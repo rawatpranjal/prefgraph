@@ -7,8 +7,10 @@ analysis results, combining consistency tests and goodness-of-fit metrics.
 from __future__ import annotations
 
 import time
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any
+
+import numpy as np
 
 from pyrevealed.core.display import ResultDisplayMixin
 from pyrevealed.core.mixins import ResultSummaryMixin
@@ -73,6 +75,15 @@ class BehavioralSummary(ResultDisplayMixin):
     num_observations: int
     num_goods: int
     computation_time_ms: float
+    # Rich stats fields (added for statsmodels-style output)
+    price_stats: dict[str, float] | None = field(default=None, repr=False)
+    quantity_stats: dict[str, float] | None = field(default=None, repr=False)
+    expenditure_stats: dict[str, float] | None = field(default=None, repr=False)
+    r_density: float | None = field(default=None, repr=False)
+    p_density: float | None = field(default=None, repr=False)
+    r_star_density: float | None = field(default=None, repr=False)
+    violation_pair_count: int | None = field(default=None, repr=False)
+    user_id: str | None = field(default=None, repr=False)
 
     @property
     def is_consistent(self) -> bool:
@@ -102,88 +113,156 @@ class BehavioralSummary(ResultDisplayMixin):
         """Return formatted summary table (statsmodels-style).
 
         Returns a professional text summary including:
-        - Data statistics
+        - Two-column header with key results
+        - Input data statistics (prices, quantities, expenditure)
+        - Revealed preference graph density
         - Consistency test results with [+]/[-] indicators
-        - Goodness-of-fit metrics
+        - Goodness-of-fit metrics with sub-details
         - Interpretation guidance
 
         Returns:
             Multi-line formatted string suitable for printing.
         """
         m = ResultSummaryMixin
-        width = 60
+        W = 70
+        sep = "-" * W
 
-        lines = []
-        lines.append("=" * width)
-        lines.append(" " * ((width - 18) // 2) + "BEHAVIORAL SUMMARY")
-        lines.append("=" * width)
+        def _indicator(passed: bool) -> str:
+            return f"[+] {'PASS' if passed else 'FAIL'}" if passed else f"[-] FAIL"
 
-        # Data section
-        lines.append("")
-        lines.append("Data:")
-        lines.append("-" * 5)
-        lines.append(m._format_metric("Observations", self.num_observations, width - 4))
-        lines.append(m._format_metric("Goods", self.num_goods, width - 4))
+        def _time_str(ms: float) -> str:
+            return f"{ms:.2f} ms" if ms < 1000 else f"{ms / 1000:.2f} s"
 
-        # Consistency Tests section
+        lines: list[str] = []
+
+        # === Two-column header ===
+        lines.append("=" * W)
+        lines.append(" " * ((W - 18) // 2) + "BEHAVIORAL SUMMARY")
+        lines.append("=" * W)
+
+        uid = self.user_id or "N/A"
+        garp_str = "[+] PASS" if self.garp_result.is_consistent else "[-] FAIL"
+        warp_str = "[+] PASS" if (self.warp_result and self.warp_result.is_consistent) else (
+            "[-] FAIL" if self.warp_result else "N/A"
+        )
+        sarp_str = "[+] PASS" if (self.sarp_result and self.sarp_result.is_consistent) else (
+            "[-] FAIL" if self.sarp_result else "N/A"
+        )
+
+        lines.append(m._format_two_column_row("User ID", uid, "GARP", garp_str, W))
+        lines.append(m._format_two_column_row("No. Observations", self.num_observations, "WARP", warp_str, W))
+        lines.append(m._format_two_column_row("No. Goods", self.num_goods, "SARP", sarp_str, W))
+        lines.append(m._format_two_column_row(
+            "Method", "Floyd-Warshall",
+            "AEI", f"{self.aei_result.efficiency_index:.4f}", W,
+        ))
+        lines.append(m._format_two_column_row(
+            "Computation Time", _time_str(self.computation_time_ms),
+            "MPI", f"{self.mpi_result.mpi_value:.4f}", W,
+        ))
+        lines.append("=" * W)
+
+        # === Input Data Statistics ===
+        if self.price_stats and self.quantity_stats and self.expenditure_stats:
+            lines.append("")
+            lines.append("Input Data:")
+            lines.append(sep)
+            lines.append(m._format_descriptive_table({
+                "Prices": self.price_stats,
+                "Quantities": self.quantity_stats,
+                "Expenditure": self.expenditure_stats,
+            }, W))
+
+        # === Revealed Preference Graph ===
+        if self.r_density is not None:
+            T = self.num_observations
+            T2 = T * T
+            lines.append("")
+            lines.append("Revealed Preference Graph:")
+            lines.append(sep)
+            r_edges = int(round(self.r_density * T2))
+            p_edges = int(round(self.p_density * T2)) if self.p_density is not None else 0
+            rs_edges = int(round(self.r_star_density * T2)) if self.r_star_density is not None else 0
+            lines.append(m._format_matrix_density("R  (direct, p'x >= p'y)", r_edges, T2, W))
+            lines.append(m._format_matrix_density("P  (strict, p'x >  p'y)", p_edges, T2, W))
+            lines.append(m._format_matrix_density("R* (transitive closure)", rs_edges, T2, W))
+            vp = self.violation_pair_count if self.violation_pair_count is not None else 0
+            lines.append(m._format_metric("Violation pairs (R* & P')", vp, W - 4))
+
+        # === Consistency Tests ===
         lines.append("")
         lines.append("Consistency Tests:")
-        lines.append("-" * 18)
+        lines.append(sep)
+        n_garp = self.garp_result.num_violations
+        garp_detail = f" ({n_garp} cycle{'s' if n_garp != 1 else ''})" if n_garp > 0 else ""
+        lines.append(m._format_metric("GARP", f"{_indicator(self.garp_result.is_consistent)}{garp_detail}", W - 4))
 
-        # GARP
-        garp_indicator = "[+]" if self.garp_result.is_consistent else "[-]"
-        garp_status = "PASS" if self.garp_result.is_consistent else "FAIL"
-        lines.append(f"  GARP {'.' * (width - 18)} {garp_indicator} {garp_status}")
-
-        # WARP (if available)
         if self.warp_result is not None:
-            warp_indicator = "[+]" if self.warp_result.is_consistent else "[-]"
-            warp_status = "PASS" if self.warp_result.is_consistent else "FAIL"
-            lines.append(f"  WARP {'.' * (width - 18)} {warp_indicator} {warp_status}")
+            n_warp = self.warp_result.num_violations
+            warp_detail = f" ({n_warp} violation{'s' if n_warp != 1 else ''})" if n_warp > 0 else ""
+            lines.append(m._format_metric("WARP", f"{_indicator(self.warp_result.is_consistent)}{warp_detail}", W - 4))
 
-        # SARP (if available)
         if self.sarp_result is not None:
-            sarp_indicator = "[+]" if self.sarp_result.is_consistent else "[-]"
-            sarp_status = "PASS" if self.sarp_result.is_consistent else "FAIL"
-            lines.append(f"  SARP {'.' * (width - 18)} {sarp_indicator} {sarp_status}")
+            n_sarp = self.sarp_result.num_violations if hasattr(self.sarp_result, 'num_violations') else 0
+            sarp_detail = f" ({n_sarp} cycle{'s' if n_sarp != 1 else ''})" if n_sarp > 0 else ""
+            lines.append(m._format_metric("SARP", f"{_indicator(self.sarp_result.is_consistent)}{sarp_detail}", W - 4))
 
-        # Goodness-of-Fit section
+        # === Goodness-of-Fit ===
         lines.append("")
         lines.append("Goodness-of-Fit:")
-        lines.append("-" * 16)
-        lines.append(m._format_metric("Afriat Efficiency (AEI)", self.aei_result.efficiency_index, width - 4))
-        lines.append(m._format_metric("Money Pump Index (MPI)", self.mpi_result.mpi_value, width - 4))
+        lines.append(sep)
 
+        # AEI with sub-metrics
+        aei = self.aei_result
+        lines.append(m._format_metric("Afriat Efficiency (AEI)", aei.efficiency_index, W - 4))
+        lines.append(m._format_metric("  Binary search iterations", aei.binary_search_iterations, W - 4))
+        waste = (1.0 - aei.efficiency_index) * 100
+        lines.append(m._format_metric("  Budget waste", f"{waste:.2f}%", W - 4))
+
+        # MPI with sub-metrics
+        mpi = self.mpi_result
+        lines.append(m._format_metric("Money Pump Index (MPI)", mpi.mpi_value, W - 4))
+        lines.append(m._format_metric("  Violation cycles", mpi.num_cycles, W - 4))
+        if mpi.worst_cycle is not None:
+            worst_cost = max(c for _, c in mpi.cycle_costs) if mpi.cycle_costs else mpi.mpi_value
+            lines.append(m._format_metric("  Worst cycle cost", f"{worst_cost:.4f}", W - 4))
+        lines.append(m._format_metric("  Total expenditure", f"${mpi.total_expenditure:,.2f}", W - 4))
+
+        # Houtman-Maks
         if self.houtman_maks_result is not None:
-            hm_score = 1.0 - self.houtman_maks_result.fraction
-            lines.append(m._format_metric("Houtman-Maks Index", hm_score, width - 4))
+            hm = self.houtman_maks_result
+            hm_score = 1.0 - hm.fraction
+            lines.append(m._format_metric("Houtman-Maks Index", hm_score, W - 4))
+            lines.append(m._format_metric(
+                "  Observations removed",
+                f"{hm.num_removed} / {self.num_observations}", W - 4,
+            ))
 
-        # Power Analysis section (optional)
+        # === Power Analysis ===
         if self.optimal_efficiency_result is not None:
             lines.append("")
             lines.append("Power Analysis:")
-            lines.append("-" * 15)
-            power_result = self.optimal_efficiency_result
-            # Bronars Power = 1 - relative_area at e=1
-            bronars_power = 1.0 - power_result.relative_areas[-1] if power_result.relative_areas else 0.0
-            lines.append(m._format_metric("Bronars Power", bronars_power, width - 4))
-            lines.append(m._format_metric("Optimal Efficiency (e*)", power_result.optimal_efficiency, width - 4))
-            lines.append(m._format_metric("Optimal Measure (m*)", power_result.optimal_measure, width - 4))
+            lines.append(sep)
+            pr = self.optimal_efficiency_result
+            bronars = 1.0 - pr.relative_areas[-1] if pr.relative_areas else 0.0
+            lines.append(m._format_metric("Bronars Power", bronars, W - 4))
+            lines.append(m._format_metric("Optimal Efficiency (e*)", pr.optimal_efficiency, W - 4))
+            lines.append(m._format_metric("Optimal Measure (m*)", pr.optimal_measure, W - 4))
 
-        # Interpretation section
+        # === Interpretation ===
         lines.append("")
         lines.append("Interpretation:")
-        lines.append("-" * 15)
-        lines.append(f"  {m._format_interpretation(self.aei_result.efficiency_index, 'efficiency')}")
+        lines.append(sep)
+        lines.append(f"  {m._format_interpretation(aei.efficiency_index, 'efficiency')}")
+        if not self.garp_result.is_consistent:
+            lines.append(f"  ~{waste:.1f}% budget waste; an arbitrager could extract ~{mpi.mpi_value * 100:.1f}%.")
+            if self.houtman_maks_result is not None:
+                hm = self.houtman_maks_result
+                pct = 100.0 * hm.num_removed / self.num_observations if self.num_observations > 0 else 0
+                lines.append(f"  {hm.num_removed} observations ({pct:.1f}%) must be removed for full consistency.")
 
-        # Footer
-        lines.append("")
-        if self.computation_time_ms < 1000:
-            time_str = f"{self.computation_time_ms:.2f} ms"
-        else:
-            time_str = f"{self.computation_time_ms / 1000:.2f} s"
-        lines.append(f"Computation Time: {time_str}")
-        lines.append("=" * width)
+        # === Footer ===
+        lines.append("=" * W)
 
         return "\n".join(lines)
 
@@ -330,6 +409,29 @@ class BehavioralSummary(ResultDisplayMixin):
                 log, n_simulations=200, n_efficiency_levels=10
             )
 
+        # Compute rich stats from log and garp_result
+        def _array_stats(arr: "np.ndarray") -> dict[str, float]:
+            return {
+                "mean": float(np.mean(arr)),
+                "std": float(np.std(arr)),
+                "min": float(np.min(arr)),
+                "max": float(np.max(arr)),
+            }
+
+        price_stats = _array_stats(log.cost_vectors)
+        quantity_stats = _array_stats(log.action_vectors)
+        expenditure_stats = _array_stats(log.total_spend)
+
+        T = log.num_observations
+        T2 = T * T if T > 0 else 1
+        R = garp_result.direct_revealed_preference
+        P = garp_result.strict_revealed_preference
+        Rstar = garp_result.transitive_closure
+        r_density = float(np.sum(R)) / T2
+        p_density = float(np.sum(P)) / T2
+        r_star_density = float(np.sum(Rstar)) / T2
+        violation_pair_count = int(np.sum(Rstar & P.T))
+
         end_time = time.perf_counter()
         total_time_ms = (end_time - start_time) * 1000
 
@@ -344,6 +446,14 @@ class BehavioralSummary(ResultDisplayMixin):
             num_observations=log.num_observations,
             num_goods=log.num_goods,
             computation_time_ms=total_time_ms,
+            price_stats=price_stats,
+            quantity_stats=quantity_stats,
+            expenditure_stats=expenditure_stats,
+            r_density=r_density,
+            p_density=p_density,
+            r_star_density=r_star_density,
+            violation_pair_count=violation_pair_count,
+            user_id=log.user_id,
         )
 
 
@@ -386,64 +496,88 @@ class MenuChoiceSummary(ResultDisplayMixin):
         return self.efficiency_score
 
     def summary(self) -> str:
-        """Return formatted summary table."""
+        """Return formatted summary table (statsmodels-style)."""
         m = ResultSummaryMixin
-        width = 60
+        W = 70
+        sep = "-" * W
 
-        lines = []
-        lines.append("=" * width)
-        lines.append(" " * ((width - 22) // 2) + "MENU CHOICE SUMMARY")
-        lines.append("=" * width)
+        def _ind(passed: bool) -> str:
+            return "[+] PASS" if passed else "[-] FAIL"
 
-        # Data section
-        lines.append("")
-        lines.append("Data:")
-        lines.append("-" * 5)
-        lines.append(m._format_metric("Observations", self.num_observations, width - 4))
-        lines.append(m._format_metric("Alternatives", self.num_alternatives, width - 4))
+        def _time_str(ms: float) -> str:
+            return f"{ms:.2f} ms" if ms < 1000 else f"{ms / 1000:.2f} s"
 
-        # Consistency Tests section
+        lines: list[str] = []
+
+        # Two-column header
+        lines.append("=" * W)
+        lines.append(" " * ((W - 19) // 2) + "MENU CHOICE SUMMARY")
+        lines.append("=" * W)
+
+        lines.append(m._format_two_column_row(
+            "No. Observations", self.num_observations,
+            "WARP", _ind(self.warp_result.is_consistent), W,
+        ))
+        lines.append(m._format_two_column_row(
+            "No. Alternatives", self.num_alternatives,
+            "SARP", _ind(self.sarp_result.is_consistent), W,
+        ))
+        lines.append(m._format_two_column_row(
+            "Computation Time", _time_str(self.computation_time_ms),
+            "Congruence", _ind(self.congruence_result.is_rationalizable), W,
+        ))
+        lines.append("=" * W)
+
+        # Consistency Tests with violation counts
         lines.append("")
         lines.append("Consistency Tests:")
-        lines.append("-" * 18)
+        lines.append(sep)
+        n_warp = self.warp_result.num_violations if hasattr(self.warp_result, 'num_violations') else 0
+        warp_detail = f" ({n_warp} violation{'s' if n_warp != 1 else ''})" if n_warp > 0 else ""
+        lines.append(m._format_metric("WARP", f"{_ind(self.warp_result.is_consistent)}{warp_detail}", W - 4))
 
-        warp_indicator = "[+]" if self.warp_result.is_consistent else "[-]"
-        warp_status = "PASS" if self.warp_result.is_consistent else "FAIL"
-        lines.append(f"  WARP {'.' * (width - 18)} {warp_indicator} {warp_status}")
+        n_sarp = self.sarp_result.num_violations if hasattr(self.sarp_result, 'num_violations') else 0
+        sarp_detail = f" ({n_sarp} cycle{'s' if n_sarp != 1 else ''})" if n_sarp > 0 else ""
+        lines.append(m._format_metric("SARP", f"{_ind(self.sarp_result.is_consistent)}{sarp_detail}", W - 4))
+        lines.append(m._format_metric("Congruence", _ind(self.congruence_result.is_rationalizable), W - 4))
 
-        sarp_indicator = "[+]" if self.sarp_result.is_consistent else "[-]"
-        sarp_status = "PASS" if self.sarp_result.is_consistent else "FAIL"
-        lines.append(f"  SARP {'.' * (width - 18)} {sarp_indicator} {sarp_status}")
-
-        cong_indicator = "[+]" if self.congruence_result.is_rationalizable else "[-]"
-        cong_status = "PASS" if self.congruence_result.is_rationalizable else "FAIL"
-        lines.append(f"  Congruence {'.' * (width - 24)} {cong_indicator} {cong_status}")
-
-        # Goodness-of-Fit section
+        # Goodness-of-Fit
         lines.append("")
         lines.append("Goodness-of-Fit:")
-        lines.append("-" * 16)
-        lines.append(m._format_metric("Houtman-Maks Efficiency", self.efficiency_score, width - 4))
+        lines.append(sep)
+        lines.append(m._format_metric("Houtman-Maks Efficiency", self.efficiency_score, W - 4))
+        if hasattr(self.efficiency_result, 'removed_observations'):
+            n_removed = len(self.efficiency_result.removed_observations)
+            lines.append(m._format_metric(
+                "  Observations removed", f"{n_removed} / {self.num_observations}", W - 4,
+            ))
 
-        # Utility recovery if available
+        # Preference Order
         if self.utility_result is not None and self.utility_result.success:
             lines.append("")
-            lines.append("Preference Order:")
-            lines.append("-" * 17)
+            lines.append("Recovered Preference Order:")
+            lines.append(sep)
             if self.utility_result.preference_order:
-                order_str = " > ".join(str(i) for i in self.utility_result.preference_order[:8])
+                order_str = " > ".join(str(i) for i in self.utility_result.preference_order[:10])
                 lines.append(f"  {order_str}")
-                if len(self.utility_result.preference_order) > 8:
-                    lines.append(f"  ... ({len(self.utility_result.preference_order) - 8} more)")
+                if len(self.utility_result.preference_order) > 10:
+                    lines.append(f"  ... ({len(self.utility_result.preference_order) - 10} more)")
 
-        # Footer
+        # Interpretation
         lines.append("")
-        if self.computation_time_ms < 1000:
-            time_str = f"{self.computation_time_ms:.2f} ms"
+        lines.append("Interpretation:")
+        lines.append(sep)
+        if self.congruence_result.is_rationalizable:
+            lines.append("  Choices are fully rationalizable by a complete preference ordering.")
+        elif self.sarp_result.is_consistent:
+            lines.append("  Choices satisfy SARP but not Congruence (violates maximality).")
+        elif self.warp_result.is_consistent:
+            lines.append("  Choices satisfy WARP but not SARP (long preference cycles exist).")
         else:
-            time_str = f"{self.computation_time_ms / 1000:.2f} s"
-        lines.append(f"Computation Time: {time_str}")
-        lines.append("=" * width)
+            lines.append("  Choices violate WARP - direct preference reversals found.")
+        lines.append(f"  Efficiency: {self.efficiency_score * 100:.1f}% of observations are consistent.")
+
+        lines.append("=" * W)
 
         return "\n".join(lines)
 
@@ -558,67 +692,91 @@ class RiskChoiceSummary(ResultDisplayMixin):
     def summary(self) -> str:
         """Return formatted summary table (statsmodels-style)."""
         m = ResultSummaryMixin
-        width = 60
+        W = 70
+        sep = "-" * W
 
-        lines = []
-        lines.append("=" * width)
-        lines.append(" " * ((width - 22) // 2) + "RISK CHOICE SUMMARY")
-        lines.append("=" * width)
+        def _ind(passed: bool) -> str:
+            return "[+] PASS" if passed else "[-] FAIL"
 
-        # Data section
+        def _time_str(ms: float) -> str:
+            return f"{ms:.2f} ms" if ms < 1000 else f"{ms / 1000:.2f} s"
+
+        lines: list[str] = []
+
+        # Two-column header
+        lines.append("=" * W)
+        lines.append(" " * ((W - 19) // 2) + "RISK CHOICE SUMMARY")
+        lines.append("=" * W)
+
+        cat = self.risk_category.replace("_", " ").title()
+        lines.append(m._format_two_column_row(
+            "No. Observations", self.num_observations,
+            "Risk Category", cat, W,
+        ))
+        lines.append(m._format_two_column_row(
+            "Risk-Seeking Choices", self.num_risk_seeking_choices,
+            "Risk Aversion (rho)", f"{self.risk_aversion_coefficient:.4f}", W,
+        ))
+        lines.append(m._format_two_column_row(
+            "Risk-Averse Choices", self.num_risk_averse_choices,
+            "Consistency", f"{self.consistency_score:.4f}", W,
+        ))
+        lines.append(m._format_two_column_row(
+            "Computation Time", _time_str(self.computation_time_ms),
+            "EU Axioms", _ind(self.eu_axioms_satisfied), W,
+        ))
+        lines.append("=" * W)
+
+        # Choice Distribution
         lines.append("")
-        lines.append("Data:")
-        lines.append("-" * 5)
-        lines.append(m._format_metric("Observations", self.num_observations, width - 4))
-        lines.append(m._format_metric("Risk-Seeking Choices", self.num_risk_seeking_choices, width - 4))
-        lines.append(m._format_metric("Risk-Averse Choices", self.num_risk_averse_choices, width - 4))
+        lines.append("Choice Distribution:")
+        lines.append(sep)
+        total = self.num_observations
+        if total > 0:
+            seek_pct = 100.0 * self.num_risk_seeking_choices / total
+            averse_pct = 100.0 * self.num_risk_averse_choices / total
+            neutral = total - self.num_risk_seeking_choices - self.num_risk_averse_choices
+            neutral_pct = 100.0 * neutral / total
+            lines.append(m._format_metric("Risk-Seeking", f"{self.num_risk_seeking_choices} ({seek_pct:.1f}%)", W - 4))
+            lines.append(m._format_metric("Risk-Averse", f"{self.num_risk_averse_choices} ({averse_pct:.1f}%)", W - 4))
+            lines.append(m._format_metric("Risk-Neutral", f"{neutral} ({neutral_pct:.1f}%)", W - 4))
 
-        # Risk Profile section
+        # Risk Profile
         lines.append("")
-        lines.append("Risk Profile:")
-        lines.append("-" * 13)
-        lines.append(m._format_metric("Risk Category", self.risk_category.replace("_", " ").title(), width - 4))
-        lines.append(m._format_metric("Risk Aversion (rho)", self.risk_aversion_coefficient, width - 4))
-        lines.append(m._format_metric("Consistency Score", self.consistency_score, width - 4))
+        lines.append("Risk Profile (CRRA):")
+        lines.append(sep)
+        lines.append(m._format_metric("Risk Category", cat, W - 4))
+        lines.append(m._format_metric("Risk Aversion (rho)", self.risk_aversion_coefficient, W - 4))
+        lines.append(m._format_metric("Consistency Score", self.consistency_score, W - 4))
 
-        # EU Axioms section
+        # EU Axioms
         lines.append("")
         lines.append("Expected Utility Axioms:")
-        lines.append("-" * 24)
-        eu_indicator = "[+]" if self.eu_axioms_satisfied else "[-]"
-        eu_status = "SATISFIED" if self.eu_axioms_satisfied else "VIOLATED"
-        lines.append(f"  Status {'.' * (width - 22)} {eu_indicator} {eu_status}")
-
+        lines.append(sep)
+        eu_str = "[+] SATISFIED" if self.eu_axioms_satisfied else "[-] VIOLATED"
+        lines.append(m._format_metric("Status", eu_str, W - 4))
         if not self.eu_axioms_satisfied and self.eu_violations:
-            lines.append("")
-            lines.append("  Violations:")
+            lines.append(m._format_metric("  Num. violations", len(self.eu_violations), W - 4))
             for v in self.eu_violations[:3]:
                 lines.append(f"    - {v}")
             if len(self.eu_violations) > 3:
                 lines.append(f"    ... and {len(self.eu_violations) - 3} more")
 
-        # Interpretation section
+        # Interpretation
         lines.append("")
         lines.append("Interpretation:")
-        lines.append("-" * 15)
+        lines.append(sep)
         if self.risk_category == "risk_averse":
             lines.append("  Decision-maker prefers certainty over gambles.")
-            lines.append(f"  Certainty premium: willing to accept ~{(1-0.5**(1/max(self.risk_aversion_coefficient, 0.1)))*100:.0f}% less for certainty.")
+            rho = max(self.risk_aversion_coefficient, 0.1)
+            lines.append(f"  Certainty premium: ~{(1 - 0.5 ** (1 / rho)) * 100:.0f}% less for certainty.")
         elif self.risk_category == "risk_seeking":
             lines.append("  Decision-maker prefers gambles over certainty.")
-            lines.append("  May accept unfavorable expected value for chance of large gain.")
         else:
             lines.append("  Decision-maker approximately maximizes expected value.")
+        lines.append(f"  Model fit: {self.consistency_score * 100:.1f}% of choices consistent with CRRA profile.")
 
-        # Footer
-        lines.append("")
-        if self.computation_time_ms < 1000:
-            time_str = f"{self.computation_time_ms:.2f} ms"
-        else:
-            time_str = f"{self.computation_time_ms / 1000:.2f} s"
-        lines.append(f"Computation Time: {time_str}")
-        lines.append("=" * width)
-
+        lines.append("=" * W)
         return "\n".join(lines)
 
     def __repr__(self) -> str:
@@ -744,82 +902,88 @@ class StochasticChoiceSummary(ResultDisplayMixin):
     def summary(self) -> str:
         """Return formatted summary table (statsmodels-style)."""
         m = ResultSummaryMixin
-        width = 60
+        W = 70
+        sep = "-" * W
 
-        lines = []
-        lines.append("=" * width)
-        lines.append(" " * ((width - 28) // 2) + "STOCHASTIC CHOICE SUMMARY")
-        lines.append("=" * width)
+        def _ind(passed: bool) -> str:
+            return "[+] PASS" if passed else "[-] FAIL"
 
-        # Data section
-        lines.append("")
-        lines.append("Data:")
-        lines.append("-" * 5)
-        lines.append(m._format_metric("Menus", self.num_menus, width - 4))
-        lines.append(m._format_metric("Unique Items", self.num_items, width - 4))
-        lines.append(m._format_metric("Total Observations", self.total_observations, width - 4))
+        def _time_str(ms: float) -> str:
+            return f"{ms:.2f} ms" if ms < 1000 else f"{ms / 1000:.2f} s"
 
-        # Consistency Tests section
+        lines: list[str] = []
+
+        # Two-column header
+        lines.append("=" * W)
+        lines.append(" " * ((W - 25) // 2) + "STOCHASTIC CHOICE SUMMARY")
+        lines.append("=" * W)
+
+        lines.append(m._format_two_column_row(
+            "No. Menus", self.num_menus,
+            "RUM Consistency", _ind(self.is_rum_consistent), W,
+        ))
+        lines.append(m._format_two_column_row(
+            "Unique Items", self.num_items,
+            "Regularity", _ind(self.satisfies_regularity), W,
+        ))
+        lines.append(m._format_two_column_row(
+            "Total Observations", self.total_observations,
+            "IIA", _ind(self.iia_satisfied), W,
+        ))
+        lines.append(m._format_two_column_row(
+            "Computation Time", _time_str(self.computation_time_ms),
+            "Transitivity", self.strongest_transitivity, W,
+        ))
+        lines.append("=" * W)
+
+        # Consistency Tests
         lines.append("")
         lines.append("Consistency Tests:")
-        lines.append("-" * 18)
+        lines.append(sep)
+        lines.append(m._format_metric("RUM Consistency", _ind(self.is_rum_consistent), W - 4))
+        if hasattr(self.rum_result, 'distance_to_rum'):
+            lines.append(m._format_metric("  Distance to nearest RUM", self.rum_result.distance_to_rum, W - 4))
+        lines.append(m._format_metric("Regularity (Luce)", _ind(self.satisfies_regularity), W - 4))
+        if hasattr(self.regularity_result, 'num_violations'):
+            n_reg = self.regularity_result.num_violations
+            if n_reg > 0:
+                lines.append(m._format_metric("  Regularity violations", n_reg, W - 4))
+        lines.append(m._format_metric("IIA", _ind(self.iia_satisfied), W - 4))
 
-        # RUM consistency
-        rum_indicator = "[+]" if self.is_rum_consistent else "[-]"
-        rum_status = "PASS" if self.is_rum_consistent else "FAIL"
-        lines.append(f"  RUM Consistency {'.' * (width - 30)} {rum_indicator} {rum_status}")
-
-        # Regularity
-        reg_indicator = "[+]" if self.satisfies_regularity else "[-]"
-        reg_status = "PASS" if self.satisfies_regularity else "FAIL"
-        lines.append(f"  Regularity (Luce) {'.' * (width - 32)} {reg_indicator} {reg_status}")
-
-        # IIA
-        iia_indicator = "[+]" if self.iia_satisfied else "[-]"
-        iia_status = "PASS" if self.iia_satisfied else "FAIL"
-        lines.append(f"  IIA {'.' * (width - 18)} {iia_indicator} {iia_status}")
-
-        # Stochastic Transitivity section
+        # Stochastic Transitivity
         lines.append("")
         lines.append("Stochastic Transitivity:")
-        lines.append("-" * 24)
-        wst_ind = "[+]" if self.transitivity_result.satisfies_wst else "[-]"
-        mst_ind = "[+]" if self.transitivity_result.satisfies_mst else "[-]"
-        sst_ind = "[+]" if self.transitivity_result.satisfies_sst else "[-]"
-        lines.append(f"  Weak (WST) {'.' * (width - 24)} {wst_ind} {'PASS' if self.transitivity_result.satisfies_wst else 'FAIL'}")
-        lines.append(f"  Moderate (MST) {'.' * (width - 28)} {mst_ind} {'PASS' if self.transitivity_result.satisfies_mst else 'FAIL'}")
-        lines.append(f"  Strong (SST) {'.' * (width - 26)} {sst_ind} {'PASS' if self.transitivity_result.satisfies_sst else 'FAIL'}")
+        lines.append(sep)
+        tr = self.transitivity_result
+        lines.append(m._format_metric("Weak (WST)", _ind(tr.satisfies_wst), W - 4))
+        lines.append(m._format_metric("Moderate (MST)", _ind(tr.satisfies_mst), W - 4))
+        lines.append(m._format_metric("Strong (SST)", _ind(tr.satisfies_sst), W - 4))
+        if hasattr(tr, 'num_triples_tested') and tr.num_triples_tested:
+            lines.append(m._format_metric("  Triples tested", tr.num_triples_tested, W - 4))
 
-        # Model Fit section (if available)
+        # Model Fit
         if self.model_result is not None:
             lines.append("")
             lines.append("Model Fit:")
-            lines.append("-" * 10)
-            lines.append(m._format_metric("Model Type", self.model_result.model_type, width - 4))
-            lines.append(m._format_metric("Log-Likelihood", self.model_result.log_likelihood, width - 4))
-            lines.append(m._format_metric("AIC", self.model_result.aic, width - 4))
-            lines.append(m._format_metric("BIC", self.model_result.bic, width - 4))
+            lines.append(sep)
+            lines.append(m._format_metric("Model Type", self.model_result.model_type, W - 4))
+            lines.append(m._format_metric("Log-Likelihood", self.model_result.log_likelihood, W - 4))
+            lines.append(m._format_metric("AIC", self.model_result.aic, W - 4))
+            lines.append(m._format_metric("BIC", self.model_result.bic, W - 4))
 
-        # Interpretation section
+        # Interpretation
         lines.append("")
         lines.append("Interpretation:")
-        lines.append("-" * 15)
+        lines.append(sep)
         if self.is_rum_consistent:
             lines.append("  Choices can be rationalized by a random utility model.")
-            lines.append(f"  Strongest transitivity: {self.strongest_transitivity}")
+            lines.append(f"  Strongest transitivity satisfied: {self.strongest_transitivity}")
         else:
             lines.append("  Choices cannot be explained by any random utility model.")
-            lines.append(f"  Distance to nearest RUM: {self.rum_result.distance_to_rum:.4f}")
+            if hasattr(self.rum_result, 'distance_to_rum'):
+                lines.append(f"  Distance to nearest RUM: {self.rum_result.distance_to_rum:.4f}")
 
-        # Footer
-        lines.append("")
-        if self.computation_time_ms < 1000:
-            time_str = f"{self.computation_time_ms:.2f} ms"
-        else:
-            time_str = f"{self.computation_time_ms / 1000:.2f} s"
-        lines.append(f"Computation Time: {time_str}")
-        lines.append("=" * width)
-
+        lines.append("=" * W)
         return "\n".join(lines)
 
     def __repr__(self) -> str:
@@ -963,83 +1127,83 @@ class ProductionSummary(ResultDisplayMixin):
     def summary(self) -> str:
         """Return formatted summary table (statsmodels-style)."""
         m = ResultSummaryMixin
-        width = 60
+        W = 70
+        sep = "-" * W
 
-        lines = []
-        lines.append("=" * width)
-        lines.append(" " * ((width - 20) // 2) + "PRODUCTION SUMMARY")
-        lines.append("=" * width)
+        def _ind(passed: bool) -> str:
+            return "[+] PASS" if passed else "[-] FAIL"
 
-        # Data section
-        lines.append("")
-        lines.append("Data:")
-        lines.append("-" * 5)
-        lines.append(m._format_metric("Observations", self.num_observations, width - 4))
-        lines.append(m._format_metric("Inputs", self.num_inputs, width - 4))
-        lines.append(m._format_metric("Outputs", self.num_outputs, width - 4))
+        def _time_str(ms: float) -> str:
+            return f"{ms:.2f} ms" if ms < 1000 else f"{ms / 1000:.2f} s"
 
-        # Consistency Tests section
+        lines: list[str] = []
+
+        # Two-column header
+        lines.append("=" * W)
+        lines.append(" " * ((W - 18) // 2) + "PRODUCTION SUMMARY")
+        lines.append("=" * W)
+
+        lines.append(m._format_two_column_row(
+            "No. Observations", self.num_observations,
+            "Profit Max", _ind(self.is_profit_maximizing), W,
+        ))
+        lines.append(m._format_two_column_row(
+            "No. Inputs", self.num_inputs,
+            "Cost Min", _ind(self.is_cost_minimizing), W,
+        ))
+        lines.append(m._format_two_column_row(
+            "No. Outputs", self.num_outputs,
+            "Returns to Scale", self.returns_to_scale.title(), W,
+        ))
+        lines.append(m._format_two_column_row(
+            "Computation Time", _time_str(self.computation_time_ms),
+            "Profit Efficiency", f"{self.profit_efficiency:.4f}", W,
+        ))
+        lines.append("=" * W)
+
+        # Consistency Tests
         lines.append("")
         lines.append("Consistency Tests:")
-        lines.append("-" * 18)
+        lines.append(sep)
+        pm_detail = ""
+        if not self.is_profit_maximizing:
+            pm_detail = f" ({self.profit_max_result.num_violations} violations)"
+        lines.append(m._format_metric("Profit Maximization", f"{_ind(self.is_profit_maximizing)}{pm_detail}", W - 4))
+        lines.append(m._format_metric("Cost Minimization", _ind(self.is_cost_minimizing), W - 4))
+        lines.append(m._format_metric("Returns to Scale", self.returns_to_scale.title(), W - 4))
 
-        # Profit maximization
-        pm_indicator = "[+]" if self.is_profit_maximizing else "[-]"
-        pm_status = "PASS" if self.is_profit_maximizing else "FAIL"
-        lines.append(f"  Profit Maximization {'.' * (width - 34)} {pm_indicator} {pm_status}")
-
-        # Cost minimization
-        cm_indicator = "[+]" if self.is_cost_minimizing else "[-]"
-        cm_status = "PASS" if self.is_cost_minimizing else "FAIL"
-        lines.append(f"  Cost Minimization {'.' * (width - 32)} {cm_indicator} {cm_status}")
-
-        # Returns to Scale
-        lines.append("")
-        lines.append(m._format_metric("Returns to Scale", self.returns_to_scale.title(), width - 4))
-
-        # Efficiency Metrics section
+        # Efficiency Metrics
         lines.append("")
         lines.append("Efficiency Metrics:")
-        lines.append("-" * 19)
-        lines.append(m._format_metric("Technical Efficiency", self.technical_efficiency, width - 4))
-        lines.append(m._format_metric("Cost Efficiency", self.cost_efficiency, width - 4))
-        lines.append(m._format_metric("Profit Efficiency", self.profit_efficiency, width - 4))
+        lines.append(sep)
+        lines.append(m._format_metric("Technical Efficiency", self.technical_efficiency, W - 4))
+        lines.append(m._format_metric("Cost Efficiency", self.cost_efficiency, W - 4))
+        lines.append(m._format_metric("Profit Efficiency", self.profit_efficiency, W - 4))
 
-        # Per-input efficiency (if available)
+        # Per-input efficiency
         if hasattr(self.profit_max_result, 'input_efficiency_vector'):
             input_eff = self.profit_max_result.input_efficiency_vector
             if len(input_eff) > 0:
                 lines.append("")
                 lines.append("Per-Input Efficiency:")
-                lines.append("-" * 21)
+                lines.append(sep)
                 for i, eff in enumerate(input_eff[:5]):
-                    lines.append(m._format_metric(f"Input {i}", eff, width - 4))
+                    lines.append(m._format_metric(f"Input {i}", eff, W - 4))
                 if len(input_eff) > 5:
                     lines.append(f"  ... ({len(input_eff) - 5} more inputs)")
 
-        # Interpretation section
+        # Interpretation
         lines.append("")
         lines.append("Interpretation:")
-        lines.append("-" * 15)
+        lines.append(sep)
         if self.is_profit_maximizing:
             lines.append("  Firm behavior is consistent with profit maximization.")
         else:
-            num_violations = self.profit_max_result.num_violations
-            lines.append(f"  Found {num_violations} profit maximization violation(s).")
-
+            lines.append(f"  Found {self.profit_max_result.num_violations} profit maximization violation(s).")
         lines.append(f"  Returns to scale: {self.returns_to_scale}.")
-        eff_pct = self.profit_efficiency * 100
-        lines.append(f"  Operating at {eff_pct:.1f}% of optimal profit efficiency.")
+        lines.append(f"  Operating at {self.profit_efficiency * 100:.1f}% of optimal profit efficiency.")
 
-        # Footer
-        lines.append("")
-        if self.computation_time_ms < 1000:
-            time_str = f"{self.computation_time_ms:.2f} ms"
-        else:
-            time_str = f"{self.computation_time_ms / 1000:.2f} s"
-        lines.append(f"Computation Time: {time_str}")
-        lines.append("=" * width)
-
+        lines.append("=" * W)
         return "\n".join(lines)
 
     def __repr__(self) -> str:
@@ -1109,3 +1273,224 @@ class ProductionSummary(ResultDisplayMixin):
             num_outputs=log.num_outputs,
             computation_time_ms=total_time_ms,
         )
+
+
+@dataclass
+class PanelSummary(ResultDisplayMixin):
+    """Aggregate summary for multi-user panel analysis.
+
+    Combines per-user BehavioralSummary results into aggregate statistics:
+    consistency rates, efficiency distributions, and identification of
+    the most inconsistent users.
+
+    Example:
+        >>> from pyrevealed import BehaviorPanel
+        >>> panel = BehaviorPanel.from_logs(logs)
+        >>> ps = panel.summary()
+        >>> print(ps)
+    """
+
+    user_summaries: dict[str, "BehavioralSummary"] = field(repr=False)
+    num_users: int
+    total_observations: int
+    num_goods: int
+    obs_per_user_stats: dict[str, float]
+    garp_pass_rate: float
+    warp_pass_rate: float | None
+    sarp_pass_rate: float | None
+    aei_distribution: dict[str, float]
+    mpi_distribution: dict[str, float]
+    hm_distribution: dict[str, float] | None
+    top_inconsistent: list[tuple[str, float, float, int]]  # (uid, aei, mpi, T)
+    computation_time_ms: float
+
+    @classmethod
+    def from_summaries(
+        cls, user_summaries: dict[str, "BehavioralSummary"],
+    ) -> "PanelSummary":
+        """Build PanelSummary from per-user BehavioralSummary results."""
+        if not user_summaries:
+            raise ValueError("Cannot create PanelSummary from empty dict")
+
+        n = len(user_summaries)
+        summaries = list(user_summaries.values())
+
+        # Obs per user
+        obs_counts = np.array([s.num_observations for s in summaries], dtype=np.float64)
+        aei_vals = np.array([s.efficiency_index for s in summaries], dtype=np.float64)
+        mpi_vals = np.array([s.mpi_value for s in summaries], dtype=np.float64)
+
+        def _dist(arr: np.ndarray) -> dict[str, float]:
+            return {
+                "mean": float(np.mean(arr)),
+                "std": float(np.std(arr)),
+                "min": float(np.min(arr)),
+                "25%": float(np.percentile(arr, 25)),
+                "50%": float(np.percentile(arr, 50)),
+                "75%": float(np.percentile(arr, 75)),
+                "max": float(np.max(arr)),
+            }
+
+        # GARP pass rate
+        garp_pass = sum(1 for s in summaries if s.is_consistent)
+
+        # WARP/SARP pass rates (if computed)
+        warp_pass_rate = None
+        if summaries[0].warp_result is not None:
+            warp_pass = sum(1 for s in summaries if s.warp_result and s.warp_result.is_consistent)
+            warp_pass_rate = warp_pass / n
+
+        sarp_pass_rate = None
+        if summaries[0].sarp_result is not None:
+            sarp_pass = sum(1 for s in summaries if s.sarp_result and s.sarp_result.is_consistent)
+            sarp_pass_rate = sarp_pass / n
+
+        # Houtman-Maks distribution (only for inconsistent users)
+        hm_distribution = None
+        hm_vals = []
+        for s in summaries:
+            if s.houtman_maks_result is not None:
+                hm_vals.append(1.0 - s.houtman_maks_result.fraction)
+            else:
+                hm_vals.append(1.0)  # Consistent => HM = 1.0
+        hm_arr = np.array(hm_vals, dtype=np.float64)
+        hm_distribution = _dist(hm_arr)
+
+        # Top inconsistent users (sorted by AEI ascending)
+        user_list = list(user_summaries.items())
+        user_list.sort(key=lambda x: x[1].efficiency_index)
+        top_inconsistent = [
+            (uid, s.efficiency_index, s.mpi_value, s.num_observations)
+            for uid, s in user_list[:5]
+        ]
+
+        # Total computation time
+        total_time = sum(s.computation_time_ms for s in summaries)
+
+        # Num goods (from first user)
+        num_goods = summaries[0].num_goods
+
+        return cls(
+            user_summaries=user_summaries,
+            num_users=n,
+            total_observations=int(np.sum(obs_counts)),
+            num_goods=num_goods,
+            obs_per_user_stats=_dist(obs_counts),
+            garp_pass_rate=garp_pass / n,
+            warp_pass_rate=warp_pass_rate,
+            sarp_pass_rate=sarp_pass_rate,
+            aei_distribution=_dist(aei_vals),
+            mpi_distribution=_dist(mpi_vals),
+            hm_distribution=hm_distribution,
+            top_inconsistent=top_inconsistent,
+            computation_time_ms=total_time,
+        )
+
+    def summary(self) -> str:
+        """Return formatted panel summary (statsmodels-style)."""
+        m = ResultSummaryMixin
+        W = 70
+        sep = "-" * W
+
+        def _time_str(ms: float) -> str:
+            return f"{ms:.2f} ms" if ms < 1000 else f"{ms / 1000:.2f} s"
+
+        lines: list[str] = []
+
+        # Two-column header
+        lines.append("=" * W)
+        lines.append(" " * ((W - 13) // 2) + "PANEL SUMMARY")
+        lines.append("=" * W)
+
+        n_garp = int(round(self.garp_pass_rate * self.num_users))
+        lines.append(m._format_two_column_row(
+            "No. Users", f"{self.num_users:,}",
+            "GARP Pass Rate", f"{self.garp_pass_rate * 100:.1f}%", W,
+        ))
+        lines.append(m._format_two_column_row(
+            "Total Observations", f"{self.total_observations:,}",
+            "Mean AEI", f"{self.aei_distribution['mean']:.4f}", W,
+        ))
+        lines.append(m._format_two_column_row(
+            "No. Goods", self.num_goods,
+            "Mean MPI", f"{self.mpi_distribution['mean']:.4f}", W,
+        ))
+        lines.append(m._format_two_column_row(
+            "Obs/User (mean)", f"{self.obs_per_user_stats['mean']:.1f}",
+            "Computation Time", _time_str(self.computation_time_ms), W,
+        ))
+        lines.append("=" * W)
+
+        # Consistency Rates
+        lines.append("")
+        lines.append("Consistency Rates:")
+        lines.append(sep)
+        n_garp = int(round(self.garp_pass_rate * self.num_users))
+        lines.append(m._format_metric(
+            "GARP", f"{self.garp_pass_rate * 100:.1f}% ({n_garp:,} / {self.num_users:,})", W - 4,
+        ))
+        if self.warp_pass_rate is not None:
+            n_warp = int(round(self.warp_pass_rate * self.num_users))
+            lines.append(m._format_metric(
+                "WARP", f"{self.warp_pass_rate * 100:.1f}% ({n_warp:,} / {self.num_users:,})", W - 4,
+            ))
+        if self.sarp_pass_rate is not None:
+            n_sarp = int(round(self.sarp_pass_rate * self.num_users))
+            lines.append(m._format_metric(
+                "SARP", f"{self.sarp_pass_rate * 100:.1f}% ({n_sarp:,} / {self.num_users:,})", W - 4,
+            ))
+
+        # Efficiency Distribution
+        lines.append("")
+        lines.append("Efficiency Distribution:")
+        lines.append(sep)
+        dist_rows = {
+            "AEI": self.aei_distribution,
+            "MPI": self.mpi_distribution,
+        }
+        if self.hm_distribution is not None:
+            dist_rows["HM Index"] = self.hm_distribution
+        lines.append(m._format_distribution_table(dist_rows, W))
+
+        # Most Inconsistent Users
+        if self.top_inconsistent:
+            lines.append("")
+            lines.append("Most Inconsistent (Bottom 5):")
+            lines.append(sep)
+            for i, (uid, aei, mpi, t) in enumerate(self.top_inconsistent):
+                lines.append(m._format_metric(
+                    f"  {i+1}. {uid}", f"AEI={aei:.3f}, MPI={mpi:.3f}, T={t}", W - 4,
+                ))
+
+        lines.append("=" * W)
+        return "\n".join(lines)
+
+    def score(self) -> float:
+        """Aggregate score: mean AEI across all users."""
+        return self.aei_distribution["mean"]
+
+    def __repr__(self) -> str:
+        return (
+            f"PanelSummary(users={self.num_users}, "
+            f"garp_pass={self.garp_pass_rate * 100:.1f}%, "
+            f"mean_aei={self.aei_distribution['mean']:.4f})"
+        )
+
+    def __str__(self) -> str:
+        return self.summary()
+
+    def to_dict(self) -> dict[str, Any]:
+        """Return dictionary representation for serialization."""
+        return {
+            "num_users": self.num_users,
+            "total_observations": self.total_observations,
+            "num_goods": self.num_goods,
+            "garp_pass_rate": self.garp_pass_rate,
+            "warp_pass_rate": self.warp_pass_rate,
+            "sarp_pass_rate": self.sarp_pass_rate,
+            "aei_distribution": self.aei_distribution,
+            "mpi_distribution": self.mpi_distribution,
+            "hm_distribution": self.hm_distribution,
+            "computation_time_ms": self.computation_time_ms,
+            "score": self.score(),
+        }

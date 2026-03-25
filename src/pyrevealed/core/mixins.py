@@ -187,3 +187,92 @@ class ResultSummaryMixin:
             result.append(f"  ... and {remaining} more {item_name}(s)")
 
         return "\n".join(result)
+
+    @staticmethod
+    def _format_two_column_row(
+        left_label: str, left_value: Any,
+        right_label: str, right_value: Any,
+        width: int = 70,
+    ) -> str:
+        """Format a two-column label-value row (statsmodels-style header).
+
+        Example: "User ID:          user_42    GARP:              [+] PASS"
+        """
+        def _fmt(v: Any) -> str:
+            if isinstance(v, float):
+                return f"{v:.4f}" if abs(v) < 1000 else f"{v:,.2f}"
+            return str(v)
+
+        half = width // 2
+        left = f"{left_label}: {_fmt(left_value)}"
+        right = f"{right_label}: {_fmt(right_value)}"
+        left_padded = left.ljust(half)
+        return f"{left_padded}{right}"
+
+    @staticmethod
+    def _format_descriptive_table(
+        rows: dict[str, dict[str, float]],
+        width: int = 70,
+    ) -> str:
+        """Format a descriptive statistics table.
+
+        Args:
+            rows: Mapping of row_name -> {mean, std, min, max}.
+
+        Returns:
+            Formatted table with header row.
+        """
+        header = f"{'':18s} {'mean':>9s} {'std dev':>9s} {'min':>9s} {'max':>9s}"
+        lines = [header]
+        for name, stats in rows.items():
+            line = (
+                f"  {name:16s}"
+                f" {stats.get('mean', 0):9.3f}"
+                f" {stats.get('std', 0):9.3f}"
+                f" {stats.get('min', 0):9.3f}"
+                f" {stats.get('max', 0):9.3f}"
+            )
+            lines.append(line)
+        return "\n".join(lines)
+
+    @staticmethod
+    def _format_matrix_density(
+        name: str, matrix_sum: int, total: int, width: int = 70,
+    ) -> str:
+        """Format matrix density stats for a boolean matrix.
+
+        Example: "  R  (direct, p'x >= p'y) ........ 1250 / 3025 edges (41.3%)"
+        """
+        pct = 100.0 * matrix_sum / total if total > 0 else 0.0
+        value = f"{matrix_sum} / {total} edges ({pct:.1f}%)"
+        dots = "." * max(1, width - len(name) - len(value) - 6)
+        return f"  {name} {dots} {value}"
+
+    @staticmethod
+    def _format_distribution_table(
+        rows: dict[str, dict[str, float]],
+        width: int = 70,
+    ) -> str:
+        """Format a distribution table with percentiles.
+
+        Args:
+            rows: Mapping of row_name -> {mean, std, min, 25%, 50%, 75%, max}.
+        """
+        header = (
+            f"{'':16s} {'mean':>7s} {'std':>7s} {'min':>7s}"
+            f" {'25%':>7s} {'50%':>7s} {'75%':>7s} {'max':>7s}"
+        )
+        lines = [header]
+        for name, stats in rows.items():
+            line = (
+                f"  {name:14s}"
+                f" {stats.get('mean', 0):7.3f}"
+                f" {stats.get('std', 0):7.3f}"
+                f" {stats.get('min', 0):7.3f}"
+                f" {stats.get('25%', 0):7.3f}"
+                f" {stats.get('50%', 0):7.3f}"
+                f" {stats.get('75%', 0):7.3f}"
+                f" {stats.get('max', 0):7.3f}"
+            )
+            lines.append(line)
+        return "\n".join(lines)
