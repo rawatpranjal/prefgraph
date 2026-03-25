@@ -97,32 +97,49 @@ For consumer purchases with prices and quantities. This is the standard revealed
 
 .. code-block:: text
 
-   ============================================================
-                        BEHAVIORAL SUMMARY
-   ============================================================
+   ======================================================================
+                             BEHAVIORAL SUMMARY
+   ======================================================================
+   User ID: N/A                       GARP: [+] PASS
+   No. Observations: 6                WARP: [+] PASS
+   No. Goods: 4                       SARP: [-] FAIL
+   Method: Floyd-Warshall             AEI: 1.0000
+   Computation Time: 234.17 ms        MPI: 0.0000
+   ======================================================================
 
-   Data:
-   -----
-     Observations ......................................... 6
-     Goods ................................................ 4
+   Input Data:
+   ----------------------------------------------------------------------
+                           mean   std dev       min       max
+     Prices               4.812     1.790     2.000     8.000
+     Quantities           0.833     0.687     0.000     2.000
+     Expenditure         12.417     1.455    10.000    14.000
+
+   Revealed Preference Graph:
+   ----------------------------------------------------------------------
+     R  (direct, p'x >= p'y) .................... 18 / 36 edges (50.0%)
+     P  (strict, p'x >  p'y) .................... 10 / 36 edges (27.8%)
+     R* (transitive closure) .................... 18 / 36 edges (50.0%)
+     Violation pairs (R* & P') ...................................... 0
 
    Consistency Tests:
-   ------------------
-     GARP .......................................... [+] PASS
-     WARP .......................................... [+] PASS
-     SARP .......................................... [+] PASS
+   ----------------------------------------------------------------------
+     GARP .................................................... [+] PASS
+     WARP .................................................... [+] PASS
+     SARP .......................................... [-] FAIL (1 cycle)
 
    Goodness-of-Fit:
-   ----------------
-     Afriat Efficiency (AEI) ......................... 1.0000
-     Money Pump Index (MPI) .......................... 0.0000
+   ----------------------------------------------------------------------
+     Afriat Efficiency (AEI) ................................... 1.0000
+       Binary search iterations ..................................... 0
+       Budget waste ............................................. 0.00%
+     Money Pump Index (MPI) .................................... 0.0000
+       Violation cycles ............................................. 0
+       Total expenditure ....................................... $74.50
 
    Interpretation:
-   ---------------
-     Excellent consistency - behavior fully rationalizable
-
-   Computation Time: 0.09 ms
-   ============================================================
+   ----------------------------------------------------------------------
+     Perfect consistency - behavior fully rationalized by utility maximization
+   ======================================================================
 
 **2. Menu-Based Choice (MenuChoiceLog)**
 
@@ -148,31 +165,34 @@ For discrete choices from menus without prices. Common in experiments and survey
 
 .. code-block:: text
 
-   ============================================================
-                     MENU CHOICE SUMMARY
-   ============================================================
-
-   Data:
-   -----
-     Observations ......................................... 6
-     Alternatives ......................................... 4
+   ======================================================================
+                            MENU CHOICE SUMMARY
+   ======================================================================
+   No. Observations: 6                WARP: [+] PASS
+   No. Alternatives: 4                SARP: [+] PASS
+   Computation Time: 739.31 ms        Congruence: [+] PASS
+   ======================================================================
 
    Consistency Tests:
-   ------------------
-     WARP .......................................... [+] PASS
-     SARP .......................................... [+] PASS
-     Congruence .................................... [+] PASS
+   ----------------------------------------------------------------------
+     WARP .................................................... [+] PASS
+     SARP .................................................... [+] PASS
+     Congruence .............................................. [+] PASS
 
    Goodness-of-Fit:
-   ----------------
-     Houtman-Maks Efficiency ......................... 1.0000
+   ----------------------------------------------------------------------
+     Houtman-Maks Efficiency ................................... 1.0000
+       Observations removed ..................................... 0 / 6
 
-   Preference Order:
-   -----------------
+   Recovered Preference Order:
+   ----------------------------------------------------------------------
      1 > 0 > 3 > 2
 
-   Computation Time: 0.06 ms
-   ============================================================
+   Interpretation:
+   ----------------------------------------------------------------------
+     Choices are fully rationalizable by a complete preference ordering.
+     Efficiency: 100.0% of observations are consistent.
+   ======================================================================
 
 **3. Risk Choice (RiskChoiceLog)**
 
@@ -199,33 +219,37 @@ For choices between safe and risky options. Reveals risk attitudes and tests Exp
 
 .. code-block:: text
 
-   ============================================================
-                       RISK CHOICE SUMMARY
-   ============================================================
+   ======================================================================
+                            RISK CHOICE SUMMARY
+   ======================================================================
+   No. Observations: 8                Risk Category: Risk Averse
+   Risk-Seeking Choices: 3            Risk Aversion (rho): 0.6941
+   Risk-Averse Choices: 2             Consistency: 0.6250
+   Computation Time: 0.30 ms          EU Axioms: [+] PASS
+   ======================================================================
 
-   Data:
-   -----
-     Observations ......................................... 8
-     Risk-Seeking Choices ................................. 3
-     Risk-Averse Choices .................................. 5
+   Choice Distribution:
+   ----------------------------------------------------------------------
+     Risk-Seeking ........................................... 3 (37.5%)
+     Risk-Averse ............................................ 2 (25.0%)
+     Risk-Neutral ........................................... 3 (37.5%)
 
-   Risk Profile:
-   -------------
-     Risk Category .............................. Risk Averse
-     Risk Aversion (rho) ............................. 0.8594
-     Consistency Score ............................... 1.0000
+   Risk Profile (CRRA):
+   ----------------------------------------------------------------------
+     Risk Category ........................................ Risk Averse
+     Risk Aversion (rho) ....................................... 0.6941
+     Consistency Score ......................................... 0.6250
 
    Expected Utility Axioms:
-   ------------------------
-     Status ...................................... [+] SATISFIED
+   ----------------------------------------------------------------------
+     Status ............................................. [+] SATISFIED
 
    Interpretation:
-   ---------------
+   ----------------------------------------------------------------------
      Decision-maker prefers certainty over gambles.
-     Certainty premium: willing to accept ~45% less for certainty.
-
-   Computation Time: 0.21 ms
-   ============================================================
+     Certainty premium: ~63% less for certainty.
+     Model fit: 62.5% of choices consistent with CRRA profile.
+   ======================================================================
 
 **4. Stochastic Choice (StochasticChoiceLog)**
 
@@ -255,35 +279,34 @@ For probabilistic choices with observed frequencies. Tests Random Utility Model 
 
 .. code-block:: text
 
-   ============================================================
-                    STOCHASTIC CHOICE SUMMARY
-   ============================================================
-
-   Data:
-   -----
-     Menus ................................................ 4
-     Unique Items ......................................... 4
-     Total Observations ................................. 400
+   ======================================================================
+                         STOCHASTIC CHOICE SUMMARY
+   ======================================================================
+   No. Menus: 4                       RUM Consistency: [-] FAIL
+   Unique Items: 4                    Regularity: [-] FAIL
+   Total Observations: 400            IIA: [-] FAIL
+   Computation Time: 4.81 ms          Transitivity: SST
+   ======================================================================
 
    Consistency Tests:
-   ------------------
-     RUM Consistency .............................. [+] PASS
-     Regularity (Luce) ............................ [+] PASS
-     IIA .......................................... [+] PASS
+   ----------------------------------------------------------------------
+     RUM Consistency ......................................... [-] FAIL
+       Distance to nearest RUM ................................. 0.1000
+     Regularity (Luce) ....................................... [-] FAIL
+       Regularity violations ........................................ 1
+     IIA ..................................................... [-] FAIL
 
    Stochastic Transitivity:
-   ------------------------
-     Weak (WST) ................................... [+] PASS
-     Moderate (MST) ............................... [+] PASS
-     Strong (SST) ................................. [+] PASS
+   ----------------------------------------------------------------------
+     Weak (WST) .............................................. [+] PASS
+     Moderate (MST) .......................................... [+] PASS
+     Strong (SST) ............................................ [+] PASS
 
    Interpretation:
-   ---------------
-     Choices can be rationalized by a random utility model.
-     Strongest transitivity: SST
-
-   Computation Time: 0.15 ms
-   ============================================================
+   ----------------------------------------------------------------------
+     Choices cannot be explained by any random utility model.
+     Distance to nearest RUM: 0.1000
+   ======================================================================
 
 **5. Production/Firm (ProductionLog)**
 
@@ -317,37 +340,39 @@ For firm behavior with inputs and outputs. Tests profit maximization and cost mi
 
 .. code-block:: text
 
-   ============================================================
-                      PRODUCTION SUMMARY
-   ============================================================
-
-   Data:
-   -----
-     Observations ......................................... 5
-     Inputs ............................................... 3
-     Outputs .............................................. 1
+   ======================================================================
+                             PRODUCTION SUMMARY
+   ======================================================================
+   No. Observations: 5                Profit Max: [-] FAIL
+   No. Inputs: 3                      Cost Min: [-] FAIL
+   No. Outputs: 1                     Returns to Scale: Decreasing
+   Computation Time: 113.64 ms        Profit Efficiency: 1.0000
+   ======================================================================
 
    Consistency Tests:
-   ------------------
-     Profit Maximization .......................... [+] PASS
-     Cost Minimization ............................ [+] PASS
-
-     Returns to Scale ......................... Increasing
+   ----------------------------------------------------------------------
+     Profit Maximization ...................... [-] FAIL (3 violations)
+     Cost Minimization ....................................... [-] FAIL
+     Returns to Scale ...................................... Decreasing
 
    Efficiency Metrics:
-   -------------------
-     Technical Efficiency ........................... 1.0000
-     Cost Efficiency ................................ 1.0000
-     Profit Efficiency .............................. 1.0000
+   ----------------------------------------------------------------------
+     Technical Efficiency ...................................... 0.9960
+     Cost Efficiency ........................................... 0.8000
+     Profit Efficiency ......................................... 1.0000
+
+   Per-Input Efficiency:
+   ----------------------------------------------------------------------
+     Input 0 ................................................... 0.0969
+     Input 1 ................................................... 0.0000
+     Input 2 ................................................... 0.9695
 
    Interpretation:
-   ---------------
-     Firm behavior is consistent with profit maximization.
-     Returns to scale: increasing.
+   ----------------------------------------------------------------------
+     Found 3 profit maximization violation(s).
+     Returns to scale: decreasing.
      Operating at 100.0% of optimal profit efficiency.
-
-   Computation Time: 0.18 ms
-   ============================================================
+   ======================================================================
 
 Power Analysis (Optional)
 -------------------------
@@ -383,6 +408,84 @@ The power analysis section shows:
 - **Bronars Power**: Probability that random behavior would fail GARP (higher = more demanding test)
 - **Optimal Efficiency (e*)**: Efficiency level that maximizes predictive success
 - **Optimal Measure (m*)**: Maximum predictive success value
+
+Multi-User Panel Analysis
+-------------------------
+
+Use ``BehaviorPanel`` to analyze many users at once and get aggregate statistics:
+
+.. code-block:: python
+
+   from pyrevealed import BehaviorLog, BehaviorPanel
+   import numpy as np
+   np.random.seed(0)
+
+   # Simulated household grocery data
+   logs = []
+   for i in range(50):
+       T = np.random.randint(10, 30)
+       prices = np.random.uniform(1, 10, size=(T, 5))
+       quantities = np.random.uniform(0.5, 5, size=(T, 5))
+       logs.append(BehaviorLog(prices, quantities, user_id=f'household_{i}'))
+
+   panel = BehaviorPanel.from_logs(logs)
+   print(panel.summary())
+
+.. code-block:: text
+
+   ======================================================================
+                               PANEL SUMMARY
+   ======================================================================
+   No. Users: 50                      GARP Pass Rate: 0.0%
+   Total Observations: 952            Mean AEI: 0.8298
+   No. Goods: 5                       Mean MPI: 0.2402
+   Obs/User (mean): 19.0              Computation Time: 609.09 ms
+   ======================================================================
+
+   Consistency Rates:
+   ----------------------------------------------------------------------
+     GARP ............................................... 0.0% (0 / 50)
+     WARP ............................................... 0.0% (0 / 50)
+     SARP ............................................... 0.0% (0 / 50)
+
+   Efficiency Distribution:
+   ----------------------------------------------------------------------
+                       mean     std     min     25%     50%     75%     max
+     AEI              0.830   0.076   0.620   0.776   0.832   0.866   0.990
+     MPI              0.240   0.085   0.036   0.201   0.239   0.295   0.428
+     HM Index         0.691   0.111   0.526   0.616   0.683   0.762   0.933
+
+   Most Inconsistent (Bottom 5):
+   ----------------------------------------------------------------------
+       1. household_41 ..................... AEI=0.620, MPI=0.427, T=20
+       2. household_14 ..................... AEI=0.660, MPI=0.346, T=25
+       3. household_4 ...................... AEI=0.710, MPI=0.428, T=27
+       4. household_3 ...................... AEI=0.729, MPI=0.279, T=19
+       5. household_37 ..................... AEI=0.733, MPI=0.374, T=14
+   ======================================================================
+
+Dataset Loaders
+---------------
+
+Load real-world datasets directly into ``BehaviorPanel`` objects (requires ``pip install pyrevealed[datasets]``):
+
+.. code-block:: python
+
+   from pyrevealed.datasets import load_dunnhumby, list_datasets
+
+   # See available datasets
+   for ds in list_datasets():
+       print(f"{ds['name']}: {ds['description']}")
+
+   # Load Dunnhumby grocery data (2,500 households)
+   panel = load_dunnhumby(n_households=100)
+   print(panel.summary())
+
+Available datasets:
+
+- **dunnhumby**: 2,500 households, 10 grocery categories, 104 weeks (Kaggle)
+- **open_ecommerce**: 4,700 consumers, 50 Amazon categories, 66 months
+- **uci_retail**: 1,800 customers, 50 product categories, 13 months (UCI)
 
 Visualizations
 --------------

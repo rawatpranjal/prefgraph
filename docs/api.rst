@@ -27,6 +27,23 @@ PreferenceEncoder
    :undoc-members:
    :show-inheritance:
 
+Summary Classes
+---------------
+
+BehavioralSummary
+^^^^^^^^^^^^^^^^^
+
+.. autoclass:: pyrevealed.BehavioralSummary
+   :members:
+   :undoc-members:
+
+PanelSummary
+^^^^^^^^^^^^
+
+.. autoclass:: pyrevealed.PanelSummary
+   :members:
+   :undoc-members:
+
 Data Containers
 ---------------
 
@@ -34,6 +51,20 @@ BehaviorLog
 ^^^^^^^^^^^
 
 .. autoclass:: pyrevealed.BehaviorLog
+   :members:
+   :undoc-members:
+
+BehaviorPanel
+^^^^^^^^^^^^^
+
+.. autoclass:: pyrevealed.BehaviorPanel
+   :members:
+   :undoc-members:
+
+MenuChoicePanel
+^^^^^^^^^^^^^^^
+
+.. autoclass:: pyrevealed.MenuChoicePanel
    :members:
    :undoc-members:
 
@@ -293,6 +324,17 @@ ProductionLog
 .. autofunction:: pyrevealed.estimate_returns_to_scale
 
 .. autofunction:: pyrevealed.compute_technical_efficiency
+
+Dataset Loaders
+---------------
+
+.. autofunction:: pyrevealed.datasets.load_dunnhumby
+
+.. autofunction:: pyrevealed.datasets.load_open_ecommerce
+
+.. autofunction:: pyrevealed.datasets.load_uci_retail
+
+.. autofunction:: pyrevealed.datasets.list_datasets
 
 Exceptions and Warnings
 -----------------------

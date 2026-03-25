@@ -48,6 +48,11 @@ from pyrevealed.core.summary import (
     RiskChoiceSummary,
     StochasticChoiceSummary,
     ProductionSummary,
+    PanelSummary,
+)
+from pyrevealed.core.panel import (
+    BehaviorPanel,
+    MenuChoicePanel,
 )
 
 # =============================================================================
@@ -572,6 +577,13 @@ __all__ = [
     # Summary classes
     "BehavioralSummary",
     "MenuChoiceSummary",
+    "RiskChoiceSummary",
+    "StochasticChoiceSummary",
+    "ProductionSummary",
+    "PanelSummary",
+    # Panel containers
+    "BehaviorPanel",
+    "MenuChoicePanel",
     # Lancaster Characteristics Model
     "LancasterLog",
     "CharacteristicsLog",
