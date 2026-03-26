@@ -165,6 +165,103 @@ pub fn analyze_batch<'py>(
     Ok(py_results)
 }
 
+/// Analyze a batch of users' MENU choice data in parallel.
+///
+/// Each user has: menus (list of lists of item indices) + choices (list of chosen item).
+/// Computes SARP, WARP, Houtman-Maks, and optionally WARP-LA per user.
+///
+/// This is the "rec/search click" path — no prices, just menus and picks.
+#[pyfunction]
+#[pyo3(signature = (menus_list, choices_list, n_items_list, compute_warp_la=false))]
+pub fn analyze_menu_batch<'py>(
+    py: Python<'py>,
+    menus_list: Vec<Vec<Vec<usize>>>,   // menus_list[user][obs] = vec of item indices
+    choices_list: Vec<Vec<usize>>,       // choices_list[user][obs] = chosen item index
+    n_items_list: Vec<usize>,            // n_items per user (max item index + 1)
+    compute_warp_la: bool,
+) -> PyResult<Vec<Bound<'py, PyDict>>> {
+    use rpt_core::menu::{menu_sarp_check, menu_warp_check, menu_houtman_maks};
+    use rpt_core::attention::warp_la_check;
+
+    let n_users = menus_list.len();
+
+    // Find max n_items for graph sizing
+    let max_items = n_items_list.iter().cloned().max().unwrap_or(0);
+
+    struct MenuOut {
+        is_sarp: bool,
+        is_warp: bool,
+        is_warp_la: bool,
+        n_sarp_violations: u32,
+        n_warp_violations: u32,
+        hm_consistent: u32,
+        hm_total: u32,
+        max_scc: u32,
+        time_us: u64,
+    }
+
+    // Pack user data for Send across threads
+    let users: Vec<(&Vec<Vec<usize>>, &Vec<usize>, usize)> = (0..n_users)
+        .map(|i| (&menus_list[i], &choices_list[i], n_items_list[i]))
+        .collect();
+
+    let results: Vec<MenuOut> = users
+        .par_iter()
+        .map_init(
+            || PreferenceGraph::new(max_items),
+            |graph, (menus, choices, n_items)| {
+                let start = Instant::now();
+
+                graph.reset();
+                graph.parse_menu(menus, choices, *n_items);
+
+                let sarp = menu_sarp_check(graph);
+                let warp = menu_warp_check(graph);
+                let (hm_c, hm_t) = menu_houtman_maks(graph);
+
+                let is_warp_la = if compute_warp_la {
+                    warp_la_check(graph).is_rationalizable
+                } else {
+                    false
+                };
+
+                let time_us = start.elapsed().as_micros() as u64;
+
+                MenuOut {
+                    is_sarp: sarp.is_consistent,
+                    is_warp: warp.is_consistent,
+                    is_warp_la,
+                    n_sarp_violations: sarp.n_violations,
+                    n_warp_violations: warp.n_violations,
+                    hm_consistent: hm_c as u32,
+                    hm_total: hm_t as u32,
+                    max_scc: sarp.max_scc_size,
+                    time_us,
+                }
+            },
+        )
+        .collect();
+
+    let py_results: Vec<Bound<'py, PyDict>> = results
+        .into_iter()
+        .map(|r| {
+            let dict = PyDict::new_bound(py);
+            dict.set_item("is_sarp", r.is_sarp).unwrap();
+            dict.set_item("is_warp", r.is_warp).unwrap();
+            dict.set_item("is_warp_la", r.is_warp_la).unwrap();
+            dict.set_item("n_sarp_violations", r.n_sarp_violations).unwrap();
+            dict.set_item("n_warp_violations", r.n_warp_violations).unwrap();
+            dict.set_item("hm_consistent", r.hm_consistent).unwrap();
+            dict.set_item("hm_total", r.hm_total).unwrap();
+            dict.set_item("max_scc", r.max_scc).unwrap();
+            dict.set_item("compute_time_us", r.time_us).unwrap();
+            dict
+        })
+        .collect();
+
+    Ok(py_results)
+}
+
 /// Build a preference graph from budget data and return it as numpy arrays.
 ///
 /// Tier 2 entry point: Python modules can consume the Rust-computed graph.

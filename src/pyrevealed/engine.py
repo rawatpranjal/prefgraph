@@ -21,12 +21,14 @@ from typing import Optional
 
 import numpy as np
 
-from pyrevealed._rust_backend import HAS_RUST, _rust_analyze_batch, _rust_build_preference_graph
+from pyrevealed._rust_backend import (
+    HAS_RUST, _rust_analyze_batch, _rust_analyze_menu_batch, _rust_build_preference_graph,
+)
 
 
 @dataclass
 class EngineResult:
-    """Result for one user from the Engine."""
+    """Result for one user from the Engine (budget data)."""
     is_garp: bool
     n_violations: int = 0
     ccei: float = 1.0
@@ -37,6 +39,20 @@ class EngineResult:
     utility_success: bool = False
     vei_mean: float = 1.0
     vei_min: float = 1.0
+    max_scc: int = 0
+    compute_time_us: int = 0
+
+
+@dataclass
+class MenuResult:
+    """Result for one user from menu/discrete choice analysis."""
+    is_sarp: bool
+    is_warp: bool
+    is_warp_la: bool = False
+    n_sarp_violations: int = 0
+    n_warp_violations: int = 0
+    hm_consistent: int = 0
+    hm_total: int = 0
     max_scc: int = 0
     compute_time_us: int = 0
 
@@ -213,6 +229,81 @@ class Engine:
                 mpi=mpi_val,
             ))
         return results
+
+    def analyze_menus(
+        self,
+        users: list[tuple[list[list[int]], list[int], int]],
+        compute_warp_la: bool = False,
+    ) -> list[MenuResult]:
+        """Analyze discrete/menu choice data for multiple users.
+
+        Each user tuple: (menus, choices, n_items) where:
+        - menus: list of menus, each a list of item indices shown
+        - choices: list of chosen item index per menu
+        - n_items: total number of distinct items for this user
+
+        Returns list of MenuResult with SARP, WARP, HM scores.
+
+        Example (rec/search click data):
+            users = [
+                ([[0,1,2,3], [1,2,4], [0,3,4]], [2, 1, 0], 5),  # user 0
+                ([[0,1], [1,2], [0,2]], [0, 1, 2], 3),            # user 1
+            ]
+            results = engine.analyze_menus(users)
+        """
+        n = len(users)
+        all_results: list[MenuResult] = []
+
+        for start in range(0, n, self.chunk_size):
+            end = min(start + self.chunk_size, n)
+            chunk = users[start:end]
+
+            if self.backend == "rust" and _rust_analyze_menu_batch is not None:
+                menus_list = [u[0] for u in chunk]
+                choices_list = [u[1] for u in chunk]
+                n_items_list = [u[2] for u in chunk]
+
+                raw = _rust_analyze_menu_batch(
+                    menus_list, choices_list, n_items_list, compute_warp_la,
+                )
+                all_results.extend(
+                    MenuResult(
+                        is_sarp=r["is_sarp"],
+                        is_warp=r["is_warp"],
+                        is_warp_la=r.get("is_warp_la", False),
+                        n_sarp_violations=r["n_sarp_violations"],
+                        n_warp_violations=r["n_warp_violations"],
+                        hm_consistent=r["hm_consistent"],
+                        hm_total=r["hm_total"],
+                        max_scc=r["max_scc"],
+                        compute_time_us=r["compute_time_us"],
+                    )
+                    for r in raw
+                )
+            else:
+                # Python fallback
+                from pyrevealed import MenuChoiceLog
+                from pyrevealed.algorithms.abstract_choice import (
+                    validate_menu_sarp, validate_menu_warp, compute_menu_efficiency,
+                )
+                for menus, choices, n_items in chunk:
+                    log = MenuChoiceLog(
+                        menus=[frozenset(m) for m in menus],
+                        choices=choices,
+                    )
+                    sarp = validate_menu_sarp(log)
+                    warp = validate_menu_warp(log)
+                    hm = compute_menu_efficiency(log)
+                    all_results.append(MenuResult(
+                        is_sarp=sarp.is_consistent,
+                        is_warp=warp.is_consistent,
+                        n_sarp_violations=len(sarp.violations),
+                        n_warp_violations=len(warp.violations),
+                        hm_consistent=len(hm.remaining_observations),
+                        hm_total=hm.num_total,
+                    ))
+
+        return all_results
 
     def __repr__(self) -> str:
         return (f"Engine(backend={self.backend!r}, "
