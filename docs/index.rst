@@ -1,7 +1,24 @@
 PyRevealed
 ==========
 
-Rationality scores for every user, at scale. Rust engine, Python interface.
+Consistency and efficiency scores from choice data.
+
+.. raw:: html
+
+   <div class="feature-grid">
+     <div class="feature-card">
+       <h3>Scores</h3>
+       <p>GARP consistency, CCEI efficiency (0-1), MPI exploitability, Houtman-Maks noise fraction. Per user.</p>
+     </div>
+     <div class="feature-card">
+       <h3>Data</h3>
+       <p>Budget choices (prices + quantities) and menu choices (items + selections). No prices needed for menus.</p>
+     </div>
+     <div class="feature-card">
+       <h3>Engine</h3>
+       <p>Rust backend. Graph algorithms + HiGHS LP, parallelized via Rayon. ~10K users/sec.</p>
+     </div>
+   </div>
 
 .. code-block:: bash
 

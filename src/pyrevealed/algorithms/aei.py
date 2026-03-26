@@ -64,7 +64,33 @@ def compute_aei(
     """
     start_time = time.perf_counter()
 
-    # First check if data satisfies GARP at e=1 (perfect consistency)
+    # Try Rust backend for CCEI (binary search over T² ratios in Rust)
+    from pyrevealed._rust_backend import HAS_RUST, _rust_analyze_batch
+    if HAS_RUST and method == "discrete":
+        try:
+            import numpy as np
+            p = np.ascontiguousarray(session.prices, dtype=np.float64)
+            q = np.ascontiguousarray(session.quantities, dtype=np.float64)
+            results = _rust_analyze_batch([p], [q], True, False, False, False, False, False, tolerance)
+            ccei = results[0]["ccei"]
+            is_consistent = results[0]["is_garp"]
+
+            from pyrevealed.algorithms.garp import check_garp
+            garp_result = check_garp(session, tolerance)
+
+            computation_time = (time.perf_counter() - start_time) * 1000
+            return AEIResult(
+                efficiency_index=1.0 if is_consistent else ccei,
+                is_perfectly_consistent=is_consistent,
+                garp_result_at_threshold=garp_result,
+                binary_search_iterations=0,
+                tolerance=tolerance,
+                computation_time_ms=computation_time,
+            )
+        except Exception:
+            pass  # Fall through to Python
+
+    # Python fallback
     from pyrevealed.algorithms.garp import check_garp
 
     garp_result = check_garp(session)
