@@ -17,6 +17,7 @@ Note:
 from pyrevealed.datasets._dunnhumby import load_dunnhumby
 from pyrevealed.datasets._open_ecommerce import load_open_ecommerce
 from pyrevealed.datasets._uci_retail import load_uci_retail
+from pyrevealed.datasets._retailrocket import load_retailrocket
 
 
 def list_datasets() -> list[dict[str, str]]:
@@ -26,6 +27,13 @@ def list_datasets() -> list[dict[str, str]]:
         List of dicts with name, description, source, and size info.
     """
     return [
+        {
+            "name": "retailrocket",
+            "description": "E-commerce click-stream from 1.4M visitors, reconstructed into menu choices",
+            "source": "Kaggle (retailrocket/ecommerce-dataset)",
+            "goods": "Menu-based (items viewed per session)",
+            "observations": "~5-50 sessions per user",
+        },
         {
             "name": "dunnhumby",
             "description": "Grocery transactions from 2,500 households over 2 years",
@@ -54,5 +62,6 @@ __all__ = [
     "load_dunnhumby",
     "load_open_ecommerce",
     "load_uci_retail",
+    "load_retailrocket",
     "list_datasets",
 ]
