@@ -97,24 +97,31 @@ User choice data (prices + quantities per observation)
 | Attention | `attention.py` | Consideration sets + graph + LP |
 | Production GARP | `production.py` | Profit comparison graph |
 
-## 5 Choice Categories
+## 4 Choice Categories
 
 We test whether observed choices are consistent with rational optimization — without estimating parameters. We answer "does a rational model exist?", not "which model is it?".
 
-| Category | Input format | Example domain | What we test |
-|----------|-------------|----------------|-------------|
-| **Budget** | `(prices T×K, quantities T×K)` | E-commerce, grocery, delivery | GARP, CCEI, MPI, HARP, utility recovery |
-| **Menu** | `(menus: list[set], choices: list[int])` | Surveys, recommendations, UI clicks | SARP, WARP, attention |
-| **Stochastic** | `(menus: list[set], frequencies: list[dict])` | A/B tests, experimental panels | RUM consistency LP, regularity |
-| **Production** | `(input_p, input_q, output_p, output_q)` | Supply chain, manufacturing | Profit maximization GARP |
-| **Intertemporal** | `(amounts, dates, chosen)` | Subscription, savings, loyalty | Discount factor bounds |
+```
+                Test (bool)     Score (0-1)     Recover (vector)  Structure (bool)
+Budget          GARP, WARP      CCEI, MPI, HM   Utility, CV/EV    HARP, Separability
+Discrete        SARP, RUM LP    HM (menu)        Ordinal utility   Congruence
+Production      Prod GARP       Prod CCEI        Tech efficiency   Cost minimization
+Intertemporal   Exp discount    —                Discount delta    Quasi-hyperbolic
+```
 
-Each user is a tuple of arrays. For batch scoring, pass a list of tuples:
+| Category | Input format | Example domain |
+|----------|-------------|----------------|
+| **Budget** | `(prices T×K, quantities T×K)` | E-commerce, grocery, food delivery |
+| **Discrete** | `(menus, choices)` or `(menus, frequencies)` | Surveys, A/B tests, recommendations |
+| **Production** | `(input_p, input_q, output_p, output_q)` | Supply chain, manufacturing |
+| **Intertemporal** | `(amounts, dates, chosen)` | Subscriptions, savings, loyalty |
+
+Each user is a tuple of arrays. T can vary per user:
 
 ```python
 users = [
-    (prices_user_0, quantities_user_0),  # T0 x K arrays
-    (prices_user_1, quantities_user_1),  # T1 x K arrays (T can vary per user)
+    (prices_user_0, quantities_user_0),
+    (prices_user_1, quantities_user_1),
     ...
 ]
 results = engine.analyze_arrays(users)
