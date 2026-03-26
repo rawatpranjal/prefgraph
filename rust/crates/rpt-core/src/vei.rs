@@ -135,7 +135,7 @@ pub fn compute_vei(graph: &mut PreferenceGraph) -> VeiResult {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::garp::garp_check;
+    use crate::garp::garp_check_with_closure;
 
     #[test]
     fn test_vei_consistent_all_ones() {
@@ -143,7 +143,7 @@ mod tests {
         let quantities = [4.0, 1.0, 1.0, 4.0];
         let mut graph = PreferenceGraph::new(2);
         graph.parse_budget(&prices, &quantities, 2, 2, 1e-10);
-        let _ = garp_check(&mut graph);
+        let _ = garp_check_with_closure(&mut graph);
         let vei = compute_vei(&mut graph);
         assert!(vei.success);
         assert_eq!(vei.mean_efficiency, 1.0);
@@ -159,7 +159,7 @@ mod tests {
         let quantities = [3.0, 2.0, 2.0, 3.0];
         let mut graph = PreferenceGraph::new(2);
         graph.parse_budget(&prices, &quantities, 2, 2, 1e-10);
-        let _ = garp_check(&mut graph);
+        let _ = garp_check_with_closure(&mut graph);
         let vei = compute_vei(&mut graph);
         assert!(vei.success);
         assert_eq!(vei.efficiency_vector.len(), 2);
@@ -175,7 +175,7 @@ mod tests {
         let quantities = [3.0, 2.0, 2.0, 3.0];
         let mut graph = PreferenceGraph::new(2);
         graph.parse_budget(&prices, &quantities, 2, 2, 1e-10);
-        let _ = garp_check(&mut graph);
+        let _ = garp_check_with_closure(&mut graph);
         let vei = compute_vei(&mut graph);
         for &e in &vei.efficiency_vector {
             assert!(e >= 0.0 && e <= 1.0, "Efficiency {e} out of [0,1]");

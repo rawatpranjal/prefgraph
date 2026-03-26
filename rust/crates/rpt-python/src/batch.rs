@@ -5,7 +5,7 @@ use rayon::prelude::*;
 use std::time::Instant;
 
 use rpt_core::ccei::ccei_search;
-use rpt_core::garp::garp_check;
+use rpt_core::garp::{garp_check, garp_check_with_closure};
 use rpt_core::graph::PreferenceGraph;
 use rpt_core::harp::harp_check;
 use rpt_core::houtman_maks::houtman_maks;
@@ -69,8 +69,13 @@ pub fn analyze_batch<'py>(
                 graph.reset();
                 graph.parse_budget(p_flat, q_flat, t, k, tolerance);
 
-                // GARP (always)
-                let garp = garp_check(graph);
+                // GARP: use O(T²) when only bool needed, O(T³) when MPI/VEI need closure
+                let needs_closure = compute_mpi || compute_vei;
+                let garp = if needs_closure {
+                    garp_check_with_closure(graph)
+                } else {
+                    garp_check(graph)
+                };
 
                 // MPI via Karp's algorithm (theory-correct, before CCEI)
                 let mpi = if compute_mpi && !garp.is_consistent {

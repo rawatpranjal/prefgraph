@@ -1,15 +1,64 @@
 use crate::graph::PreferenceGraph;
+use crate::scc::tarjan_scc;
 use crate::types::GarpResult;
 
-/// Check GARP consistency using SCC-optimized transitive closure.
+/// Check GARP consistency in O(T²) — the provably optimal algorithm.
 ///
-/// Requires: graph has expenditure and R/P built (call parse_budget first).
-/// Computes transitive closure lazily if not already done.
+/// Talla Nobibon, Smeulders & Spieksma (2015, JOTA 166(3)):
+/// GARP is violated iff any SCC of the weak preference graph R₀ contains
+/// a strict preference arc P₀. No transitive closure needed.
+///
+/// 1. Build R₀ in O(T²)
+/// 2. Tarjan's SCC in O(T + |A|) ≤ O(T²)
+/// 3. Check intra-SCC arcs for strict preference in O(T²)
+///
+/// This is the default GARP check. Use garp_check_with_closure() if you
+/// also need the full transitive closure matrix (e.g., for MPI or VEI).
 pub fn garp_check(graph: &mut PreferenceGraph) -> GarpResult {
+    graph.ensure_r(graph.tolerance);
+    let t = graph.t;
+
+    // Step 1: Tarjan's SCC on the weak preference graph R₀
+    let n_comp = tarjan_scc(&graph.r[..t * t], t, &mut graph.scc_labels[..t]);
+    graph.n_components = n_comp;
+
+    // Compute max SCC size
+    let mut scc_sizes = vec![0u32; n_comp];
+    for i in 0..t {
+        scc_sizes[graph.scc_labels[i] as usize] += 1;
+    }
+    graph.max_scc_size = *scc_sizes.iter().max().unwrap_or(&0) as usize;
+
+    // Step 2: Check each intra-SCC arc for strict preference
+    // GARP violated iff exists (i,j) in same SCC where P[i,j] = true
+    let mut n_violations = 0u32;
+    for i in 0..t {
+        for j in 0..t {
+            if i != j
+                && graph.scc_labels[i] == graph.scc_labels[j]
+                && graph.p[i * t + j]
+            {
+                n_violations += 1;
+            }
+        }
+    }
+
+    GarpResult {
+        is_consistent: n_violations == 0,
+        n_violations,
+        max_scc_size: graph.max_scc_size as u32,
+        n_components: n_comp as u32,
+    }
+}
+
+/// Check GARP with full transitive closure (O(T³) but provides R* matrix).
+///
+/// Use this when downstream algorithms need the closure (MPI, VEI, etc.).
+/// The O(T²) garp_check() is preferred when only the bool result is needed.
+pub fn garp_check_with_closure(graph: &mut PreferenceGraph) -> GarpResult {
     graph.ensure_closure();
     let t = graph.t;
 
-    // GARP violation: R*[i,j] AND P[j,i]
     let mut n_violations = 0u32;
     for i in 0..t {
         for j in 0..t {
