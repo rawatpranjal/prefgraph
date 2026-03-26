@@ -62,7 +62,50 @@ def compute_mpi(
     """
     start_time = time.perf_counter()
 
-    # First check GARP to find violations
+    # Try Rust backend for MPI (Karp's algorithm in Rust)
+    from pyrevealed._rust_backend import HAS_RUST, _rust_analyze_batch
+    if HAS_RUST:
+        try:
+            p = np.ascontiguousarray(session.prices, dtype=np.float64)
+            q = np.ascontiguousarray(session.quantities, dtype=np.float64)
+            results = _rust_analyze_batch([p], [q], False, True, False, False, False, False, tolerance)
+            mpi_val = results[0]["mpi"]
+            is_consistent = results[0]["is_garp"]
+
+            total_expenditure = float(session.own_expenditures.sum())
+
+            if is_consistent:
+                computation_time = (time.perf_counter() - start_time) * 1000
+                return MPIResult(
+                    mpi_value=0.0, worst_cycle=None, cycle_costs=[],
+                    total_expenditure=total_expenditure,
+                    computation_time_ms=computation_time,
+                )
+
+            # Get violation cycles from Python (cheap since GARP uses Rust graph)
+            from pyrevealed.algorithms.garp import check_garp
+            garp_result = check_garp(session, tolerance)
+            E = session.expenditure_matrix
+            cycle_costs: list[tuple[Cycle, float]] = []
+            for cycle in garp_result.violations:
+                mc = _compute_cycle_mpi(cycle, E)
+                if mc > 0:
+                    cycle_costs.append((cycle, mc))
+
+            worst_cycle = max(cycle_costs, key=lambda x: x[1])[0] if cycle_costs else None
+
+            computation_time = (time.perf_counter() - start_time) * 1000
+            return MPIResult(
+                mpi_value=mpi_val,
+                worst_cycle=worst_cycle,
+                cycle_costs=cycle_costs,
+                total_expenditure=total_expenditure,
+                computation_time_ms=computation_time,
+            )
+        except Exception:
+            pass  # Fall through to Python
+
+    # Python fallback
     from pyrevealed.algorithms.garp import check_garp
 
     garp_result = check_garp(session, tolerance)
@@ -81,7 +124,6 @@ def compute_mpi(
 
     E = session.expenditure_matrix
 
-    # Collect per-cycle costs from GARP violations (always — these are free)
     cycle_costs: list[tuple[Cycle, float]] = []
     for cycle in garp_result.violations:
         mpi_cycle = _compute_cycle_mpi(cycle, E)
@@ -94,7 +136,6 @@ def compute_mpi(
         max_mpi = _compute_simple_mpi(session, garp_result.violations)
         worst_cycle = garp_result.violations[0] if garp_result.violations else None
 
-    # Optionally run Karp's algorithm for a tighter bound
     if method == "karp":
         own_exp = session.own_expenditures
         R = garp_result.direct_revealed_preference

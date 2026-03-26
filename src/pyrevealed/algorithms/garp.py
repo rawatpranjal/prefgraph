@@ -67,35 +67,49 @@ def check_garp(
     """
     start_time = time.perf_counter()
 
-    E = session.expenditure_matrix  # T x T
+    # Try Rust backend for the heavy computation (Floyd-Warshall + SCC)
+    from pyrevealed._rust_backend import HAS_RUST, _rust_build_preference_graph
+    if HAS_RUST:
+        try:
+            g = _rust_build_preference_graph(
+                np.ascontiguousarray(session.prices, dtype=np.float64),
+                np.ascontiguousarray(session.quantities, dtype=np.float64),
+                tolerance,
+            )
+            R = g["r"].astype(bool)
+            P = g["p"].astype(bool)
+            R_star = g["r_star"].astype(bool)
+            violation_matrix = R_star & P.T
+            is_consistent = bool(g["is_garp"])
 
-    # Own expenditures (diagonal): what was actually spent at each observation
+            violations: list[Cycle] = []
+            if not is_consistent:
+                violations = _find_violation_cycles(R, P, R_star, violation_matrix)
+
+            computation_time = (time.perf_counter() - start_time) * 1000
+            return GARPResult(
+                is_consistent=is_consistent,
+                violations=violations,
+                direct_revealed_preference=R,
+                transitive_closure=R_star,
+                strict_revealed_preference=P,
+                computation_time_ms=computation_time,
+            )
+        except Exception:
+            pass  # Fall through to Python
+
+    # Python fallback
+    E = session.expenditure_matrix  # T x T
     own_exp = session.own_expenditures  # Shape: (T,)
 
-    # Direct revealed preference: R[i,j] = True iff p_i @ x_i >= p_i @ x_j
-    # Interpretation: bundle j was affordable when i was chosen
-    # Vectorized: compare each row's own expenditure to all cross-expenditures
     R = own_exp[:, np.newaxis] >= E - tolerance
-
-    # Strict revealed preference: P[i,j] = True iff p_i @ x_i > p_i @ x_j
-    # Interpretation: bundle j was strictly cheaper than what was spent
     P = own_exp[:, np.newaxis] > E + tolerance
-
-    # Remove self-loops from P (can't strictly prefer to yourself)
     np.fill_diagonal(P, False)
 
-    # Transitive closure of R using Floyd-Warshall
     R_star = floyd_warshall_transitive_closure(R)
-
-    # GARP violation check:
-    # Violation exists if R*[i,j] AND P[j,i] for any i,j
-    # This means: i is transitively revealed preferred to j (via R*),
-    # BUT j is strictly revealed preferred to i (via P)
     violation_matrix = R_star & P.T
-
     is_consistent = not np.any(violation_matrix)
 
-    # Find all violation cycles if not consistent
     violations: list[Cycle] = []
     if not is_consistent:
         violations = _find_violation_cycles(R, P, R_star, violation_matrix)
