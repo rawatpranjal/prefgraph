@@ -1,16 +1,25 @@
+use crate::garp::garp_check;
 use crate::graph::PreferenceGraph;
 use crate::types::CceiResult;
 
 /// Compute CCEI (Critical Cost Efficiency Index) via discrete binary search.
 ///
+/// Uses the O(T²) SCC-based GARP check (Talla Nobibon et al. 2015) inside the
+/// binary search loop, avoiding the O(T³) transitive closure per iteration.
+/// Total complexity: O(T² log T) — provably optimal up to log factors.
+///
 /// Requires: graph has expenditure built (call parse_budget or ensure_expenditure first).
 /// Reuses the expenditure matrix — only rebuilds R/P at each efficiency level.
+///
+/// References:
+///   Afriat (1967), "Construction of Utility Functions from Expenditure Data", IER.
+///   Smeulders et al. (2014), "Goodness-of-Fit Measures for RP Tests", ACM TEAC.
 pub fn ccei_search(graph: &mut PreferenceGraph, tolerance: f64) -> CceiResult {
     let t = graph.t;
 
     // Quick check: is data already GARP-consistent at e=1?
     graph.ensure_r(tolerance);
-    if garp_consistent(graph) {
+    if garp_check(graph).is_consistent {
         return CceiResult {
             ccei: 1.0,
             iterations: 0,
@@ -43,7 +52,7 @@ pub fn ccei_search(graph: &mut PreferenceGraph, tolerance: f64) -> CceiResult {
         };
     }
 
-    // Binary search over candidates
+    // Binary search over candidates — O(log T²) iterations × O(T²) GARP check
     let mut lo = 0usize;
     let mut hi = candidates.len() - 1;
     let mut best_e = 0.0f64;
@@ -54,11 +63,11 @@ pub fn ccei_search(graph: &mut PreferenceGraph, tolerance: f64) -> CceiResult {
         let e = candidates[mid];
         iterations += 1;
 
-        // Rebuild R/P at this efficiency level (reuses cached E and own_exp)
+        // Rebuild R/P at this efficiency level: O(T²)
         graph.build_r_at_efficiency(e, tolerance);
-        graph.ensure_closure();
 
-        if garp_consistent(graph) {
+        // O(T²) SCC-based GARP check — no transitive closure needed
+        if garp_check(graph).is_consistent {
             best_e = e;
             if mid == 0 {
                 break;
@@ -78,20 +87,6 @@ pub fn ccei_search(graph: &mut PreferenceGraph, tolerance: f64) -> CceiResult {
         iterations,
         is_perfectly_consistent: false,
     }
-}
-
-/// Check GARP consistency on current graph state (no allocation).
-fn garp_consistent(graph: &mut PreferenceGraph) -> bool {
-    graph.ensure_closure();
-    let t = graph.t;
-    for i in 0..t {
-        for j in 0..t {
-            if graph.r_star[i * t + j] && graph.p[j * t + i] {
-                return false;
-            }
-        }
-    }
-    true
 }
 
 #[cfg(test)]

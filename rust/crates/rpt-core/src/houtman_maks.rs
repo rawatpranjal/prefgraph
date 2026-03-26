@@ -141,6 +141,44 @@ fn houtman_maks_greedy(graph: &PreferenceGraph) -> (usize, usize) {
     (t - removed_count, t)
 }
 
+/// Exact Houtman-Maks via ILP (Big-M Afriat formulation).
+///
+/// Finds the true maximum consistent subset using integer linear programming.
+/// Slower than greedy FVS but exact — guaranteed optimal solution.
+///
+/// For T ≤ 200, typically solves in under 3 seconds (Demuynck & Rehbeck, 2023).
+/// Falls back to greedy if ILP fails.
+///
+/// References:
+///   Demuynck & Rehbeck (2023), "Computing RP Goodness-of-Fit with IP", Econ Theory.
+///   Mononen (2023), "Computing and Comparing Measures of Rationality", UZH WP 437.
+pub fn houtman_maks_exact(graph: &mut PreferenceGraph) -> (usize, usize) {
+    use crate::garp::garp_check;
+
+    let t = graph.t;
+
+    if t == 0 {
+        return (0, 0);
+    }
+
+    // O(T²) GARP check — no closure needed for the violation test
+    let garp = garp_check(graph);
+    let has_violation = !garp.is_consistent;
+
+    if !has_violation {
+        return (t, t);
+    }
+
+    // Try ILP first, fall back to greedy
+    let removed = solve_hm_ilp(&graph.e[..t * t], &graph.own_exp[..t], t, graph.tolerance);
+    if removed.is_empty() && has_violation {
+        // ILP failed — fall back to greedy
+        return houtman_maks_greedy(graph);
+    }
+
+    (t - removed.len(), t)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -165,6 +203,43 @@ mod tests {
         let (consistent, total) = houtman_maks(&mut graph);
         assert_eq!(consistent, 1);
         assert_eq!(total, 2);
+    }
+
+    #[test]
+    fn test_exact_consistent_data() {
+        let prices = [1.0, 2.0, 2.0, 1.0];
+        let quantities = [4.0, 1.0, 1.0, 4.0];
+        let mut graph = PreferenceGraph::new(2);
+        graph.parse_budget(&prices, &quantities, 2, 2, 1e-10);
+        let (consistent, total) = houtman_maks_exact(&mut graph);
+        assert_eq!(consistent, 2);
+        assert_eq!(total, 2);
+    }
+
+    #[test]
+    fn test_exact_violation() {
+        let prices = [2.0, 1.0, 1.0, 2.0];
+        let quantities = [3.0, 2.0, 2.0, 3.0];
+        let mut graph = PreferenceGraph::new(2);
+        graph.parse_budget(&prices, &quantities, 2, 2, 1e-10);
+        let (consistent, total) = houtman_maks_exact(&mut graph);
+        assert_eq!(consistent, 1);
+        assert_eq!(total, 2);
+    }
+
+    #[test]
+    fn test_exact_matches_greedy() {
+        // For small data, exact ILP and greedy should agree
+        let prices = [2.0, 1.0, 1.0, 2.0];
+        let quantities = [3.0, 2.0, 2.0, 3.0];
+        let mut graph = PreferenceGraph::new(2);
+        graph.parse_budget(&prices, &quantities, 2, 2, 1e-10);
+        let greedy = houtman_maks(&mut graph);
+        graph.reset();
+        graph.parse_budget(&prices, &quantities, 2, 2, 1e-10);
+        let exact = houtman_maks_exact(&mut graph);
+        assert_eq!(greedy.0, exact.0);
+        assert_eq!(greedy.1, exact.1);
     }
 
     #[test]

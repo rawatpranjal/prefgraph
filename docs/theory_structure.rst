@@ -1,110 +1,95 @@
-Preference Structure
-====================
+Structural Preference Analysis and Utility Recovery
+==================================================
 
-This section covers tests for specific preference structures and utility recovery.
+This section delineates axiomatic tests for specific preference structures, including homotheticity, quasilinearity, and separability, as well as the formal methodology for utility recovery.
 
-Proportional Scaling (HARP)
----------------------------
+Homothetic Preferences (HARP)
+-----------------------------
 
-**Function:** ``validate_proportional_scaling(log)``
+**Reference Implementation:** ``validate_proportional_scaling(log)``
 
-Tests homothetic preferences (demand scales proportionally with income).
+The Homothetic Axiom of Revealed Preference (HARP) evaluates whether an agent's preferences are invariant to proportional scaling of income, implying that commodity demand scales linearly with total expenditure.
 
-Define expenditure ratio:
+**Formal Definition:**
+
+Define the expenditure ratio :math:`r_{ij}` as the cost of bundle :math:`j` evaluated at prices :math:`i` relative to the actual expenditure at observation :math:`i`:
 
 .. math::
 
    r_{ij} = \frac{p^i \cdot x^i}{p^i \cdot x^j}
 
-**HARP Condition:**
+**The HARP Condition:**
 
 .. math::
 
-   \text{HARP holds} \iff \text{no cycle } i_1 \to i_2 \to \cdots \to i_m \to i_1 \text{ with } \prod_{k=1}^{m} r_{i_k, i_{k+1}} > 1
+   \text{HARP is satisfied} \iff \nexists \text{ cycle } i_1 \to i_2 \to \cdots \to i_m \to i_1 : \prod_{k=1}^{m} r_{i_k, i_{k+1}} > 1
 
-In log-space (Floyd-Warshall):
+Equivalently, in logarithmic space:
 
 .. math::
 
    \sum_{k=1}^{m} \log r_{i_k, i_{k+1}} \leq 0
 
-**Reference:** Varian (1983)
+**Reference:** Varian (1983).
 
 
-Income Invariance (Quasilinearity)
-----------------------------------
+Quasilinear Utility (Income Invariance)
+---------------------------------------
 
-**Function:** ``test_income_invariance(log)``
+**Reference Implementation:** ``test_income_invariance(log)``
 
-Tests quasilinear utility :math:`U(x, m) = v(x) + m` via cyclic monotonicity.
+Quasilinearity implies a utility function of the form :math:`U(x, m) = v(x) + m`, where the demand for commodity :math:`x` is independent of the agent's income level :math:`m`. This is evaluated via the condition of cyclic monotonicity.
 
-**Condition:** For any cycle :math:`i_1 \to i_2 \to \cdots \to i_m \to i_1`:
+**The Quasilinearity Condition:**
+
+For any sequence of observations forming a cycle :math:`i_1 \to i_2 \to \cdots \to i_m \to i_1`, the following must hold:
 
 .. math::
 
    \sum_{k=1}^{m} p^{i_k} \cdot (x^{i_{k+1}} - x^{i_k}) \geq 0
 
-**Interpretation:** Choices depend only on relative prices, not income level.
+**Behavioral Interpretation:**
 
-**Reference:** Rochet (1987)
+A failure of quasilinearity suggests that the agent's marginal utility of income is not constant, and choices are influenced by income effects rather than relative prices alone.
 
-
-Feature Independence (Separability)
------------------------------------
-
-**Function:** ``test_feature_independence(log, group_a, group_b)``
-
-Tests weak separability: :math:`U(x_A, x_B) = V(u_A(x_A), u_B(x_B))`
-
-**Heuristic Test:**
-
-1. Compute AEI within each group
-2. Measure cross-group correlation
-3. Separable if :math:`\text{AEI}_A > 0.9`, :math:`\text{AEI}_B > 0.9`, and cross-effect < 0.2
-
-**Reference:** Chambers & Echenique (2016) Ch. 4, Theorem 4.4
+**Reference:** Rochet (1987).
 
 
-Cross-Price Effects
--------------------
+Weak Separability (Feature Independence)
+----------------------------------------
 
-**Function:** ``test_cross_price_effect(log, good_g, good_h)``
+**Reference Implementation:** ``test_feature_independence(log, group_a, group_b)``
 
-**Gross Substitutes:**
+Weak separability posits that preferences over a subset of commodities (Group A) are independent of the consumption levels of another subset (Group B). Formally, :math:`U(x_A, x_B) = V(u_A(x_A), u_B(x_B))`.
 
-.. math::
+**Analytical Heuristic:**
 
-   \Delta p_g > 0, \, \Delta x_g < 0 \implies \Delta x_h > 0
+The implementation evaluates separability by examining the consistency (CCEI) of choices within partitioned commodity groups and assessing the degree of cross-group correlation.
 
-**Gross Complements:**
-
-.. math::
-
-   \Delta p_g > 0, \, \Delta x_g < 0 \implies \Delta x_h < 0
-
-**Reference:** Hicks (1939)
+**Reference:** Chambers & Echenique (2016).
 
 
-Utility Recovery
-----------------
+Utility Recovery via Afriat’s Inequalities
+------------------------------------------
 
-Afriat's Inequalities
-^^^^^^^^^^^^^^^^^^^^^
+**Reference Implementation:** ``fit_latent_values(log)``
 
-**Function:** ``fit_latent_values(log)``
+If the observed data satisfy GARP, Afriat's Theorem guarantees the existence of a continuous, monotonic, and concave utility function that rationalizes the behavior. PyRevealed recovers the latent utility values :math:`U_k` and marginal utilities of income (Lagrange multipliers) :math:`\lambda_k > 0`.
 
-If GARP holds, there exist utility values :math:`U_k` and Lagrange multipliers :math:`\lambda_k > 0` satisfying:
+**Linear Programming Formulation:**
+
+The recovery is achieved by solving a system of Afriat inequalities for all observation pairs :math:`(k, l)`:
 
 .. math::
 
    U_k \leq U_l + \lambda_l \cdot p^l \cdot (x^k - x^l) \quad \forall \, k, l
 
-**Linear Program:**
+**Optimization Objective:**
 
-- Variables: :math:`U_1, \ldots, U_T, \lambda_1, \ldots, \lambda_T`
-- Constraints: Afriat inequalities for all :math:`(k, l)` pairs
-- Objective: Minimize :math:`\sum_k \lambda_k`
+.. math::
 
-The recovered utility is piecewise linear and concave.
+   \min \sum_{k=1}^{T} \lambda_k
 
-**Reference:** Afriat (1967), Varian (1982)
+The resulting utility function is the lower envelope of the recovered tangent planes, providing a piecewise linear and concave approximation of the agent's true preferences.
+
+**References:** Afriat (1967), Varian (1982).

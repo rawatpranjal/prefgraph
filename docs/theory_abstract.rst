@@ -1,144 +1,124 @@
-Abstract Choice Theory
-======================
+Abstract Choice Theory and Menu-Based Analysis
+============================================
 
-Abstract choice theory analyzes preferences from discrete choices **without prices**.
-Instead of observing (price, quantity) pairs, we observe (menu, choice) pairs where
-each menu is a finite set of alternatives and the choice is one element from that menu.
+Abstract choice theory evaluates preference consistency from discrete choice observations in the absence of price vectors. In this framework, the analyst observes a sequence of menu-choice pairs, where each menu :math:`B_t` is a finite set of alternatives and the selection :math:`c(B_t)` is a single element from that menu.
 
-This framework applies to:
+This axiomatic framework is applicable to diverse empirical settings, including:
 
-- **Surveys**: "Which of these do you prefer?"
-- **Recommendations**: "User clicked item X from shown set Y"
-- **Voting**: "Candidate selected from ballot options"
-- **A/B tests**: "Variant chosen from available options"
+- **Survey Instruments:** Longitudinal evaluation of individual stated preferences.
+- **Recommendation Systems:** Analysis of agent interactions within constrained digital interfaces.
+- **Social Choice:** Examination of voting patterns across varied ballot options.
+- **Experimental Design:** Discrete choice experiments and A/B testing protocols.
 
-Notation (Menu-Based)
----------------------
+Formal Notation
+---------------
+
+The analysis of menu-based choices utilizes the following mathematical conventions:
 
 .. list-table::
    :widths: 20 80
 
    * - :math:`B_t \subseteq X`
-     - Menu at observation :math:`t` (finite set of alternatives)
+     - The menu (feasible set) available at observation :math:`t`.
    * - :math:`c(B_t) \in B_t`
-     - Chosen item from menu :math:`B_t`
+     - The item selected by the agent from menu :math:`B_t`.
    * - :math:`x \, R \, y`
-     - :math:`x` is revealed preferred to :math:`y` (x chosen when y available)
+     - The weak revealed preference relation (where :math:`x` is chosen and :math:`y` was available).
    * - :math:`R^*`
-     - Transitive closure of :math:`R`
+     - The transitive closure of the revealed preference relation :math:`R`.
    * - :math:`T`
-     - Number of observations
+     - Total number of choice observations.
 
-Revealed Preference Relation
-----------------------------
+The Revealed Preference Relation
+--------------------------------
 
-For menu-based choices, the revealed preference relation is defined as:
+For menu-based observations, the revealed preference relation :math:`R` is formally defined as:
 
 .. math::
 
    x \, R \, y \iff \exists \, t : c(B_t) = x \text{ and } y \in B_t
 
-In words: :math:`x` is revealed preferred to :math:`y` if :math:`x` was chosen from
-a menu containing :math:`y`.
+This signifies that :math:`x` is revealed preferred to :math:`y` if :math:`x` was selected from a feasible set containing :math:`y`.
 
 
-WARP for Menus
---------------
+Weak Axiom of Revealed Preference (WARP)
+----------------------------------------
 
-**Function:** ``validate_menu_warp(log)``
+**Reference Implementation:** ``validate_menu_warp(log)``
 
-WARP (Weak Axiom of Revealed Preference) prohibits **direct contradictions**:
+The Weak Axiom of Revealed Preference (WARP) in the context of discrete choice precludes direct pairwise contradictions in behavioral selections.
 
-.. math::
-
-   \text{WARP holds} \iff \nexists \, x, y : (x \, R \, y) \land (y \, R \, x)
-
-If :math:`x` was chosen over :math:`y` in one menu, then :math:`y` cannot be
-chosen over :math:`x` in another menu.
-
-**Example violation:** User chose Pizza over Burger, then later chose Burger over Pizza.
-
-
-SARP for Menus
---------------
-
-**Function:** ``validate_menu_sarp(log)``
-
-SARP (Strong Axiom of Revealed Preference) prohibits **cycles of any length**:
+**The WARP Condition:**
 
 .. math::
 
-   \text{SARP holds} \iff R^* \text{ is acyclic}
+   \text{WARP is satisfied} \iff \nexists \, x, y : (x \, R \, y) \land (y \, R \, x)
 
-Equivalently:
+If an agent selects :math:`x` when :math:`y` is available, WARP dictates that they cannot select :math:`y` in a subsequent menu where :math:`x` is also available.
+
+
+Strong Axiom of Revealed Preference (SARP)
+------------------------------------------
+
+**Reference Implementation:** ``validate_menu_sarp(log)``
+
+The Strong Axiom of Revealed Preference (SARP) extends consistency to transitivity, prohibiting preference cycles of any length within the discrete choice framework.
+
+**The SARP Condition (Acyclicity):**
 
 .. math::
 
-   \text{SARP holds} \iff \nexists \, x_1, \ldots, x_m : x_1 \, R \, x_2 \, R \, \cdots \, R \, x_m \, R \, x_1
+   \text{SARP is satisfied} \iff R^* \text{ is acyclic}
 
-**Example violation:** Pizza > Burger, Burger > Salad, Salad > Pizza (3-cycle)
+Equivalently, SARP is satisfied if there exists no sequence :math:`x_1, \ldots, x_m` such that :math:`x_1 \, R \, x_2 \, R \, \cdots \, R \, x_m \, R \, x_1`.
 
 
-Congruence (Full Rationalizability)
------------------------------------
+Congruence and Full Rationalizability
+-------------------------------------
 
-**Function:** ``validate_menu_consistency(log)``
+**Reference Implementation:** ``validate_menu_consistency(log)``
 
-The Congruence axiom (Richter's condition) requires:
-
-1. **SARP**: No preference cycles
-2. **Maximality**: The chosen item is maximal under :math:`R^*` within the menu
+The Congruence axiom, also known as Richter's condition, provides the necessary and sufficient criteria for the existence of a stable preference ordering.
 
 .. admonition:: Richter's Theorem (1966)
    :class: important
 
-   A choice function :math:`c` is rationalizable by a complete, transitive preference
-   ordering **if and only if** it satisfies Congruence.
+   A discrete choice function :math:`c` is rationalizable by a complete and transitive preference ordering **if and only if** it satisfies the condition of Congruence.
+
+Congruence requires both SARP (acyclicity) and the property that the selected item :math:`c(B_t)` is maximal under the indirect preference relation :math:`R^*` within the feasible set :math:`B_t`.
 
 
-Houtman-Maks Efficiency (Menus)
--------------------------------
+Houtman-Maks Efficiency for Discrete Choice
+-------------------------------------------
 
-**Function:** ``compute_menu_efficiency(log)``
+**Reference Implementation:** ``compute_menu_efficiency(log)``
 
-When SARP fails, measure how close the data is to consistency:
+When behavioral data violate SARP, the Houtman-Maks Index quantifies the degree of approximate rationality by identifying the maximal subset of observations that satisfy axiomatic consistency.
+
+**Formal Definition:**
 
 .. math::
 
-   \text{HM} = 1 - \min \left\{ \frac{|S|}{T} : \text{removing observations } S \text{ yields SARP-consistent data} \right\}
+   \text{HM} = 1 - \min \left\{ \frac{|S|}{T} : \text{The subset } \{1, \ldots, T\} \setminus S \text{ satisfies SARP} \right\}
 
 **Interpretation:**
 
-.. list-table::
-   :header-rows: 1
-   :widths: 20 80
-
-   * - Efficiency
-     - Interpretation
-   * - 1.0
-     - All choices are consistent
-   * - 0.9+
-     - Minor inconsistencies (1-2 problematic choices)
-   * - < 0.8
-     - Substantial inconsistencies
+An HM index of 1.0 indicates perfect transitivity, while lower values signify significant behavioral noise or model misspecification within the choice environment.
 
 
-Ordinal Utility Recovery
-------------------------
+Ordinal Preference Recovery
+---------------------------
 
-**Function:** ``fit_menu_preferences(log)``
+**Reference Implementation:** ``fit_menu_preferences(log)``
 
-If SARP holds, recover the preference ordering via topological sort of the revealed
-preference graph. The result is a ranking where item :math:`i` ranked before item :math:`j`
-means :math:`i \succ j` (i is preferred to j).
+If the agent's behavior satisfies SARP, the underlying ordinal preference ranking can be recovered via a topological sort of the revealed preference graph.
 
-**Algorithm:**
+**Methodology:**
 
-1. Build revealed preference graph: edge :math:`x \to y` if :math:`x \, R \, y`
-2. Compute transitive closure :math:`R^*`
-3. Topological sort of :math:`R^*` gives preference order (most preferred first)
+1. **Graph Construction:** Directed edges :math:`x \to y` are established for all observed relations :math:`x \, R \, y`.
+2. **Transitive Extension:** The transitive closure :math:`R^*` is computed to identify all indirect preferences.
+3. **Topological Ordering:** A linear ordering of alternatives is generated such that if :math:`x \, R^* \, y`, then :math:`x` is ranked before :math:`y`.
 
-**Note:** If multiple orderings are compatible with the data, one consistent ordering
-is returned.
+If multiple preference orderings are compatible with the observed data, PyRevealed returns one such consistent ranking.
 
-**Reference:** Chambers & Echenique (2016) Ch. 1-2, Richter (1966)
+**References:** Richter (1966), Chambers & Echenique (2016).

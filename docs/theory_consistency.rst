@@ -1,16 +1,18 @@
-Consistency Tests
-=================
+Axiomatic Consistency Tests
+==========================
 
-This section covers the formal definitions of consistency axioms: GARP, WARP, SARP, and related tests.
+This section delineates the formal definitions and axiomatic properties of revealed preference consistency, including GARP, WARP, SARP, and their associated variants.
 
 GARP (Generalized Axiom of Revealed Preference)
 -----------------------------------------------
 
-**Function:** ``validate_consistency(log)``
+**Reference Implementation:** ``validate_consistency(log)``
 
-**Revealed Preference Relations:**
+The Generalized Axiom of Revealed Preference (GARP) constitutes the central behavioral benchmark for optimizing agents.
 
-Define weak revealed preference :math:`R` and strict revealed preference :math:`P`:
+**Formal Revealed Preference Relations:**
+
+Consider an agent facing price-quantity observations :math:`\{(p^t, x^t)\}_{t=1}^T`. We define the weak revealed preference relation :math:`R` and the strict revealed preference relation :math:`P` as follows:
 
 .. math::
 
@@ -20,113 +22,115 @@ Define weak revealed preference :math:`R` and strict revealed preference :math:`
 
    x^i \, P \, x^j \iff p^i \cdot x^i > p^i \cdot x^j
 
-Let :math:`R^*` be the transitive closure of :math:`R` (computed via Floyd-Warshall).
+Let :math:`R^*` denote the transitive closure of the relation :math:`R`, representing the indirect revealed preference relation.
 
-**GARP Condition:**
+**The GARP Condition:**
 
 .. math::
 
-   \text{GARP holds} \iff \nexists \, i,j : \left( x^i \, R^* \, x^j \right) \land \left( x^j \, P \, x^i \right)
+   \text{GARP is satisfied} \iff \nexists \, i,j : \left( x^i \, R^* \, x^j \right) \land \left( x^j \, P \, x^i \right)
 
 .. admonition:: Afriat's Theorem (1967)
    :class: important
 
-   The following are **equivalent**:
+   For any given dataset :math:`\{(p^t, x^t)\}_{t=1}^T`, the following propositions are logically equivalent:
 
-   1. The data :math:`\{(p^t, x^t)\}_{t=1}^T` satisfy GARP
-   2. There exist utility values :math:`\{U_t\}` and multipliers :math:`\{\lambda_t > 0\}` satisfying:
+   1. The data satisfy the **Generalized Axiom of Revealed Preference (GARP)**.
+   2. There exist positive scalars :math:`\{U_t\}` and :math:`\{\lambda_t > 0\}` that satisfy the **Afriat Inequalities**:
       :math:`U_s \leq U_t + \lambda_t \cdot p^t \cdot (x^s - x^t) \quad \forall s,t`
-   3. There exists a **continuous, monotonic, concave** utility function :math:`U(x)` that rationalizes the data
+   3. The data are **rationalizable** by a continuous, monotonic, and concave utility function :math:`U(x)`.
 
-   This is the foundational result: GARP is both necessary and sufficient for rationalizability.
+Afriat's Theorem establishes that GARP is both necessary and sufficient for the existence of a well-behaved utility function that rationalizes the observed choices.
 
-**Reference:** Afriat (1967), Varian (1982), Chambers & Echenique (2016) Ch. 3
+**References:** Afriat (1967), Varian (1982), Chambers & Echenique (2016).
 
 
 WARP (Weak Axiom of Revealed Preference)
 ----------------------------------------
 
-**Function:** ``validate_consistency_weak(log)``
+**Reference Implementation:** ``validate_consistency_weak(log)``
 
-**WARP Condition:**
+The Weak Axiom of Revealed Preference (WARP) is a foundational consistency condition that precludes direct pairwise contradictions.
+
+**The WARP Condition:**
 
 .. math::
 
-   \text{WARP holds} \iff \nexists \, i,j : \left( x^i \, R \, x^j \right) \land \left( x^j \, P \, x^i \right)
+   \text{WARP is satisfied} \iff \nexists \, i,j : \left( x^i \, R \, x^j \right) \land \left( x^j \, P \, x^i \right)
 
-Unlike GARP, WARP only checks direct (length-2) violations without transitivity.
+Unlike GARP, WARP evaluates only direct inconsistencies (cycles of length 2) and does not account for transitive contradictions across longer sequences of choices.
 
-**Reference:** Samuelson (1938), Chambers & Echenique (2016) Ch. 2
+**Reference:** Samuelson (1938).
 
 
-SARP (Strict Axiom of Revealed Preference)
+SARP (Strong Axiom of Revealed Preference)
 ------------------------------------------
 
-**Function:** ``validate_sarp(log)``
+**Reference Implementation:** ``validate_sarp(log)``
 
-**SARP Condition (Antisymmetry):**
+The Strong Axiom of Revealed Preference (SARP) extends consistency by imposing acyclicity on the indirect revealed preference relation, effectively prohibiting indifference cycles.
+
+**The SARP Condition (Acyclicity):**
 
 .. math::
 
-   \text{SARP holds} \iff \nexists \, i \neq j : \left( x^i \, R^* \, x^j \right) \land \left( x^j \, R^* \, x^i \right)
+   \text{SARP is satisfied} \iff \nexists \, i \neq j : \left( x^i \, R^* \, x^j \right) \land \left( x^j \, R^* \, x^i \right)
 
-SARP prohibits indifference cycles. Stronger than GARP.
+SARP is a more restrictive condition than GARP and is necessary for the identification of unique, single-valued demand functions.
 
-**Reference:** Chambers & Echenique (2016) Ch. 2
+**Reference:** Houthakker (1950), Chambers & Echenique (2016).
 
 
-Smooth Preferences (Differentiable Utility)
--------------------------------------------
+Smooth Preferences and Differentiable Utility
+---------------------------------------------
 
-**Function:** ``validate_smooth_preferences(log)``
+**Reference Implementation:** ``validate_smooth_preferences(log)``
 
-Two conditions must hold:
+In econometric applications requiring differentiable utility specifications (e.g., for calculating price elasticities), the observed behavior must satisfy the following joint conditions:
 
-1. **SARP:** No indifference cycles
-2. **Price-Quantity Uniqueness:**
+1. **SARP Consistency**: Preclusion of all indifference cycles.
+2. **Local Injectivity**: A unique mapping from prices to quantities such that:
 
 .. math::
 
    p^t \neq p^s \implies x^t \neq x^s
 
-**Interpretation:** Demand function is well-defined and differentiable, enabling price elasticity calculations.
-
-**Reference:** Chiappori & Rochet (1987)
+**Reference:** Chiappori & Rochet (1987).
 
 
-Strict Consistency (Acyclical P)
---------------------------------
+Acyclical Strict Preferences (Acyclical P)
+------------------------------------------
 
-**Function:** ``validate_strict_consistency(log)``
+**Reference Implementation:** ``validate_strict_consistency(log)``
 
-More lenient than GARP. Only checks cycles in strict preference :math:`P`:
+This condition provides a more lenient consistency test by evaluating cycles exclusively within the strict revealed preference relation :math:`P`:
 
 .. math::
 
-   \text{Acyclical P holds} \iff P^* \text{ has no cycles}
+   \text{Acyclical P holds} \iff P^* \text{ contains no cycles}
 
-**Interpretation:** Approximately consistent behavior. GARP may fail due to indifference, but strict preferences are consistent.
+This criterion accounts for indifference by allowing cycles in the weak relation :math:`R`, provided no strict preference is violated.
 
-**Reference:** Dziewulski (2023)
+**Reference:** Dziewulski (2023).
 
 
-Price Preferences (GAPP)
-------------------------
+Generalized Axiom of Price Preferences (GAPP)
+---------------------------------------------
 
-**Function:** ``validate_price_preferences(log)``
+**Reference Implementation:** ``validate_price_preferences(log)``
 
-Dual of GARP for price vectors. Define price preference:
+GAPP constitutes the dual of GARP in the space of price vectors. We define the price preference relation :math:`R_p`:
 
 .. math::
 
    p^s \, R_p \, p^t \iff p^s \cdot x^t \leq p^t \cdot x^t
 
-**GAPP Condition:**
+**The GAPP Condition:**
 
 .. math::
 
-   \text{GAPP holds} \iff \nexists \, s,t : \left( p^s \, R_p^* \, p^t \right) \land \left( p^t \, P_p \, p^s \right)
+   \text{GAPP is satisfied} \iff \nexists \, s,t : \left( p^s \, R_p^* \, p^t \right) \land \left( p^t \, P_p \, p^s \right)
 
-**Interpretation:** Consumer consistently prefers situations where desired bundles are cheaper.
+This dual test evaluates whether an agent exhibits consistent preferences across different budget environments, independent of specific quantity bundles.
 
-**Reference:** Deb et al. (2022)
+**Reference:** Deb et al. (2022).
