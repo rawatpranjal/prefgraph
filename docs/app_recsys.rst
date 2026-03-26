@@ -1,13 +1,9 @@
-Application: Recommendation Clicks
-===================================
+Recommendation Clicks
+=====================
 
 Test whether users' click patterns from recommendation menus reveal
 consistent preferences, and use consistency scores for segmentation
 and churn detection.
-
-.. contents:: On this page
-   :local:
-   :depth: 2
 
 Introduction
 ------------

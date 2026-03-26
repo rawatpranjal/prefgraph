@@ -1,12 +1,8 @@
-Application: Grocery Scanner Data
-=================================
+Grocery Scanner Data
+====================
 
 Score household shopping behavior for economic rationality using
 revealed preference theory on loyalty-card scanner data.
-
-.. contents:: On this page
-   :local:
-   :depth: 2
 
 Introduction
 ------------
