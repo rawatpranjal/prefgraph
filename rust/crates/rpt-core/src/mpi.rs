@@ -128,7 +128,7 @@ pub fn mpi_fast(graph: &PreferenceGraph) -> f64 {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::garp::garp_check;
+    use crate::garp::garp_check_with_closure;
 
     #[test]
     fn test_mpi_karp_zero_when_consistent() {
@@ -159,7 +159,7 @@ mod tests {
         let quantities = [3.0, 2.0, 2.0, 3.0];
         let mut graph = PreferenceGraph::new(2);
         graph.parse_budget(&prices, &quantities, 2, 2, 1e-10);
-        let _ = garp_check(&mut graph); // need closure for mpi_fast
+        let _ = garp_check_with_closure(&mut graph); // need closure for mpi_fast
         let karp = mpi_karp(&graph);
         let fast = mpi_fast(&graph);
         assert!(
@@ -174,7 +174,7 @@ mod tests {
         let quantities = [3.0, 2.0, 2.0, 3.0];
         let mut graph = PreferenceGraph::new(2);
         graph.parse_budget(&prices, &quantities, 2, 2, 1e-10);
-        let garp = garp_check(&mut graph);
+        let garp = garp_check_with_closure(&mut graph);
         assert!(!garp.is_consistent);
         let mpi = mpi_fast(&graph);
         assert!(mpi > 0.0);
