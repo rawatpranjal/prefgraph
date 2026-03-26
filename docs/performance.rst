@@ -1,80 +1,70 @@
-Performance
-===========
+Computational Performance and Scalability
+========================================
 
-PyRevealed uses a Rust compute engine (``rpt-core``) with Rayon thread-pool
-parallelism, SCC-optimized transitive closure, and HiGHS LP solving. This
-page shows raw scaling benchmarks.
+PyRevealed utilizes a high-performance Rust compute engine (``rpt-core``) designed for large-scale longitudinal choice analysis. The architecture leverages Rayon for thread-level parallelism, SCC-optimized algorithms for transitive closure, and the HiGHS solver for linear programming (LP) tasks.
 
-Throughput at Scale
--------------------
+Scalability and Throughput
+--------------------------
 
-Throughput stays constant as the number of users grows — the workload is
-embarrassingly parallel and memory is bounded via streaming chunks.
+The engine exhibits linear scalability with respect to the number of agents. The workload is highly parallelizable, and memory consumption remains bounded through the use of streaming data chunks.
 
 .. image:: _static/perf_throughput.png
    :width: 100%
-   :alt: Throughput vs number of users
+   :alt: Throughput characteristics across agent cohorts
 
-.. list-table:: Throughput by metric combination (T=20-100, K=5)
+.. list-table:: Throughput by Metric Configuration (T=20-100, K=5)
    :header-rows: 1
    :widths: 40 20 20
 
    * - Metrics
-     - Throughput
-     - Per user
-   * - GARP only (O(T²))
-     - ~49,000/s
-     - 20 us
-   * - GARP + CCEI
-     - ~2,400/s
-     - 420 us
-   * - GARP + CCEI + MPI + HARP
-     - ~2,000/s
-     - 500 us
+     - Throughput (Agents/sec)
+     - Latency (per Agent)
+   * - **GARP Only** (O(T²))
+     - ~49,000
+     - 20 μs
+   * - **GARP + CCEI**
+     - ~2,400
+     - 420 μs
+   * - **Comprehensive Metrics** (GARP, CCEI, MPI, HARP)
+     - ~2,000
+     - 500 μs
 
-Per-User Cost by Metric
------------------------
+Computational Complexity by Metric
+----------------------------------
 
-Each metric adds cost independently. GARP and MPI are cheapest (graph-only).
-CCEI is most expensive (binary search over ~15 GARP re-checks).
+The computational cost varies significantly across metrics. Axiomatic tests (e.g., GARP) and the Money Pump Index (MPI) are computationally efficient as they rely primarily on graph-theoretic traversals. The CCEI is more intensive, requiring an iterative binary search over approximately 15 GARP evaluations.
 
 .. image:: _static/perf_per_user.png
    :width: 100%
-   :alt: Per-user compute time by metric and T
+   :alt: Per-agent computational cost by metric and observation count (T)
 
-All graph algorithms scale as O(T^3) in the inner Floyd-Warshall loop, but
-SCC decomposition reduces the effective T to the largest strongly connected
-component — often much smaller than T for real economic data.
+PyRevealed implements the O(T²) SCC-based algorithm (Talla Nobibon et al., 2015) for GARP verification, avoiding the O(T³) overhead of Floyd-Warshall. CCEI computation thus achieves O(T² log T) complexity. Metrics such as MPI, HARP, and VEI necessitate O(T³) transitive closure operations. Technical details are available in the :doc:`algorithms` section.
 
-Memory Under Streaming
-----------------------
+Memory Management and Streaming
+-------------------------------
 
-Memory stays bounded regardless of how many users you score. The engine
-processes users in chunks (default 50,000) and frees each chunk before
-loading the next.
+The engine is designed to maintain a flat memory profile regardless of the total population size. Data are processed in discrete chunks (default size: 50,000 agents), with memory allocated for a given chunk being released upon completion of its analysis.
 
 .. image:: _static/perf_memory.png
    :width: 100%
-   :alt: Memory stays flat under streaming
+   :alt: Memory consumption under streaming conditions
 
-Peak memory is determined by chunk size, not total users. With 50K-user
-chunks, expect ~100-200 MB peak regardless of whether you're scoring
-100K or 10M users.
+Peak memory usage is a function of the chunk size rather than the total number of agents. At the default chunk size, peak memory consumption typically remains between 100–200 MB, enabling the analysis of datasets exceeding 10 million agents on commodity hardware.
 
-1M-User Benchmarks
--------------------
+Large-Scale Benchmarks
+----------------------
 
-Budget Choice (GARP + CCEI + MPI + HARP, T=20-100, K=5):
+**Budget-Constrained Analysis** (GARP, CCEI, MPI, HARP; T=20-100, K=5):
 
 .. list-table::
    :header-rows: 1
    :widths: 25 15 15 15
 
-   * - Config
-     - 10K users
-     - 100K users
-     - 1M users
-   * - GARP only (O(T²))
+   * - Configuration
+     - 10,000 Agents
+     - 100,000 Agents
+     - 1,000,000 Agents
+   * - GARP (O(T²))
      - 0.1s
      - 2.0s
      - ~20s
@@ -82,31 +72,28 @@ Budget Choice (GARP + CCEI + MPI + HARP, T=20-100, K=5):
      - 4.2s
      - 39.5s
      - ~6.6 min
-   * - All 5 metrics
+   * - Comprehensive Suite
      - 6.8s
      - 67.1s
      - ~11 min
 
-Menu/Discrete Choice (SARP + WARP + Houtman-Maks, 50 items, 20-100 sessions):
+**Discrete Menu-Based Analysis** (SARP, WARP, Houtman-Maks; 50 items, 20-100 sessions):
 
 .. list-table::
    :header-rows: 1
    :widths: 25 15 15 15
 
-   * - Metric
-     - 10K users
-     - 100K users
-     - 1M users
+   * - Metric Configuration
+     - 10,000 Agents
+     - 100,000 Agents
+     - 1,000,000 Agents
    * - SARP + WARP + HM
      - 0.3s
      - 5.2s
      - **85.6s**
 
-At 1M users, the Rust engine finds 0% SARP-consistent (random click data),
-67.2% average Houtman-Maks efficiency (fraction of rationalizable clicks).
-
-Algorithm Complexity
---------------------
+Algorithmic Complexity Summary
+------------------------------
 
 .. list-table::
    :header-rows: 1
@@ -114,31 +101,30 @@ Algorithm Complexity
 
    * - Algorithm
      - Complexity
-     - Notes
-   * - GARP
-     - **O(T²)** [tight]
-     - SCC arc-scan, no transitive closure (Talla Nobibon+ 2015)
-   * - CCEI (AEI)
-     - O(T^2 log T) * GARP
-     - Discrete binary search over T^2 efficiency ratios
-   * - MPI
-     - O(T^2) after GARP
-     - Scans violation pairs from GARP's closure matrix
-   * - HARP
-     - O(T^3)
-     - Modified Floyd-Warshall in log-space (max-product paths)
-   * - Houtman-Maks
-     - O(T^2) greedy / ILP exact
-     - Greedy FVS default; ILP via HiGHS for T <= 200
-   * - Utility recovery
-     - O(T^2) constraints
-     - LP with 2T variables, T(T-1) constraints (HiGHS solver)
-   * - VEI
-     - O(T^2) constraints
-     - Per-observation efficiency via LP
+     - Implementation Notes
+   * - **GARP**
+     - **O(T²)**
+     - SCC-based arc-scan; avoids O(T³) transitive closure.
+   * - **CCEI (AEI)**
+     - O(T² log T)
+     - Iterative binary search over T² potential efficiency ratios.
+   * - **MPI**
+     - O(T³)
+     - Karp’s maximum-mean-weight cycle algorithm.
+   * - **HARP**
+     - O(T³)
+     - Max-product path calculation via modified Floyd-Warshall.
+   * - **Houtman-Maks**
+     - O(T²) / ILP
+     - Greedy FVS (approximate); ILP via HiGHS for exact solutions (T ≤ 200).
+   * - **Utility Recovery**
+     - O(T²)
+     - Linear programming with 2T variables and T(T-1) constraints.
+   * - **VEI**
+     - O(T²)
+     - Observation-specific efficiency via constrained optimization.
 
-Hardware
---------
+Hardware Configuration
+----------------------
 
-All benchmarks run on Apple M-series (11 cores). The Rust engine scales
-linearly with core count. On a 64-core server, multiply throughput by ~5x.
+Benchmarks were conducted on an Apple M-series architecture (11 cores). Performance scales linearly with available CPU cores; on high-core-count server environments (e.g., 64 cores), throughput is expected to increase by approximately 5x.

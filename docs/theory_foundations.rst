@@ -1,34 +1,34 @@
-Foundations
-===========
+Theoretical Foundations
+=======================
 
-This section covers the mathematical notation, maintained assumptions, and axiom hierarchy
-that underpin all revealed preference analysis.
+This chapter delineates the formal notation, foundational assumptions, and axiomatic hierarchy that constitute the theoretical core of revealed preference analysis.
 
-Notation
---------
+Formal Notation
+---------------
+
+The analysis of choice behavior in PyRevealed is based on the following mathematical conventions:
 
 .. list-table::
    :widths: 20 80
 
    * - :math:`p^t \in \mathbb{R}^n_+`
-     - Price vector at observation :math:`t`
+     - Price vector associated with observation :math:`t`.
    * - :math:`x^t \in \mathbb{R}^n_+`
-     - Quantity vector (bundle) chosen at observation :math:`t`
+     - Commodity bundle (quantity vector) selected at observation :math:`t`.
    * - :math:`e_t = p^t \cdot x^t`
-     - Expenditure at observation :math:`t`
+     - Total expenditure at observation :math:`t`.
    * - :math:`E_{ij} = p^i \cdot x^j`
-     - Cost of bundle :math:`j` at prices :math:`i`
+     - The hypothetical cost of bundle :math:`j` evaluated at the price vector of observation :math:`i`.
    * - :math:`T`
-     - Number of observations
+     - Total number of longitudinal observations for a given agent.
    * - :math:`n`
-     - Number of goods
+     - Dimensionality of the commodity space (number of distinct goods).
 
 
 Maintained Assumptions
 ----------------------
 
-The following assumptions are **necessary** for revealed preference analysis to be meaningful.
-If these are violated, GARP failures may reflect model misspecification rather than behavioral inconsistency.
+The validity of revealed preference results is contingent upon several maintained assumptions regarding the underlying data-generating process. Violations of these assumptions may lead to spurious detections of behavioral inconsistency.
 
 .. list-table::
    :header-rows: 1
@@ -36,41 +36,43 @@ If these are violated, GARP failures may reflect model misspecification rather t
 
    * -
      - Assumption
-     - Implication if Violated
+     - Implications of Violation
    * - **A1**
-     - **Stable Preferences** - Consumer has a fixed utility function :math:`U(x)` across all observations
-     - Legitimate preference changes (e.g., developing a taste for coffee) appear as GARP violations
+     - **Preference Stability** - The agent possesses a time-invariant utility function :math:`U(x)` across all observations.
+     - Evolutionary changes in preferences (e.g., taste formation) may be incorrectly identified as axiomatic violations.
    * - **A2**
-     - **Utility Maximization** - Consumer chooses :math:`\arg\max_x U(x)` subject to budget
-     - Satisficing, habit formation, inattention, and heuristic decision-making generate violations
+     - **Utility Maximization** - Observed choices represent the solution to :math:`\arg\max_x U(x)` subject to the budget constraint.
+     - Decision heuristics, cognitive load, or satisficing behavior generate violations that reflect bounded rationality.
    * - **A3**
-     - **Local Non-Satiation** - More is always weakly preferred; consumer spends entire budget
-     - Free disposal allowed, but discarding goods or saving violates the model
+     - **Local Non-Satiation** - The agent strictly prefers more of at least one good; the entire budget is exhausted.
+     - While free disposal is mathematically accommodated, systematic under-spending or unobserved saving violates the budget model.
    * - **A4**
-     - **Single Decision-Maker** - Observed choices reflect one agent's preferences
-     - Household data with multiple members, or accounts with gift purchases, violate this
+     - **Unitary Decision-Maker** - Observed choices reflect the preferences of a single optimizing agent.
+     - Aggregated household data or multi-user accounts may exhibit violations arising from collective choice dynamics.
    * - **A5**
-     - **Complete Observation** - We observe the entire consumption bundle and prices faced
-     - If we only see partial consumption (e.g., Amazon but not groceries), GARP may fail spuriously
+     - **Information Completeness** - The analyst observes the exhaustive set of commodities and prices relevant to the agent's decision.
+     - Partial observation (e.g., omitting essential categories) may result in an incomplete budget set, leading to false-positive violations.
 
 
-Axiom Hierarchy
----------------
+Axiomatic Hierarchy
+-------------------
 
-.. admonition:: Relationship Between Axioms
+The fundamental axioms of revealed preference exhibit a nested hierarchical structure, providing varying levels of stringency for behavioral analysis.
+
+.. admonition:: Logical Relationship Between Axioms
 
    **SARP** :math:`\Rightarrow` **GARP** :math:`\Rightarrow` **WARP**
 
-   - **WARP** rules out direct contradictions (length-2 cycles)
-   - **GARP** rules out transitive contradictions (any cycle with a strict edge)
-   - **SARP** rules out all indifference cycles (strongest condition)
+   - **WARP (Weak Axiom):** Precludes direct contradictions in pairwise choices (cycles of length 2).
+   - **GARP (Generalized Axiom):** Precludes transitive contradictions across cycles of any length, provided at least one preference is strict.
+   - **SARP (Strong Axiom):** Precludes all preference cycles, including those involving indifference; it is the most restrictive condition.
 
-   Most empirical work uses GARP as it corresponds exactly to utility maximization via Afriat's Theorem.
+Empirical applications typically focus on **GARP**, as it provides the necessary and sufficient conditions for rationalizability by a continuous, monotonic, and concave utility function (Afriat, 1967).
 
 .. note::
 
-   **When to use which axiom:**
+   **Axiomatic Selection Criteria:**
 
-   - **WARP**: Quick sanity check; if WARP fails, no need to test GARP
-   - **GARP**: Standard test for rationality; corresponds to existence of a utility function
-   - **SARP**: Strict test; required for smooth/differentiable utility functions
+   - **WARP**: Employed as a computationally efficient preliminary filter for direct inconsistencies.
+   - **GARP**: The standard benchmark for consumer rationality and utility maximization.
+   - **SARP**: Required for applications necessitating unique demand systems or differentiable utility specifications.

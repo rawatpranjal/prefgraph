@@ -144,6 +144,150 @@ pub fn solve_hm_ilp(
     }
 }
 
+// ---------------------------------------------------------------------------
+// Optional Gurobi backend (feature = "gurobi")
+// ---------------------------------------------------------------------------
+
+/// Solve the Afriat feasibility LP using Gurobi (requires license).
+///
+/// Identical formulation to `solve_afriat_lp` but uses Gurobi's LP solver,
+/// which is ~10x faster than HiGHS for large MIP problems (Machado, 2024).
+#[cfg(feature = "gurobi")]
+pub fn solve_afriat_lp_gurobi(
+    e: &[f64],
+    own_exp: &[f64],
+    t: usize,
+    tolerance: f64,
+) -> Option<(Vec<f64>, Vec<f64>)> {
+    use grb::prelude::*;
+
+    let lambda_lb = 1e-6;
+
+    let mut env = Env::empty().ok()?.start().ok()?;
+    env.set(param::OutputFlag, 0).ok()?;
+
+    let mut model = Model::with_env("afriat", &env).ok()?;
+
+    // Variables: U_i (continuous, lb=0) and λ_i (continuous, lb=lambda_lb)
+    let u: Vec<Var> = (0..t)
+        .map(|i| add_ctsvar!(model, name: &format!("u_{}", i), bounds: 0.0..).unwrap())
+        .collect();
+    let lam: Vec<Var> = (0..t)
+        .map(|i| {
+            add_ctsvar!(model, name: &format!("l_{}", i), bounds: lambda_lb..).unwrap()
+        })
+        .collect();
+
+    // Objective: minimize sum(λ)
+    model.set_objective(lam.iter().grb_sum(), Minimize).ok()?;
+
+    // Constraints: U_i - U_j - λ_j * (E[j,i] - E[j,j]) <= 0
+    for i in 0..t {
+        for j in 0..t {
+            if i == j {
+                continue;
+            }
+            let lambda_coeff = -(e[j * t + i] - own_exp[j]);
+            model
+                .add_constr(
+                    &format!("c_{}_{}", i, j),
+                    c!(u[i] - u[j] + lambda_coeff * lam[j] <= 0.0),
+                )
+                .ok()?;
+        }
+    }
+
+    model.optimize().ok()?;
+
+    match model.status().ok()? {
+        Status::Optimal => {
+            let u_vals: Vec<f64> = u.iter().map(|v| model.get_obj_attr(attr::X, v).unwrap()).collect();
+            let l_vals: Vec<f64> = lam.iter().map(|v| model.get_obj_attr(attr::X, v).unwrap()).collect();
+            Some((u_vals, l_vals))
+        }
+        _ => None,
+    }
+}
+
+/// Solve the Houtman-Maks ILP using Gurobi (requires license).
+///
+/// ~10x faster than HiGHS for MIP problems. Same Big-M Afriat formulation.
+#[cfg(feature = "gurobi")]
+pub fn solve_hm_ilp_gurobi(
+    e: &[f64],
+    own_exp: &[f64],
+    t: usize,
+    tolerance: f64,
+) -> Vec<usize> {
+    use grb::prelude::*;
+
+    let max_exp = own_exp.iter().cloned().fold(0.0f64, f64::max);
+    let big_m = (3.0 * max_exp).max(10.0);
+    let lambda_lb = 0.01;
+
+    let env = match Env::empty().and_then(|e| e.start()) {
+        Ok(e) => e,
+        Err(_) => return Vec::new(),
+    };
+
+    let mut model = match Model::with_env("hm", &env) {
+        Ok(m) => m,
+        Err(_) => return Vec::new(),
+    };
+    let _ = model.set_param(param::OutputFlag, 0);
+
+    // Variables
+    let z: Vec<Var> = (0..t)
+        .map(|i| add_binvar!(model, name: &format!("z_{}", i)).unwrap())
+        .collect();
+    let u: Vec<Var> = (0..t)
+        .map(|i| add_ctsvar!(model, name: &format!("u_{}", i), bounds: 0.0..big_m).unwrap())
+        .collect();
+    let lam: Vec<Var> = (0..t)
+        .map(|i| {
+            add_ctsvar!(model, name: &format!("l_{}", i), bounds: lambda_lb..big_m).unwrap()
+        })
+        .collect();
+
+    // Objective: maximize sum(z) = minimize sum(-z)
+    model
+        .set_objective(z.iter().map(|v| (*v, -1.0)).grb_sum(), Minimize)
+        .ok();
+
+    // Constraints
+    for i in 0..t {
+        for j in 0..t {
+            if i == j {
+                continue;
+            }
+            let lambda_coeff = -(e[j * t + i] - own_exp[j]);
+            let _ = model.add_constr(
+                &format!("c_{}_{}", i, j),
+                c!(u[i] - u[j] + lambda_coeff * lam[j] + big_m * z[i] + big_m * z[j] <= 2.0 * big_m),
+            );
+        }
+    }
+
+    if model.optimize().is_err() {
+        return Vec::new();
+    }
+
+    match model.status() {
+        Ok(Status::Optimal) => {
+            let mut removed = Vec::new();
+            for i in 0..t {
+                if let Ok(val) = model.get_obj_attr(attr::X, &z[i]) {
+                    if val < 0.5 {
+                        removed.push(i);
+                    }
+                }
+            }
+            removed
+        }
+        _ => Vec::new(),
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

@@ -4,5 +4,10 @@ version = "0.1.0"
 edition = "2021"
 description = "Revealed Preference Theory algorithms — pure Rust, no Python dependency"
 
+[features]
+default = []
+gurobi = ["grb"]
+
 [dependencies]
 highs = "1"  # HiGHS LP/MILP solver (MIT license)
+grb = { version = "3", optional = true }  # Gurobi (requires license + shared lib)
