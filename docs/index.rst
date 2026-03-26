@@ -148,6 +148,7 @@ See :doc:`theory` for the economics behind each score.
    :maxdepth: 1
    :hidden:
 
+   applications
    examples
    theory
    performance
