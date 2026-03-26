@@ -1,289 +1,192 @@
 Examples
 ========
 
-Core examples showing each data type and analysis pattern.
-
 .. contents:: On this page
    :local:
    :depth: 1
 
-Batch Scoring (Engine)
-----------------------
+Budget Choices (Engine)
+-----------------------
 
-Score thousands of users with the Rust-accelerated Engine:
+Score many users in one call. The Engine uses Rust for graph algorithms
+and LP solving, parallelized across CPU cores.
 
 .. code-block:: python
 
    from pyrevealed.engine import Engine
    import numpy as np
 
-   # Simulate 1000 users: 20 observations x 5 goods each
+   # Simulate 1000 users: 20 purchase occasions, 5 product categories
    rng = np.random.RandomState(42)
    users = [
-       (rng.rand(20, 5) + 0.1, rng.rand(20, 5) + 0.1)
+       (rng.rand(20, 5).astype(np.float64) + 0.1,
+        rng.rand(20, 5).astype(np.float64) + 0.1)
        for _ in range(1000)
    ]
 
    engine = Engine(metrics=["garp", "ccei", "mpi", "harp", "hm"])
    results = engine.analyze_arrays(users)
 
-   # Summary
+   # Summary statistics
    n_consistent = sum(1 for r in results if r.is_garp)
    avg_ccei = np.mean([r.ccei for r in results])
-   print(f"Consistent: {n_consistent}/1000")
+   avg_mpi = np.mean([r.mpi for r in results])
+
+   print(f"Users: {len(results)}")
+   print(f"Consistent: {n_consistent} ({100*n_consistent/len(results):.1f}%)")
    print(f"Avg CCEI: {avg_ccei:.3f}")
-   print(f"Backend: {engine.backend}")  # 'rust' or 'python'
+   print(f"Avg MPI: {avg_mpi:.3f}")
+   print(f"Backend: {engine.backend}")
 
-Budget Panel Analysis
----------------------
+.. code-block:: text
 
-The primary use case: analyze consistency across many users over time.
+   Users: 1000
+   Consistent: 0 (0.0%)
+   Avg CCEI: 0.823
+   Avg MPI: 0.239
+   Backend: rust
 
-.. code-block:: python
+Each ``EngineResult`` has: ``is_garp``, ``ccei``, ``mpi``, ``is_harp``,
+``hm_consistent``, ``hm_total``, ``utility_success``, ``vei_mean``, ``vei_min``.
 
-   from pyrevealed.datasets import load_dunnhumby
+Available metrics: ``"garp"``, ``"ccei"``, ``"mpi"``, ``"harp"``, ``"hm"``,
+``"utility"``, ``"vei"``.
 
-   # Load 2,500 households x 10 grocery categories x 104 weeks
-   panel = load_dunnhumby()
-   report = panel.summary()
-   print(report)
+Menu Choices (SARP)
+-------------------
 
-   # Drill into a specific user
-   user_report = panel.analyze_user("household_42")
-   print(user_report)
-
-   # Filter to users with enough data
-   big_panel = panel.filter(lambda log: log.num_observations >= 30)
-   print(big_panel.summary())
-
-**Temporal analysis** --- split by month to track consistency over time:
+When there are no prices --- just menus and chosen items --- use
+``MenuChoiceLog`` with SARP and Houtman-Maks:
 
 .. code-block:: python
 
-   panel = load_dunnhumby(n_households=50, period="month")
-   report = panel.summary()
-   print(report)  # Shows Temporal Breakdown section
+   from pyrevealed import MenuChoiceLog, validate_menu_sarp, compute_menu_efficiency
+   import numpy as np
 
-**From your own data** --- load from a DataFrame:
+   rng = np.random.RandomState(42)
+   n_items = 8
+
+   for uid in range(5):
+       menus, choices = [], []
+       for _ in range(25):
+           size = rng.randint(2, min(5, n_items + 1))
+           menu = frozenset(rng.choice(n_items, size, replace=False).tolist())
+           menus.append(menu)
+           choices.append(rng.choice(list(menu)))
+
+       log = MenuChoiceLog(menus=menus, choices=choices)
+       sarp = validate_menu_sarp(log)
+       hm = compute_menu_efficiency(log)
+       print(f"user {uid}  violations={sarp.num_violations}"
+             f"  removed={len(hm.removed_observations)}/25")
+
+.. code-block:: text
+
+   user 0  violations=28  removed=12/25
+   user 1  violations=21  removed=14/25
+   user 2  violations=28  removed=9/25
+   user 3  violations=28  removed=13/25
+   user 4  violations=28  removed=13/25
+
+``validate_menu_sarp`` checks for preference cycles across item choices.
+``compute_menu_efficiency`` (Houtman-Maks) finds the minimum observations
+to remove to make choices consistent.
+
+Production Data
+---------------
+
+Test whether a firm's input/output decisions are consistent with profit
+maximization:
 
 .. code-block:: python
 
-   import pandas as pd
+   from pyrevealed import ProductionLog
+   from pyrevealed.algorithms.production import test_profit_maximization
+   import numpy as np
+
+   rng = np.random.RandomState(42)
+   log = ProductionLog(
+       input_prices=rng.rand(15, 3) + 0.5,
+       input_quantities=rng.rand(15, 3) + 0.1,
+       output_prices=rng.rand(15, 2) + 1.0,
+       output_quantities=rng.rand(15, 2) + 0.1,
+   )
+
+   result = test_profit_maximization(log)
+   print(f"Consistent: {result.is_consistent}")
+   print(f"Violations: {result.num_violations}")
+
+.. code-block:: text
+
+   Consistent: False
+   Violations: 2
+
+Single-User Analysis
+--------------------
+
+For drilling into one user without the Engine:
+
+.. code-block:: python
+
+   from pyrevealed import BehaviorLog, check_garp, compute_aei, compute_mpi
+   import numpy as np
+
+   prices = np.array([[2.0, 1.0], [1.0, 2.0], [1.5, 1.5]])
+   quantities = np.array([[3.0, 2.0], [2.0, 3.0], [2.5, 2.5]])
+
+   log = BehaviorLog(cost_vectors=prices, action_vectors=quantities)
+
+   garp = check_garp(log)
+   aei = compute_aei(log)
+   mpi = compute_mpi(log)
+
+   print(f"GARP consistent: {garp.is_consistent}")
+   print(f"Violations: {len(garp.violations)}")
+   print(f"CCEI: {aei.efficiency_index:.3f}")
+   print(f"MPI: {mpi.mpi_value:.3f}")
+
+.. code-block:: text
+
+   GARP consistent: False
+   Violations: 2
+   CCEI: 0.889
+   MPI: 0.100
+
+Loading Datasets
+----------------
+
+Built-in panel datasets (require separate download):
+
+.. code-block:: python
+
+   from pyrevealed.datasets import load_dunnhumby, load_open_ecommerce, load_uci_retail
+
+   panel = load_dunnhumby()           # 2,500 households, 10 goods, 104 weeks
+   panel = load_open_ecommerce()      # 4,700 consumers, 50 categories, 66 months
+   panel = load_uci_retail()          # 1,800 customers, 50 products, 13 months
+
+From a pandas DataFrame:
+
+.. code-block:: python
+
    from pyrevealed import BehaviorPanel
 
-   df = pd.read_csv("transactions.csv")
    panel = BehaviorPanel.from_dataframe(
        df,
        user_col="customer_id",
-       cost_cols=["price_milk", "price_bread", "price_eggs"],
-       action_cols=["qty_milk", "qty_bread", "qty_eggs"],
-       period_col="month",  # optional: enables temporal breakdown
+       cost_cols=["price_a", "price_b", "price_c"],
+       action_cols=["qty_a", "qty_b", "qty_c"],
    )
-   print(panel.summary())
 
-Menu-Based Choice
------------------
-
-Discrete choices from menus without prices. For surveys, experiments, voting.
+From individual logs:
 
 .. code-block:: python
 
-   from pyrevealed import MenuChoiceLog, MenuChoiceSummary
-
-   # Restaurant choices: 6 visits, 4 dishes
-   menus = [
-       frozenset({0, 1, 2, 3}),  # Full menu
-       frozenset({0, 1, 2}),     # No fish
-       frozenset({0, 2, 3}),     # No steak
-       frozenset({1, 2, 3}),     # No pasta
-       frozenset({0, 1}),        # Pasta or steak only
-       frozenset({2, 3}),        # Salad or fish only
-   ]
-   choices = [1, 1, 0, 1, 1, 3]  # Prefers steak > pasta > fish > salad
-
-   log = MenuChoiceLog(menus, choices, item_labels=["Pasta", "Steak", "Salad", "Fish"])
-   print(MenuChoiceSummary.from_log(log))
-
-.. code-block:: text
-
-   ======================================================================
-                            MENU CHOICE SUMMARY
-   ======================================================================
-   No. Observations: 6                WARP: [+] PASS
-   No. Alternatives: 4                SARP: [+] PASS
-   Computation Time: 142.29 ms        Congruence: [+] PASS
-   ======================================================================
-
-   Input Data:
-   ----------------------------------------------------------------------
-                           mean   std dev       min       max
-     Menu Size            2.833     0.687     2.000     4.000
-
-     Unique Items Chosen ........................................ 3 / 4
-     Choice Diversity .......................................... 0.7500
-
-   Consistency Tests:
-   ----------------------------------------------------------------------
-     WARP .................................................... [+] PASS
-     SARP .................................................... [+] PASS
-     Congruence .............................................. [+] PASS
-
-   Goodness-of-Fit:
-   ----------------------------------------------------------------------
-     Houtman-Maks Efficiency ................................... 1.0000
-       Observations removed ..................................... 0 / 6
-
-   Recovered Preference Order:
-   ----------------------------------------------------------------------
-     1 > 0 > 3 > 2
-
-   Interpretation:
-   ----------------------------------------------------------------------
-     Choices are fully rationalizable by a complete preference ordering.
-     Efficiency: 100.0% of observations are consistent.
-   ======================================================================
-
-Risk & Stochastic Choice
-------------------------
-
-**Risk Choice** --- safe vs. risky gambles:
-
-.. code-block:: python
-
-   from pyrevealed import RiskChoiceLog, RiskChoiceSummary
+   from pyrevealed import BehaviorLog, BehaviorPanel
    import numpy as np
 
-   safe_values = np.array([40, 45, 50, 55, 60, 65, 70, 75])
-   risky_outcomes = np.array([
-       [0, 100], [0, 100], [0, 100], [0, 100],
-       [0, 120], [0, 120], [0, 140], [0, 140],
-   ])
-   risky_probs = np.array([[0.5, 0.5]] * 8)
-   choices = np.array([False, False, False, True, False, True, False, True])
-
-   log = RiskChoiceLog(safe_values, risky_outcomes, risky_probs, choices)
-   print(RiskChoiceSummary.from_log(log))
-
-**Stochastic Choice** --- probabilistic choice frequencies:
-
-.. code-block:: python
-
-   from pyrevealed import StochasticChoiceLog, StochasticChoiceSummary
-
-   menus = [
-       frozenset({0, 1, 2, 3}),
-       frozenset({0, 1, 2}),
-       frozenset({1, 2, 3}),
-       frozenset({0, 1}),
+   logs = [
+       BehaviorLog(prices, quantities, user_id=f"user_{i}")
+       for i, (prices, quantities) in enumerate(user_data)
    ]
-   choice_frequencies = [
-       {0: 10, 1: 30, 2: 40, 3: 20},
-       {0: 15, 1: 35, 2: 50},
-       {1: 25, 2: 45, 3: 30},
-       {0: 30, 1: 70},
-   ]
-
-   log = StochasticChoiceLog(menus, choice_frequencies)
-   print(StochasticChoiceSummary.from_log(log))
-
-.. code-block:: text
-
-   ======================================================================
-                         STOCHASTIC CHOICE SUMMARY
-   ======================================================================
-   No. Menus: 4                       RUM Consistency: [-] FAIL
-   Unique Items: 4                    Regularity: [-] FAIL
-   Total Observations: 400            IIA: [-] FAIL
-   Computation Time: 9.25 ms          Transitivity: SST
-   ======================================================================
-
-   Input Data:
-   ----------------------------------------------------------------------
-                           mean   std dev       min       max
-     Menu Size            3.000     0.707     2.000     4.000
-     Obs per Menu       100.000     0.000   100.000   100.000
-
-     Mean Choice Entropy ....................................... 1.4270
-   ...
-
-Production Analysis
--------------------
-
-Firm input/output data for profit maximization and cost minimization tests.
-
-.. code-block:: python
-
-   from pyrevealed import ProductionLog, ProductionSummary
-   import numpy as np
-
-   input_prices = np.array([[20, 50, 10], [22, 45, 10], [18, 55, 10], [20, 50, 8], [20, 50, 12]])
-   input_quantities = np.array([[100, 40, 200], [90, 45, 200], [110, 35, 200], [100, 40, 250], [100, 40, 150]])
-   output_prices = np.array([[100]] * 5)
-   output_quantities = np.array([[50], [48], [49], [55], [45]])
-
-   log = ProductionLog(input_prices, input_quantities, output_prices, output_quantities)
-   print(ProductionSummary.from_log(log))
-
-.. code-block:: text
-
-   ======================================================================
-                             PRODUCTION SUMMARY
-   ======================================================================
-   No. Observations: 5                Profit Max: [-] FAIL
-   No. Inputs: 3                      Cost Min: [-] FAIL
-   No. Outputs: 1                     Returns to Scale: Decreasing
-   Computation Time: 284.49 ms        Profit Efficiency: 1.0000
-   ======================================================================
-
-   Input Data:
-   ----------------------------------------------------------------------
-                           mean   std dev       min       max
-     Input Prices        26.667    17.126     8.000    55.000
-     Output Prices      100.000     0.000   100.000   100.000
-     Profit           -1002.000   276.416 -1300.000  -500.000
-   ...
-
-Dataset Loaders
----------------
-
-Three real-world datasets are available (data must be downloaded separately):
-
-.. list-table::
-   :header-rows: 1
-   :widths: 20 40 15 15 10
-
-   * - Dataset
-     - Description
-     - Users
-     - Goods
-     - Periods
-   * - ``load_dunnhumby()``
-     - Grocery purchases (Kaggle)
-     - 2,500
-     - 10
-     - 104 weeks
-   * - ``load_open_ecommerce()``
-     - Amazon purchases (Crowdsourced)
-     - 4,700
-     - 50
-     - 66 months
-   * - ``load_uci_retail()``
-     - UK online retail (UCI)
-     - 1,800
-     - 50
-     - 13 months
-
-.. code-block:: python
-
-   from pyrevealed.datasets import load_dunnhumby, list_datasets
-
-   # See available datasets
-   for ds in list_datasets():
-       print(f"{ds['name']}: {ds['description']}")
-
-   # Load with options
-   panel = load_dunnhumby(
-       n_households=100,    # subsample
-       min_weeks=10,        # minimum data per household
-       period="month",      # monthly temporal breakdown
-   )
+   panel = BehaviorPanel.from_logs(logs)
