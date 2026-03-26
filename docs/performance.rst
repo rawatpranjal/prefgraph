@@ -22,9 +22,9 @@ embarrassingly parallel and memory is bounded via streaming chunks.
    * - Metrics
      - Throughput
      - Per user
-   * - GARP only
-     - ~12,000/s
-     - 80 us
+   * - GARP only (O(T²))
+     - ~49,000/s
+     - 20 us
    * - GARP + CCEI
      - ~2,400/s
      - 420 us
@@ -61,6 +61,50 @@ Peak memory is determined by chunk size, not total users. With 50K-user
 chunks, expect ~100-200 MB peak regardless of whether you're scoring
 100K or 10M users.
 
+1M-User Benchmarks
+-------------------
+
+Budget Choice (GARP + CCEI + MPI + HARP, T=20-100, K=5):
+
+.. list-table::
+   :header-rows: 1
+   :widths: 25 15 15 15
+
+   * - Config
+     - 10K users
+     - 100K users
+     - 1M users
+   * - GARP only (O(T²))
+     - 0.1s
+     - 2.0s
+     - ~20s
+   * - GARP + CCEI
+     - 4.2s
+     - 39.5s
+     - ~6.6 min
+   * - All 5 metrics
+     - 6.8s
+     - 67.1s
+     - ~11 min
+
+Menu/Discrete Choice (SARP + WARP + Houtman-Maks, 50 items, 20-100 sessions):
+
+.. list-table::
+   :header-rows: 1
+   :widths: 25 15 15 15
+
+   * - Metric
+     - 10K users
+     - 100K users
+     - 1M users
+   * - SARP + WARP + HM
+     - 0.3s
+     - 5.2s
+     - **85.6s**
+
+At 1M users, the Rust engine finds 0% SARP-consistent (random click data),
+67.2% average Houtman-Maks efficiency (fraction of rationalizable clicks).
+
 Algorithm Complexity
 --------------------
 
@@ -72,8 +116,8 @@ Algorithm Complexity
      - Complexity
      - Notes
    * - GARP
-     - O(T^3) / O(sum k_i^3)
-     - SCC decomposition reduces to sum of cubic SCC sizes
+     - **O(T²)** [tight]
+     - SCC arc-scan, no transitive closure (Talla Nobibon+ 2015)
    * - CCEI (AEI)
      - O(T^2 log T) * GARP
      - Discrete binary search over T^2 efficiency ratios
