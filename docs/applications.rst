@@ -102,7 +102,6 @@ Quick reference
 
 .. toctree::
    :maxdepth: 2
-   :hidden:
 
    app_grocery
    app_llm_alignment

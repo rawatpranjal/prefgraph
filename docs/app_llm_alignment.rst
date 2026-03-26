@@ -1,12 +1,8 @@
-Application: LLM Prompt Consistency
-====================================
+LLM Prompt Consistency
+======================
 
 A controlled experiment testing whether different system prompts cause
 LLMs to make inconsistent choices when selecting from package menus.
-
-.. contents:: On this page
-   :local:
-   :depth: 2
 
 Introduction
 ------------
