@@ -29,20 +29,53 @@ python3 dunnhumby/run_all.py           # Full 2,222 households
 
 PyRevealed tests whether observed choices are consistent with rational optimization — without estimating parameters. We test existence ("does a utility function exist?"), not fit models ("which utility function?"). All graph algorithms and LP solving run in Rust via Rayon; Python handles I/O.
 
-### 5 Choice Categories (by data type)
+### 4 Choice Categories × 4 Method Types
 
-| Category | Input | What we test | What we DON'T do |
-|---|---|---|---|
-| **Budget Choice** | prices T×K, quantities T×K | GARP, CCEI, MPI, HARP, HM, VEI, utility recovery | Demand estimation |
-| **Menu Choice** | menus + chosen items | SARP, WARP, HM, attention (WARP-LA) | — |
-| **Stochastic Choice** | menus + choice frequencies | RUM LP, regularity, IIA | Logit/probit MLE |
-| **Production Choice** | input/output prices + quantities | Production GARP, CCEI | Production function estimation |
-| **Intertemporal Choice** | amounts + dates + chosen | Discount factor bounds | Discount rate estimation |
+Primary axis: **data type**. Secondary axis: what the method does.
+
+| | Test (bool) | Score (0→1) | Recover (vector) | Structure (bool) |
+|---|---|---|---|---|
+| **Budget** (prices × quantities) | GARP, WARP, GAPP, Slutsky | CCEI, MPI, HM, VEI, Swaps | Utility, Demand, CV/EV | HARP, Quasilinear, Separability |
+| **Discrete** (menus × choices) | SARP, WARP, WARP-LA, RUM LP, IIA | HM (menu), Regularity | Ordinal utility | Congruence |
+| **Production** (inputs × outputs) | Prod GARP | Prod CCEI | Tech efficiency | Cost min, Returns to scale |
+| **Intertemporal** (dated amounts) | Exp discounting | — | Discount factor δ | Quasi-hyperbolic |
+
+"Discrete" unifies menu choice, stochastic choice, and risk — all "pick from a set" with different item types.
+
+### Full Method Reference with Citations
+
+**Budget Choice:**
+- GARP: SCC + Floyd-Warshall — Varian (1982) *Econometrica*
+- CCEI/AEI: Binary search over T² ratios — Afriat (1967) *IER*
+- MPI: Karp's max-mean-weight cycle — Echenique, Lee & Shum (2011) *JPE*
+- Houtman-Maks: Greedy FVS / ILP — Houtman & Maks (1985)
+- VEI: Per-observation LP — Varian (1990) *J Econometrics*
+- HARP: Log-space Floyd-Warshall — Varian (1983) *RES*
+- Quasilinear: Bellman-Ford negative cycles — Chambers & Echenique (2016) Ch 9
+- GAPP: FW on price preferences — Deb, Kitamura, Quah & Stoye (2023) *RES*
+- Utility Recovery: Afriat LP via HiGHS — Afriat (1967)
+- CV/EV Welfare: Afriat LP + expenditure — Vartia (1983) *Econometrica*
+- Swaps Index: Greedy FAS — Apesteguia & Ballester (2015) *JPE*
+- Min Cost Index: Cycle cost — Dean & Martin (2016) *REStat*
+
+**Discrete Choice:**
+- SARP: FW on item graph — Richter (1966) *Econometrica*
+- WARP-LA: Consideration sets — Masatlioglu, Nakajima & Ozbay (2012) *AER*
+- RUM LP: LP on K! orderings — Block & Marschak (1960); Kitamura & Stoye (2018)
+- Regularity: Subset dominance — Debreu (1960)
+- Congruence: SARP + maximality — Richter (1966)
+
+**Production Choice:**
+- Production GARP: FW on profit graph — Varian (1984) *Econometrica*
+
+**Intertemporal Choice:**
+- Exponential Discounting: Bound propagation — Echenique, Imai & Saito (2020) *AEJ:Micro*
+- Quasi-Hyperbolic: Grid search + LP — Laibson (1997) *QJE*
 
 ### Rust Engine (rpt-core)
 
 ```
-User data (any of 5 types)
+User data (any of 4 types)
     ↓
 PreferenceGraph.parse_*()     ← builds expenditure/preference matrices
     ↓
@@ -56,31 +89,24 @@ Engine results
 ### Core Data Flow
 
 ```
-BehaviorLog (prices + quantities)     MenuChoiceLog (menus + choices)
-    ↓                                      ↓
-┌───────────────────────────────────────┐  ┌─────────────────────────────────┐
-│ Budget Choice (algorithms/ + Rust)    │  │ Menu Choice (algorithms/ + Rust)│
-│  • garp.py → consistency check        │  │  • abstract_choice.py           │
-│  • aei.py → efficiency score (0-1)    │  │    → WARP/SARP/Congruence       │
-│  • mpi.py → exploitability metric     │  │    → Houtman-Maks efficiency    │
-│  • utility.py → preference recovery   │  │  • attention.py                 │
-│  • harp.py → homotheticity test       │  │    → Limited attention models   │
-└───────────────────────────────────────┘  └─────────────────────────────────┘
-
-StochasticChoiceLog (frequencies)     ProductionLog (inputs + outputs)
-    ↓                                      ↓
-┌───────────────────────────────────────┐  ┌─────────────────────────────────┐
-│ Stochastic Choice (Rust LP)           │  │ Production Choice (Rust)        │
-│  • RUM consistency LP                 │  │  • production.py                │
-│  • Regularity test                    │  │    → Profit maximization GARP   │
-│  • IIA test                           │  │    → Cost minimization          │
-└───────────────────────────────────────┘  └─────────────────────────────────┘
-
-Intertemporal data (amounts + dates)
-    ↓
-┌───────────────────────────────────────┐
-│ Intertemporal Choice (Rust)           │
-│  • Exponential discounting bounds     │
+BehaviorLog (prices × quantities)             DiscreteChoiceLog (menus × choices/frequencies)
+    ↓                                              ↓
+┌──────────────────────────────────────┐  ┌────────────────────────────────────┐
+│ Budget Choice (Rust)                 │  │ Discrete Choice (Rust)             │
+│  Test:  GARP, WARP, GAPP            │  │  Test:  SARP, WARP, WARP-LA,      │
+│  Score: CCEI, MPI, HM, VEI          │  │         RUM LP, IIA               │
+│  Recover: Utility, Demand, CV/EV    │  │  Score: HM (menu)                 │
+│  Structure: HARP, Separability      │  │  Recover: Ordinal utility          │
+└──────────────────────────────────────┘  │  Structure: Congruence, Regularity│
+                                          └────────────────────────────────────┘
+ProductionLog (inputs × outputs)          Intertemporal data (amounts × dates)
+    ↓                                          ↓
+┌──────────────────────────────────────┐  ┌────────────────────────────────────┐
+│ Production Choice (Rust)             │  │ Intertemporal Choice (Rust)        │
+│  Test:  Prod GARP                    │  │  Test:  Exp discounting            │
+│  Score: Prod CCEI                    │  │  Recover: Discount factor δ        │
+│  Structure: Cost min, RTS            │  │  Structure: Quasi-hyperbolic       │
+└──────────────────────────────────────┘  └────────────────────────────────────┘
 └───────────────────────────────────────┘
 ```
 
@@ -88,49 +114,38 @@ Intertemporal data (amounts + dates)
 
 | Module | Category | Computation |
 |---|---|---|
-| garp.py | Budget | SCC + Floyd-Warshall cycle detection |
-| aei.py | Budget | Discrete binary search over efficiency ratios |
-| mpi.py | Budget | Karp's max-mean-weight cycle |
-| harp.py | Budget | Log-space Floyd-Warshall (max-product paths) |
-| utility.py | Budget | Afriat LP via HiGHS |
-| vei.py | Budget | Per-observation efficiency LP |
-| abstract_choice.py | Menu | Floyd-Warshall on item graph |
-| attention.py | Menu | WARP-LA, consideration sets |
-| production.py | Production | Profit graph + Floyd-Warshall |
-| quasilinear.py | Budget | Bellman-Ford negative cycle |
+| garp.py | Budget | SCC + Floyd-Warshall — Varian (1982) |
+| aei.py | Budget | Discrete binary search — Afriat (1967) |
+| mpi.py | Budget | Karp's max-mean cycle — Echenique+ (2011) |
+| harp.py | Budget | Log-space FW — Varian (1983) |
+| utility.py | Budget | Afriat LP — Afriat (1967) |
+| vei.py | Budget | Per-obs efficiency LP — Varian (1990) |
+| abstract_choice.py | Discrete | FW on item graph — Richter (1966) |
+| attention.py | Discrete | WARP-LA — Masatlioglu+ (2012) |
+| stochastic.py | Discrete | RUM LP — Kitamura & Stoye (2018) |
+| production.py | Production | Profit graph FW — Varian (1984) |
+| quasilinear.py | Budget | Bellman-Ford — C&E (2016) Ch 9 |
+| intertemporal.py | Intertemporal | Bound propagation — Echenique+ (2020) |
 
-### Contrib (deprecated from core — MLE/estimation, not graph/LP)
+### Contrib (deprecated — MLE/estimation)
 
-Located in `src/pyrevealed/contrib/`. Import shims with DeprecationWarning.
-Stochastic MLE, Risk, Integrability, Ranking, Spatial, etc.
+Located in `src/pyrevealed/contrib/`. Logit/Luce MLE, CRRA estimation, Bradley-Terry,
+Slutsky regression, Spatial ideal point. Import shims with DeprecationWarning.
 
-### API Pattern
-
-```python
-from pyrevealed.engine import Engine
-
-# Budget choice (default)
-engine = Engine(metrics=["garp", "ccei", "mpi"])
-results = engine.analyze_arrays(users)
-
-# All data types supported via Engine
-```
-
-Old single-user API still works: `check_garp(log)`, `compute_aei(log)`, etc.
-These auto-route to Rust when available.
-
-### Key Modules (Rust)
+### Rust Engine (rpt-core)
 
 ```
 rust/crates/rpt-core/src/
-├── garp.rs, ccei.rs, mpi.rs, harp.rs     ← Budget
-├── menu.rs, attention.rs                   ← Menu
-├── stochastic.rs                           ← Stochastic (RUM LP)
+├── garp.rs, ccei.rs, mpi.rs, harp.rs     ← Budget (Test + Score)
+├── utility.rs, vei.rs, welfare.rs         ← Budget (Recover)
+├── quasilinear.rs, additive.rs            ← Budget (Structure)
+├── separability.rs, gapp.rs, variants.rs  ← Budget (Structure)
+├── menu.rs, attention.rs, stochastic.rs   ← Discrete
 ├── production.rs                           ← Production
 ├── intertemporal.rs                        ← Intertemporal
 ├── graph.rs, closure.rs, scc.rs            ← Infrastructure
-├── lp.rs                                   ← HiGHS LP/ILP solver
-└── 57 tests passing
+├── lp.rs, houtman_maks.rs                 ← Shared (LP, FVS)
+└── 57 tests
 ```
 
 ### Production Data Flow
