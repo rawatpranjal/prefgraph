@@ -210,7 +210,7 @@ class Engine:
         tolerance: Numerical tolerance for GARP comparisons.
     """
 
-    SUPPORTED_METRICS = {"garp", "ccei", "mpi", "harp", "hm", "utility", "vei", "vei_exact"}
+    SUPPORTED_METRICS = {"garp", "ccei", "mpi", "harp", "hm", "utility", "vei", "vei_exact", "network"}
 
     def __init__(
         self,
@@ -355,6 +355,7 @@ class Engine:
             "utility": "utility" in self.metrics,
             "vei": "vei" in self.metrics,
             "vei_exact": "vei_exact" in self.metrics,
+            "network": "network" in self.metrics,
         }
 
         for start in range(0, n, self.chunk_size):
@@ -423,6 +424,7 @@ class Engine:
             flags.get("utility", False),
             flags.get("vei", False),
             flags.get("vei_exact", False),
+            flags.get("network", False),
             self.tolerance,
         )
 
@@ -534,6 +536,7 @@ class Engine:
 
                 raw = _rust_analyze_menu_batch(
                     menus_list, choices_list, n_items_list, compute_warp_la,
+                    "network" in self.metrics,
                 )
                 all_results.extend(
                     MenuResult(
@@ -652,6 +655,7 @@ class Engine:
             "utility": "utility" in self.metrics,
             "vei": "vei" in self.metrics,
             "vei_exact": "vei_exact" in self.metrics,
+            "network": "network" in self.metrics,
         }
 
         if output_path is not None:
@@ -690,6 +694,7 @@ class Engine:
             "utility" in self.metrics,
             "vei" in self.metrics,
             "vei_exact" in self.metrics,
+            "network" in self.metrics,
             self.tolerance,
             self.chunk_size,
         )
