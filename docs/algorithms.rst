@@ -65,26 +65,31 @@ reveal :math:`A \succeq B`. If you then choose :math:`B` when :math:`A` was
 strictly cheaper, you have a contradiction (:math:`B \succ A`), implying no stable
 utility function can explain your behavior.
 
-.. raw:: html
-
-   <div style="display: flex; gap: 40px; margin-top: 20px; margin-bottom: 24px; align-items: flex-start; justify-content: center; flex-wrap: wrap;">
-       <div style="flex: 1; min-width: 300px; text-align: center;">
-           <img src="_static/floyd_warshall.gif" style="width: 100%; max-width: 400px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
-           <p style="font-size: 0.9em; color: #666; margin-top: 8px;">Floyd-Warshall (O(T³))</p>
-       </div>
-       <div style="flex: 1; min-width: 300px; text-align: center;">
-           <img src="_static/scc_tarjan.gif" style="width: 100%; max-width: 400px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
-           <p style="font-size: 0.9em; color: #666; margin-top: 8px;">Tarjan's SCC (O(T²))</p>
-       </div>
-   </div>
-
 **Traditional approach** (pre-2015): Build the direct revealed preference graph
 :math:`G_{R_0}`, compute its transitive closure :math:`R^*` via Floyd-Warshall in
 :math:`O(T^3)`, then check :math:`\neg(i R^* j \wedge j P_0 i)` for all pairs.
 
+.. raw:: html
+
+   <div style="margin: 2em 0;">
+       <div style="text-align: center;">
+           <img src="_static/floyd_warshall.gif" style="width: 100%; max-width: 550px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
+           <p style="font-size: 0.9em; color: #666; margin-top: 8px;">Floyd-Warshall builds the full transitive closure R* in O(T³)</p>
+       </div>
+   </div>
+
 **Our approach**: Talla Nobibon, Smeulders & Spieksma (2015, *JOTA* 166(3)) proved
 that transitive closure is unnecessary. Instead, we use **Strongly Connected
 Components (SCCs)**.
+
+.. raw:: html
+
+   <div style="margin: 2em 0;">
+       <div style="text-align: center;">
+           <img src="_static/scc_tarjan.gif" style="width: 100%; max-width: 550px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
+           <p style="font-size: 0.9em; color: #666; margin-top: 8px;">Tarjan's SCC detects GARP violations in O(T²) — no closure needed</p>
+       </div>
+   </div>
 
 .. admonition:: Theorem (Talla Nobibon et al., 2015)
 
@@ -359,60 +364,92 @@ A violation occurs if : :math:`R_p^*[s,t] \wedge P_p[t,s]`. This is the same str
 **Reference**: Deb, Kitamura, Quah & Stoye (2023, *RES*).
 
 
-Menu-Based Methods
-------------------
+Stochastic Choice and RUM
+-------------------------
 
-SARP / WARP — :math:`O(T^2)` SCC on Item Graph
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+**Definition**: Stochastic choice models analyze the probability :math:`P(x|A)` of
+choosing item :math:`x` from a menu :math:`A`. A Random Utility Model (RUM) assumes
+the consumer has a utility :math:`U_i = V_i + \epsilon_i` where :math:`\epsilon_i` is
+a random error term.
 
-**Definition**: For discrete choice data (menus + single picks), the Weak Axiom (WARP)
-and Strong Axiom (SARP) test the consistency of selection.
+**Key Axioms**:
+- **Regularity**: :math:`P(x|A) \geq P(x|B)` whenever :math:`A \subseteq B`. Removing
+  options from a menu should not decrease the probability of choosing an existing item.
+- **IIA (Independence of Irrelevant Alternatives)**: The ratio of probabilities
+  between two items :math:`P(x|A)/P(y|A)` should be constant across all menus
+  containing both :math:`x` and :math:`y`.
 
-**Intuition**:
-If you chose Apple when Orange was available, you reveal Apple :math:`\succeq` Orange.
-- **WARP**: No direct reversals. If you reveal Apple :math:`\succ` Orange, you
-  cannot later choose Orange when Apple is available.
-- **SARP**: No cycles. If Apple :math:`\succ` Orange and Orange :math:`\succ` Banana,
-  you cannot choose Banana when Apple is available.
-
-**Algorithm**:
-We construct a **Directed Preference Graph** where nodes are the **items** (not
-the observations). An edge :math:`i \to j` exists if item :math:`i` was chosen
-from a menu containing item :math:`j`.
-1. Build the choice-graph — :math:`O(T \times \text{menu\_size})`.
-2. Find SCCs using Tarjan's algorithm — :math:`O(K + E)` where :math:`K` is items.
-3. SARP is violated if any SCC contains a strict preference (choosing :math:`i`
-   over :math:`j` when :math:`j` was available).
+**Algorithms**:
+PyRevealed implements maximum likelihood estimation for:
+- **Logit**: Errors :math:`\epsilon` follow a Gumbel distribution (IIA holds).
+- **Luce Model**: Probability of choosing :math:`x` is proportional to its weight :math:`w_x`.
 
 .. rubric:: Implementation
 
-- **Rust**: ``rpt-core/src/menu.rs`` — ``menu_sarp_check()`` and ``menu_warp_check()``.
+- **Python**: ``src/pyrevealed/contrib/stochastic.py`` — ``fit_random_utility_model()``.
+
+**References**: McFadden (1974); Chambers & Echenique (2016), Chapter 13.
 
 
-WARP-LA (Limited Attention) — Consideration Sets
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Practical Usage: Code Examples
+------------------------------
 
-**Definition**: WARP with Limited Attention (Masatlioglu et al., 2012) tests
-whether choices are consistent with a preference order and an **attention filter**.
+The following examples demonstrate how to call the primary algorithms using the
+Python API.
 
-**Intuition**: In large menus (like Amazon or Netflix), you don't actually see
-every item. If you choose :math:`x` even though :math:`y` is better, it may not
-be "irrational"—it may be that you didn't even *consider* :math:`y`.
-WARP-LA allows for this by requiring only that your attention is "consistent":
-removing an item you *didn't* choose shouldn't change which items you *do* consider.
+**GARP and CCEI (Budget Data)**
 
-**Example**:
-Suppose from menu {A, B, C}, you choose B.
-If you later choose A from menu {A, B}, you have violated WARP.
-However, this is consistent with **Limited Attention** if, in the first case,
-having C in the menu "distracted" you from seeing A. But if we remove C and you
-*still* don't choose A, then the contradiction remains.
+.. code-block:: python
 
-.. rubric:: Implementation
+   from pyrevealed import BehaviorLog, validate_consistency, compute_integrity_score
 
-- **Rust**: ``rpt-core/src/attention.rs`` — ``warp_la_check()``.
+   # 1. Create a log (Prices p and Quantities x)
+   log = BehaviorLog(cost_vectors=p, action_vectors=x)
 
-**Reference**: Masatlioglu, Nakajima & Ozbay (2012, *AER*).
+   # 2. Test GARP (O(T²))
+   result = validate_consistency(log)
+   print(f"Consistent: {result.is_consistent}")
+
+   # 3. Compute CCEI (O(T² log T))
+   ccei = compute_integrity_score(log)
+   print(f"CCEI: {ccei.efficiency_index:.4f}")
+
+**SARP and WARP (Menu Data)**
+
+.. code-block:: python
+
+   from pyrevealed import MenuChoiceLog, menu_sarp_check
+
+   # 1. Create a log (Menus and chosen item indices)
+   log = MenuChoiceLog(menus=menus, picks=picks)
+
+   # 2. Test SARP (O(T²))
+   result = menu_sarp_check(log)
+   print(f"SARP Consistent: {result.is_consistent}")
+
+**Money Pump Index (MPI)**
+
+.. code-block:: python
+
+   from pyrevealed import compute_confusion_metric
+
+   # Calculate the max average savings per cycle (O(T³))
+   mpi = compute_confusion_metric(log)
+   print(f"Money Pump Index: {mpi.mpi_value:.4f}")
+
+**Stochastic Choice (RUM)**
+
+.. code-block:: python
+
+   from pyrevealed import StochasticChoiceLog, fit_random_utility_model
+
+   # 1. Create a log (Menus and choice frequencies)
+   log = StochasticChoiceLog(menus=menus, counts=counts)
+
+   # 2. Fit Logit model
+   result = fit_random_utility_model(log, model_type="logit")
+   print(f"Log-Likelihood: {result.log_likelihood:.2f}")
+   print(f"Satisfies IIA: {result.satisfies_iia}")
 
 
 Solver Stack
