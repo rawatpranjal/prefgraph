@@ -61,29 +61,36 @@ def save_results(results: list[BenchmarkResult], output_dir: Path) -> None:
 
 def print_summary(results: list[BenchmarkResult]) -> None:
     """Print a formatted summary table to stdout."""
-    print("\n" + "=" * 90)
-    print(" ML BENCHMARK: Revealed Preference Features as Predictive Signals")
-    print("=" * 90)
-
-    # Classification results
     cls_results = [r for r in results if r.task_type == "classification"]
+    reg_results = [r for r in results if r.task_type == "regression"]
+    total_n = sum(r.n_users for r in results)
+
+    print("\n" + "=" * 90)
+    print(" ML BENCHMARK: RP Features as Predictive Signals")
+    print("=" * 90)
+    print(f"\n  {len(results)} tasks across {len(set(r.dataset for r in results))} datasets, "
+          f"{total_n:,} total users.")
     if cls_results:
-        print("\n  Classification Tasks — Out-of-Sample AUC-ROC (5-fold Stratified CV)")
-        print("  " + "-" * 100)
-        print(f"  {'Dataset':<18} {'Target':<18} {'N':>6} {'%pos':>5}  {'RP only':>10}  {'Baseline':>10}  {'Combined':>10}  {'Lift %':>7}")
-        print("  " + "-" * 100)
+        lifts = [(r.auc_combined - r.auc_base) / max(r.auc_base, 0.5) * 100
+                 for r in cls_results if r.auc_base > 0.5]
+        if lifts:
+            print(f"  Marginal lift from RP features: {min(lifts):+.1f}% to {max(lifts):+.1f}% AUC.")
+    print()
+
+    # Main table: focus on Baseline → Combined → Lift
+    if cls_results:
+        print("  Classification (AUC-ROC, 5-fold Stratified CV)")
+        print("  " + "-" * 88)
+        print(f"  {'Dataset':<18} {'Target':<18} {'N':>6} {'%pos':>5}  {'Baseline':>10}  {'+RP':>10}  {'Lift%':>7}  {'AUC-PR':>7}")
+        print("  " + "-" * 88)
         for r in cls_results:
-            # Lift as percentage of baseline
-            if r.auc_base > 0 and r.auc_base != 0.5:
-                pct_lift = (r.auc_combined - r.auc_base) / r.auc_base * 100
-            else:
-                pct_lift = 0.0
+            pct_lift = (r.auc_combined - r.auc_base) / max(r.auc_base, 0.5) * 100 if r.auc_base > 0.5 else 0.0
             print(
                 f"  {r.dataset:<18} {r.target:<18} {r.n_users:>6} {r.positive_rate:>5.1%}  "
-                f"{r.auc_rp:>.3f}±{r.auc_rp_std:.3f}  {r.auc_base:>.3f}±{r.auc_base_std:.3f}  "
-                f"{r.auc_combined:>.3f}±{r.auc_combined_std:.3f}  {pct_lift:>+6.1f}%"
+                f"{r.auc_base:>.3f}±{r.auc_base_std:.3f}  {r.auc_combined:>.3f}±{r.auc_combined_std:.3f}  "
+                f"{pct_lift:>+6.1f}%  {r.ap_combined:>7.3f}"
             )
-        print("  " + "-" * 100)
+        print("  " + "-" * 88)
 
         print("\n  Classification Tasks — AUC-PR (Average Precision, better for imbalanced targets)")
         print("  " + "-" * 100)
