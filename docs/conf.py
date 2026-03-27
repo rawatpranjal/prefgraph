@@ -48,6 +48,13 @@ html_theme_options = {
     "show_toc_level": 2,
     "navigation_with_keys": True,
     "show_prev_next": False,
+    "secondary_sidebar_items": [],  # Remove right sidebar globally
+}
+
+# Algorithms and Performance: add in-page section nav to left sidebar
+html_sidebars = {
+    "algorithms": ["sidebar-nav-bs", "page-toc"],
+    "performance": ["sidebar-nav-bs", "page-toc"],
 }
 
 # -- Extension configuration -------------------------------------------------
