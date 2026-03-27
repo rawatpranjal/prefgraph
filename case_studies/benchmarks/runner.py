@@ -26,12 +26,8 @@ from case_studies.benchmarks.core.reporting import print_summary, save_results, 
 
 AVAILABLE_DATASETS = {
     "dunnhumby": "case_studies.benchmarks.datasets.dunnhumby_bench",
-    "uci_retail": "case_studies.benchmarks.datasets.uci_retail_bench",
-    "retailrocket": "case_studies.benchmarks.datasets.retailrocket_bench",
+    "open_ecommerce": "case_studies.benchmarks.datasets.open_ecommerce_bench",
     "instacart": "case_studies.benchmarks.datasets.instacart_bench",
-    "yoochoose": "case_studies.benchmarks.datasets.yoochoose_bench",
-    "olist": "case_studies.benchmarks.datasets.olist_bench",
-    "m5": "case_studies.benchmarks.datasets.m5_bench",
     "rees46": "case_studies.benchmarks.datasets.rees46_bench",
 }
 
@@ -47,21 +43,13 @@ def run_dataset(name: str, max_users: int | None = None) -> list[BenchmarkResult
     if name == "dunnhumby":
         if max_users:
             kwargs["n_households"] = max_users
-    elif name == "uci_retail":
+    elif name == "open_ecommerce":
         if max_users:
-            kwargs["n_customers"] = max_users
-    elif name == "retailrocket":
-        if max_users:
-            kwargs["max_users"] = max_users
-    elif name in ("instacart", "yoochoose"):
-        kwargs["max_users"] = max_users or 5000
-    elif name == "olist":
-        if max_users:
-            kwargs["max_users"] = max_users
-    elif name == "m5":
-        pass  # M5 has fixed store count
+            kwargs["n_users"] = max_users
+    elif name == "instacart":
+        kwargs["max_users"] = max_users or 50000
     elif name == "rees46":
-        kwargs["max_users"] = max_users or 10000
+        kwargs["max_users"] = max_users or 50000
 
     try:
         return mod.run_benchmark(**kwargs)

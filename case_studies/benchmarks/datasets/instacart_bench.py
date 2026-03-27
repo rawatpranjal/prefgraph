@@ -17,7 +17,7 @@ DATASET_NAME = "Instacart"
 NUM_DEPARTMENTS = 21
 
 
-def load_and_prepare(data_dir=None, max_users=5000):
+def load_and_prepare(data_dir=None, max_users=50000):
     """Load Instacart and prepare train/target splits.
 
     Since Instacart doesn't have price data, we use uniform prices ($1 per unit).
@@ -92,7 +92,7 @@ def load_and_prepare(data_dir=None, max_users=5000):
     return X_rp, X_base, targets_dict, user_ids
 
 
-def run_benchmark(data_dir=None, max_users=5000) -> list[BenchmarkResult]:
+def run_benchmark(data_dir=None, max_users=50000) -> list[BenchmarkResult]:
     """Run all Instacart benchmarks."""
     X_rp, X_base, targets_dict, user_ids = load_and_prepare(data_dir, max_users)
 

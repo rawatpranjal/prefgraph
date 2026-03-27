@@ -36,7 +36,7 @@ def _split_menu_log(log: MenuChoiceLog, fraction: float):
     return train, test
 
 
-def load_and_prepare(data_dir=None, max_users=10000):
+def load_and_prepare(data_dir=None, max_users=50000):
     """Load REES46 and prepare train/target splits."""
     from pyrevealed.datasets._rees46 import load_rees46
 
@@ -91,7 +91,7 @@ def load_and_prepare(data_dir=None, max_users=10000):
     return X_rp, X_base, targets_dict, user_ids
 
 
-def run_benchmark(data_dir=None, max_users=10000) -> list[BenchmarkResult]:
+def run_benchmark(data_dir=None, max_users=50000) -> list[BenchmarkResult]:
     """Run all REES46 benchmarks."""
     X_rp, X_base, targets_dict, user_ids = load_and_prepare(data_dir, max_users)
 
