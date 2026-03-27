@@ -1,14 +1,22 @@
-Recommendation Clicks
-=====================
+Recommender Systems
+===================
 
 Test whether users' click patterns from recommendation menus reveal
 consistent preferences, and use consistency scores for segmentation
 and churn detection.
 
+.. raw:: html
+
+   <div style="margin: 1.5em 0;"></div>
+
 .. image:: ../_static/app_recsys_hero.jpg
    :width: 70%
    :align: center
-   :alt: E-commerce product browsing
+   :alt: Person clicking on search results and recommendations
+
+.. raw:: html
+
+   <div style="margin: 1.5em 0;"></div>
 
 Introduction
 ------------
