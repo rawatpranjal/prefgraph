@@ -106,7 +106,7 @@ Empirical benchmarks: CCEI ≈ 0.88 in lab experiments (Choi et al., 2014); HM �
 E-commerce Benchmarks
 ---------------------
 
-Six public datasets, 162K users, LightGBM with 5-fold stratified CV.
+Six public datasets, 117K users, LightGBM with 5-fold stratified CV.
 Full results: :doc:`benchmarks_ecommerce`.
 
 .. list-table::
@@ -122,7 +122,7 @@ Full results: :doc:`benchmarks_ecommerce`.
      - 2,222
      - High Spender
      - 0.958
-     - 0.959
+     - 0.960
    * - Open E-Commerce
      - 4,694
      - Churn
@@ -141,13 +141,13 @@ Full results: :doc:`benchmarks_ecommerce`.
    * - REES46
      - 8,832
      - High Engagement
-     - 0.941
-     - 0.941
+     - 0.996
+     - 0.996
    * - Taobao
      - 4,239
      - High Engagement
-     - 0.907
-     - **0.913**
+     - 0.913
+     - 0.913
 
 RP features add 0–0.7% AUC over strong RFM baselines. The lift is real but modest.
 
