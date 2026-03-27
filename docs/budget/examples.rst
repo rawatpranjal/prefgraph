@@ -247,9 +247,9 @@ measures what fraction of random consumers would fail on the same budgets:
 
 .. code-block:: text
 
-   Bronars power: 0.344
+   Bronars power: 0.104
    Significant: False
-   Selten m: 0.344  (m = pass_rate - relative_area)
+   Selten m: 0.104  (m = pass_rate - relative_area)
 
 With only 2 observations, power is low --- most random consumers also
 pass GARP. With 50+ observations, power approaches 1.0.
