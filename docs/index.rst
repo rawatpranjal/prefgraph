@@ -87,6 +87,7 @@ PyRevealed's methodology is grounded in the formal frameworks established in `Ch
    :maxdepth: 2
    :hidden:
 
+   quickstart
    budget/index
    menu/index
    algorithms

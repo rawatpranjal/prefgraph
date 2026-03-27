@@ -28,7 +28,31 @@ from pyrevealed._rust_backend import (
 
 @dataclass
 class EngineResult:
-    """Result for one user from the Engine (budget data)."""
+    """Result for one user from the Engine (budget data).
+
+    Contains all metrics requested via ``Engine(metrics=[...])``. Fields
+    for unrequested metrics retain their defaults (e.g. ``ccei=1.0``).
+
+    Attributes:
+        is_garp: True if choices satisfy GARP (no revealed-preference cycles).
+        n_violations: Number of GARP violation pairs. 0 when consistent.
+        ccei: Critical Cost Efficiency Index (Afriat 1967). 1.0 = perfectly
+            rational; lower values indicate wasted budget. Range: (0, 1].
+        mpi: Money Pump Index (Echenique, Lee & Shum 2011). Average
+            exploitability per dollar. 0.0 = unexploitable. Range: [0, 1).
+        is_harp: True if choices satisfy HARP (homothetic preferences).
+        hm_consistent: Houtman-Maks: size of largest GARP-consistent subset.
+        hm_total: Total observations. ``hm_consistent / hm_total`` = noise fraction.
+        utility_success: True if Afriat's LP recovered a rationalizing utility.
+        vei_mean: Mean Varian Efficiency Index across observations. Range: [0, 1].
+        vei_min: Worst-observation VEI. Range: [0, 1].
+        vei_exact_mean: VEI via exact LP (vs binary-search approximation).
+        vei_exact_min: Exact VEI, worst observation.
+        max_scc: Largest strongly connected component in preference graph.
+            1 = acyclic (no entangled violations).
+        compute_time_us: Wall-clock computation time in microseconds.
+    """
+
     is_garp: bool
     n_violations: int = 0
     ccei: float = 1.0
@@ -48,6 +72,28 @@ class EngineResult:
         """Return dictionary representation for serialization."""
         return {f.name: getattr(self, f.name) for f in fields(self)}
 
+    def summary(self) -> str:
+        """Return human-readable summary report."""
+        indicator = "[+]" if self.is_garp else "[-]"
+        status = "GARP-consistent" if self.is_garp else f"{self.n_violations} GARP violations"
+        lines = [f"Engine Budget Report: {indicator} {status}"]
+        lines.append(f"  CCEI:  {self.ccei:.4f}")
+        if self.mpi > 0.0:
+            lines.append(f"  MPI:   {self.mpi:.4f}")
+        if self.is_harp:
+            lines.append("  HARP:  yes (homothetic)")
+        if self.hm_total > 0:
+            frac = self.hm_consistent / self.hm_total
+            lines.append(f"  HM:    {self.hm_consistent}/{self.hm_total} ({frac:.0%} consistent)")
+        if self.utility_success:
+            lines.append("  Utility: recovered")
+        if self.vei_mean < 1.0:
+            lines.append(f"  VEI:   mean={self.vei_mean:.4f}  min={self.vei_min:.4f}")
+        if self.max_scc > 1:
+            lines.append(f"  SCC:   {self.max_scc} (entangled violations)")
+        lines.append(f"  Time:  {self.compute_time_us}us")
+        return "\n".join(lines)
+
     def __repr__(self) -> str:
         indicator = "[+]" if self.is_garp else "[-]"
         status = "GARP-consistent" if self.is_garp else f"{self.n_violations} violations"
@@ -63,7 +109,25 @@ class EngineResult:
 
 @dataclass
 class MenuResult:
-    """Result for one user from menu/discrete choice analysis."""
+    """Result for one user from menu/discrete choice analysis.
+
+    Contains SARP, WARP, and optionally WARP-LA consistency tests plus
+    Houtman-Maks noise fraction for discrete (menu-based) choice data.
+
+    Attributes:
+        is_sarp: True if choices satisfy SARP (no preference cycles of any length).
+        is_warp: True if choices satisfy WARP (no direct preference reversals).
+        is_warp_la: True if choices satisfy WARP under limited attention
+            (Masatlioglu, Nakajima & Ozbay 2012). Only computed when
+            ``compute_warp_la=True``.
+        n_sarp_violations: Number of SARP violation cycles found.
+        n_warp_violations: Number of WARP violation pairs found.
+        hm_consistent: Houtman-Maks: size of largest SARP-consistent subset.
+        hm_total: Total observations. ``hm_consistent / hm_total`` = consistency fraction.
+        max_scc: Largest SCC in the item preference graph. 1 = acyclic.
+        compute_time_us: Wall-clock computation time in microseconds.
+    """
+
     is_sarp: bool
     is_warp: bool
     is_warp_la: bool = False
@@ -77,6 +141,25 @@ class MenuResult:
     def to_dict(self) -> dict[str, Any]:
         """Return dictionary representation for serialization."""
         return {f.name: getattr(self, f.name) for f in fields(self)}
+
+    def summary(self) -> str:
+        """Return human-readable summary report."""
+        indicator = "[+]" if self.is_sarp else "[-]"
+        status = "SARP-consistent" if self.is_sarp else f"{self.n_sarp_violations} SARP violations"
+        lines = [f"Engine Menu Report: {indicator} {status}"]
+        if not self.is_warp:
+            lines.append(f"  WARP:  {self.n_warp_violations} violations")
+        else:
+            lines.append("  WARP:  consistent")
+        if self.is_warp_la:
+            lines.append("  WARP-LA: consistent (limited attention)")
+        if self.hm_total > 0:
+            frac = self.hm_consistent / self.hm_total
+            lines.append(f"  HM:    {self.hm_consistent}/{self.hm_total} ({frac:.0%} consistent)")
+        if self.max_scc > 1:
+            lines.append(f"  SCC:   {self.max_scc}")
+        lines.append(f"  Time:  {self.compute_time_us}us")
+        return "\n".join(lines)
 
     def __repr__(self) -> str:
         indicator = "[+]" if self.is_sarp else "[-]"
