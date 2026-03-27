@@ -1,35 +1,41 @@
-PrefGraph
-==========
+Preference Graphs
+==================
 
-You have data on what people chose. PrefGraph tests whether those choices are rational — whether any coherent preference ordering explains them. Each user gets a score from 0 (incoherent) to 1 (perfectly consistent).
+Build a preference graph from observed choices. Test it for cycles.
+Score how rational it is. PrefGraph does this at scale — for shoppers,
+recommender clicks, or LLM decisions.
+
+Every choice reveals a preference edge: "A was chosen over B." These
+edges form a **preference graph**. If the graph is acyclic, a coherent
+ranking exists. If it has cycles, the choices are inconsistent — and
+PrefGraph scores *how much* (0 = incoherent, 1 = perfectly rational).
 
 .. raw:: html
 
    <div class="feature-grid">
      <div class="feature-card">
-       <h3>Axiomatic Scoring</h3>
-       <p>Quantify consistency via GARP, SARP, and WARP. Compute efficiency indices including CCEI (0–1), Money Pump Index (MPI), and Houtman-Maks noise fractions.</p>
+       <h3>Build Preference Graphs</h3>
+       <p>From budget data (prices × quantities) or menu data (choice sets × picks), build the revealed preference graph. Each choice adds a directed edge.</p>
      </div>
      <div class="feature-card">
-       <h3>Heterogeneous Data</h3>
-       <p>Support for budget-constrained choices (price-quantity pairs) and discrete menu-based selections (item-set pairs) across large-scale longitudinal datasets.</p>
+       <h3>Detect Cycles</h3>
+       <p>Test GARP, SARP, WARP — does the preference graph have cycles? If yes, no coherent ranking exists. Floyd-Warshall transitive closure + Tarjan SCC decomposition.</p>
      </div>
      <div class="feature-card">
-       <h3>Computational Engine</h3>
-       <p>Optimized Rust backend utilizing graph-theoretic algorithms and HiGHS linear programming, parallelized via Rayon for high-throughput processing.</p>
+       <h3>Score Consistency</h3>
+       <p>CCEI (0–1), Money Pump Index, Houtman-Maks, Varian Efficiency — all measure how close the preference graph is to acyclic. Each user gets a rationality score.</p>
      </div>
      <div class="feature-card">
        <h3>Two API Layers</h3>
-       <p><strong>Engine</strong> — batch scoring via Rust/Rayon. <strong>Functions</strong> — single-user deep dives.</p>
-       <p>Results are dataclasses with <code>.to_dict()</code> / <code>.summary()</code>, pandas and sklearn ready.</p>
+       <p><strong>Engine</strong> — batch scoring via Rust/Rayon (49K users/sec). <strong>Functions</strong> — single-user deep dives with full preference graph output.</p>
      </div>
      <div class="feature-card">
-       <h3>Algorithms</h3>
-       <p>Graph closure, cycle detection, linear programming, and combinatorial search — all implemented in Rust.</p>
+       <h3>Graph Algorithms in Rust</h3>
+       <p>Floyd-Warshall, Tarjan SCC, Karp's max-mean cycle, HiGHS LP — all in Rust with Rayon parallelism. Python fallback available.</p>
      </div>
      <div class="feature-card">
        <h3>Post-Estimation</h3>
-       <p>Once you have a consistency score, go further: recover the underlying utility function, compute welfare bounds, test for separability, or measure statistical power.</p>
+       <p>From the preference graph: recover utility functions, compute welfare bounds, test separability, detect IIA violations (decoy effects).</p>
      </div>
    </div>
 
@@ -37,10 +43,18 @@ You have data on what people chose. PrefGraph tests whether those choices are ra
 
    pip install prefgraph
 
-Why Revealed Preference?
-------------------------
+Why Preference Graphs?
+-----------------------
 
-Most approaches assume a model of preferences first, then fit parameters. Revealed preference works backwards: take raw choices and ask "could any rational model have produced these?" No assumptions about what people want — just a consistency check on what they did. Afriat (1967), Varian (1982).
+Most approaches assume a model of preferences first, then fit parameters.
+Preference graphs work backwards: take raw choices, build the revealed
+preference graph, and ask "is it acyclic?" No assumptions about what
+people want — just a consistency check on what they did.
+
+A cycle in the preference graph (A > B > C > A) means no ranking
+explains the choices. Detecting and measuring these cycles is what
+PrefGraph does — using Floyd-Warshall, Tarjan SCC, and Karp's algorithm
+on the preference graph. Afriat (1967), Varian (1982).
 
 .. raw:: html
 
