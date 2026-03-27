@@ -186,6 +186,7 @@ struct MetricFlags {
     utility: bool,
     vei: bool,
     vei_exact: bool,
+    network: bool,
 }
 
 /// Output from processing one user.
@@ -294,7 +295,7 @@ fn process_users_parallel(
 
                 // Graph network features — compute before CCEI which may modify state
                 let (r_density, r_out_degree_std, degree_gini, ew_mean, ew_std, ew_skew) =
-                    compute_graph_stats(graph);
+                    if flags.network { compute_graph_stats(graph) } else { (0.0, 0.0, 0.0, 0.0, 0.0, 0.0) };
 
                 let ccei = if flags.ccei && !garp.is_consistent {
                     ccei_search(graph, tolerance).ccei
@@ -395,7 +396,7 @@ fn results_to_pydicts<'py>(py: Python<'py>, results: Vec<UserOut>) -> Vec<Bound<
 /// R/P/closure reused across metrics. MPI uses Karp's max-mean-weight cycle
 /// (theory-correct). CCEI runs last since it may modify graph state.
 #[pyfunction]
-#[pyo3(signature = (prices_list, quantities_list, compute_ccei=true, compute_mpi=false, compute_harp=false, compute_hm=false, compute_utility=false, compute_vei=false, compute_vei_exact=false, tolerance=1e-10))]
+#[pyo3(signature = (prices_list, quantities_list, compute_ccei=true, compute_mpi=false, compute_harp=false, compute_hm=false, compute_utility=false, compute_vei=false, compute_vei_exact=false, compute_network=false, tolerance=1e-10))]
 pub fn analyze_batch<'py>(
     py: Python<'py>,
     prices_list: Vec<PyReadonlyArray2<'py, f64>>,
@@ -407,6 +408,7 @@ pub fn analyze_batch<'py>(
     compute_utility: bool,
     compute_vei: bool,
     compute_vei_exact: bool,
+    compute_network: bool,
     tolerance: f64,
 ) -> PyResult<Vec<Bound<'py, PyDict>>> {
     let n_users = prices_list.len();
@@ -423,6 +425,7 @@ pub fn analyze_batch<'py>(
         utility: compute_utility,
         vei: compute_vei,
         vei_exact: compute_vei_exact,
+        network: compute_network,
     };
 
     let results = process_users_parallel(&users, flags, tolerance);
@@ -436,13 +439,14 @@ pub fn analyze_batch<'py>(
 ///
 /// This is the "rec/search click" path — no prices, just menus and picks.
 #[pyfunction]
-#[pyo3(signature = (menus_list, choices_list, n_items_list, compute_warp_la=false))]
+#[pyo3(signature = (menus_list, choices_list, n_items_list, compute_warp_la=false, compute_network=false))]
 pub fn analyze_menu_batch<'py>(
     py: Python<'py>,
     menus_list: Vec<Vec<Vec<usize>>>,   // menus_list[user][obs] = vec of item indices
     choices_list: Vec<Vec<usize>>,       // choices_list[user][obs] = chosen item index
     n_items_list: Vec<usize>,            // n_items per user (max item index + 1)
     compute_warp_la: bool,
+    compute_network: bool,
 ) -> PyResult<Vec<Bound<'py, PyDict>>> {
     use rpt_core::menu::{menu_sarp_check, menu_warp_check, menu_houtman_maks};
     use rpt_core::attention::warp_la_check;
@@ -494,7 +498,7 @@ pub fn analyze_menu_batch<'py>(
                 };
 
                 let (r_density, pref_entropy, choice_diversity) =
-                    compute_menu_graph_stats(graph, choices);
+                    if compute_network { compute_menu_graph_stats(graph, choices) } else { (0.0, 0.0, 0.0) };
 
                 let time_us = start.elapsed().as_micros() as u64;
 
@@ -600,7 +604,7 @@ pub fn build_preference_graph<'py>(
 /// as list of (user_id, result_dict) tuples.
 #[cfg(feature = "parquet")]
 #[pyfunction]
-#[pyo3(signature = (path, user_col, cost_cols, action_cols, compute_ccei=true, compute_mpi=false, compute_harp=false, compute_hm=false, compute_utility=false, compute_vei=false, compute_vei_exact=false, tolerance=1e-10, chunk_size=50000))]
+#[pyo3(signature = (path, user_col, cost_cols, action_cols, compute_ccei=true, compute_mpi=false, compute_harp=false, compute_hm=false, compute_utility=false, compute_vei=false, compute_vei_exact=false, compute_network=false, tolerance=1e-10, chunk_size=50000))]
 pub fn analyze_parquet_file<'py>(
     py: Python<'py>,
     path: &str,
@@ -614,6 +618,7 @@ pub fn analyze_parquet_file<'py>(
     compute_utility: bool,
     compute_vei: bool,
     compute_vei_exact: bool,
+    compute_network: bool,
     tolerance: f64,
     chunk_size: usize,
 ) -> PyResult<Vec<(String, Bound<'py, PyDict>)>> {
@@ -627,6 +632,7 @@ pub fn analyze_parquet_file<'py>(
         utility: compute_utility,
         vei: compute_vei,
         vei_exact: compute_vei_exact,
+        network: compute_network,
     };
 
     // Read and chunk users from Parquet (GIL released during I/O + Rayon)
