@@ -133,11 +133,56 @@ Total wall time: **19 min** on M1 Mac (data on external USB drive via symlink).
      - 4s
 
 REES46 and Taobao dominate wall time due to raw CSV parsing (110M and 100M
-events). Converting to Parquet would cut data loading by 5--10x:
+events). Pre-processing to Parquet eliminates this bottleneck entirely.
+
+Parquet Speedup
+~~~~~~~~~~~~~~~
+
+Converting budget datasets to sorted Parquet and using the Rust Parquet
+path (``Engine.analyze_parquet()``) shows **7--57x speedup** over
+CSV load + in-memory analysis:
+
+.. list-table::
+   :header-rows: 1
+   :widths: 20 10 12 12 10
+
+   * - Dataset
+     - N
+     - CSV (s)
+     - Parquet (s)
+     - Speedup
+   * - Dunnhumby
+     - 2,222
+     - 5.1
+     - 0.7
+     - 7x
+   * - Open E-Commerce
+     - 4,694
+     - 13.3
+     - 1.8
+     - 7x
+   * - H&M
+     - 49,642
+     - 151.2
+     - 3.1
+     - **49x**
+   * - Instacart
+     - 50,000
+     - 90.1
+     - 1.6
+     - **57x**
+
+*CSV = pandas load + Engine.analyze_arrays(). Parquet = Engine.analyze_parquet()
+with Rust Parquet reader (end-to-end, includes I/O). One-time Parquet conversion
+not included. Parquet files are 0.7--4.8 MB (zstd compressed).*
 
 .. code-block:: python
 
-   # With pyarrow installed, analyze directly from Parquet
+   # One-time: convert CSV to sorted Parquet
+   from pyrevealed.io.parquet import prepare_parquet
+   prepare_parquet("raw.csv", "users.parquet", user_col="user_id")
+
+   # Fast repeated analysis
    results = rp.analyze("users.parquet", user_col="user_id",
                         cost_cols=["p1", "p2"], action_cols=["q1", "q2"])
 
