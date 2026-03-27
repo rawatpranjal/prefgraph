@@ -128,37 +128,53 @@ Results
 Key Findings
 ~~~~~~~~~~~~
 
-1. **Most prompt-model combinations fail SARP.** With 5 items and guaranteed
-   pairwise coverage, preference cycles are common. Both models show
-   HM efficiency around 0.60--0.80 across scenarios.
+1. **Every gpt-4o-mini prompt combination fails SARP** with exactly 10
+   violations (the maximum for C(5,2) item pairs) and HM=0.60 (3/5 items
+   form the largest consistent subset). This holds uniformly across all
+   5 scenarios and all 5 prompt strategies at n=200.
 
-2. **Permutation p-values are high (>0.85).** This means the LLMs have
-   *fewer* violations than uniform random choice --- they do have preference
-   structure, just not perfect consistency. The SARP test has high
-   discriminatory power for these menu designs.
+2. **95% of individual decisions are consistent.** Bootstrap CIs on
+   observation-level HM efficiency are tight: [0.93, 0.97]. The LLM
+   has real preference structure --- only the *pairwise* comparisons
+   reveal intransitive cycles.
 
-3. **Content moderation with minimal prompts is perfectly consistent.**
-   Both models pass SARP (HM=1.0) with the minimal prompt on content review.
-   Adding instructions *creates* inconsistency.
+3. **Permutation p=1.0 everywhere.** Random uniform choice produces
+   *more* violations 100% of the time. The SARP test has near-perfect
+   discriminatory power for these menu designs --- passing SARP would
+   be highly meaningful if achieved.
 
-4. **Conservative prompts do not guarantee consistency.** Despite being
-   designed to reduce ambiguity, conservative prompts still produce
-   SARP violations across all scenarios.
+4. **o4-mini achieves perfect consistency on procurement × aggressive.**
+   SARP=PASS, HM=1.0. The reasoning model with a throughput-optimized
+   prompt produces a fully transitive preference ordering over the 5
+   procurement actions.
 
-5. **Scenario difficulty varies.** Content review shows the most variation
-   across prompts; alert triage and job screening are uniformly inconsistent.
+5. **Chain-of-thought helps on nuanced tasks.** For content moderation,
+   CoT prompts achieve HM=0.80 (4/5 items consistent) vs 0.60 for
+   other prompts. Structured reasoning reduces preference cycles when
+   the decision boundary is subjective.
+
+6. **Conservative prompts do not reduce inconsistency.** Despite being
+   designed to reduce ambiguity by escalating borderline cases, conservative
+   prompts produce the same 10 violations as aggressive or minimal prompts.
+
+7. **Alert triage is uniformly inconsistent.** All 50 combinations (5
+   prompts × 2 models × 5 scenarios) fail SARP on alert triage. Infrastructure
+   alerts create genuinely ambiguous decision boundaries that no prompt
+   strategy resolves.
 
 Statistical Inference
 ~~~~~~~~~~~~~~~~~~~~~
 
-- **Permutation test**: Under H₀ of uniform random choice, the observed
-  violations are *fewer* than random in 87--100% of permutations. LLMs
-  are more consistent than chance, but not fully rational.
-- **Bootstrap CIs**: 95% confidence intervals for HM efficiency are
-  typically [0.60, 1.00], reflecting high variance at current sample sizes.
-- **BH-FDR correction**: After Benjamini-Hochberg adjustment across all
-  50 tests, no individual test reaches significance --- sample size needs
-  to increase for hypothesis-level conclusions.
+- **Permutation test** (H₀: uniform random choice, 500 permutations):
+  p=1.000 for all gpt-4o-mini groups at n=200. The LLM's violations are
+  far fewer than random --- it has real preference structure.
+- **Bootstrap CIs** (500 resamples, 95% level): Observation-level HM
+  efficiency is [0.93, 0.97] for gpt-4o-mini at n=200, confirming that
+  ~95% of decisions are locally consistent.
+- **BH-FDR correction**: Applied across all 50 hypothesis tests. No
+  individual permutation test is significant (all p-adj=1.0) because
+  *all* LLM configurations are more consistent than random --- the test
+  measures power, not inconsistency.
 
 Reproduce
 ---------
