@@ -9,58 +9,52 @@ use rpt_core::garp::{garp_check, garp_check_with_closure};
 use rpt_core::graph::PreferenceGraph;
 use rpt_core::harp::harp_check;
 use rpt_core::houtman_maks::houtman_maks;
-use rpt_core::mpi::{mpi_karp, mpi_fast};
+use rpt_core::mpi::mpi_karp;
 use rpt_core::utility::recover_utility;
 use rpt_core::vei::{compute_vei as run_vei, compute_vei_exact as run_vei_exact};
 
 use crate::convert::extract_user_data;
 
-/// Analyze a batch of users in parallel using Rayon.
-///
-/// Uses PreferenceGraph with lazy computation — expenditure matrix built once,
-/// R/P/closure reused across metrics. MPI uses Karp's max-mean-weight cycle
-/// (theory-correct). CCEI runs last since it may modify graph state.
-#[pyfunction]
-#[pyo3(signature = (prices_list, quantities_list, compute_ccei=true, compute_mpi=false, compute_harp=false, compute_hm=false, compute_utility=false, compute_vei=false, compute_vei_exact=false, tolerance=1e-10))]
-pub fn analyze_batch<'py>(
-    py: Python<'py>,
-    prices_list: Vec<PyReadonlyArray2<'py, f64>>,
-    quantities_list: Vec<PyReadonlyArray2<'py, f64>>,
-    compute_ccei: bool,
-    compute_mpi: bool,
-    compute_harp: bool,
-    compute_hm: bool,
-    compute_utility: bool,
-    compute_vei: bool,
-    compute_vei_exact: bool,
+/// Metric flags controlling which analyses to run.
+#[derive(Clone, Copy)]
+struct MetricFlags {
+    ccei: bool,
+    mpi: bool,
+    harp: bool,
+    hm: bool,
+    utility: bool,
+    vei: bool,
+    vei_exact: bool,
+}
+
+/// Output from processing one user.
+struct UserOut {
+    is_garp: bool,
+    n_violations: u32,
+    ccei: f64,
+    mpi: f64,
+    is_harp: bool,
+    hm_consistent: u32,
+    hm_total: u32,
+    utility_success: bool,
+    vei_mean: f64,
+    vei_min: f64,
+    vei_exact_mean: f64,
+    vei_exact_min: f64,
+    max_scc: u32,
+    time_us: u64,
+}
+
+/// Process a batch of users in parallel using Rayon. Shared by both
+/// `analyze_batch` (numpy input) and `analyze_parquet_file` (Parquet input).
+fn process_users_parallel(
+    users: &[(Vec<f64>, Vec<f64>, usize, usize)],
+    flags: MetricFlags,
     tolerance: f64,
-) -> PyResult<Vec<Bound<'py, PyDict>>> {
-    let n_users = prices_list.len();
-
-    let users: Vec<(Vec<f64>, Vec<f64>, usize, usize)> = (0..n_users)
-        .map(|i| extract_user_data(&prices_list[i], &quantities_list[i]))
-        .collect();
-
+) -> Vec<UserOut> {
     let max_t = users.iter().map(|(_, _, t, _)| *t).max().unwrap_or(0);
 
-    struct UserOut {
-        is_garp: bool,
-        n_violations: u32,
-        ccei: f64,
-        mpi: f64,
-        is_harp: bool,
-        hm_consistent: u32,
-        hm_total: u32,
-        utility_success: bool,
-        vei_mean: f64,
-        vei_min: f64,
-        vei_exact_mean: f64,
-        vei_exact_min: f64,
-        max_scc: u32,
-        time_us: u64,
-    }
-
-    let results: Vec<UserOut> = users
+    users
         .par_iter()
         .map_init(
             || PreferenceGraph::new(max_t),
@@ -72,60 +66,52 @@ pub fn analyze_batch<'py>(
                 graph.reset();
                 graph.parse_budget(p_flat, q_flat, t, k, tolerance);
 
-                // GARP: use O(T²) when only bool needed, O(T³) when MPI/VEI need closure
-                let needs_closure = compute_mpi || compute_vei;
+                let needs_closure = flags.mpi || flags.vei;
                 let garp = if needs_closure {
                     garp_check_with_closure(graph)
                 } else {
                     garp_check(graph)
                 };
 
-                // MPI via Karp's algorithm (theory-correct, before CCEI)
-                let mpi = if compute_mpi && !garp.is_consistent {
+                let mpi = if flags.mpi && !garp.is_consistent {
                     mpi_karp(graph)
                 } else {
                     0.0
                 };
 
-                // HARP
-                let is_harp = if compute_harp {
+                let is_harp = if flags.harp {
                     harp_check(graph, tolerance).is_consistent
                 } else {
                     false
                 };
 
-                // Houtman-Maks
-                let (hm_c, hm_t) = if compute_hm {
+                let (hm_c, hm_t) = if flags.hm {
                     houtman_maks(graph)
                 } else {
                     (0, 0)
                 };
 
-                // Utility recovery (Afriat LP)
-                let utility_success = if compute_utility {
+                let utility_success = if flags.utility {
                     recover_utility(graph).success
                 } else {
                     false
                 };
 
-                // VEI (per-observation efficiency, LP relaxation)
-                let (vei_mean, vei_min) = if compute_vei {
+                let (vei_mean, vei_min) = if flags.vei {
                     let vei = run_vei(graph);
                     (vei.mean_efficiency, vei.min_efficiency)
                 } else {
                     (1.0, 1.0)
                 };
 
-                // VEI exact (Mononen binary LP + row generation)
-                let (vei_exact_mean, vei_exact_min) = if compute_vei_exact {
+                let (vei_exact_mean, vei_exact_min) = if flags.vei_exact {
                     let vei = run_vei_exact(graph);
                     (vei.mean_efficiency, vei.min_efficiency)
                 } else {
                     (1.0, 1.0)
                 };
 
-                // CCEI (last — may overwrite R/P/closure)
-                let ccei = if compute_ccei && !garp.is_consistent {
+                let ccei = if flags.ccei && !garp.is_consistent {
                     ccei_search(graph, tolerance).ccei
                 } else if garp.is_consistent {
                     1.0
@@ -153,9 +139,12 @@ pub fn analyze_batch<'py>(
                 }
             },
         )
-        .collect();
+        .collect()
+}
 
-    let py_results: Vec<Bound<'py, PyDict>> = results
+/// Convert a Vec<UserOut> to Python dicts.
+fn results_to_pydicts<'py>(py: Python<'py>, results: Vec<UserOut>) -> Vec<Bound<'py, PyDict>> {
+    results
         .into_iter()
         .map(|r| {
             let dict = PyDict::new_bound(py);
@@ -175,9 +164,47 @@ pub fn analyze_batch<'py>(
             dict.set_item("compute_time_us", r.time_us).unwrap();
             dict
         })
+        .collect()
+}
+
+/// Analyze a batch of users in parallel using Rayon.
+///
+/// Uses PreferenceGraph with lazy computation — expenditure matrix built once,
+/// R/P/closure reused across metrics. MPI uses Karp's max-mean-weight cycle
+/// (theory-correct). CCEI runs last since it may modify graph state.
+#[pyfunction]
+#[pyo3(signature = (prices_list, quantities_list, compute_ccei=true, compute_mpi=false, compute_harp=false, compute_hm=false, compute_utility=false, compute_vei=false, compute_vei_exact=false, tolerance=1e-10))]
+pub fn analyze_batch<'py>(
+    py: Python<'py>,
+    prices_list: Vec<PyReadonlyArray2<'py, f64>>,
+    quantities_list: Vec<PyReadonlyArray2<'py, f64>>,
+    compute_ccei: bool,
+    compute_mpi: bool,
+    compute_harp: bool,
+    compute_hm: bool,
+    compute_utility: bool,
+    compute_vei: bool,
+    compute_vei_exact: bool,
+    tolerance: f64,
+) -> PyResult<Vec<Bound<'py, PyDict>>> {
+    let n_users = prices_list.len();
+
+    let users: Vec<(Vec<f64>, Vec<f64>, usize, usize)> = (0..n_users)
+        .map(|i| extract_user_data(&prices_list[i], &quantities_list[i]))
         .collect();
 
-    Ok(py_results)
+    let flags = MetricFlags {
+        ccei: compute_ccei,
+        mpi: compute_mpi,
+        harp: compute_harp,
+        hm: compute_hm,
+        utility: compute_utility,
+        vei: compute_vei,
+        vei_exact: compute_vei_exact,
+    };
+
+    let results = process_users_parallel(&users, flags, tolerance);
+    Ok(results_to_pydicts(py, results))
 }
 
 /// Analyze a batch of users' MENU choice data in parallel.
@@ -327,4 +354,68 @@ pub fn build_preference_graph<'py>(
     dict.set_item("t", t)?;
 
     Ok(dict)
+}
+
+/// Analyze a Parquet file directly in Rust — no Python data prep overhead.
+///
+/// Reads Parquet row groups, groups by user_col, extracts cost/action columns,
+/// and feeds users to the Rayon-parallel analysis pipeline. Results returned
+/// as list of (user_id, result_dict) tuples.
+#[cfg(feature = "parquet")]
+#[pyfunction]
+#[pyo3(signature = (path, user_col, cost_cols, action_cols, compute_ccei=true, compute_mpi=false, compute_harp=false, compute_hm=false, compute_utility=false, compute_vei=false, compute_vei_exact=false, tolerance=1e-10, chunk_size=50000))]
+pub fn analyze_parquet_file<'py>(
+    py: Python<'py>,
+    path: &str,
+    user_col: &str,
+    cost_cols: Vec<String>,
+    action_cols: Vec<String>,
+    compute_ccei: bool,
+    compute_mpi: bool,
+    compute_harp: bool,
+    compute_hm: bool,
+    compute_utility: bool,
+    compute_vei: bool,
+    compute_vei_exact: bool,
+    tolerance: f64,
+    chunk_size: usize,
+) -> PyResult<Vec<(String, Bound<'py, PyDict>)>> {
+    use crate::parquet_reader::read_parquet_users_wide;
+
+    let flags = MetricFlags {
+        ccei: compute_ccei,
+        mpi: compute_mpi,
+        harp: compute_harp,
+        hm: compute_hm,
+        utility: compute_utility,
+        vei: compute_vei,
+        vei_exact: compute_vei_exact,
+    };
+
+    // Read and chunk users from Parquet (GIL released during I/O + Rayon)
+    let chunks = py.allow_threads(|| {
+        read_parquet_users_wide(path, user_col, &cost_cols, &action_cols, chunk_size)
+    }).map_err(|e| pyo3::exceptions::PyValueError::new_err(e))?;
+
+    let mut all_results: Vec<(String, Bound<'py, PyDict>)> = Vec::new();
+
+    for chunk in chunks {
+        let user_ids: Vec<String> = chunk.iter().map(|(uid, _, _, _, _)| uid.clone()).collect();
+        let user_data: Vec<(Vec<f64>, Vec<f64>, usize, usize)> = chunk
+            .into_iter()
+            .map(|(_, p, q, t, k)| (p, q, t, k))
+            .collect();
+
+        // Run Rayon-parallel analysis (GIL released)
+        let results = py.allow_threads(|| {
+            process_users_parallel(&user_data, flags, tolerance)
+        });
+
+        let dicts = results_to_pydicts(py, results);
+        for (uid, dict) in user_ids.into_iter().zip(dicts) {
+            all_results.push((uid, dict));
+        }
+    }
+
+    Ok(all_results)
 }

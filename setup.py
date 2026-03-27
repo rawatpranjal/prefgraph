@@ -16,6 +16,7 @@ try:
             "pyrevealed._rust_core",
             path="rust/crates/rpt-python/Cargo.toml",
             binding=Binding.PyO3,
+            features=["parquet"],
             optional=True,
         )
     ]
