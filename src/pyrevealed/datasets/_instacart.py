@@ -55,7 +55,7 @@ def _find_data_dir(data_dir: str | Path | None) -> Path:
 
 def load_instacart(
     data_dir: str | Path | None = None,
-    max_users: int | None = 5000,
+    max_users: int | None = None,
     min_orders: int = 10,
 ) -> BehaviorPanel:
     """Load Instacart dataset as a BehaviorPanel.

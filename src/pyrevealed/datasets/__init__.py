@@ -29,6 +29,7 @@ from pyrevealed.datasets._hm import load_hm
 from pyrevealed.datasets._pakistan import load_pakistan
 from pyrevealed.datasets._favorita import load_favorita
 from pyrevealed.datasets._taobao import load_taobao
+from pyrevealed.datasets._tenrec import load_tenrec
 
 
 def list_datasets() -> list[dict[str, str]]:
@@ -143,6 +144,13 @@ def list_datasets() -> list[dict[str, str]]:
             "goods": "Menu-based (daily viewed → purchased items)",
             "observations": "~5-50 purchase-days per user",
         },
+        {
+            "name": "tenrec",
+            "description": "Tencent QQ Browser: 5M users, 140M interactions (click/like/share/follow)",
+            "source": "NeurIPS 2022 (Tenrec)",
+            "goods": "Menu-based (clicked items → liked item)",
+            "observations": "~5-50 sessions per user",
+        },
     ]
 
 
@@ -162,5 +170,6 @@ __all__ = [
     "load_pakistan",
     "load_favorita",
     "load_taobao",
+    "load_tenrec",
     "list_datasets",
 ]
