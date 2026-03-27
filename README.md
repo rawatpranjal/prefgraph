@@ -10,30 +10,30 @@ Rationality scores for every user, at scale. Rust engine, Python interface.
 pip install pyrevealed
 ```
 
-## What it does
+## Quick Example
 
-Scores how consistently each user's choices align with rational utility maximization. Feed it choice data, get back per-user scores you can plug into any ML pipeline, segmentation model, or dashboard.
+Score how consistently each user's choices align with rational utility maximization. Paste and run:
 
 ```python
+from pyrevealed.datasets import load_demo
 from pyrevealed.engine import Engine
-import numpy as np
 
-# Each user: (prices T x K, quantities T x K)
-users = [(prices_i, quantities_i) for prices_i, quantities_i in user_data]
-
+users = load_demo()  # 100 synthetic consumers, no download needed
 engine = Engine(metrics=["garp", "ccei", "mpi", "harp", "hm"])
 results = engine.analyze_arrays(users)
 
-for r in results:
-    print(r.is_garp, r.ccei, r.mpi, r.is_harp)
+for r in results[:5]:
+    print(r)
 ```
 
 ```
-is_garp  ccei   mpi    is_harp  hm
-False    0.847  0.023  True     18/20
-True     1.000  0.000  True     20/20
-False    0.791  0.041  False    15/20
+EngineResult: [+] GARP-consistent  ccei=1.0000  hm=15/15  (42us)
+EngineResult: [-] 3 violations  ccei=0.8472  mpi=0.0231  hm=12/15  (38us)
+EngineResult: [+] GARP-consistent  ccei=1.0000  hm=15/15  (35us)
+...
 ```
+
+Every score is a feature. Use them for fraud detection, user segmentation, A/B testing, churn prediction, or personalization.
 
 ## Scores
 
@@ -47,59 +47,26 @@ False    0.791  0.041  False    15/20
 | Utility recovery | `utility_success` | Can latent utility be reconstructed? (Afriat LP) | bool |
 | Per-obs efficiency | `vei_mean` | Average efficiency across observations (Varian) | 0-1 |
 
-Every score is a feature. Use them for fraud detection, user segmentation, A/B testing, churn prediction, or personalization.
+## Which API?
 
-## Performance
+| | Engine | Function API |
+|---|---|---|
+| Use case | Score thousands of users | Deep-dive one user |
+| Speed | 10,000+ users/sec (Rust) | Single-user |
+| Returns | `EngineResult` (flat scores) | `GARPResult`, `AEIResult`, etc. (matrices, cycles, graphs) |
+| Metrics | 7 (garp, ccei, mpi, harp, hm, utility, vei) | 30+ algorithms |
+| Input | `list[(prices, quantities)]` | `BehaviorLog` |
 
-The Rust engine (`rpt-core`) handles graph algorithms and LP solving via Rayon thread pool. Python handles I/O and the user-facing API.
+**Engine** for batch scoring. **Function API** when you need violation details, preference graphs, or advanced tests:
 
-| Users | Metrics | Time | Throughput |
-|-------|---------|------|------------|
-| 1,000 | 5 | 0.1s | 10,000/s |
-| 10,000 | 5 | 2s | 5,000/s |
-| 100,000 | 5 | 20s | 5,000/s |
-
-18-100x faster than pure Python. Memory stays bounded via streaming chunks.
-
-## How it works
-
+```python
+from pyrevealed import BehaviorLog, validate_consistency, compute_integrity_score
+session = BehaviorLog(cost_vectors=prices, action_vectors=quantities)
+garp = validate_consistency(session)       # GARPResult with violation cycles, matrices
+ccei = compute_integrity_score(session)    # AEIResult with binary search details
 ```
-User choice data (prices + quantities per observation)
-       |
-       v
-  +-----------+
-  | Engine    |  partition by user, stream in chunks
-  +-----+-----+
-        |
-        v
-  +-----------+
-  | Rust +    |  SCC decomposition -> Floyd-Warshall transitive closure
-  | Rayon     |  Karp's cycle algorithm -> HiGHS LP solver
-  +-----+-----+
-        |
-        v
-  list[EngineResult]  (one per user)
-```
-
-## Core algorithms
-
-| Algorithm | Module | Computation |
-|-----------|--------|-------------|
-| GARP | `garp.py` | Boolean cycle detection via SCC + Floyd-Warshall |
-| CCEI (AEI) | `aei.py` | Binary search over efficiency levels |
-| MPI | `mpi.py` | Karp's max-mean-weight cycle O(T^3) |
-| HARP | `harp.py` | Max-product cycle in log-space |
-| Houtman-Maks | `mpi.py` | Greedy feedback vertex set / ILP |
-| Quasilinear | `quasilinear.py` | Bellman-Ford negative cycle detection |
-| Utility recovery | `utility.py` | Afriat LP via HiGHS |
-| VEI | `vei.py` | Per-observation efficiency LP |
-| Menu SARP | `abstract_choice.py` | Cycle detection on item-space graph |
-| Attention | `attention.py` | Consideration sets + graph + LP |
-| Production GARP | `production.py` | Profit comparison graph |
 
 ## 4 Choice Categories
-
-We test whether observed choices are consistent with rational optimization — without estimating parameters. We answer "does a rational model exist?", not "which model is it?".
 
 ```
                 Test (bool)     Score (0-1)     Recover (vector)  Structure (bool)
@@ -116,20 +83,21 @@ Intertemporal   Exp discount    —                Discount delta    Quasi-hyper
 | **Production** | `(input_p, input_q, output_p, output_q)` | Supply chain, manufacturing |
 | **Intertemporal** | `(amounts, dates, chosen)` | Subscriptions, savings, loyalty |
 
-Each user is a tuple of arrays. T can vary per user:
+## Performance
 
-```python
-users = [
-    (prices_user_0, quantities_user_0),
-    (prices_user_1, quantities_user_1),
-    ...
-]
-results = engine.analyze_arrays(users)
-```
+The Rust engine (`rpt-core`) handles graph algorithms and LP solving via Rayon thread pool. Python handles I/O and the user-facing API.
+
+| Users | Metrics | Time | Throughput |
+|-------|---------|------|------------|
+| 1,000 | 5 | 0.1s | 10,000/s |
+| 10,000 | 5 | 2s | 5,000/s |
+| 100,000 | 5 | 20s | 5,000/s |
+
+18-100x faster than pure Python. Memory stays bounded via streaming chunks.
 
 ## Documentation
 
-**[Full docs](https://pyrevealed.readthedocs.io/)**
+**[Full docs](https://pyrevealed.readthedocs.io/)** — tutorials, theory, API reference, application examples.
 
 ## License
 

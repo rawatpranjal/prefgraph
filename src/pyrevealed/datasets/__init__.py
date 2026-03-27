@@ -29,6 +29,13 @@ def list_datasets() -> list[dict[str, str]]:
     """
     return [
         {
+            "name": "demo",
+            "description": "Synthetic budget data: 40% rational, 40% noisy, 20% irrational consumers",
+            "source": "Generated (seeded, deterministic)",
+            "goods": "5 categories (default)",
+            "observations": "15 per user (default)",
+        },
+        {
             "name": "retailrocket",
             "description": "E-commerce click-stream from 1.4M visitors, reconstructed into menu choices",
             "source": "Kaggle (retailrocket/ecommerce-dataset)",

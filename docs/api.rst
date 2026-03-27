@@ -345,6 +345,8 @@ ProductionLog
 Dataset Loaders
 ---------------
 
+.. autofunction:: pyrevealed.datasets.load_demo
+
 .. autofunction:: pyrevealed.datasets.load_dunnhumby
 
 .. autofunction:: pyrevealed.datasets.load_open_ecommerce

@@ -284,6 +284,16 @@ def check_warp(
 
     Returns:
         WARPResult with is_consistent flag and list of violating pairs
+
+    Example:
+        >>> import numpy as np
+        >>> from pyrevealed import BehaviorLog, check_warp
+        >>> prices = np.array([[1.0, 2.0], [2.0, 1.0]])
+        >>> quantities = np.array([[4.0, 1.0], [1.0, 4.0]])
+        >>> session = BehaviorLog(cost_vectors=prices, action_vectors=quantities)
+        >>> result = check_warp(session)
+        >>> result.is_consistent
+        True
     """
     start_time = time.perf_counter()
 

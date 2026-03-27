@@ -1,0 +1,45 @@
+# Changelog
+
+## [0.5.1] - 2026-03-26
+
+### Fixed
+- ReadTheDocs builds broken since maturin migration — mock Rust extension in autodoc
+- PyPI homepage URL now points to ReadTheDocs instead of GitHub
+- Linux CI: pin to Python 3.10-3.12 (PyO3 0.22 max), install libclang for HiGHS bindgen
+- Escaped pipe characters in RST list-tables causing Sphinx build errors
+
+### Added
+- `load_demo()` synthetic dataset — 100 consumers, zero setup, deterministic
+- `EngineResult.summary()` and `MenuResult.summary()` methods
+- Field-level documentation for `EngineResult` and `MenuResult` dataclasses
+- Quickstart page in documentation
+- "Which API?" guidance in README
+- Application pages: grocery rationality, LLM alignment, recommender systems
+- Animated algorithm visualizations (Floyd-Warshall, SCC Tarjan, engine throughput)
+- Hero images for budget and menu analysis pages
+- Stock images for application pages
+- `CHANGELOG.md`
+
+### Changed
+- README reordered: quick example first, architecture details moved to docs
+- Documentation navigation restructured into data-type subdirectories
+- Single-word nav tab names (Budgets, Menus, Algorithms, Performance, etc.)
+
+## [0.5.0] - 2026-03-25
+
+### Added
+- Rust engine (`rpt-core`) with Rayon parallelism — 18-100x faster than Python
+- `Engine` class for batch analysis of millions of users
+- `Engine.analyze_menus()` for discrete/menu choice data
+- `Engine.build_graph()` for deep per-user preference graph construction
+- VEI (Varian Efficiency Index) metric
+- Houtman-Maks consistency fraction via Engine
+- HARP (homothetic axiom) via Engine
+- Utility recovery via Afriat LP in Engine
+- Cross-platform CI release workflow (macOS, Linux, Windows)
+- Result dataclasses: `EngineResult`, `MenuResult`
+- Backend parity tests (`tests/test_backend_parity.py`)
+
+### Changed
+- Build backend switched from setuptools to maturin
+- `result.py` modularized into `core/results/` subpackage
