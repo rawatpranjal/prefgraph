@@ -87,11 +87,19 @@ def _check_columns(
     """Validate that all referenced columns exist in the DataFrame."""
     available = set(df.columns)
 
-    def _check(col_name: str | None, param: str) -> None:
+    def _check(col_name: str | None, param: str, is_default: bool = False) -> None:
         if col_name is not None and col_name not in available:
+            default_hint = (
+                f" (defaulting to '{col_name}' — set {param}= explicitly)"
+                if is_default else ""
+            )
+            # Suggest close matches
+            close = [c for c in sorted(available)
+                     if col_name.lower() in c.lower() or c.lower() in col_name.lower()]
+            suggestion = f" Similar: {close}." if close else ""
             raise ValueError(
-                f"Column '{col_name}' (from {param}=) not found. "
-                f"Available columns: {sorted(available)}"
+                f"Column '{col_name}'{default_hint} not found. "
+                f"Available columns: {sorted(available)}.{suggestion}"
             )
 
     def _check_list(cols: list[str] | None, param: str) -> None:
@@ -108,12 +116,12 @@ def _check_columns(
         _check_list(action_cols, "action_cols")
     elif fmt == "long":
         _check(item_col, "item_col")
-        _check(cost_col or "price", "cost_col")
-        _check(action_col or "quantity", "action_col")
-        _check(time_col or "time", "time_col")
+        _check(cost_col or "price", "cost_col", is_default=cost_col is None)
+        _check(action_col or "quantity", "action_col", is_default=action_col is None)
+        _check(time_col or "time", "time_col", is_default=time_col is None)
     elif fmt == "menu":
-        _check(menu_col or "menu", "menu_col")
-        _check(choice_col or "choice", "choice_col")
+        _check(menu_col or "menu", "menu_col", is_default=menu_col is None)
+        _check(choice_col or "choice", "choice_col", is_default=choice_col is None)
 
 
 def analyze(
@@ -134,6 +142,7 @@ def analyze(
     # Options
     metrics: list[str] | None = None,
     output: Literal["dataframe", "objects"] = "dataframe",
+    nan_policy: Literal["raise", "warn", "drop"] = "raise",
     # Legacy aliases
     price_col: str | None = None,
     qty_col: str | None = None,
@@ -160,6 +169,9 @@ def analyze(
             for budget data. Ignored for menu data (always SARP/WARP/HM).
         output: ``"dataframe"`` (default) returns a pandas DataFrame with one
             row per user. ``"objects"`` returns a list of EngineResult/MenuResult.
+        nan_policy: How to handle NaN/Inf values. ``"raise"`` (default) raises
+            an error. ``"drop"`` silently removes affected rows. ``"warn"``
+            drops with a warning.
         price_col: Alias for ``cost_col``.
         qty_col: Alias for ``action_col``.
         price_cols: Alias for ``cost_cols``.
@@ -196,18 +208,39 @@ def analyze(
         ) from None
 
     if not isinstance(df, pd.DataFrame):
+        hint = ""
+        if isinstance(df, pd.Series):
+            hint = " To convert a Series: pd.DataFrame(series)."
+        elif isinstance(df, dict):
+            hint = " To convert a dict: pd.DataFrame(your_dict)."
+        elif hasattr(df, 'shape'):  # numpy array
+            hint = " To convert a numpy array: pd.DataFrame(array, columns=[...])."
         raise TypeError(
-            f"First argument must be a pandas DataFrame, got {type(df).__name__}. "
-            f"Example: rp.analyze(pd.read_csv('data.csv'), cost_cols=[...], action_cols=[...])"
+            f"First argument must be a pandas DataFrame, got {type(df).__name__}.{hint}"
         )
     if len(df) == 0:
         raise ValueError("DataFrame is empty (0 rows). Nothing to analyze.")
+
+    # --- Validate output parameter ---
+    if output not in ("dataframe", "objects"):
+        raise ValueError(
+            f"output must be 'dataframe' or 'objects', got '{output}'."
+        )
 
     # --- Resolve legacy aliases ---
     cost_col = cost_col or price_col
     action_col = action_col or qty_col
     cost_cols = cost_cols or price_cols
     action_cols = action_cols or qty_cols
+
+    # --- Catch string-instead-of-list mistake ---
+    for param_name, param_val in [("cost_cols", cost_cols), ("action_cols", action_cols),
+                                   ("price_cols", price_cols), ("qty_cols", qty_cols)]:
+        if isinstance(param_val, str):
+            raise TypeError(
+                f"{param_name} must be a list of column names, got a string '{param_val}'. "
+                f"Use {param_name}=['{param_val}'] instead."
+            )
 
     # --- Detect format ---
     fmt = _detect_format(
@@ -224,10 +257,13 @@ def analyze(
     # --- Validate columns exist ---
     available = list(df.columns)
     if user_col not in available:
+        # Try to suggest the closest match
+        close = [c for c in available if "user" in c.lower() or "id" in c.lower()
+                 or "customer" in c.lower() or "household" in c.lower()]
+        suggestion = f" Did you mean: {close}?" if close else ""
         raise ValueError(
             f"Column '{user_col}' not found in DataFrame. "
-            f"Available columns: {available}. "
-            f"Set user_col= to the column containing user/household IDs."
+            f"Available columns: {available}.{suggestion}"
         )
     _check_columns(df, fmt, user_col=user_col, item_col=item_col,
                     cost_col=cost_col, action_col=action_col, time_col=time_col,
@@ -239,14 +275,14 @@ def analyze(
         user_ids, results = _analyze_wide(
             df, user_col=user_col,
             cost_cols=cost_cols, action_cols=action_cols,
-            metrics=metrics,
+            metrics=metrics, nan_policy=nan_policy,
         )
     elif fmt == "long":
         user_ids, results = _analyze_long(
             df, user_col=user_col,
             item_col=item_col, cost_col=cost_col,
             action_col=action_col, time_col=time_col,
-            metrics=metrics,
+            metrics=metrics, nan_policy=nan_policy,
         )
     else:  # menu
         if metrics is not None:
@@ -268,6 +304,37 @@ def analyze(
     return results_to_dataframe(results, user_ids=user_ids)
 
 
+def _handle_nan(
+    df: Any,
+    data_cols: list[str],
+    nan_policy: str,
+) -> Any:
+    """Handle NaN/Inf values in data columns before analysis."""
+    import numpy as np
+
+    subset = df[data_cols]
+    has_problem = subset.isnull().any(axis=1) | subset.isin([np.inf, -np.inf]).any(axis=1)
+
+    if not has_problem.any():
+        return df
+
+    n_bad = has_problem.sum()
+    if nan_policy == "raise":
+        raise ValueError(
+            f"Found {n_bad} rows with NaN or Inf values in columns {data_cols}. "
+            f"Options: set nan_policy='drop' to remove them, "
+            f"nan_policy='warn' to drop with a warning, "
+            f"or clean your data first with df.dropna(subset={data_cols})."
+        )
+    elif nan_policy == "warn":
+        warnings.warn(
+            f"Dropping {n_bad} rows with NaN/Inf values in {data_cols}.",
+            stacklevel=4,
+        )
+    # drop or warn: filter out bad rows
+    return df[~has_problem].copy()
+
+
 def _analyze_wide(
     df: Any,
     *,
@@ -275,6 +342,7 @@ def _analyze_wide(
     cost_cols: list[str] | None,
     action_cols: list[str] | None,
     metrics: list[str] | None,
+    nan_policy: str = "raise",
 ) -> tuple[list[str], list]:
     """Wide format: one row per observation, items as columns."""
     from pyrevealed.core.panel import BehaviorPanel
@@ -285,6 +353,8 @@ def _analyze_wide(
     if action_cols is None:
         raise ValueError("Wide format requires action_cols (list of column names for quantities).")
 
+    df = _handle_nan(df, cost_cols + action_cols, nan_policy)
+
     try:
         panel = BehaviorPanel.from_dataframe(
             df, user_col=user_col, cost_cols=cost_cols, action_cols=action_cols
@@ -293,7 +363,8 @@ def _analyze_wide(
         if "could not convert" in str(e).lower():
             raise ValueError(
                 f"Non-numeric data in cost or action columns. "
-                f"Ensure all values in {cost_cols} and {action_cols} are numeric."
+                f"Ensure all values in {cost_cols} and {action_cols} are numeric. "
+                f"Tip: df[cols].dtypes to check types, pd.to_numeric(df[col], errors='coerce') to convert."
             ) from None
         raise
     engine = Engine(metrics=metrics or _DEFAULT_BUDGET_METRICS)
@@ -310,6 +381,7 @@ def _analyze_long(
     action_col: str | None,
     time_col: str | None,
     metrics: list[str] | None,
+    nan_policy: str = "raise",
 ) -> tuple[list[str], list]:
     """Long format: one row per item per time per user."""
     from pyrevealed.core.session import BehaviorLog
@@ -320,6 +392,8 @@ def _analyze_long(
     _cost = cost_col or "price"
     _action = action_col or "quantity"
     _time = time_col or "time"
+
+    df = _handle_nan(df, [_cost, _action], nan_policy)
 
     user_ids: list[str] = []
     tuples: list[tuple] = []

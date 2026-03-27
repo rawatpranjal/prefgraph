@@ -287,6 +287,96 @@ class TestErrorMessages:
         with pytest.raises(TypeError, match="integer item indices"):
             analyze(df, menu_col="shown", choice_col="clicked")
 
+    def test_cost_cols_as_string(self):
+        df = pd.DataFrame({"user_id": ["A", "A"], "p": [1.0, 2.0], "q": [3.0, 1.0]})
+        with pytest.raises(TypeError, match="list of column names.*got a string"):
+            analyze(df, cost_cols="p", action_cols=["q"])
+
+    def test_action_cols_as_string(self):
+        df = pd.DataFrame({"user_id": ["A", "A"], "p": [1.0, 2.0], "q": [3.0, 1.0]})
+        with pytest.raises(TypeError, match="list of column names.*got a string"):
+            analyze(df, cost_cols=["p"], action_cols="q")
+
+    def test_output_typo(self):
+        df = pd.DataFrame({"user_id": ["A", "A"], "p": [1.0, 2.0], "q": [3.0, 1.0]})
+        with pytest.raises(ValueError, match="'dataframe' or 'objects'"):
+            analyze(df, cost_cols=["p"], action_cols=["q"], output="dict")
+
+    def test_series_not_dataframe(self):
+        with pytest.raises(TypeError, match="Series"):
+            analyze(pd.Series([1, 2, 3]), cost_cols=["a"], action_cols=["b"])
+
+    def test_numpy_not_dataframe(self):
+        with pytest.raises(TypeError, match="ndarray"):
+            analyze(np.array([[1, 2]]), cost_cols=["a"], action_cols=["b"])
+
+    def test_dict_not_dataframe(self):
+        with pytest.raises(TypeError, match="dict"):
+            analyze({"a": [1]}, cost_cols=["a"], action_cols=["b"])
+
+    def test_user_col_suggestion(self):
+        df = pd.DataFrame({"customer_id": ["A", "A"], "p": [1.0, 2.0], "q": [3.0, 1.0]})
+        with pytest.raises(ValueError, match="customer_id"):
+            analyze(df, cost_cols=["p"], action_cols=["q"])
+
+    def test_long_default_time_col_missing(self):
+        df = pd.DataFrame({
+            "user_id": ["A", "A"],
+            "product": ["x", "y"],
+            "price": [1.0, 2.0],
+            "quantity": [1.0, 2.0],
+        })
+        with pytest.raises(ValueError, match="defaulting.*time_col"):
+            analyze(df, item_col="product", cost_col="price", action_col="quantity")
+
+
+# ---------------------------------------------------------------------------
+# NaN handling
+# ---------------------------------------------------------------------------
+
+class TestNanHandling:
+
+    def _nan_df(self):
+        return pd.DataFrame({
+            "user_id": ["A", "A", "A"],
+            "p": [1.0, float("nan"), 2.0],
+            "q": [3.0, 1.0, 2.0],
+        })
+
+    def test_nan_raises_by_default(self):
+        with pytest.raises(ValueError, match="NaN or Inf"):
+            analyze(self._nan_df(), cost_cols=["p"], action_cols=["q"])
+
+    def test_nan_drop(self):
+        result = analyze(self._nan_df(), cost_cols=["p"], action_cols=["q"],
+                         nan_policy="drop")
+        assert isinstance(result, pd.DataFrame)
+        assert len(result) == 1
+
+    def test_nan_warn(self):
+        with pytest.warns(UserWarning, match="Dropping.*rows"):
+            result = analyze(self._nan_df(), cost_cols=["p"], action_cols=["q"],
+                             nan_policy="warn")
+        assert isinstance(result, pd.DataFrame)
+
+    def test_inf_raises(self):
+        df = pd.DataFrame({
+            "user_id": ["A", "A"],
+            "p": [1.0, float("inf")],
+            "q": [3.0, 1.0],
+        })
+        with pytest.raises(ValueError, match="NaN or Inf"):
+            analyze(df, cost_cols=["p"], action_cols=["q"])
+
+    def test_inf_drop(self):
+        df = pd.DataFrame({
+            "user_id": ["A", "A", "A"],
+            "p": [1.0, float("inf"), 2.0],
+            "q": [3.0, 1.0, 2.0],
+        })
+        result = analyze(df, cost_cols=["p"], action_cols=["q"], nan_policy="drop")
+        assert isinstance(result, pd.DataFrame)
+
 
 # ---------------------------------------------------------------------------
 # Regression: matches direct Engine usage
