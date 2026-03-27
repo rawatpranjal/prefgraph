@@ -106,7 +106,7 @@ Empirical benchmarks: CCEI ≈ 0.88 in lab experiments (Choi et al., 2014); HM �
 E-commerce Benchmarks
 ---------------------
 
-Six public datasets, 117K users, LightGBM with 5-fold stratified CV.
+Seven public datasets, 167K users, LightGBM with 5-fold stratified CV.
 Full results: :doc:`benchmarks_ecommerce`.
 
 .. list-table::
@@ -148,6 +148,11 @@ Full results: :doc:`benchmarks_ecommerce`.
      - High Engagement
      - 0.913
      - 0.913
+   * - Tenrec
+     - 50,000
+     - High Engagement
+     - 0.993
+     - 0.993
 
 RP features add 0–0.7% AUC over strong RFM baselines. The lift is real but modest.
 
