@@ -236,6 +236,57 @@ class TestErrorMessages:
                     cost_cols=["price_x", "price_y"],
                     action_cols=["qty_x", "qty_y"])
 
+    def test_not_a_dataframe(self):
+        with pytest.raises(TypeError, match="pandas DataFrame"):
+            analyze({"a": 1}, cost_cols=["a"], action_cols=["b"])
+
+    def test_empty_dataframe(self):
+        df = pd.DataFrame({"user_id": [], "p": [], "q": []})
+        with pytest.raises(ValueError, match="empty"):
+            analyze(df, cost_cols=["p"], action_cols=["q"])
+
+    def test_bad_column_name_wide(self):
+        df = _wide_df()
+        with pytest.raises(ValueError, match="not found"):
+            analyze(df, cost_cols=["price_x", "NOPE"],
+                    action_cols=["qty_x", "qty_y"])
+
+    def test_bad_column_name_long(self):
+        df = _long_df()
+        with pytest.raises(ValueError, match="not found"):
+            analyze(df, item_col="product", cost_col="NOPE",
+                    action_col="quantity", time_col="week")
+
+    def test_duplicate_long_format(self):
+        df = pd.DataFrame({
+            "user_id": ["A", "A", "A"],
+            "week": [1, 1, 2],
+            "product": ["x", "x", "x"],
+            "price": [1.0, 2.0, 3.0],
+            "quantity": [1.0, 2.0, 3.0],
+        })
+        with pytest.raises(ValueError, match="duplicate"):
+            analyze(df, item_col="product", cost_col="price",
+                    action_col="quantity", time_col="week")
+
+    def test_string_values_in_price(self):
+        df = pd.DataFrame({
+            "user_id": ["A", "A"],
+            "p": ["hi", "there"],
+            "q": [1.0, 2.0],
+        })
+        with pytest.raises(ValueError, match="[Nn]on-numeric"):
+            analyze(df, cost_cols=["p"], action_cols=["q"])
+
+    def test_menu_string_items(self):
+        df = pd.DataFrame({
+            "user_id": ["A", "A"],
+            "shown": [["a", "b"], ["b", "c"]],
+            "clicked": ["a", "b"],
+        })
+        with pytest.raises(TypeError, match="integer item indices"):
+            analyze(df, menu_col="shown", choice_col="clicked")
+
 
 # ---------------------------------------------------------------------------
 # Regression: matches direct Engine usage

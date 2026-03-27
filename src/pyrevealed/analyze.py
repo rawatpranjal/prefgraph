@@ -70,6 +70,52 @@ def _detect_format(
     )
 
 
+def _check_columns(
+    df: Any,
+    fmt: str,
+    *,
+    user_col: str,
+    item_col: str | None,
+    cost_col: str | None,
+    action_col: str | None,
+    time_col: str | None,
+    cost_cols: list[str] | None,
+    action_cols: list[str] | None,
+    menu_col: str | None,
+    choice_col: str | None,
+) -> None:
+    """Validate that all referenced columns exist in the DataFrame."""
+    available = set(df.columns)
+
+    def _check(col_name: str | None, param: str) -> None:
+        if col_name is not None and col_name not in available:
+            raise ValueError(
+                f"Column '{col_name}' (from {param}=) not found. "
+                f"Available columns: {sorted(available)}"
+            )
+
+    def _check_list(cols: list[str] | None, param: str) -> None:
+        if cols is not None:
+            missing = [c for c in cols if c not in available]
+            if missing:
+                raise ValueError(
+                    f"Columns {missing} (from {param}=) not found. "
+                    f"Available columns: {sorted(available)}"
+                )
+
+    if fmt == "wide":
+        _check_list(cost_cols, "cost_cols")
+        _check_list(action_cols, "action_cols")
+    elif fmt == "long":
+        _check(item_col, "item_col")
+        _check(cost_col or "price", "cost_col")
+        _check(action_col or "quantity", "action_col")
+        _check(time_col or "time", "time_col")
+    elif fmt == "menu":
+        _check(menu_col or "menu", "menu_col")
+        _check(choice_col or "choice", "choice_col")
+
+
 def analyze(
     df: Any,
     *,
@@ -140,6 +186,23 @@ def analyze(
             results = rp.analyze(df,
                 menu_col="shown_items", choice_col="clicked")
     """
+    # --- Validate input type ---
+    try:
+        import pandas as pd
+    except ImportError:
+        raise ImportError(
+            "pandas is required for analyze(). "
+            "Install with: pip install pandas"
+        ) from None
+
+    if not isinstance(df, pd.DataFrame):
+        raise TypeError(
+            f"First argument must be a pandas DataFrame, got {type(df).__name__}. "
+            f"Example: rp.analyze(pd.read_csv('data.csv'), cost_cols=[...], action_cols=[...])"
+        )
+    if len(df) == 0:
+        raise ValueError("DataFrame is empty (0 rows). Nothing to analyze.")
+
     # --- Resolve legacy aliases ---
     cost_col = cost_col or price_col
     action_col = action_col or qty_col
@@ -158,7 +221,7 @@ def analyze(
         choice_col=choice_col,
     )
 
-    # --- Validate user_col exists ---
+    # --- Validate columns exist ---
     available = list(df.columns)
     if user_col not in available:
         raise ValueError(
@@ -166,6 +229,10 @@ def analyze(
             f"Available columns: {available}. "
             f"Set user_col= to the column containing user/household IDs."
         )
+    _check_columns(df, fmt, user_col=user_col, item_col=item_col,
+                    cost_col=cost_col, action_col=action_col, time_col=time_col,
+                    cost_cols=cost_cols, action_cols=action_cols,
+                    menu_col=menu_col, choice_col=choice_col)
 
     # --- Dispatch by format ---
     if fmt == "wide":
@@ -218,9 +285,17 @@ def _analyze_wide(
     if action_cols is None:
         raise ValueError("Wide format requires action_cols (list of column names for quantities).")
 
-    panel = BehaviorPanel.from_dataframe(
-        df, user_col=user_col, cost_cols=cost_cols, action_cols=action_cols
-    )
+    try:
+        panel = BehaviorPanel.from_dataframe(
+            df, user_col=user_col, cost_cols=cost_cols, action_cols=action_cols
+        )
+    except (ValueError, TypeError) as e:
+        if "could not convert" in str(e).lower():
+            raise ValueError(
+                f"Non-numeric data in cost or action columns. "
+                f"Ensure all values in {cost_cols} and {action_cols} are numeric."
+            ) from None
+        raise
     engine = Engine(metrics=metrics or _DEFAULT_BUDGET_METRICS)
     results = engine.analyze_arrays(panel.to_engine_tuples())
     return panel.user_ids, results
@@ -251,14 +326,31 @@ def _analyze_long(
 
     for uid, group in df.groupby(user_col, sort=True):
         uid_str = str(uid)
-        log = BehaviorLog.from_long_format(
-            group,
-            time_col=_time,
-            item_col=item_col,
-            cost_col=_cost,
-            action_col=_action,
-            user_id=uid_str,
-        )
+        try:
+            log = BehaviorLog.from_long_format(
+                group,
+                time_col=_time,
+                item_col=item_col,
+                cost_col=_cost,
+                action_col=_action,
+                user_id=uid_str,
+            )
+        except ValueError as e:
+            if "duplicate" in str(e).lower() or "reshape" in str(e).lower():
+                raise ValueError(
+                    f"User '{uid_str}': duplicate (time, item) pairs found. "
+                    f"Each ({_time}, {item_col}) combination must be unique per user. "
+                    f"Aggregate duplicates first: "
+                    f"df.groupby(['{user_col}','{_time}','{item_col}']).agg(...)."
+                ) from None
+            raise
+        except Exception as e:
+            if "could not convert" in str(e).lower():
+                raise ValueError(
+                    f"User '{uid_str}': non-numeric data in cost or action columns. "
+                    f"Ensure '{_cost}' and '{_action}' contain numeric values."
+                ) from None
+            raise
         user_ids.append(uid_str)
         tuples.append(log.to_engine_tuple())
 
@@ -281,9 +373,17 @@ def _analyze_menu(
     _menu = menu_col or "menu"
     _choice = choice_col or "choice"
 
-    panel = MenuChoicePanel.from_dataframe(
-        df, user_col=user_col, menu_col=_menu, choice_col=_choice
-    )
+    try:
+        panel = MenuChoicePanel.from_dataframe(
+            df, user_col=user_col, menu_col=_menu, choice_col=_choice
+        )
+    except TypeError as e:
+        raise TypeError(
+            f"Menu choice data requires integer item indices. "
+            f"If your items are strings, map them to integers first: "
+            f"item_map = {{v: i for i, v in enumerate(all_items)}}; "
+            f"df['{_menu}'] = df['{_menu}'].apply(lambda m: [item_map[x] for x in m])"
+        ) from None
 
     tuples = [log.to_engine_tuple() for _, log in panel]
     engine = Engine()  # metrics param only applies to budget data
