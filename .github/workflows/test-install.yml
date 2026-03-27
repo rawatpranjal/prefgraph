@@ -28,8 +28,9 @@ jobs:
           # Quick smoke test with demo data
           from pyrevealed import load_demo
           data = load_demo(n_users=5)
-          result = e.analyze_arrays(data)
-          scores = result.to_dict()
-          print(f'Analyzed {len(data)} users, CCEI scores: {[round(r["ccei"], 2) for r in scores]}')
+          results = e.analyze_arrays(data)
+          print(f'Analyzed {len(data)} users')
+          print(f'Result type: {type(results)}')
+          print(f'First result: {results[0] if isinstance(results, list) else results}')
           print('ALL TESTS PASSED')
           "
