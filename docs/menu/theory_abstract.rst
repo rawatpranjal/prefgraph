@@ -124,12 +124,12 @@ If multiple preference orderings are compatible with the observed data, PrefGrap
 **References:** Richter (1966), Chambers & Echenique (2016).
 
 
-Item Preference Network Features
----------------------------------
+Item Graph Network Features
+----------------------------
 
 **Requires:** ``Engine(metrics=[..., "network"])``
 
-The item preference graph :math:`G = (X, R)` has one node per item and a directed edge :math:`x \to y` whenever item :math:`x` was chosen from a menu containing :math:`y`. These features summarize the *shape* of preferences — not whether they're consistent, but how they're distributed across items.
+The **item graph** :math:`G = (X, R)` has one node per product and a directed edge :math:`x \to y` whenever item :math:`x` was chosen from a menu containing :math:`y`. Unlike the budget observation graph (where nodes are shopping trips), here nodes are items and edges represent direct pairwise preferences. These features summarize *how* preferences are distributed across items — not whether they're consistent.
 
 **Graph Density** (``r_density``)
 

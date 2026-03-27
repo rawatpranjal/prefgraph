@@ -170,12 +170,12 @@ Power is estimated by simulating a cohort of "synthetic agents" who make random 
 **Reference:** Bronars (1987).
 
 
-Preference Graph Network Features
-----------------------------------
+Observation Graph Network Features
+-----------------------------------
 
 **Requires:** ``Engine(metrics=[..., "network"])``
 
-The preference graph :math:`G = (V, E)` has one node per observation and directed edges from the revealed preference relation :math:`R`. These features summarize its topology and edge-weight distribution — capturing signals orthogonal to consistency scores. Empirically validated as uncorrelated (max :math:`|r| < 0.3`) with CCEI, MPI, and VEI across multiple datasets.
+The **observation graph** :math:`G = (V, E)` has one node per shopping trip and a directed edge :math:`i \to j` whenever bundle :math:`j` was affordable at observation :math:`i`'s prices but not chosen (:math:`x^i \, R \, x^j`). These features summarize its topology and edge-weight distribution — capturing signals orthogonal to consistency scores. Empirically validated as uncorrelated (max :math:`|r| < 0.3`) with CCEI, MPI, and VEI across multiple datasets.
 
 **Graph Density** (``r_density``)
 
