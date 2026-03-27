@@ -28,256 +28,170 @@ PALETTE = {
 # ---------------------------------------------------------------------------
 # GIF 1: Landing Page — Budget vs Menu Revealed Preference
 # ---------------------------------------------------------------------------
-def generate_landing_hero():
-    """Two-panel animation: budget and menu choices → preferences → scores."""
-    # --- Budget data (left panel): 3 observations, 2 goods ---
-    prices = np.array([[1.0, 2.0], [2.5, 1.0], [1.5, 1.5]])
-    quantities = np.array([[5.0, 2.5], [2.0, 5.0], [3.5, 3.0]])
-    expenditures = np.sum(prices * quantities, axis=1)
-    obs_colors = ["#5b8def", "#e67e22", "#27ae60"]
-    obs_labels = ["$x^1$", "$x^2$", "$x^3$"]
 
-    # Budget revealed preferences: i R j iff p_i . x_i >= p_i . x_j
+# ---------------------------------------------------------------------------
+# GIF 1A: Landing Page — Budget Choice
+# ---------------------------------------------------------------------------
+def generate_budget_hero():
+    import numpy as np
+    import matplotlib.pyplot as plt
+    from matplotlib.animation import FuncAnimation
+    
+    prices = np.array([[1.0, 2.0], [2.5, 1.0], [1.5, 1.5], [1.8, 1.0], [1.2, 1.8]])
+    quantities = np.array([[5.0, 2.5], [2.0, 5.0], [3.5, 3.0], [2.0, 5.0], [4.0, 2.0]])
+    expenditures = np.sum(prices * quantities, axis=1)
+    obs_colors = ["#5b8def", "#e67e22", "#27ae60", "#8e44ad", "#e74c3c"]
+    obs_labels = ["$x^1$", "$x^2$", "$x^3$", "$x^4$", "$x^5$"]
+
     budget_prefs = []
-    for i in range(3):
-        for j in range(3):
+    for i in range(5):
+        for j in range(5):
             if i != j and prices[i] @ quantities[i] >= prices[i] @ quantities[j]:
                 budget_prefs.append((i, j))
 
-    # --- Menu data (right panel): 3 menus with choices ---
-    menus = [
-        ({"a", "b", "c"}, "a"),
-        ({"b", "c", "d"}, "c"),
-        ({"a", "c", "d"}, "a"),
-    ]
-    all_items = ["a", "b", "c", "d"]
-    item_colors = {"a": "#5b8def", "b": "#e67e22", "c": "#27ae60", "d": "#8e44ad"}
-
-    # Menu revealed preferences: chosen > each other item in menu
-    menu_prefs = []
-    for menu_set, chosen in menus:
-        for item in menu_set:
-            if item != chosen:
-                menu_prefs.append((chosen, item))
-
-    # --- Animation phases ---
-    # Phase 1 (0-11):  Data appears observation by observation (4 frames each)
-    # Phase 2 (12-23): Preference arrows appear one by one (2 frames each)
-    # Phase 3 (24-31): Scores fade in
-    # Phase 4 (32-39): Hold
-    TOTAL = 40
-
-    fig, (ax_b, ax_m) = plt.subplots(1, 2, figsize=(10, 4.5), facecolor=PALETTE["bg"])
+    TOTAL = 72
+    fig, ax = plt.subplots(figsize=(6, 5), facecolor=PALETTE["bg"])
 
     def _draw_arrow(ax, x0, y0, x1, y1, color, lw=1.5):
         dx, dy = x1 - x0, y1 - y0
         length = np.sqrt(dx**2 + dy**2)
-        if length < 0.01:
-            return
-        shrink = 0.18
+        if length < 0.01: return
+        shrink = 0.28
         sx, sy = x0 + shrink * dx / length, y0 + shrink * dy / length
         ex, ey = x1 - shrink * dx / length, y1 - shrink * dy / length
-        ax.annotate(
-            "", xy=(ex, ey), xytext=(sx, sy),
-            arrowprops=dict(arrowstyle="-|>", color=color, lw=lw, shrinkA=0, shrinkB=0),
-        )
-
-    # Node positions for preference mini-graphs (bottom area)
-    budget_node_pos = np.array([[1.5, 0.8], [5.5, 0.8], [3.5, 2.2]])
-    item_pos = {"a": (-0.6, 0.6), "b": (0.6, 0.6), "c": (0.6, -0.6), "d": (-0.6, -0.6)}
+        ax.annotate("", xy=(ex, ey), xytext=(sx, sy),
+                    arrowprops=dict(arrowstyle="-|>", color=color, lw=lw, shrinkA=0, shrinkB=0))
 
     def update(frame):
-        ax_b.clear()
-        ax_m.clear()
-        for ax in (ax_b, ax_m):
-            ax.set_facecolor(PALETTE["bg"])
+        ax.clear()
+        ax.set_facecolor(PALETTE["bg"])
+        ax.set_title("Budget Choice Analysis", fontsize=15, fontweight="bold", pad=12)
 
-        # ===== LEFT PANEL: Budget Choice =====
-        ax_b.set_title("Budget Choice", fontsize=13, fontweight="bold", pad=10)
-
-        # How many observations visible
-        n_obs = min((frame // 4) + 1, 3) if frame < 12 else 3
+        n_obs = min((frame // 6) + 1, 5) if frame < 30 else 5
 
         for t in range(n_obs):
             p0, p1 = prices[t]
             budget = expenditures[t]
             x0_max = budget / p0
             x1_max = budget / p1
-            ax_b.plot([0, x0_max], [x1_max, 0], color=obs_colors[t], lw=2, alpha=0.6)
-            ax_b.fill_between([0, x0_max], [x1_max, 0], alpha=0.06, color=obs_colors[t])
-            ax_b.scatter(
-                quantities[t, 0], quantities[t, 1],
-                color=obs_colors[t], s=100, zorder=5, edgecolors="white", lw=2,
-            )
-            ax_b.annotate(
-                obs_labels[t], (quantities[t, 0] + 0.25, quantities[t, 1] + 0.2),
-                fontsize=11, fontweight="bold", color=obs_colors[t],
-            )
+            ax.plot([0, x0_max], [x1_max, 0], color=obs_colors[t], lw=2.5, alpha=0.5)
+            ax.fill_between([0, x0_max], [x1_max, 0], alpha=0.06, color=obs_colors[t])
+            ax.scatter(quantities[t, 0], quantities[t, 1], color=obs_colors[t], s=140, zorder=5, edgecolors="white", lw=2)
+            ax.annotate(obs_labels[t], (quantities[t, 0] + 0.25, quantities[t, 1] + 0.2), 
+                        fontsize=12, fontweight="bold", color=obs_colors[t])
 
-        ax_b.set_xlim(-0.3, 8)
-        ax_b.set_ylim(-0.3, 7)
-        ax_b.set_xlabel("Good 1", fontsize=9)
-        ax_b.set_ylabel("Good 2", fontsize=9)
-        ax_b.grid(True, alpha=0.2, color=PALETTE["grid"])
+        ax.set_xlim(-0.3, 9)
+        ax.set_ylim(-0.3, 8)
+        ax.set_xlabel("Good 1", fontsize=11)
+        ax.set_ylabel("Good 2", fontsize=11)
+        ax.grid(True, alpha=0.15, color=PALETTE["grid"])
 
-        # Phase 1 subtitle: explain what's happening
-        if frame < 12:
-            if n_obs <= 3:
-                ax_b.text(
-                    4, 6.2,
-                    f"Observation {n_obs}: chose $x^{n_obs}$\non this budget",
-                    fontsize=9, ha="center", color=obs_colors[min(n_obs - 1, 2)],
-                    style="italic",
-                )
-
-        # Phase 2: preference arrows on the budget plot
-        if 12 <= frame:
-            n_arrows = min((frame - 12) // 2 + 1, len(budget_prefs)) if frame < 24 else len(budget_prefs)
+        if frame >= 30:
+            n_arrows = min((frame - 30) // 2 + 1, len(budget_prefs)) if frame < 56 else len(budget_prefs)
             for idx in range(n_arrows):
                 i, j = budget_prefs[idx]
-                _draw_arrow(
-                    ax_b,
-                    quantities[i, 0], quantities[i, 1],
-                    quantities[j, 0], quantities[j, 1],
-                    color=PALETTE["highlight"], lw=1.8,
-                )
-            if n_arrows > 0 and frame < 24:
-                i, j = budget_prefs[min(n_arrows - 1, len(budget_prefs) - 1)]
-                ax_b.text(
-                    4, 6.2,
-                    f"$x^{i+1}$ revealed preferred to $x^{j+1}$",
-                    fontsize=9, ha="center", color=PALETTE["highlight"], style="italic",
-                )
+                _draw_arrow(ax, quantities[i, 0], quantities[i, 1],
+                            quantities[j, 0], quantities[j, 1],
+                            color=PALETTE["highlight"], lw=2.0)
+            if frame < 56:
+                ax.text(4.5, 7.5, "Revealing Preferences...", fontsize=12, ha="center", color=PALETTE["highlight"], style="italic")
 
-        # Phase 3: score
-        if frame >= 24:
-            alpha = min((frame - 24) / 4, 1.0)
-            ax_b.text(
-                4, 6.2, "CCEI = 0.94",
-                fontsize=14, fontweight="bold", ha="center",
-                color=PALETTE["accent"], alpha=alpha,
-                bbox=dict(
-                    boxstyle="round,pad=0.4", facecolor="white",
-                    edgecolor=PALETTE["accent"], alpha=alpha,
-                ),
-            )
+        if frame >= 56:
+            alpha = min((frame - 56) / 5, 1.0)
+            ax.text(4.5, 7.0, "GARP Consistent\nScore = 1.0", fontsize=16, fontweight="bold", ha="center",
+                    color=PALETTE["accent"], alpha=alpha,
+                    bbox=dict(boxstyle="round,pad=0.5", facecolor="white", edgecolor=PALETTE["accent"], alpha=alpha))
 
-        # ===== RIGHT PANEL: Menu Choice =====
-        ax_m.set_title("Menu Choice", fontsize=13, fontweight="bold", pad=10)
-        ax_m.set_xlim(-2, 2)
-        ax_m.set_ylim(-2.5, 2.8)
-        ax_m.set_aspect("equal")
-        ax_m.axis("off")
+        fig.tight_layout()
 
-        n_menus = min((frame // 4) + 1, 3) if frame < 12 else 3
+    print("  Generating budget_hero.gif...")
+    anim = FuncAnimation(fig, update, frames=TOTAL, interval=250)
+    anim.save(OUTPUT_DIR / "budget_hero.gif", writer="pillow", dpi=DPI)
+    plt.close(fig)
 
-        menu_y_positions = [1.8, 0.0, -1.8]
+# ---------------------------------------------------------------------------
+# GIF 1B: Landing Page — Menu Choice
+# ---------------------------------------------------------------------------
+def generate_menu_hero():
+    import numpy as np
+    import matplotlib.pyplot as plt
+    from matplotlib.animation import FuncAnimation
+    
+    menus = [
+        ({"a", "b", "c", "d", "e"}, "a"),
+        ({"b", "c", "d", "e"}, "c"),
+        ({"b", "d", "e"}, "d"),
+        ({"b", "e"}, "b"),
+        ({"a", "c", "e"}, "a"),
+    ]
+    all_items = ["a", "b", "c", "d", "e"]
+    item_colors = {"a": "#5b8def", "b": "#e67e22", "c": "#27ae60", "d": "#8e44ad", "e": "#e74c3c"}
+
+    menu_prefs = []
+    for menu_set, chosen in menus:
+        for item in menu_set:
+            if item != chosen:
+                menu_prefs.append((chosen, item))
+
+    TOTAL = 72
+    fig, ax = plt.subplots(figsize=(6, 5), facecolor=PALETTE["bg"])
+
+    def update(frame):
+        ax.clear()
+        ax.set_facecolor(PALETTE["bg"])
+        ax.set_title("Discrete Menu Choice Analysis", fontsize=15, fontweight="bold", pad=12)
+        ax.set_xlim(-3, 3)
+        ax.set_ylim(-4.2, 3.5)
+        ax.set_aspect("equal")
+        ax.axis("off")
+
+        n_menus = min((frame // 6) + 1, 5) if frame < 30 else 5
+        menu_y_positions = [2.5, 1.0, -0.5, -2.0, -3.5]
+
         for m_idx in range(n_menus):
             menu_set, chosen = menus[m_idx]
             y_base = menu_y_positions[m_idx]
             sorted_items = sorted(menu_set)
             n_items = len(sorted_items)
-            x_positions = np.linspace(-0.8, 0.8, n_items)
+            x_positions = np.linspace(-1.5 * (n_items-1)/4, 1.5 * (n_items-1)/4, n_items) if n_items > 1 else [0]
 
-            # Draw menu bracket
-            ax_m.plot(
-                [x_positions[0] - 0.35, x_positions[-1] + 0.35],
-                [y_base - 0.45, y_base - 0.45],
-                color=PALETTE["secondary"], lw=1, alpha=0.5,
-            )
-            ax_m.text(
-                -1.6, y_base, f"Menu {m_idx+1}:",
-                fontsize=8, va="center", color=PALETTE["secondary"],
-            )
+            ax.plot([min(x_positions)-0.5, max(x_positions)+0.5], [y_base-0.45, y_base-0.45], 
+                    color=PALETTE["secondary"], lw=1.5, alpha=0.4)
+            ax.text(-2.6, y_base, f"Menu {m_idx+1}:", fontsize=11, va="center", color=PALETTE["secondary"])
 
             for i_idx, item in enumerate(sorted_items):
                 x = x_positions[i_idx]
                 is_chosen = item == chosen
-                radius = 0.22
+                radius = 0.28
                 color = item_colors[item]
-                alpha = 1.0 if is_chosen else 0.35
+                alpha = 1.0 if is_chosen else 0.3
                 lw = 2.5 if is_chosen else 1.0
-
-                circle = plt.Circle(
-                    (x, y_base), radius,
-                    facecolor=color, alpha=alpha,
-                    edgecolor="white" if is_chosen else PALETTE["secondary"],
-                    lw=lw, zorder=10,
-                )
-                ax_m.add_patch(circle)
-                ax_m.text(
-                    x, y_base, item,
-                    ha="center", va="center", fontsize=11,
-                    fontweight="bold" if is_chosen else "normal",
-                    color="white" if is_chosen else PALETTE["edge"],
-                    zorder=11,
-                )
+                circle = plt.Circle((x, y_base), radius, facecolor=color, alpha=alpha, 
+                                    edgecolor="white" if is_chosen else PALETTE["secondary"], lw=lw, zorder=10)
+                ax.add_patch(circle)
+                ax.text(x, y_base, item.upper(), ha="center", va="center", fontsize=13,
+                        fontweight="bold" if is_chosen else "normal",
+                        color="white" if is_chosen else PALETTE["edge"], zorder=11)
                 if is_chosen:
-                    ax_m.annotate(
-                        "", xy=(x, y_base + radius + 0.12),
-                        xytext=(x, y_base + radius + 0.35),
-                        arrowprops=dict(
-                            arrowstyle="-|>", color=color, lw=2, shrinkA=0, shrinkB=0,
-                        ),
-                    )
+                    ax.annotate("", xy=(x, y_base+radius+0.15), xytext=(x, y_base+radius+0.45),
+                                arrowprops=dict(arrowstyle="-|>", color=color, lw=2.5, shrinkA=0, shrinkB=0))
 
-        # Phase 2: preference summary
-        if 12 <= frame < 24:
-            n_shown = min((frame - 12) // 2 + 1, len(menu_prefs))
-            shown = menu_prefs[:n_shown]
-            # Show as text list
-            lines = []
-            for chosen, other in shown[:6]:
-                lines.append(f"{chosen} \u227b {other}")
-            if lines:
-                text = "   ".join(lines)
-                ax_m.text(
-                    0, -2.3, text,
-                    fontsize=9, ha="center", color=PALETTE["highlight"],
-                    style="italic",
-                )
+        if 30 <= frame < 56:
+            ax.text(0, -4.0, "Inferring Preference Relations...", fontsize=12, ha="center", color=PALETTE["highlight"], style="italic")
 
-        # Phase 3: score
-        if frame >= 24:
-            alpha = min((frame - 24) / 4, 1.0)
-            ax_m.text(
-                0, -2.3, "HM = 1.00",
-                fontsize=14, fontweight="bold", ha="center",
-                color=PALETTE["accent"], alpha=alpha,
-                bbox=dict(
-                    boxstyle="round,pad=0.4", facecolor="white",
-                    edgecolor=PALETTE["accent"], alpha=alpha,
-                ),
-            )
+        if frame >= 56:
+            alpha = min((frame - 56) / 5, 1.0)
+            ax.text(0, -3.2, "SARP Consistent\nScore = 1.0", fontsize=16, fontweight="bold", ha="center",
+                    color=PALETTE["accent"], alpha=alpha,
+                    bbox=dict(boxstyle="round,pad=0.5", facecolor="white", edgecolor=PALETTE["accent"], alpha=alpha))
 
-        # Global subtitle
-        if frame < 12:
-            fig.suptitle(
-                "Observe Choices", fontsize=11, color=PALETTE["edge"],
-                y=0.02, style="italic",
-            )
-        elif frame < 24:
-            fig.suptitle(
-                "Reveal Preferences", fontsize=11, color=PALETTE["highlight"],
-                y=0.02, style="italic",
-            )
-        else:
-            fig.suptitle(
-                "Score Consistency", fontsize=11, color=PALETTE["accent"],
-                y=0.02, style="italic",
-            )
+        fig.tight_layout()
 
-        fig.tight_layout(rect=[0, 0.04, 1, 1])
-
-    anim = FuncAnimation(fig, update, frames=TOTAL, interval=200)
-    anim.save(OUTPUT_DIR / "landing_hero.gif", writer="pillow", dpi=DPI)
+    print("  Generating menu_hero.gif...")
+    anim = FuncAnimation(fig, update, frames=TOTAL, interval=250)
+    anim.save(OUTPUT_DIR / "menu_hero.gif", writer="pillow", dpi=DPI)
     plt.close(fig)
-    print("  landing_hero.gif")
 
-
-# ---------------------------------------------------------------------------
-# GIF 2: Floyd-Warshall Transitive Closure
-# ---------------------------------------------------------------------------
 def generate_floyd_warshall():
     """Preference graph filling in through transitive closure."""
     n = 5
@@ -692,7 +606,8 @@ def main():
     OUTPUT_DIR.mkdir(exist_ok=True)
     print("Generating documentation GIFs...")
 
-    generate_landing_hero()
+    generate_budget_hero()
+    generate_menu_hero()
     generate_floyd_warshall()
     generate_garp_violation()
     generate_power_analysis()
