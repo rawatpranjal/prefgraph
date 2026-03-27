@@ -1,10 +1,10 @@
 [build-system]
-requires = ["maturin>=1.7,<2.0"]
-build-backend = "maturin"
+requires = ["setuptools>=68.0", "setuptools-rust>=1.8"]
+build-backend = "setuptools.build_meta"
 
 [project]
 name = "pyrevealed"
-version = "0.5.2"
+version = "0.5.3"
 description = "Revealed preference analysis at scale — rationality scores, efficiency indices, and utility recovery. Rust engine, Python interface."
 readme = "README.md"
 license = {text = "MIT"}
@@ -31,6 +31,7 @@ classifiers = [
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
     "Topic :: Scientific/Engineering :: Mathematics",
     "Typing :: Typed"
 ]
@@ -80,6 +81,12 @@ all = [
 Homepage = "https://pyrevealed.readthedocs.io"
 Documentation = "https://pyrevealed.readthedocs.io"
 Repository = "https://github.com/rawatpranjal/PyRevealed"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+pyrevealed = ["py.typed"]
 
 [tool.maturin]
 python-source = "src"

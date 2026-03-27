@@ -564,7 +564,7 @@ from pyrevealed.core.result import (
     RankDependentUtilityResult,
 )
 
-__version__ = "0.5.2"
+__version__ = "0.5.3"
 
 __all__ = [
     # ==========================================================================

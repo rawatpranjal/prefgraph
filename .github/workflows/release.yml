@@ -30,14 +30,14 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        target: [x86_64]
+        target: [x86_64, aarch64-unknown-linux-gnu]
     steps:
       - uses: actions/checkout@v4
       - name: Build wheels
         uses: PyO3/maturin-action@v1
         with:
           target: ${{ matrix.target }}
-          args: --release --out dist -i python3.10 -i python3.11 -i python3.12
+          args: --release --out dist -i python3.10 -i python3.11 -i python3.12 -i python3.13
           manylinux: "2_28"
           before-script-linux: dnf install -y clang-devel
       - uses: actions/upload-artifact@v4
@@ -50,7 +50,7 @@ jobs:
     strategy:
       matrix:
         target: [x86_64-apple-darwin, aarch64-apple-darwin]
-        python-version: ["3.10", "3.11", "3.12"]
+        python-version: ["3.10", "3.11", "3.12", "3.13"]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -70,7 +70,7 @@ jobs:
     runs-on: windows-latest
     strategy:
       matrix:
-        python-version: ["3.10", "3.11", "3.12"]
+        python-version: ["3.10", "3.11", "3.12", "3.13"]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
