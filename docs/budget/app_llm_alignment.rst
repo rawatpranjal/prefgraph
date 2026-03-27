@@ -11,7 +11,7 @@ LLMs to make inconsistent choices when selecting from package menus.
 .. image:: ../_static/app_llm_hero.jpg
    :width: 70%
    :align: center
-   :alt: Claude Code AI making decisions in terminal
+   :alt: AI provider logos — OpenAI, Anthropic, Gemini, Meta, Mistral, Cohere
 
 .. raw:: html
 
