@@ -2,12 +2,7 @@ LLM Enterprise Consistency Benchmark
 =====================================
 
 Applying SARP and Houtman-Maks to measure whether LLM decision-making
-is rationalizable --- i.e., whether any fixed preference ranking over
-actions can explain the choices an LLM makes under varying contexts.
-
-.. image:: ../_static/app_llm_benchmark_summary.png
-   :width: 100%
-   :align: center
+is rationalizable across 5 enterprise deployment scenarios.
 
 Why This Measurement Matters
 ----------------------------
@@ -15,32 +10,13 @@ Why This Measurement Matters
 Accuracy benchmarks test whether an LLM gets the *right* answer.
 Consistency benchmarks test whether it has a *coherent* policy.
 
-An LLM deployed for support triage might correctly escalate 90% of
-urgent tickets. But if it prefers action A over B in one context and
-B over A in another, its decisions are **intransitive** --- no fixed
-ranking can explain them. This is invisible to accuracy metrics.
+SARP (Strong Axiom of Revealed Preference) tests whether a fixed ranking
+over actions exists that explains all choices. Houtman-Maks quantifies
+what fraction of behavior is rationalizable. Standard tools in behavioral
+economics since Varian (1982), applied here to LLM deployment evaluation.
 
-SARP (Strong Axiom of Revealed Preference) detects exactly this.
-Houtman-Maks quantifies how much of the behavior is rationalizable.
-These tools, standard in behavioral economics since Varian (1982),
-have never been applied at scale to LLM deployment evaluation.
-
-Design
-------
-
-.. list-table::
-   :widths: 25 75
-
-   * - **Scale**
-     - 10,000 decisions (5 scenarios × 5 prompts × 2 models × 200 trials)
-   * - **Models**
-     - gpt-4o-mini (instinct) vs o4-mini (reasoning)
-   * - **Menus**
-     - All C(5,2)=10 pairwise comparisons + 190 random subsets of size 2--4
-   * - **Inference**
-     - Permutation test (H₀: uniform random), bootstrap 95% CI, BH-FDR
-
-**Scenarios** --- each models a real LLM deployment endpoint:
+Scenarios and Prompts
+---------------------
 
 .. list-table::
    :header-rows: 1
@@ -65,206 +41,195 @@ Design
      - Purchase request
      - auto-approve, tag, request quotes, escalate, deny
 
-**Prompts** --- 5 production system prompts per scenario, varying on
-axes a real team would A/B test: *minimal* (bare instructions),
-*decision tree* (explicit rules), *conservative* (escalate ambiguity),
-*aggressive* (minimize human routing), *chain-of-thought* (reason first).
+5 prompt strategies per scenario: *minimal*, *decision tree*, *conservative*,
+*aggressive*, *chain-of-thought*. Full production prompts (100--300 words).
 
-Results
--------
+Experiment v1: Pooled SARP (10,000 decisions)
+----------------------------------------------
 
-SARP Consistency
-~~~~~~~~~~~~~~~~
+**Design**: 5 scenarios x 5 prompts x 2 models x 200 vignettes x 1 menu each.
+Different vignette per trial. SARP tested across all 200 trials per group.
+
+**Result**: 50/50 groups fail SARP. HM=0.60 everywhere. Zero variation.
+
+**What we learned:**
+
+- At temp=0, both gpt-4o-mini and o4-mini fail SARP on every scenario-prompt
+  combination with maximum violations (10/10 pairwise cycles)
+- Observation-level bootstrap HM is 0.95 [0.93, 0.97] — 95% of individual
+  decisions are locally rationalizable
+- Permutation p=1.000 everywhere — LLMs are far more consistent than random
+- gpt-4o-mini and o4-mini are indistinguishable on consistency
+- Prompts shift choice distributions (KL divergence 0.02--0.84) but never
+  eliminate preference cycles
+- Conservative prompts flip 6/10 pairwise preferences vs aggressive, but both
+  produce 10 SARP violations
+
+**Design flaw identified:** Each trial uses a different vignette. SARP
+violations reflect the LLM correctly adapting to different inputs, not
+actual menu-dependent inconsistency. EDA confirmed: 50% of vignettes
+produce identical choices across all 5 prompts.
+
+Experiment v2: Per-Vignette SARP (3,750 decisions)
+----------------------------------------------------
+
+**Design fix**: Hold vignette constant, vary only the menu. For each of 10
+curated vignettes per scenario, present all C(5,2)=10 pairwise menus + 5
+size-3 menus = 15 menus. Test SARP within each vignette.
+
+**Scale**: 5 scenarios x 5 prompts x 10 vignettes x 15 menus = 3,750 calls.
+gpt-4o-mini only, temp=0.
+
+v2 Results
+~~~~~~~~~~
+
+SARP pass rates by scenario and prompt:
 
 .. list-table::
    :header-rows: 1
    :widths: 22 13 13 13 13 13
 
-   * - gpt-4o-mini
+   * - Scenario
      - Minimal
-     - Decision Tree
-     - Conservative
-     - Aggressive
+     - Dec. Tree
+     - Conserv.
+     - Aggress.
      - CoT
    * - Support Router
-     - FAIL (10)
-     - FAIL (10)
-     - FAIL (10)
-     - FAIL (10)
-     - FAIL (10)
+     - 90%
+     - 80%
+     - 100%
+     - 80%
+     - 90%
    * - Alert Triage
-     - FAIL (10)
-     - FAIL (10)
-     - FAIL (10)
-     - FAIL (10)
-     - FAIL (10)
+     - 80%
+     - 100%
+     - 90%
+     - 100%
+     - 90%
    * - Content Review
-     - FAIL (10)
-     - FAIL (10)
-     - FAIL (10)
-     - FAIL (6)
-     - FAIL (10)
+     - 90%
+     - 80%
+     - 70%
+     - 90%
+     - 80%
    * - Job Screen
-     - FAIL (10)
-     - FAIL (10)
-     - FAIL (10)
-     - FAIL (10)
-     - FAIL (10)
+     - 70%
+     - 60%
+     - 80%
+     - 80%
+     - 80%
    * - Procurement
-     - FAIL (10)
-     - FAIL (10)
-     - FAIL (10)
-     - FAIL (10)
-     - FAIL (10)
+     - 70%
+     - 100%
+     - 70%
+     - 90%
+     - 90%
 
-*Violation count in parentheses. Max = C(5,2) = 10. Both models identical.*
+*Percentage of 10 vignettes where SARP is satisfied (deterministic, temp=0).
+Higher = more consistent for that prompt-scenario combination.*
 
-**50/50 groups fail SARP at n=200.** No prompt strategy, model, or
-scenario achieves transitivity. The one early PASS (procurement ×
-o4-mini × aggressive at n=15) flipped to FAIL at n=200.
-
-Houtman-Maks Efficiency
-~~~~~~~~~~~~~~~~~~~~~~~
+SARP pass rates by vignette difficulty tier:
 
 .. list-table::
    :header-rows: 1
-   :widths: 22 16 16 16 16 16
+   :widths: 22 16 16 16 16
 
-   * - Metric
-     - Support
-     - Alert
-     - Content
-     - Jobs
-     - Procurement
-   * - Item HM
-     - 0.60
-     - 0.60
-     - 0.60
-     - 0.60
-     - 0.60
-   * - Obs HM (gpt)
-     - 0.947
-     - 0.948
-     - 0.958
-     - 0.947
-     - 0.950
-   * - Obs HM (o4)
-     - 0.947
-     - 0.948
-     - 0.955
-     - 0.947
-     - 0.950
-   * - 95% CI
-     - [.93, .96]
-     - [.93, .97]
-     - [.94, .97]
-     - [.93, .97]
-     - [.93, .97]
-   * - Permutation p
-     - 1.000
-     - 1.000
-     - 1.000
-     - 1.000
-     - 1.000
-
-*Item HM = 3/5 items in largest consistent subset. Obs HM = ~95% of
-individual decisions rationalizable (bootstrap, 1000 resamples).
-Averages across 5 prompts per scenario.*
-
-Prompt Effects
-~~~~~~~~~~~~~~
-
-Prompts shift *which* actions the LLM prefers but do not fix the
-preference cycles:
-
-.. list-table::
-   :header-rows: 1
-   :widths: 22 16 40 16
-
-   * - Prompt
-     - KL from uniform
-     - Strongest bias
-     - SARP violations
-   * - Minimal
-     - 0.02--0.43
-     - scenario-dependent
-     - 10
-   * - Decision Tree
-     - 0.02--0.26
-     - moderate
-     - 10
-   * - Conservative
-     - 0.24--0.42
-     - escalation actions
-     - 10
-   * - Aggressive
-     - 0.02--0.84
-     - auto-resolve / approve
-     - 6--10
-   * - Chain-of-Thought
-     - 0.03--0.50
-     - moderate
-     - 10
-
-*KL divergence from uniform over 5 actions. Higher = more biased distribution.
-Aggressive on content review is the most biased (KL=0.84, 57% approve) and
-the only prompt to reduce violations below maximum.*
-
-Model Comparison
-~~~~~~~~~~~~~~~~
-
-At n=200 per group, gpt-4o-mini and o4-mini are statistically
-indistinguishable on consistency:
-
-.. list-table::
-   :header-rows: 1
-   :widths: 30 18 18 18
-
-   * - Scenario (avg over 5 prompts)
-     - gpt-4o-mini
-     - o4-mini
-     - Delta
+   * - Scenario
+     - Clear
+     - Binary
+     - Ambiguous
+     - Adversarial
    * - Support Router
-     - 0.947
-     - 0.947
-     - 0.000
+     - 87%
+     - 93%
+     - 90%
+     - 80%
    * - Alert Triage
-     - 0.948
-     - 0.948
-     - 0.000
+     - 93%
+     - 100%
+     - 90%
+     - 80%
    * - Content Review
-     - 0.958
-     - 0.955
-     - −0.003
+     - 60%
+     - 80%
+     - 100%
+     - 100%
    * - Job Screen
-     - 0.947
-     - 0.947
-     - 0.000
+     - 87%
+     - 67%
+     - 70%
+     - 70%
    * - Procurement
-     - 0.950
-     - 0.950
-     - 0.000
+     - 93%
+     - 73%
+     - 90%
+     - 80%
 
-*Observation-level HM (bootstrap mean, 1000 resamples). Reasoning
-confers no consistency advantage.*
+*Averaged across 5 prompts per tier. Clear = unambiguous input, Binary = 2
+actions compete, Ambiguous = 3+ plausible, Adversarial = designed to trigger
+menu effects.*
 
-Key Takeaways
-~~~~~~~~~~~~~
+IIA violations (menu-dependence):
 
-1. **LLM inconsistency is structural.** 50/50 prompt-model-scenario
-   combinations produce intransitive preference cycles. This is
-   invisible to accuracy benchmarks.
+.. list-table::
+   :header-rows: 1
+   :widths: 30 20 50
 
-2. **95% locally consistent, 100% globally inconsistent.** Individual
-   decisions are reasonable; cycles emerge from rare pairwise
-   contradictions across 200 trials.
+   * - Scenario
+     - IIA violations
+     - Interpretation
+   * - Support Router
+     - 3
+     - Adding a third option rarely changes pairwise preference
+   * - Alert Triage
+     - 2
+     - Nearly menu-independent decisions
+   * - Content Review
+     - 9
+     - Moderate menu effects — adding options shifts moderation decisions
+   * - Job Screen
+     - 15
+     - Strongest menu effects — candidate ranking changes with alternatives shown
+   * - Procurement
+     - 8
+     - Moderate menu effects on spending decisions
 
-3. **Prompts shift distributions, not cycle structure.** Conservative
-   prompts push toward escalation (KL=0.42); aggressive prompts toward
-   auto-resolve. Neither eliminates transitivity violations.
+*IIA = Independence of Irrelevant Alternatives. A violation means adding a
+third option to a pairwise menu changed which of two options is preferred.*
 
-4. **Reasoning confers no advantage.** o4-mini and gpt-4o-mini are
-   indistinguishable on consistency at n=200.
+What We Learned (v2)
+~~~~~~~~~~~~~~~~~~~~
+
+- **gpt-4o-mini is 60--100% SARP-consistent per vignette.** When input is
+  held constant, most action rankings are transitive. The v1 "universal failure"
+  was a design artifact.
+
+- **Job screening is the hardest scenario** (74% mean pass rate, 15 IIA
+  violations). Resume evaluation creates the most menu-dependent decisions.
+
+- **Content review "clear" vignettes only pass 60%.** Even supposedly
+  unambiguous posts produce menu-dependent moderation decisions — the
+  LLM's severity judgment shifts when alternative actions are shown.
+
+- **Decision tree prompts hurt consistency on job screening** (60% pass
+  rate vs 80% for aggressive/conservative/CoT). Explicit if/then rules
+  create more edge cases than they resolve.
+
+- **Conservative prompts hurt consistency on content review and procurement**
+  (70% each). Risk-averse escalation policies create more decision boundaries
+  to trip over.
+
+- **IIA violations are concentrated in job screening and content review.**
+  These scenarios have the most subjective decision boundaries, where the
+  presence of a third option acts as a "decoy" shifting the pairwise ranking.
+
+- **Binary and adversarial vignettes produce the most failures**, as expected.
+  But the surprise is content_review: "clear" vignettes (60%) are *harder*
+  than ambiguous ones (100%). Moderation has no truly unambiguous cases.
+
+- **Alert triage is the most consistent scenario** (92% mean). Infrastructure
+  alerts have the clearest severity ordering.
 
 Reproduce
 ---------
@@ -275,12 +240,18 @@ Reproduce
    export OPENAI_API_KEY=your_key
    cd examples
 
+   # v1 (pooled SARP, 10K decisions)
    python -m applications.llm_benchmark.generate_vignettes --all --trials 200
    python -m applications.llm_benchmark.run_benchmark --all --trials 200
    python -m applications.llm_benchmark.analyze --all
-   python -m applications.llm_benchmark.figures
 
-Each stage is resumable. Data in ``examples/applications/llm_benchmark/data/``.
+   # v2 (per-vignette SARP, 3.75K decisions)
+   python -m applications.llm_benchmark.v2.generate_vignettes --all
+   python -m applications.llm_benchmark.v2.run_benchmark --all --stage 1
+   python -m applications.llm_benchmark.v2.analyze --all
+
+All stages are resumable. v1 data in ``llm_benchmark/data/``,
+v2 data in ``llm_benchmark/v2/data/``.
 
 Appendix: Full Pipeline Documentation
 --------------------------------------
@@ -293,184 +264,76 @@ Data Generation
    ┌──────────────────┐     ┌──────────────────┐     ┌──────────────────┐
    │ Vignette Gen      │     │ Menu Gen          │     │ LLM Querying     │
    │                   │     │                   │     │                  │
-   │ o4-mini generates │────▶│ Deterministic:    │────▶│ For each         │
-   │ 200 situations    │     │ C(5,2)=10 pairwise│     │ (vig, menu,      │
-   │ per scenario      │     │ + random size 2-4 │     │  prompt, model): │
-   │                   │     │ Seed=42           │     │  → OpenAI API    │
-   │ Cached: JSONL     │     │                   │     │  → parse choice  │
-   │ per scenario      │     │ Each trial gets   │     │  → append JSONL  │
-   └──────────────────┘     │ one menu           │     └──────────────────┘
-                             └──────────────────┘
-
-   Output: {scenario}__{model_slug}.jsonl
-   Schema per record:
-     scenario, prompt_name, model, trial, menu, vignette,
-     system_prompt, user_prompt, response, choice, choice_name, timestamp
+   │ v1: o4-mini, 200  │     │ v1: 1 random menu │     │ For each         │
+   │ random per scen.  │────▶│ per vignette      │────▶│ (vig, menu,      │
+   │                   │     │                   │     │  prompt, model): │
+   │ v2: gpt-4o-mini,  │     │ v2: ALL 15 menus  │     │  → OpenAI API    │
+   │ 10 curated tiers  │     │ per vignette      │     │  → parse choice  │
+   │                   │     │ (10 pair + 5 tri) │     │  → append JSONL  │
+   └──────────────────┘     └──────────────────┘     └──────────────────┘
 
 Feature Extraction
 ~~~~~~~~~~~~~~~~~~
 
-Each ``(prompt, model)`` group produces a ``MenuChoiceLog``:
+Each ``(vignette, prompt)`` group produces a ``MenuChoiceLog``:
 
 .. code-block:: python
 
    from pyrevealed import MenuChoiceLog
+   from pyrevealed.algorithms.abstract_choice import validate_menu_sarp
 
    log = MenuChoiceLog(
-       menus=[frozenset(r["menu"]) for r in records],   # T menus
-       choices=[r["choice"] for r in records],           # T choices
+       menus=[frozenset(r["menu"]) for r in records],
+       choices=[r["choice"] for r in records],
        item_labels=["auto_reply_kb", "create_bug_ticket", ...],
    )
-
-   # Convert to Engine format for batch processing
-   tuples = [log.to_engine_tuple() for log in logs]
-   # → list of (menus: list[list[int]], choices: list[int], n_items: int)
-
-The ``MenuChoiceLog`` validates that each choice is in its menu, indices
-are non-negative, and menu/choice arrays have matching lengths.
+   result = validate_menu_sarp(log)
+   # result.is_consistent, result.violations, result.transitive_closure
 
 Analysis Pipeline
 ~~~~~~~~~~~~~~~~~
 
 .. code-block:: text
 
-   MenuChoiceLog(s)
+   MenuChoiceLog
        │
-       ├─── Engine.analyze_menus() ──── Batch SARP/WARP/HM via Rust
-       │    │
-       │    └─── MenuResult per user:
-       │           is_sarp, is_warp, n_sarp_violations, n_warp_violations,
-       │           hm_consistent, hm_total, max_scc
-       │
-       ├─── validate_menu_sarp() ──── Per-user detailed analysis
-       │    │
-       │    └─── AbstractSARPResult:
-       │           is_consistent, violations (cycle list),
-       │           revealed_preference_matrix (N×N bool),
-       │           transitive_closure (N×N bool)
-       │
-       ├─── compute_menu_efficiency() ── Houtman-Maks
-       │    │
-       │    └─── HoutmanMaksAbstractResult:
-       │           efficiency_index (0-1),
-       │           removed_observations, remaining_observations
-       │
-       └─── Statistical Inference (custom, in analyze.py):
-            ├── Permutation test: shuffle choices, recompute violations
-            │   H₀: uniform random choice from menu
-            │   p = P(random violations ≥ observed)
-            │
-            ├── Bootstrap CI: resample observations, recompute HM
-            │   1000 resamples, 95% percentile interval
-            │
-            └── BH-FDR: Benjamini-Hochberg across all 50 tests
+       ├─── validate_menu_sarp() ─── SARP pass/fail + cycle list
+       ├─── compute_menu_efficiency() ─── HM efficiency (0-1)
+       └─── IIA detection ─── compare pairwise vs triple menu choices
 
 Metrics Reference
 ~~~~~~~~~~~~~~~~~
 
 .. list-table::
    :header-rows: 1
-   :widths: 20 20 60
+   :widths: 25 15 60
 
    * - Metric
      - Range
      - Interpretation
-   * - SARP
-     - PASS/FAIL
-     - Does a transitive ranking exist that explains all choices?
-   * - HM (item)
+   * - SARP pass rate
+     - [0%, 100%]
+     - Fraction of vignettes with transitive action ranking (v2)
+   * - HM efficiency
      - [0, 1]
-     - Fraction of items in largest consistent subset. 3/5=0.60 means
-       2 items participate in preference cycles.
-   * - HM (obs)
-     - [0, 1]
-     - Fraction of observations rationalizable by a consistent subset.
-       0.95 means 95% of decisions are locally consistent.
-   * - WARP violations
-     - [0, C(n,2)]
-     - Direct pairwise preference reversals (subset of SARP).
+     - Fraction of items in largest consistent subset
+   * - IIA violations
+     - [0, n_triples]
+     - Cases where adding a third option flips a pairwise preference
    * - Max SCC
      - [1, n]
-     - Largest strongly connected component in preference graph.
-       1=acyclic, n=all items in one cycle.
-   * - Permutation p
-     - [0, 1]
-     - Probability that random uniform choices produce ≥ observed violations.
-       High p = LLM is more consistent than random.
-   * - KL divergence
-     - [0, ∞)
-     - Divergence of choice distribution from uniform. Higher = more biased
-       toward specific actions.
-
-Prompt Specification
-~~~~~~~~~~~~~~~~~~~~
-
-Each scenario has 5 production system prompts (100--300 words each):
-
-- **Minimal**: 2--3 sentences. ``"Route support tickets. Pick one action."``
-- **Decision Tree**: Full if/then rubric. ``"If 'outage' → escalate. If 'invoice' → billing..."``
-- **Conservative**: Risk-averse. ``"When in doubt, route to human. False escalation costs 5 min; missed issue costs a customer."``
-- **Aggressive**: Throughput-optimized. ``"Minimize human involvement. Auto-reply for anything matching docs."``
-- **Chain-of-Thought**: Structured reasoning. ``"1. Identify intent. 2. Assess urgency. 3. Check if docs suffice. 4. Decide."``
-
-Full prompt text: ``examples/applications/llm_benchmark/config.py``
-
-Response Parsing
-~~~~~~~~~~~~~~~~
-
-LLM responses are parsed using letter labels (A--E) to avoid the LLM
-choosing actions not in the menu:
-
-.. code-block:: text
-
-   User prompt (excerpt):
-     Choose from ONLY these options:
-     (A) auto_reply_kb: Auto-reply with knowledge base article link
-     (B) create_bug_ticket: Create engineering bug ticket in Jira
-     Reply with ONLY the letter (A, B). Do not explain.
-
-   Parse priority: exact letter → letter in short response → item name fallback
-   Parse success rate: ~95% for gpt-4o-mini, ~100% for o4-mini (with 4000 token budget)
-
-Data Storage
-~~~~~~~~~~~~
-
-All data is append-only JSONL. Each ``run_benchmark`` invocation checks
-existing ``(prompt_name, trial)`` pairs and only runs missing ones.
-Safe to interrupt and resume.
-
-.. code-block:: text
-
-   examples/applications/llm_benchmark/
-   ├── config.py                          # 5 scenarios, 5 prompts, 2 models
-   ├── generate_vignettes.py              # Stage 0: o4-mini vignette gen
-   ├── run_benchmark.py                   # Stage 1: API calls → JSONL
-   ├── analyze.py                         # Stage 2: SARP/HM + inference
-   ├── figures.py                         # Stage 3: 2×3 panel
-   └── data/
-       ├── vignettes/                     # 200 vignettes per scenario
-       │   └── {scenario}.jsonl
-       ├── responses/                     # 10 files (scenario × model)
-       │   └── {scenario}__{model}.jsonl  # ~1000 records each
-       └── results/
-           └── summary.json              # analysis output
+     - Largest strongly connected component. 1=acyclic, n=all items in one cycle
 
 Limitations
 ~~~~~~~~~~~
 
-1. **v1 design confound**: Each trial uses a different vignette. SARP
-   violations may reflect correct context-sensitivity, not inconsistency.
-   Fixed in v2 (per-vignette SARP with constant input).
-
-2. **No ground truth**: We measure consistency, not accuracy. A perfectly
+1. **No ground truth**: We measure consistency, not accuracy. A perfectly
    consistent but wrong system would score well.
 
-3. **5 synthetic scenarios**: Results may not generalize to all LLM
-   deployment contexts.
+2. **5 synthetic scenarios**: Results may not generalize to all LLM deployments.
 
-4. **Parse failures**: ~5% of gpt-4o-mini responses and ~0% of o4-mini
-   (with 4000 token budget) fail to parse, introducing minor selection bias.
+3. **Deterministic only (v2 Stage 1)**: SARP assumes deterministic choice.
+   Stochastic testing (RUM, K=20 repetitions at temp=0.7) planned for Stage 2.
 
-5. **SARP assumes deterministic choice**: LLMs are stochastic. The proper
-   framework for temp>0 is Random Utility Models (RUM). Addressed in v2
-   via stochastic condition with K=20 repetitions.
+4. **Single model**: v2 tests gpt-4o-mini only. v1 showed o4-mini is
+   indistinguishable, but other model families (Claude, Gemini) untested.
