@@ -24,6 +24,8 @@ from pyrevealed.datasets._yoochoose import load_yoochoose
 from pyrevealed.datasets._olist import load_olist
 from pyrevealed.datasets._m5 import load_m5
 from pyrevealed.datasets._rees46 import load_rees46
+from pyrevealed.datasets._online_retail_ii import load_online_retail_ii
+from pyrevealed.datasets._hm import load_hm
 
 
 def list_datasets() -> list[dict[str, str]]:
@@ -103,6 +105,20 @@ def list_datasets() -> list[dict[str, str]]:
             "goods": "Menu-based (items viewed per session)",
             "observations": "~5-50 sessions per user",
         },
+        {
+            "name": "online_retail_ii",
+            "description": "UK e-commerce transactions from 5,942 customers over Dec 2009 - Dec 2011",
+            "source": "UCI ML Repository (Online Retail II)",
+            "goods": "30 top products (real prices)",
+            "observations": "~4-24 months per customer",
+        },
+        {
+            "name": "hm",
+            "description": "H&M fashion transactions from 1.36M customers over Sep 2018 - Sep 2020",
+            "source": "Kaggle (h-and-m-personalized-fashion-recommendations)",
+            "goods": "20 product groups (article prefix)",
+            "observations": "~6-24 months per customer",
+        },
     ]
 
 
@@ -117,5 +133,7 @@ __all__ = [
     "load_olist",
     "load_m5",
     "load_rees46",
+    "load_online_retail_ii",
+    "load_hm",
     "list_datasets",
 ]
