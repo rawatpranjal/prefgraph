@@ -1,8 +1,12 @@
 """Taobao User Behavior dataset loader.
 
 Loads the Taobao/Alibaba user behavior dataset (100M events, 988K users)
-and reconstructs daily menu-choice observations: items viewed in a day
-form the menu, purchased item is the choice.
+and reconstructs session-based menu-choice observations: items viewed in
+a session form the menu, purchased item is the choice.
+
+Sessions are defined by 30-minute (1800s) inactivity gaps between
+consecutive events of the same user, avoiding calendar-day boundary
+artifacts (e.g. browsing at 23:50, purchasing at 00:10).
 
 Data must be downloaded from Kaggle:
   kaggle datasets download -d marwa80/userbehavior
@@ -25,6 +29,7 @@ from prefgraph.core.session import MenuChoiceLog
 MIN_MENU_SIZE = 2
 MAX_MENU_SIZE = 50
 CHUNK_SIZE = 5_000_000
+SESSION_GAP = 1800  # 30-minute inactivity gap (seconds)
 
 
 def _find_data_dir(data_dir: str | Path | None) -> Path:
@@ -62,12 +67,15 @@ def load_taobao(
 ) -> dict[str, MenuChoiceLog]:
     """Load Taobao user behavior as menu-choice observations.
 
-    Daily sessions: items viewed (pv) = menu, item bought (buy) = choice.
-    Only keeps days with exactly 1 purchase and >= 2 viewed items.
+    Gap-based sessions: a new session starts when the gap between
+    consecutive events of the same user exceeds 30 minutes (1800s).
+    Items viewed (pv) within a session form the menu; the purchased
+    item (buy) is the choice.  Only sessions with exactly 1 purchased
+    item and menu size in [2, 50] are kept.
 
     Args:
         data_dir: Path to directory containing UserBehavior.csv.
-        min_sessions: Minimum purchase-days per user.
+        min_sessions: Minimum valid sessions per user.
         max_users: Cap on number of users returned.
         remap_items: Remap item IDs to 0..N-1 per user.
 
@@ -79,9 +87,8 @@ def load_taobao(
 
     print(f"  Loading Taobao events from {csv_file} (chunked)...")
 
-    # Read in chunks, filter to pv + buy only
-    all_views = []  # (user_id, date, item_id)
-    all_buys = []   # (user_id, date, item_id)
+    # Read in chunks, keep only pv + buy events
+    chunks = []
 
     for chunk in pd.read_csv(
         csv_file,
@@ -91,51 +98,65 @@ def load_taobao(
         dtype={"user_id": "int64", "item_id": "int64", "behavior_type": "category"},
         chunksize=CHUNK_SIZE,
     ):
-        # Convert timestamp to date
-        chunk["date"] = pd.to_datetime(chunk["timestamp"], unit="s").dt.date
+        mask = chunk["behavior_type"].isin(["pv", "buy"])
+        chunks.append(chunk.loc[mask, ["user_id", "item_id", "behavior_type", "timestamp"]])
 
-        views = chunk[chunk["behavior_type"] == "pv"][["user_id", "date", "item_id"]]
-        buys = chunk[chunk["behavior_type"] == "buy"][["user_id", "date", "item_id"]]
+    df = pd.concat(chunks, ignore_index=True)
+    del chunks
 
-        all_views.append(views)
-        all_buys.append(buys)
+    print(f"  Events (pv+buy): {len(df):,}")
 
-    views_df = pd.concat(all_views, ignore_index=True)
-    buys_df = pd.concat(all_buys, ignore_index=True)
-    del all_views, all_buys
+    # Sort by (user_id, timestamp) and assign gap-based session IDs
+    df.sort_values(["user_id", "timestamp"], inplace=True)
+    df.reset_index(drop=True, inplace=True)
 
-    print(f"  Views: {len(views_df):,}, Buys: {len(buys_df):,}")
+    # New session whenever user changes OR gap > SESSION_GAP
+    new_user = df["user_id"].values[1:] != df["user_id"].values[:-1]
+    time_gap = np.diff(df["timestamp"].values) > SESSION_GAP
+    session_break = np.empty(len(df), dtype=bool)
+    session_break[0] = True
+    session_break[1:] = new_user | time_gap
 
-    # Find (user, date) pairs with exactly 1 unique purchased item
-    buy_counts = buys_df.groupby(["user_id", "date"])["item_id"].nunique()
-    single_buy_sessions = set(buy_counts[buy_counts == 1].index)
+    df["session_id"] = np.cumsum(session_break)
 
-    # Get purchased item per session
-    session_purchases = {}
-    for (uid, date), group in buys_df[
-        buys_df.set_index(["user_id", "date"]).index.isin(single_buy_sessions)
-    ].groupby(["user_id", "date"]):
-        session_purchases[(uid, date)] = group["item_id"].iloc[0]
+    print(f"  Sessions (raw): {df['session_id'].nunique():,}")
 
-    # Build menus from views
-    session_menus = {}
-    for (uid, date), group in views_df[
-        views_df.set_index(["user_id", "date"]).index.isin(single_buy_sessions)
-    ].groupby(["user_id", "date"]):
-        session_menus[(uid, date)] = set(group["item_id"].tolist())
+    # Split views and buys
+    is_buy = df["behavior_type"] == "buy"
+    buys_df = df.loc[is_buy, ["user_id", "session_id", "item_id"]]
+    views_df = df.loc[~is_buy, ["user_id", "session_id", "item_id"]]
+    del df
 
-    del views_df, buys_df
+    # Keep sessions with exactly 1 unique purchased item
+    buy_counts = buys_df.groupby("session_id")["item_id"].nunique()
+    valid_sessions = set(buy_counts[buy_counts == 1].index)
 
-    # Build (menu, choice) records
+    # Get purchased item per valid session
+    valid_buys = buys_df[buys_df["session_id"].isin(valid_sessions)]
+    session_purchases = (
+        valid_buys.groupby("session_id")
+        .agg(user_id=("user_id", "first"), item_id=("item_id", "first"))
+    )
+
+    # Build menus from views in valid sessions
+    valid_views = views_df[views_df["session_id"].isin(valid_sessions)]
+    session_menus = valid_views.groupby("session_id")["item_id"].apply(set)
+
+    del buys_df, views_df, valid_buys, valid_views
+
+    # Build (menu, choice) records — ensure purchased item is in menu
     records = []
-    for key, menu in session_menus.items():
-        choice = session_purchases.get(key)
-        if choice is None:
-            continue
+    for sid, menu in session_menus.items():
+        row = session_purchases.loc[sid]
+        choice = row["item_id"]
         menu = menu | {choice}
         if len(menu) < MIN_MENU_SIZE or len(menu) > MAX_MENU_SIZE:
             continue
-        records.append({"user_id": key[0], "menu": frozenset(menu), "choice": choice})
+        records.append({
+            "user_id": row["user_id"],
+            "menu": frozenset(menu),
+            "choice": choice,
+        })
 
     print(f"  Valid sessions: {len(records):,}")
 
