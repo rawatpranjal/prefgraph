@@ -4,6 +4,10 @@
 
 ### Added
 - `rp.analyze()` one-liner API — auto-detects long, wide, and menu formats from a DataFrame
+- **Parquet streaming**: `rp.analyze("data.parquet", ...)` and `Engine.analyze_parquet()` — stream datasets larger than RAM with bounded O(chunk_size) memory
+- **Rust-native Parquet pipeline**: `analyze_parquet_file()` reads Parquet, groups by user, and feeds directly to Rayon — eliminates Python from the hot path (requires `--features parquet`)
+- `pyrevealed.io.ParquetUserIterator` — streaming row-group reader for wide and long formats
+- `pyrevealed.io.prepare_parquet()` — sort and rewrite datasets for optimal streaming
 - `nan_policy` parameter ("raise"/"warn"/"drop") for `analyze()` and `BehaviorLog`
 - `load_pakistan()`, `load_favorita()`, `load_taobao()` dataset loaders
 - 6-dataset e-commerce benchmark: 162K users, 14 tasks, RP features add 0–0.7% AUC

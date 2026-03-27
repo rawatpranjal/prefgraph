@@ -57,6 +57,10 @@ notebooks = [
 datasets = [
     "pandas>=2.0.0",
 ]
+parquet = [
+    "pyarrow>=14.0.0",
+    "pandas>=2.0.0",
+]
 dev = [
     "pytest>=7.0",
     "pytest-cov>=4.0",
@@ -76,7 +80,7 @@ benchmarks = [
     "matplotlib>=3.7.0",
 ]
 all = [
-    "pyrevealed[dev,viz,notebooks,docs]"
+    "pyrevealed[dev,viz,notebooks,docs,parquet]"
 ]
 
 [project.urls]
@@ -94,7 +98,7 @@ pyrevealed = ["py.typed"]
 python-source = "src"
 module-name = "pyrevealed._rust_core"
 manifest-path = "rust/crates/rpt-python/Cargo.toml"
-features = ["pyo3/extension-module"]
+features = ["pyo3/extension-module", "parquet"]
 include = ["LICENSE"]
 
 [tool.pytest.ini_options]

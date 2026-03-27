@@ -14,3 +14,11 @@ except ImportError:
     _rust_analyze_batch = None
     _rust_analyze_menu_batch = None
     _rust_build_preference_graph = None
+
+# Parquet support (compiled with --features parquet)
+try:
+    from pyrevealed._rust_core import analyze_parquet_file as _rust_analyze_parquet_file
+    HAS_PARQUET_RUST = True
+except ImportError:
+    HAS_PARQUET_RUST = False
+    _rust_analyze_parquet_file = None

@@ -14,6 +14,7 @@ Example::
 from __future__ import annotations
 
 import warnings
+from pathlib import Path
 from typing import Any, Literal
 
 
@@ -198,6 +199,26 @@ def analyze(
             results = rp.analyze(df,
                 menu_col="shown_items", choice_col="clicked")
     """
+    # --- Parquet file path shortcut ---
+    if isinstance(df, (str, Path)):
+        path = Path(df)
+        if path.suffix == ".parquet" or path.is_dir():
+            from pyrevealed.engine import Engine
+            engine = Engine(metrics=metrics or _DEFAULT_BUDGET_METRICS)
+            result = engine.analyze_parquet(
+                path,
+                user_col=user_col,
+                cost_cols=cost_cols or price_cols,
+                action_cols=action_cols or qty_cols,
+                item_col=item_col,
+                cost_col=cost_col or price_col,
+                action_col=action_col or qty_col,
+                time_col=time_col,
+            )
+            if output == "objects":
+                return list(result.iterrows())
+            return result
+
     # --- Validate input type ---
     try:
         import pandas as pd

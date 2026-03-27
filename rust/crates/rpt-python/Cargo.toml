@@ -7,9 +7,15 @@ edition = "2021"
 name = "_rust_core"
 crate-type = ["cdylib"]
 
+[features]
+default = []
+parquet = ["dep:arrow", "dep:parquet"]
+
 [dependencies]
 rpt-core = { path = "../rpt-core" }
 pyo3 = { version = "0.22", features = ["extension-module"] }
 numpy = "0.22"
 ndarray = "0.16"
 rayon = "1.10"
+arrow = { version = "54", optional = true, default-features = false, features = ["ffi"] }
+parquet = { version = "54", optional = true, default-features = false, features = ["arrow", "snap", "zstd"] }

@@ -23,6 +23,7 @@ import numpy as np
 
 from pyrevealed._rust_backend import (
     HAS_RUST, _rust_analyze_batch, _rust_analyze_menu_batch, _rust_build_preference_graph,
+    HAS_PARQUET_RUST, _rust_analyze_parquet_file,
 )
 
 
@@ -531,6 +532,184 @@ class Engine:
                     ))
 
         return all_results
+
+    # ------------------------------------------------------------------
+    # Parquet streaming
+    # ------------------------------------------------------------------
+
+    def analyze_parquet(
+        self,
+        path: str | Any,
+        *,
+        user_col: str = "user_id",
+        cost_cols: list[str] | None = None,
+        action_cols: list[str] | None = None,
+        item_col: str | None = None,
+        cost_col: str | None = None,
+        action_col: str | None = None,
+        time_col: str | None = None,
+        output_path: str | None = None,
+    ) -> Any:
+        """Stream-analyze a Parquet file without loading it all into memory.
+
+        Reads row groups incrementally, groups by user, and feeds chunks
+        to the Rust engine. Memory stays bounded at O(chunk_size) regardless
+        of total dataset size.
+
+        Args:
+            path: Path to Parquet file.
+            user_col: Column for user identifiers.
+            cost_cols: (Wide format) Price column names.
+            action_cols: (Wide format) Quantity column names.
+            item_col: (Long format) Item identifier column.
+            cost_col: (Long format) Price column.
+            action_col: (Long format) Quantity column.
+            time_col: (Long format) Time/period column.
+            output_path: If set, write results incrementally to this Parquet
+                file instead of accumulating in memory.
+
+        Returns:
+            pandas DataFrame with one row per user (or path to output Parquet
+            if ``output_path`` is set).
+        """
+        # Fast path: wide-format + Rust parquet feature compiled
+        if (
+            HAS_PARQUET_RUST
+            and cost_cols is not None
+            and action_cols is not None
+            and item_col is None
+            and output_path is None
+        ):
+            return self._analyze_parquet_rust(
+                str(path), user_col, cost_cols, action_cols
+            )
+
+        # Standard path: PyArrow streaming
+        from pyrevealed.io.parquet import ParquetUserIterator
+
+        iterator = ParquetUserIterator(
+            path,
+            user_col=user_col,
+            cost_cols=cost_cols,
+            action_cols=action_cols,
+            item_col=item_col,
+            cost_col=cost_col,
+            action_col=action_col,
+            time_col=time_col,
+            chunk_size=self.chunk_size,
+        )
+
+        flags = {
+            "ccei": "ccei" in self.metrics,
+            "mpi": "mpi" in self.metrics,
+            "harp": "harp" in self.metrics,
+            "hm": "hm" in self.metrics,
+            "utility": "utility" in self.metrics,
+            "vei": "vei" in self.metrics,
+            "vei_exact": "vei_exact" in self.metrics,
+        }
+
+        if output_path is not None:
+            return self._analyze_parquet_to_file(iterator, flags, output_path)
+
+        all_user_ids: list[str] = []
+        all_results: list[EngineResult] = []
+
+        for user_ids, user_tuples in iterator:
+            if self.backend == "rust":
+                chunk_results = self._analyze_chunk_rust(user_tuples, flags)
+            else:
+                chunk_results = self._analyze_chunk_python(user_tuples, flags)
+            all_user_ids.extend(user_ids)
+            all_results.extend(chunk_results)
+
+        return results_to_dataframe(all_results, user_ids=all_user_ids)
+
+    def _analyze_parquet_rust(
+        self,
+        path: str,
+        user_col: str,
+        cost_cols: list[str],
+        action_cols: list[str],
+    ) -> Any:
+        """Full Rust pipeline: Parquet I/O + Rayon analysis, no Python overhead."""
+        raw_results = _rust_analyze_parquet_file(
+            path,
+            user_col,
+            cost_cols,
+            action_cols,
+            "ccei" in self.metrics,
+            "mpi" in self.metrics,
+            "harp" in self.metrics,
+            "hm" in self.metrics,
+            "utility" in self.metrics,
+            "vei" in self.metrics,
+            "vei_exact" in self.metrics,
+            self.tolerance,
+            self.chunk_size,
+        )
+
+        user_ids = [uid for uid, _ in raw_results]
+        engine_results = [
+            EngineResult(
+                is_garp=r["is_garp"],
+                n_violations=r["n_violations"],
+                ccei=r["ccei"],
+                mpi=r.get("mpi", 0.0),
+                is_harp=r.get("is_harp", False),
+                hm_consistent=r.get("hm_consistent", 0),
+                hm_total=r.get("hm_total", 0),
+                utility_success=r.get("utility_success", False),
+                vei_mean=r.get("vei_mean", 1.0),
+                vei_min=r.get("vei_min", 1.0),
+                vei_exact_mean=r.get("vei_exact_mean", 1.0),
+                vei_exact_min=r.get("vei_exact_min", 1.0),
+                max_scc=r["max_scc"],
+                compute_time_us=r["compute_time_us"],
+            )
+            for _, r in raw_results
+        ]
+
+        return results_to_dataframe(engine_results, user_ids=user_ids)
+
+    def _analyze_parquet_to_file(
+        self,
+        iterator: Any,
+        flags: dict[str, bool],
+        output_path: str,
+    ) -> str:
+        """Analyze streaming and write results to Parquet incrementally."""
+        try:
+            import pyarrow as pa
+            import pyarrow.parquet as pq
+        except ImportError:
+            raise ImportError(
+                "pyarrow is required for Parquet output. "
+                "Install with: pip install pyrevealed[parquet]"
+            ) from None
+
+        writer = None
+        total_users = 0
+
+        for user_ids, user_tuples in iterator:
+            if self.backend == "rust":
+                chunk_results = self._analyze_chunk_rust(user_tuples, flags)
+            else:
+                chunk_results = self._analyze_chunk_python(user_tuples, flags)
+
+            result_df = results_to_dataframe(chunk_results, user_ids=user_ids)
+            result_table = pa.Table.from_pandas(result_df)
+
+            if writer is None:
+                writer = pq.ParquetWriter(output_path, result_table.schema,
+                                          compression="zstd")
+            writer.write_table(result_table)
+            total_users += len(user_ids)
+
+        if writer is not None:
+            writer.close()
+
+        return output_path
 
     def __repr__(self) -> str:
         return (f"Engine(backend={self.backend!r}, "
