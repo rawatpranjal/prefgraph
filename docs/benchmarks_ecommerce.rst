@@ -1,7 +1,7 @@
 E-commerce Benchmarks
 =====================
 
-Six public datasets, 162K users, LightGBM with 5-fold stratified CV.
+Six public datasets, 117K users, LightGBM with 5-fold stratified CV.
 **RP features add 0--0.7% AUC over strong RFM baselines.** The lift is
 real but modest — most predictive power comes from standard spending
 and engagement features. All targets use top-tercile thresholds for
