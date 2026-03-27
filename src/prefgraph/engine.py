@@ -9,7 +9,7 @@ Usage:
     engine = Engine(metrics=["garp", "ccei", "mpi", "harp", "hm", "utility", "vei"])
     results = engine.analyze_arrays(user_data)
 
-    # Get the full preference graph (for Tier 2 deep dives)
+    # Get the full observation graph (for Tier 2 deep dives)
     graph = engine.build_graph(prices, quantities)
 """
 
@@ -49,7 +49,7 @@ class EngineResult:
         vei_min: Worst-observation VEI. Range: [0, 1].
         vei_exact_mean: VEI via exact LP (vs binary-search approximation).
         vei_exact_min: Exact VEI, worst observation.
-        max_scc: Largest strongly connected component in preference graph.
+        max_scc: Largest strongly connected component in observation graph.
             1 = acyclic (no entangled violations).
         compute_time_us: Wall-clock computation time in microseconds.
     """
@@ -147,7 +147,7 @@ class MenuResult:
         n_warp_violations: Number of WARP violation pairs found.
         hm_consistent: Houtman-Maks: size of largest SARP-consistent subset.
         hm_total: Total observations. ``hm_consistent / hm_total`` = consistency fraction.
-        max_scc: Largest SCC in the item preference graph. 1 = acyclic.
+        max_scc: Largest SCC in the item graph. 1 = acyclic.
         compute_time_us: Wall-clock computation time in microseconds.
     """
 
@@ -377,7 +377,7 @@ class Engine:
         quantities: np.ndarray,
         tolerance: float | None = None,
     ) -> dict:
-        """Build a preference graph and return it as numpy arrays.
+        """Build an observation graph and return it as numpy arrays.
 
         Tier 2 entry point for deep per-user analysis. Python modules
         (utility.py, welfare.py, etc.) can consume the Rust-computed graph.

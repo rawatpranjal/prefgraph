@@ -3,8 +3,7 @@ Budgets
 
 **Input:** ``BehaviorLog`` — prices × quantities (continuous budget sets)
 
-Every purchase at observed prices adds directed edges to the agent's **preference graph**. Budget analysis checks whether this graph is acyclic (GARP), scores how close it is (CCEI, MPI), and recovers utility. The agent's
-observed price-quantity pairs are consistent with utility maximization.
+Every purchase at observed prices adds directed edges to the agent's **observation graph** (nodes = shopping trips, edges = revealed preferences). Budget analysis checks whether this graph is acyclic (GARP), scores how close it is (CCEI, MPI), and recovers utility.
 The classical setting of Samuelson (1938), Afriat (1967), and Varian (1982).
 
 .. admonition:: What can you do?

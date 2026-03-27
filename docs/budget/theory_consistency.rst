@@ -1,7 +1,7 @@
 Axiomatic Consistency Tests
 ==========================
 
-Every choice adds edges to a directed **preference graph**. The axioms below define what "acyclic" means for this graph — GARP (allowing indifference), SARP (strict), and WARP (pairwise only).
+Every choice adds edges to a directed **observation graph** (nodes = shopping trips, edges = revealed preferences). The axioms below define what "acyclic" means for this graph — GARP (allowing indifference), SARP (strict), and WARP (pairwise only).
 
 GARP (Generalized Axiom of Revealed Preference)
 -----------------------------------------------

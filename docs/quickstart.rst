@@ -73,7 +73,7 @@ PrefGraph has two APIs. Use whichever fits your task:
    results = Engine(metrics=["garp", "ccei", "mpi"]).analyze_arrays(load_demo())
    # list[EngineResult] — flat scores, ready for pandas
 
-**Function API** — deep single-user analysis (violation details, preference graphs):
+**Function API** — deep single-user analysis (violation details, observation/item graphs):
 
 .. code-block:: python
 

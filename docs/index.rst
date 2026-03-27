@@ -15,7 +15,7 @@ PrefGraph scores *how much* (0 = incoherent, 1 = perfectly rational).
    <div class="feature-grid">
      <div class="feature-card">
        <h3>Build &amp; Test</h3>
-       <p>Budget data (prices × quantities) or menu data (sets × picks) → directed preference graph. Test GARP, SARP, WARP for cycles via Floyd-Warshall and Tarjan SCC.</p>
+       <p>Budget data (prices × quantities) → observation graph. Menu data (sets × picks) → item graph. Test GARP, SARP, WARP for cycles via Floyd-Warshall and Tarjan SCC.</p>
      </div>
      <div class="feature-card">
        <h3>Score &amp; Recover</h3>
