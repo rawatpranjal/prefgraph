@@ -22,7 +22,7 @@ Prerequisites
 .. note::
 
    The full code for this tutorial is available in the
-   ``datasets/open_ecommerce/`` directory of the PyRevealed repository.
+   ``datasets/open_ecommerce/`` directory of the PrefGraph repository.
 
 
 Part 1: The Data Challenge
@@ -582,14 +582,14 @@ Output:
 For the Open E-Commerce dataset, power typically exceeds 0.90.
 
 
-Part 10: Using PyRevealed
+Part 10: Using PrefGraph
 -------------------------
 
-The above shows what happens under the hood. In practice, use PyRevealed:
+The above shows what happens under the hood. In practice, use PrefGraph:
 
 .. code-block:: python
 
-   from pyrevealed import BehaviorLog, validate_consistency, compute_integrity_score
+   from prefgraph import BehaviorLog, validate_consistency, compute_integrity_score
 
    # Create BehaviorLog
    log = BehaviorLog(

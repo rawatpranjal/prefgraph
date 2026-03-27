@@ -1,4 +1,4 @@
-"""Run PyRevealed algorithms on Dunnhumby data (Phase 4).
+"""Run PrefGraph algorithms on Dunnhumby data (Phase 4).
 
 This module executes the core revealed preference algorithms on all
 qualifying households:
@@ -22,7 +22,7 @@ from numpy.typing import NDArray
 # Add parent directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
-from src.pyrevealed import (
+from src.prefgraph import (
     check_garp,
     compute_aei,
     recover_utility,

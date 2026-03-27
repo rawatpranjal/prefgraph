@@ -8,7 +8,7 @@ Test whether a user's menu choices form a consistent ranking:
 
 .. code-block:: python
 
-   from pyrevealed import MenuChoiceLog, validate_menu_warp, validate_menu_sarp
+   from prefgraph import MenuChoiceLog, validate_menu_warp, validate_menu_sarp
 
    log = MenuChoiceLog(
        menus=[
@@ -36,7 +36,7 @@ A WARP violation: choosing differently from the same pair.
 
 .. code-block:: python
 
-   from pyrevealed import MenuChoiceLog, validate_menu_warp
+   from prefgraph import MenuChoiceLog, validate_menu_warp
 
    log = MenuChoiceLog(
        menus=[frozenset({0, 1}), frozenset({0, 1})],
@@ -56,7 +56,7 @@ How many observations to remove to restore consistency:
 
 .. code-block:: python
 
-   from pyrevealed import MenuChoiceLog, compute_menu_efficiency
+   from prefgraph import MenuChoiceLog, compute_menu_efficiency
 
    log = MenuChoiceLog(
        menus=[frozenset({0, 1}), frozenset({0, 1}), frozenset({1, 2}), frozenset({0, 2})],
@@ -78,7 +78,7 @@ Recover a preference ranking from consistent choices:
 
 .. code-block:: python
 
-   from pyrevealed import MenuChoiceLog, fit_menu_preferences
+   from prefgraph import MenuChoiceLog, fit_menu_preferences
 
    log = MenuChoiceLog(
        menus=[frozenset({0, 1, 2}), frozenset({1, 2}), frozenset({0, 2})],
@@ -100,7 +100,7 @@ Test whether violations can be explained by inattention rather than irrationalit
 
 .. code-block:: python
 
-   from pyrevealed import MenuChoiceLog, test_warp_la
+   from prefgraph import MenuChoiceLog, test_warp_la
 
    log = MenuChoiceLog(
        menus=[frozenset({0, 1, 2}), frozenset({0, 1}), frozenset({1, 2}), frozenset({0, 2})],
@@ -120,7 +120,7 @@ Fit a random utility model to choice frequency data:
 
 .. code-block:: python
 
-   from pyrevealed import StochasticChoiceLog, fit_random_utility_model
+   from prefgraph import StochasticChoiceLog, fit_random_utility_model
 
    log = StochasticChoiceLog(
        menus=[frozenset({0, 1, 2}), frozenset({0, 1}), frozenset({1, 2})],
@@ -148,7 +148,7 @@ Classify risk attitudes from lottery choices:
 .. code-block:: python
 
    import numpy as np
-   from pyrevealed import RiskChoiceLog, compute_risk_profile
+   from prefgraph import RiskChoiceLog, compute_risk_profile
 
    log = RiskChoiceLog(
        safe_values=np.array([50.0, 40.0, 30.0, 20.0, 10.0]),
@@ -172,7 +172,7 @@ Detect whether adding items shifts choice probabilities:
 
 .. code-block:: python
 
-   from pyrevealed import StochasticChoiceLog, detect_decoy_effect
+   from prefgraph import StochasticChoiceLog, detect_decoy_effect
 
    log = StochasticChoiceLog(
        menus=[
@@ -206,7 +206,7 @@ Fit a Bradley-Terry model from pairwise data:
 
 .. code-block:: python
 
-   from pyrevealed import fit_bradley_terry
+   from prefgraph import fit_bradley_terry
 
    # (winner, loser, count)
    comparisons = [
@@ -233,8 +233,8 @@ Score thousands of users via the Rust engine:
 
 .. code-block:: python
 
-   from pyrevealed import MenuChoicePanel
-   from pyrevealed.engine import Engine
+   from prefgraph import MenuChoicePanel
+   from prefgraph.engine import Engine
 
    panel = MenuChoicePanel.from_dataframe(
        df, user_col="user_id", menu_col="shown_items", choice_col="clicked"

@@ -46,9 +46,9 @@ def _apply_style():
 
 def generate_grocery_panel():
     """Generate 2x2 panel for the grocery scanner application."""
-    from pyrevealed.datasets import load_demo
-    from pyrevealed.engine import Engine
-    from pyrevealed import BehaviorLog, compute_integrity_score, recover_utility
+    from prefgraph.datasets import load_demo
+    from prefgraph.engine import Engine
+    from prefgraph import BehaviorLog, compute_integrity_score, recover_utility
 
     _apply_style()
 
@@ -249,8 +249,8 @@ def _generate_llm_data(seed=42):
 
 def generate_llm_panel():
     """Generate 2x2 panel for the LLM prompt consistency application."""
-    from pyrevealed import MenuChoiceLog
-    from pyrevealed.algorithms.abstract_choice import validate_menu_sarp, compute_menu_efficiency
+    from prefgraph import MenuChoiceLog
+    from prefgraph.algorithms.abstract_choice import validate_menu_sarp, compute_menu_efficiency
 
     _apply_style()
 
@@ -462,8 +462,8 @@ def _generate_recsys_data(n_users=200, catalog_size=20, seed=42):
 
 def generate_recsys_panel():
     """Generate 2x2 panel for the recommender systems application."""
-    from pyrevealed import MenuChoiceLog
-    from pyrevealed.algorithms.abstract_choice import validate_menu_sarp, compute_menu_efficiency
+    from prefgraph import MenuChoiceLog
+    from prefgraph.algorithms.abstract_choice import validate_menu_sarp, compute_menu_efficiency
 
     _apply_style()
 

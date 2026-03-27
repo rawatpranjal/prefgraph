@@ -27,10 +27,10 @@ from dataclasses import dataclass
 
 import numpy as np
 
-from pyrevealed import MenuChoiceLog
-from pyrevealed.algorithms.abstract_choice import compute_menu_efficiency
-from pyrevealed.datasets import load_retailrocket
-from pyrevealed.engine import Engine
+from prefgraph import MenuChoiceLog
+from prefgraph.algorithms.abstract_choice import compute_menu_efficiency
+from prefgraph.datasets import load_retailrocket
+from prefgraph.engine import Engine
 
 
 # =============================================================================

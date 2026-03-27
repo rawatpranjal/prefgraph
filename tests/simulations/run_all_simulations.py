@@ -2,7 +2,7 @@
 """
 Run All Simulation Studies
 
-Master script that runs all validation simulations for pyrevealed.
+Master script that runs all validation simulations for prefgraph.
 
 Validates:
 1. GARP consistency detection

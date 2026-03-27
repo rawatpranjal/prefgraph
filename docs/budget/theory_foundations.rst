@@ -6,7 +6,7 @@ This chapter delineates the formal notation, foundational assumptions, and axiom
 Formal Notation
 ---------------
 
-The analysis of choice behavior in PyRevealed is based on the following mathematical conventions:
+The analysis of choice behavior in PrefGraph is based on the following mathematical conventions:
 
 .. list-table::
    :widths: 20 80

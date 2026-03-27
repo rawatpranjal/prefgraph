@@ -6,8 +6,8 @@ Tests for ill-conditioned constraint matrices and solver failures.
 
 import numpy as np
 import pytest
-from pyrevealed.core.session import BehaviorLog
-from pyrevealed.core.exceptions import SolverError, OptimizationError
+from prefgraph.core.session import BehaviorLog
+from prefgraph.core.exceptions import SolverError, OptimizationError
 
 
 class TestIllConditionedLP:
@@ -15,7 +15,7 @@ class TestIllConditionedLP:
 
     def test_afriat_lp_ill_conditioned(self, high_condition_number_log):
         """EVAL: Afriat LP with ill-conditioned constraint matrix."""
-        from pyrevealed.algorithms.utility import recover_utility
+        from prefgraph.algorithms.utility import recover_utility
 
         try:
             result = recover_utility(high_condition_number_log)
@@ -30,7 +30,7 @@ class TestIllConditionedLP:
 
     def test_welfare_lp_ill_conditioned(self, high_condition_number_log):
         """EVAL: Welfare LP with ill-conditioned data."""
-        from pyrevealed.algorithms.welfare import compute_cv_exact
+        from prefgraph.algorithms.welfare import compute_cv_exact
 
         try:
             cv, success = compute_cv_exact(
@@ -47,7 +47,7 @@ class TestInfeasibleLP:
 
     def test_afriat_infeasible_constraints(self):
         """EVAL: Afriat LP with infeasible constraints (severe GARP violations)."""
-        from pyrevealed.algorithms.utility import recover_utility
+        from prefgraph.algorithms.utility import recover_utility
 
         # Data with severe violations
         log = BehaviorLog(
@@ -68,8 +68,8 @@ class TestInfeasibleLP:
 
     def test_rum_lp_infeasible(self):
         """EVAL: RUM LP with infeasible probability constraints."""
-        from pyrevealed.algorithms.stochastic import test_rum_consistency
-        from pyrevealed.core.session import StochasticChoiceLog
+        from prefgraph.algorithms.stochastic import test_rum_consistency
+        from prefgraph.core.session import StochasticChoiceLog
 
         # Intransitive cycle - no RUM can rationalize
         log = StochasticChoiceLog(
@@ -92,7 +92,7 @@ class TestPoorScaling:
 
     def test_lp_extreme_coefficient_ratio(self):
         """EVAL: LP with coefficients varying by 1e15."""
-        from pyrevealed.algorithms.utility import recover_utility
+        from prefgraph.algorithms.utility import recover_utility
 
         log = BehaviorLog(
             cost_vectors=np.array([
@@ -114,7 +114,7 @@ class TestPoorScaling:
 
     def test_lp_near_zero_coefficients(self):
         """EVAL: LP with near-zero coefficients."""
-        from pyrevealed.algorithms.utility import recover_utility
+        from prefgraph.algorithms.utility import recover_utility
 
         log = BehaviorLog(
             cost_vectors=np.array([
@@ -139,7 +139,7 @@ class TestSolverMethods:
 
     def test_highs_solver(self):
         """EVAL: Using HiGHS solver (default)."""
-        from pyrevealed.algorithms.utility import recover_utility
+        from prefgraph.algorithms.utility import recover_utility
 
         log = BehaviorLog(
             cost_vectors=np.array([[1.0, 2.0], [2.0, 1.0]]),
@@ -152,7 +152,7 @@ class TestSolverMethods:
 
     def test_solver_timeout(self):
         """EVAL: LP solver timeout behavior."""
-        from pyrevealed.algorithms.utility import recover_utility
+        from prefgraph.algorithms.utility import recover_utility
 
         # Large problem that might be slow
         np.random.seed(42)
@@ -174,7 +174,7 @@ class TestBoundaryConditions:
 
     def test_lp_tight_bounds(self):
         """EVAL: LP where solution is at bounds."""
-        from pyrevealed.algorithms.utility import recover_utility
+        from prefgraph.algorithms.utility import recover_utility
 
         # Consistent data where utilities should be at lower bounds (0)
         log = BehaviorLog(
@@ -190,7 +190,7 @@ class TestBoundaryConditions:
 
     def test_lp_unbounded_variables(self):
         """EVAL: LP with potentially unbounded variables."""
-        from pyrevealed.algorithms.welfare import recover_expenditure_function
+        from prefgraph.algorithms.welfare import recover_expenditure_function
 
         log = BehaviorLog(
             cost_vectors=np.array([[1.0, 1.0], [1.0, 1.0]]),
@@ -208,7 +208,7 @@ class TestDegenerateSolutions:
 
     def test_lp_multiple_optimal_solutions(self):
         """EVAL: LP with multiple optimal solutions."""
-        from pyrevealed.algorithms.utility import recover_utility
+        from prefgraph.algorithms.utility import recover_utility
 
         # Data with symmetry - multiple equivalent utility assignments
         log = BehaviorLog(
@@ -231,7 +231,7 @@ class TestDegenerateSolutions:
 
     def test_lp_nearly_degenerate(self):
         """EVAL: LP with nearly degenerate constraints."""
-        from pyrevealed.algorithms.utility import recover_utility
+        from prefgraph.algorithms.utility import recover_utility
 
         # Very similar observations
         log = BehaviorLog(
@@ -258,7 +258,7 @@ class TestSolverErrors:
 
     def test_solver_error_propagation(self):
         """EVAL: SolverError should propagate with useful information."""
-        from pyrevealed.algorithms.welfare import _recover_afriat_utility
+        from prefgraph.algorithms.welfare import _recover_afriat_utility
 
         # Try to trigger solver error with bad data
         log = BehaviorLog(
@@ -277,7 +277,7 @@ class TestSolverErrors:
 
     def test_optimization_error_handling(self):
         """EVAL: OptimizationError handling in welfare computation."""
-        from pyrevealed.algorithms.welfare import compute_cv_exact
+        from prefgraph.algorithms.welfare import compute_cv_exact
 
         # Data that might fail optimization
         baseline = BehaviorLog(

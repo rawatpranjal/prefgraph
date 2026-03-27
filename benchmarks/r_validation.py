@@ -2,7 +2,7 @@
 """
 Cross-validation against R's revealedPrefs package.
 
-Validates that PyRevealed produces identical results to the established
+Validates that PrefGraph produces identical results to the established
 R implementation and benchmarks performance differences.
 
 Requirements:
@@ -26,10 +26,10 @@ import numpy as np
 # Add parent to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from pyrevealed import ConsumerSession
-from pyrevealed.algorithms.garp import check_garp, check_warp
-from pyrevealed.algorithms.differentiable import check_sarp
-from pyrevealed.algorithms.aei import compute_aei
+from prefgraph import ConsumerSession
+from prefgraph.algorithms.garp import check_garp, check_warp
+from prefgraph.algorithms.differentiable import check_sarp
+from prefgraph.algorithms.aei import compute_aei
 
 
 # =============================================================================
@@ -90,10 +90,10 @@ def get_sarp_violation_data() -> tuple[np.ndarray, np.ndarray]:
     Different bundles that cost the same at each other's prices creates
     mutual weak revealed preference (indifference), which violates SARP.
 
-    NOTE: PyRevealed and R have different WARP definitions:
-    - PyRevealed: R[i,j] AND P[j,i] (strict-weak asymmetry)
+    NOTE: PrefGraph and R have different WARP definitions:
+    - PrefGraph: R[i,j] AND P[j,i] (strict-weak asymmetry)
     - R: R[i,j] AND R[j,i] (any mutual preference)
-    This data fails R's WARP but passes PyRevealed's WARP.
+    This data fails R's WARP but passes PrefGraph's WARP.
     """
     prices = np.array([
         [1.0, 1.0],
@@ -310,7 +310,7 @@ class AxiomTestResult:
     """Result of a single axiom test."""
     axiom: str
     test_name: str
-    pyrevealed_pass: bool
+    prefgraph_pass: bool
     r_pass: bool
     match: bool
 
@@ -319,7 +319,7 @@ class AxiomTestResult:
 class EfficiencyTestResult:
     """Result of an Afriat efficiency test."""
     efficiency: float
-    pyrevealed_pass: bool
+    prefgraph_pass: bool
     r_pass: bool
     match: bool
 
@@ -336,7 +336,7 @@ class MatrixComparisonResult:
 class PerformanceResult:
     """Result of a performance comparison."""
     n_observations: int
-    pyrevealed_ms: float
+    prefgraph_ms: float
     r_ms: float
     speedup: float
 
@@ -344,8 +344,8 @@ class PerformanceResult:
 def run_axiom_tests() -> list[AxiomTestResult]:
     """Run axiom validation tests for GARP, WARP, and SARP.
 
-    Note: WARP has different definitions in PyRevealed vs R:
-    - PyRevealed: R[i,j] AND P[j,i] (strict-weak asymmetry)
+    Note: WARP has different definitions in PrefGraph vs R:
+    - PrefGraph: R[i,j] AND P[j,i] (strict-weak asymmetry)
     - R revealedPrefs: R[i,j] AND R[j,i] (any mutual preference)
 
     We only compare WARP on test cases where both definitions agree.
@@ -370,7 +370,7 @@ def run_axiom_tests() -> list[AxiomTestResult]:
         results.append(AxiomTestResult(
             axiom="GARP",
             test_name=name,
-            pyrevealed_pass=py_garp,
+            prefgraph_pass=py_garp,
             r_pass=r_garp,
             match=(py_garp == r_garp),
         ))
@@ -381,7 +381,7 @@ def run_axiom_tests() -> list[AxiomTestResult]:
         results.append(AxiomTestResult(
             axiom="WARP",
             test_name=name,
-            pyrevealed_pass=py_warp,
+            prefgraph_pass=py_warp,
             r_pass=r_warp,
             match=(py_warp == r_warp),
         ))
@@ -392,7 +392,7 @@ def run_axiom_tests() -> list[AxiomTestResult]:
         results.append(AxiomTestResult(
             axiom="SARP",
             test_name=name,
-            pyrevealed_pass=py_sarp,
+            prefgraph_pass=py_sarp,
             r_pass=r_sarp,
             match=(py_sarp == r_sarp),
         ))
@@ -407,7 +407,7 @@ def run_axiom_tests() -> list[AxiomTestResult]:
     results.append(AxiomTestResult(
         axiom="GARP",
         test_name="sarp_violation",
-        pyrevealed_pass=py_garp,
+        prefgraph_pass=py_garp,
         r_pass=r_garp,
         match=(py_garp == r_garp),
     ))
@@ -418,7 +418,7 @@ def run_axiom_tests() -> list[AxiomTestResult]:
     results.append(AxiomTestResult(
         axiom="SARP",
         test_name="sarp_violation",
-        pyrevealed_pass=py_sarp,
+        prefgraph_pass=py_sarp,
         r_pass=r_sarp,
         match=(py_sarp == r_sarp),
     ))
@@ -436,7 +436,7 @@ def run_efficiency_tests() -> list[EfficiencyTestResult]:
 
     # Test at different efficiency levels
     for e in [1.0, 0.9, 0.8, 0.5]:
-        # PyRevealed: use AEI to check if data passes at efficiency e
+        # PrefGraph: use AEI to check if data passes at efficiency e
         aei_result = compute_aei(session, tolerance=1e-6)
         py_pass = aei_result.efficiency_index >= e
 
@@ -445,7 +445,7 @@ def run_efficiency_tests() -> list[EfficiencyTestResult]:
 
         results.append(EfficiencyTestResult(
             efficiency=e,
-            pyrevealed_pass=py_pass,
+            prefgraph_pass=py_pass,
             r_pass=r_pass,
             match=(py_pass == r_pass),
         ))
@@ -454,20 +454,20 @@ def run_efficiency_tests() -> list[EfficiencyTestResult]:
 
 
 def run_matrix_comparison() -> list[MatrixComparisonResult]:
-    """Compare preference matrices between PyRevealed and R."""
+    """Compare preference matrices between PrefGraph and R."""
     results = []
 
     prices, quantities = get_consistent_data()
     session = ConsumerSession(prices=prices, quantities=quantities)
 
-    # Get PyRevealed's direct revealed preference matrix
+    # Get PrefGraph's direct revealed preference matrix
     garp_result = check_garp(session)
     py_matrix = garp_result.direct_revealed_preference.astype(float)
 
     # Get R's directPrefs matrix
     r_matrix = r_direct_prefs(prices, quantities)
 
-    # Compare - R uses 0/1 integers, PyRevealed uses True/False
+    # Compare - R uses 0/1 integers, PrefGraph uses True/False
     # directPrefs in R returns 1 if i R j (revealed preferred), 0 otherwise
     max_diff = np.max(np.abs(py_matrix - r_matrix))
     match = max_diff < 0.5  # Allow for boolean vs int differences
@@ -509,7 +509,7 @@ def run_performance_tests(scale_levels: list[int], n_goods: int = 10) -> list[Pe
         check_garp(session)
         r_check_garp(prices, quantities)
 
-        # PyRevealed timing (average of 3 runs)
+        # PrefGraph timing (average of 3 runs)
         py_times = []
         for _ in range(3):
             start = time.perf_counter()
@@ -529,7 +529,7 @@ def run_performance_tests(scale_levels: list[int], n_goods: int = 10) -> list[Pe
 
         results.append(PerformanceResult(
             n_observations=n_obs,
-            pyrevealed_ms=py_ms,
+            prefgraph_ms=py_ms,
             r_ms=r_ms,
             speedup=speedup,
         ))
@@ -554,12 +554,12 @@ def print_axiom_results(results: list[AxiomTestResult]) -> bool:
     """Print axiom test results table. Returns True if all match."""
     print_banner("AXIOM TESTS")
 
-    print(f"{'Axiom':<8} {'Test Case':<20} {'PyRevealed':<12} {'revealedPrefs':<14} {'Match':<10}")
+    print(f"{'Axiom':<8} {'Test Case':<20} {'PrefGraph':<12} {'revealedPrefs':<14} {'Match':<10}")
     print("-" * 70)
 
     all_match = True
     for r in results:
-        py_str = "PASS" if r.pyrevealed_pass else "FAIL"
+        py_str = "PASS" if r.prefgraph_pass else "FAIL"
         r_str = "PASS" if r.r_pass else "FAIL"
         match_str = "OK" if r.match else "MISMATCH"
         print(f"{r.axiom:<8} {r.test_name:<20} {py_str:<12} {r_str:<14} {match_str:<10}")
@@ -573,12 +573,12 @@ def print_efficiency_results(results: list[EfficiencyTestResult]) -> bool:
     """Print Afriat efficiency test results. Returns True if all match."""
     print_banner("AFRIAT EFFICIENCY TESTS")
 
-    print(f"{'Efficiency':<12} {'PyRevealed':<12} {'revealedPrefs':<14} {'Match':<10}")
+    print(f"{'Efficiency':<12} {'PrefGraph':<12} {'revealedPrefs':<14} {'Match':<10}")
     print("-" * 50)
 
     all_match = True
     for r in results:
-        py_str = "PASS" if r.pyrevealed_pass else "FAIL"
+        py_str = "PASS" if r.prefgraph_pass else "FAIL"
         r_str = "PASS" if r.r_pass else "FAIL"
         match_str = "OK" if r.match else "MISMATCH"
         print(f"{r.efficiency:<12.1f} {py_str:<12} {r_str:<14} {match_str:<10}")
@@ -610,12 +610,12 @@ def print_correctness_results(results: list[AxiomTestResult]) -> bool:
     """Print correctness results table (legacy). Returns True if all match."""
     print_banner("CORRECTNESS VALIDATION")
 
-    print(f"{'Test Case':<25} {'PyRevealed':<15} {'revealedPrefs':<15} {'Match':<10}")
+    print(f"{'Test Case':<25} {'PrefGraph':<15} {'revealedPrefs':<15} {'Match':<10}")
     print("-" * 65)
 
     all_match = True
     for r in results:
-        py_str = "PASS" if r.pyrevealed_pass else "FAIL"
+        py_str = "PASS" if r.prefgraph_pass else "FAIL"
         r_str = "PASS" if r.r_pass else "FAIL"
         match_str = "OK" if r.match else "MISMATCH"
         print(f"{r.test_name:<25} {py_str:<15} {r_str:<15} {match_str:<10}")
@@ -629,11 +629,11 @@ def print_performance_results(results: list[PerformanceResult]) -> None:
     """Print performance comparison table."""
     print_banner("PERFORMANCE COMPARISON")
 
-    print(f"{'T':<10} {'PyRevealed':<15} {'revealedPrefs':<15} {'Speedup':<10}")
+    print(f"{'T':<10} {'PrefGraph':<15} {'revealedPrefs':<15} {'Speedup':<10}")
     print("-" * 50)
 
     for r in results:
-        py_str = format_time(r.pyrevealed_ms)
+        py_str = format_time(r.prefgraph_ms)
         r_str = format_time(r.r_ms)
         speedup_str = f"{r.speedup:.0f}x"
         print(f"{r.n_observations:<10} {py_str:<15} {r_str:<15} {speedup_str:<10}")

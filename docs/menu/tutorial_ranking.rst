@@ -68,7 +68,7 @@ Fitting the Model
 
 .. code-block:: python
 
-   from pyrevealed import fit_bradley_terry
+   from prefgraph import fit_bradley_terry
 
    # Pairwise comparison data: (winner, loser, count)
    comparisons = [
@@ -123,7 +123,7 @@ Predicting Pairwise Probabilities
 
 .. code-block:: python
 
-   from pyrevealed import predict_pairwise_probability
+   from prefgraph import predict_pairwise_probability
 
    # Predict probability of each outcome
    for i in range(3):
@@ -189,7 +189,7 @@ Kendall Tau Correlation
 
 .. code-block:: python
 
-   from pyrevealed import compute_kendall_tau
+   from prefgraph import compute_kendall_tau
 
    ranking1 = [0, 1, 2, 3, 4]  # Original ranking
    ranking2 = [0, 2, 1, 3, 4]  # One swap (positions 1 and 2)
@@ -217,7 +217,7 @@ Spearman Footrule Distance
 
 .. code-block:: python
 
-   from pyrevealed import compute_spearman_footrule
+   from prefgraph import compute_spearman_footrule
 
    ranking1 = [0, 1, 2, 3]
    ranking2 = [3, 2, 1, 0]  # Completely reversed
@@ -246,7 +246,7 @@ RBO emphasizes agreement at the top of rankings:
 
 .. code-block:: python
 
-   from pyrevealed import compute_rank_biased_overlap
+   from prefgraph import compute_rank_biased_overlap
 
    # Same top-2, different rest
    ranking1 = [0, 1, 2, 3, 4]
@@ -276,7 +276,7 @@ Comprehensive Comparison
 
 .. code-block:: python
 
-   from pyrevealed import compare_rankings
+   from prefgraph import compare_rankings
 
    ranking1 = [0, 1, 2, 3, 4]
    ranking2 = [0, 2, 1, 4, 3]
@@ -305,7 +305,7 @@ Combine rankings from multiple judges/raters:
 
 .. code-block:: python
 
-   from pyrevealed import aggregate_rankings
+   from prefgraph import aggregate_rankings
 
    # Three judges rank 5 items
    judge_rankings = [
@@ -360,7 +360,7 @@ Use Bradley-Terry to aggregate human preferences for AI training:
 .. code-block:: python
 
    import numpy as np
-   from pyrevealed import fit_bradley_terry, predict_pairwise_probability
+   from prefgraph import fit_bradley_terry, predict_pairwise_probability
 
    np.random.seed(42)
 
@@ -435,7 +435,7 @@ Evaluate consistency between human raters:
 
 .. code-block:: python
 
-   from pyrevealed import compare_rankings
+   from prefgraph import compare_rankings
 
    # Two raters rank the same responses
    rater1_ranking = [0, 1, 2, 3]  # A > B > C > D

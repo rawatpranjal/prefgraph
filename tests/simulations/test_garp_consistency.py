@@ -25,8 +25,8 @@ from .generators import (
     generate_irrational_data,
     generate_garp_violation_cycle,
 )
-from src.pyrevealed import ConsumerSession
-from src.pyrevealed.algorithms.garp import check_garp, check_warp
+from src.prefgraph import ConsumerSession
+from src.prefgraph.algorithms.garp import check_garp, check_warp
 
 
 class SimulationResults:

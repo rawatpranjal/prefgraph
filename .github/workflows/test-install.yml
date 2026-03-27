@@ -14,19 +14,19 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
       - name: Install from PyPI
-        run: pip install "pyrevealed[datasets]==0.5.3"
+        run: pip install "prefgraph[datasets]==0.5.3"
       - name: Verify
         run: |
           python -c "
-          import pyrevealed
-          print(f'Version: {pyrevealed.__version__}')
-          from pyrevealed._rust_backend import HAS_RUST
+          import prefgraph
+          print(f'Version: {prefgraph.__version__}')
+          from prefgraph._rust_backend import HAS_RUST
           print(f'Rust backend: {HAS_RUST}')
-          from pyrevealed import Engine
+          from prefgraph import Engine
           e = Engine(['ccei'])
           print('Engine created OK')
           # Quick smoke test with demo data
-          from pyrevealed import load_demo
+          from prefgraph import load_demo
           data = load_demo(n_users=5)
           results = e.analyze_arrays(data)
           print(f'Analyzed {len(data)} users')

@@ -3,8 +3,8 @@
 import numpy as np
 import pytest
 
-from pyrevealed.engine import Engine, EngineResult, MenuResult, results_to_dataframe
-from pyrevealed.core.exceptions import DataValidationError, DimensionError
+from prefgraph.engine import Engine, EngineResult, MenuResult, results_to_dataframe
+from prefgraph.core.exceptions import DataValidationError, DimensionError
 
 
 # =============================================================================
@@ -214,7 +214,7 @@ class TestResultsToDataframe:
 
 class TestLoadDemo:
     def test_returns_list_of_tuples(self):
-        from pyrevealed.datasets import load_demo
+        from prefgraph.datasets import load_demo
         users = load_demo(n_users=10)
         assert isinstance(users, list)
         assert len(users) == 10
@@ -224,7 +224,7 @@ class TestLoadDemo:
         assert p.shape == q.shape
 
     def test_deterministic(self):
-        from pyrevealed.datasets import load_demo
+        from prefgraph.datasets import load_demo
         u1 = load_demo(n_users=5, seed=42)
         u2 = load_demo(n_users=5, seed=42)
         for (p1, q1), (p2, q2) in zip(u1, u2):
@@ -232,7 +232,7 @@ class TestLoadDemo:
             np.testing.assert_array_equal(q1, q2)
 
     def test_engine_compatible(self):
-        from pyrevealed.datasets import load_demo
+        from prefgraph.datasets import load_demo
         users = load_demo(n_users=5)
         e = Engine(metrics=["garp", "ccei"])
         results = e.analyze_arrays(users)
@@ -241,15 +241,15 @@ class TestLoadDemo:
             assert isinstance(r, EngineResult)
 
     def test_return_panel(self):
-        from pyrevealed.datasets import load_demo
-        from pyrevealed.core.panel import BehaviorPanel
+        from prefgraph.datasets import load_demo
+        from prefgraph.core.panel import BehaviorPanel
         panel = load_demo(n_users=5, return_panel=True)
         assert isinstance(panel, BehaviorPanel)
         assert panel.num_users == 5
 
     def test_has_variety(self):
         """Some users should be rational, some not."""
-        from pyrevealed.datasets import load_demo
+        from prefgraph.datasets import load_demo
         users = load_demo(n_users=50)
         e = Engine(metrics=["garp"])
         results = e.analyze_arrays(users)
@@ -264,8 +264,8 @@ class TestLoadDemo:
 
 class TestPanelBridge:
     def test_behavior_panel_to_engine_tuples(self):
-        from pyrevealed.core.session import BehaviorLog
-        from pyrevealed.core.panel import BehaviorPanel
+        from prefgraph.core.session import BehaviorLog
+        from prefgraph.core.panel import BehaviorPanel
 
         logs = [
             BehaviorLog(

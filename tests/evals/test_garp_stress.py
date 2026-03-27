@@ -6,7 +6,7 @@ Tests for scalability and numerical edge cases in GARP checking.
 
 import numpy as np
 import pytest
-from pyrevealed.core.session import BehaviorLog
+from prefgraph.core.session import BehaviorLog
 
 
 class TestGARPScalability:
@@ -21,7 +21,7 @@ class TestGARPScalability:
             action_vectors=np.random.rand(T, N) + 0.1,
         )
 
-        from pyrevealed.algorithms.garp import check_garp
+        from prefgraph.algorithms.garp import check_garp
         import time
 
         start = time.time()
@@ -33,7 +33,7 @@ class TestGARPScalability:
 
     def test_garp_t500(self, large_t_500):
         """EVAL: GARP with T=500 observations should complete <10s."""
-        from pyrevealed.algorithms.garp import check_garp
+        from prefgraph.algorithms.garp import check_garp
         import time
 
         start = time.time()
@@ -46,7 +46,7 @@ class TestGARPScalability:
     @pytest.mark.slow
     def test_garp_t1000(self, large_t_1000):
         """EVAL: GARP with T=1000 observations should complete <60s."""
-        from pyrevealed.algorithms.garp import check_garp
+        from prefgraph.algorithms.garp import check_garp
         import time
 
         start = time.time()
@@ -62,7 +62,7 @@ class TestGARPMemory:
 
     def test_garp_memory_t500(self, large_t_500):
         """EVAL: Memory for T=500 (500x500 boolean matrices ~250KB each)."""
-        from pyrevealed.algorithms.garp import check_garp
+        from prefgraph.algorithms.garp import check_garp
 
         result = check_garp(large_t_500)
 
@@ -83,7 +83,7 @@ class TestGARPMemory:
             action_vectors=np.random.rand(T, N) + 0.1,
         )
 
-        from pyrevealed.algorithms.garp import check_garp
+        from prefgraph.algorithms.garp import check_garp
 
         # This tests memory allocation
         result = check_garp(log)
@@ -110,7 +110,7 @@ class TestGARPNumerical:
             ]),
         )
 
-        from pyrevealed.algorithms.garp import check_garp
+        from prefgraph.algorithms.garp import check_garp
         result = check_garp(log)
 
         # All bundles identical = trivially consistent
@@ -126,7 +126,7 @@ class TestGARPNumerical:
 
         log = BehaviorLog(cost_vectors=costs, action_vectors=actions)
 
-        from pyrevealed.algorithms.garp import check_garp
+        from prefgraph.algorithms.garp import check_garp
         result = check_garp(log, tolerance=1e-10)
 
         # Near-equal should be treated as equal
@@ -138,7 +138,7 @@ class TestViolationCycles:
 
     def test_simple_warp_violation(self, warp_violation_log):
         """EVAL: Simple 2-cycle (WARP violation)."""
-        from pyrevealed.algorithms.garp import check_garp
+        from prefgraph.algorithms.garp import check_garp
 
         result = check_garp(warp_violation_log)
 
@@ -147,7 +147,7 @@ class TestViolationCycles:
 
     def test_3_cycle_violation(self, garp_3_cycle_log):
         """EVAL: 3-cycle GARP violation."""
-        from pyrevealed.algorithms.garp import check_garp
+        from prefgraph.algorithms.garp import check_garp
 
         result = check_garp(garp_3_cycle_log)
 
@@ -158,7 +158,7 @@ class TestViolationCycles:
 
     def test_dense_violations(self, dense_violation_log):
         """EVAL: Data with many overlapping violation cycles."""
-        from pyrevealed.algorithms.garp import check_garp
+        from prefgraph.algorithms.garp import check_garp
 
         result = check_garp(dense_violation_log)
 
@@ -172,7 +172,7 @@ class TestWARP:
 
     def test_warp_vs_garp_difference(self, garp_3_cycle_log):
         """EVAL: WARP may pass when GARP fails (transitive violations)."""
-        from pyrevealed.algorithms.garp import check_garp, check_warp
+        from prefgraph.algorithms.garp import check_garp, check_warp
 
         garp = check_garp(garp_3_cycle_log)
         warp = check_warp(garp_3_cycle_log)
@@ -183,7 +183,7 @@ class TestWARP:
 
     def test_warp_implies_garp(self):
         """EVAL: WARP violation should imply GARP violation."""
-        from pyrevealed.algorithms.garp import check_garp, check_warp
+        from prefgraph.algorithms.garp import check_garp, check_warp
 
         # Create data with WARP violation
         log = BehaviorLog(
@@ -203,7 +203,7 @@ class TestSwapsIndex:
 
     def test_swaps_consistent_data(self):
         """EVAL: Swaps index for consistent data should be 0."""
-        from pyrevealed.algorithms.garp import compute_swaps_index
+        from prefgraph.algorithms.garp import compute_swaps_index
 
         log = BehaviorLog(
             cost_vectors=np.array([[1.0, 2.0], [2.0, 1.0]]),
@@ -217,7 +217,7 @@ class TestSwapsIndex:
 
     def test_swaps_single_violation(self, warp_violation_log):
         """EVAL: Swaps index for single violation."""
-        from pyrevealed.algorithms.garp import compute_swaps_index
+        from prefgraph.algorithms.garp import compute_swaps_index
 
         result = compute_swaps_index(warp_violation_log)
 
@@ -230,7 +230,7 @@ class TestObservationContributions:
 
     def test_contributions_consistent_data(self):
         """EVAL: Contributions for consistent data should be zero."""
-        from pyrevealed.algorithms.garp import compute_observation_contributions
+        from prefgraph.algorithms.garp import compute_observation_contributions
 
         log = BehaviorLog(
             cost_vectors=np.array([[1.0, 2.0], [2.0, 1.0]]),
@@ -243,7 +243,7 @@ class TestObservationContributions:
 
     def test_contributions_with_violations(self, warp_violation_log):
         """EVAL: Contributions should sum to 1 for inconsistent data."""
-        from pyrevealed.algorithms.garp import compute_observation_contributions
+        from prefgraph.algorithms.garp import compute_observation_contributions
 
         result = compute_observation_contributions(warp_violation_log)
 

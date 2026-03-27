@@ -9,7 +9,7 @@ Test whether time-dated choices are consistent with a fixed discount factor:
 .. code-block:: python
 
    import numpy as np
-   from pyrevealed.algorithms.intertemporal import test_exponential_discounting, DatedChoice
+   from prefgraph.algorithms.intertemporal import test_exponential_discounting, DatedChoice
 
    choices = [
        DatedChoice(amounts=np.array([100.0, 105.0]), dates=np.array([0, 30]), chosen=1),
@@ -32,7 +32,7 @@ Impatient now but patient later — the hallmark of present bias:
 
 .. code-block:: python
 
-   from pyrevealed.algorithms.intertemporal import test_present_bias, DatedChoice
+   from prefgraph.algorithms.intertemporal import test_present_bias, DatedChoice
    import numpy as np
 
    choices = [
@@ -59,7 +59,7 @@ Test for the Laibson (1997) beta-delta model:
 
 .. code-block:: python
 
-   from pyrevealed.algorithms.intertemporal import test_quasi_hyperbolic, DatedChoice
+   from prefgraph.algorithms.intertemporal import test_quasi_hyperbolic, DatedChoice
    import numpy as np
 
    choices = [
@@ -86,7 +86,7 @@ Bound the discount factor from observed choices:
 
 .. code-block:: python
 
-   from pyrevealed.algorithms.intertemporal import recover_discount_factor, DatedChoice
+   from prefgraph.algorithms.intertemporal import recover_discount_factor, DatedChoice
    import numpy as np
 
    choices = [

@@ -1,7 +1,7 @@
 """Session builder: Create BehaviorLog objects for each household (Phase 3).
 
 This module transforms household transaction data into the format required
-by PyRevealed's revealed preference algorithms.
+by PrefGraph's revealed preference algorithms.
 
 For each household:
 1. Pivot quantities by week and commodity
@@ -24,7 +24,7 @@ from numpy.typing import NDArray
 # Add parent directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
-from src.pyrevealed import BehaviorLog
+from src.prefgraph import BehaviorLog
 
 from config import MIN_SHOPPING_WEEKS, NUM_PRODUCTS, TOP_COMMODITIES
 

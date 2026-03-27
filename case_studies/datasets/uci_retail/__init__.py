@@ -1,1 +1,1 @@
-"""UCI Online Retail dataset loader for PyRevealed."""
+"""UCI Online Retail dataset loader for PrefGraph."""

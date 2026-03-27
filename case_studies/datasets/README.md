@@ -1,6 +1,6 @@
-# Datasets for PyRevealed Validation
+# Datasets for PrefGraph Validation
 
-This directory contains data loaders for publicly available datasets that can be used to validate PyRevealed's revealed preference algorithms.
+This directory contains data loaders for publicly available datasets that can be used to validate PrefGraph's revealed preference algorithms.
 
 ## Available Datasets
 
@@ -52,7 +52,7 @@ from datasets.uci_retail.session_builder import load_sessions
 customers = load_sessions()
 
 # Run GARP validation on a single customer
-from pyrevealed import validate_consistency, compute_integrity_score
+from prefgraph import validate_consistency, compute_integrity_score
 
 customer = customers[list(customers.keys())[0]]
 result = validate_consistency(customer.behavior_log)

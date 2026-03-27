@@ -13,7 +13,7 @@ try:
 
     rust_extensions = [
         RustExtension(
-            "pyrevealed._rust_core",
+            "prefgraph._rust_core",
             path="rust/crates/rpt-python/Cargo.toml",
             binding=Binding.PyO3,
             features=["parquet"],

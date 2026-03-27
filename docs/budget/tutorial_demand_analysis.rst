@@ -62,13 +62,13 @@ This implies:
 Part 2: Estimating the Slutsky Matrix
 -------------------------------------
 
-PyRevealed provides multiple methods to estimate the Slutsky matrix from
+PrefGraph provides multiple methods to estimate the Slutsky matrix from
 observed demand data.
 
 .. code-block:: python
 
    import numpy as np
-   from pyrevealed import BehaviorLog, compute_slutsky_matrix
+   from prefgraph import BehaviorLog, compute_slutsky_matrix
 
    # Simulate demand data: 50 observations, 4 goods
    np.random.seed(42)
@@ -124,7 +124,7 @@ Estimation Methods
 
 .. code-block:: python
 
-   from pyrevealed import compute_slutsky_matrix
+   from prefgraph import compute_slutsky_matrix
 
    # Regression method (default)
    S_reg = compute_slutsky_matrix(log, method="regression")
@@ -152,7 +152,7 @@ The main function ``test_integrability()`` checks both conditions:
 
 .. code-block:: python
 
-   from pyrevealed import test_integrability
+   from prefgraph import test_integrability
 
    result = test_integrability(
        log,
@@ -238,7 +238,7 @@ marginal utility of money is constant.
 
 .. code-block:: python
 
-   from pyrevealed import test_income_invariance
+   from prefgraph import test_income_invariance
 
    result = test_income_invariance(log, max_cycle_length=3)
 
@@ -277,7 +277,7 @@ For exhaustive checking of all cycle lengths:
 
 .. code-block:: python
 
-   from pyrevealed import test_income_invariance_exhaustive
+   from prefgraph import test_income_invariance_exhaustive
 
    result_full = test_income_invariance_exhaustive(log)
    print(f"Exhaustive check: {result_full.is_quasilinear}")
@@ -290,7 +290,7 @@ Test symmetry separately with detailed diagnostics:
 
 .. code-block:: python
 
-   from pyrevealed import check_slutsky_symmetry
+   from prefgraph import check_slutsky_symmetry
 
    is_symmetric, violations, max_deviation = check_slutsky_symmetry(
        S,
@@ -337,7 +337,7 @@ Test NSD with statistical significance:
 
 .. code-block:: python
 
-   from pyrevealed import check_slutsky_nsd
+   from prefgraph import check_slutsky_nsd
 
    is_nsd, eigenvalues, max_eigenvalue, p_value = check_slutsky_nsd(
        S,
@@ -375,7 +375,7 @@ requires two conditions:
 
 .. code-block:: python
 
-   from pyrevealed import validate_smooth_preferences, validate_sarp
+   from prefgraph import validate_smooth_preferences, validate_sarp
 
    # Full differentiability test
    diff_result = validate_smooth_preferences(log)
@@ -402,7 +402,7 @@ SARP (Strict Axiom of Revealed Preference) is stronger than GARP:
 
 .. code-block:: python
 
-   from pyrevealed import validate_sarp
+   from prefgraph import validate_sarp
 
    sarp_result = validate_sarp(log)
 
@@ -445,7 +445,7 @@ Test whether preferences are additively separable:
 
 .. code-block:: python
 
-   from pyrevealed import test_additive_separability
+   from prefgraph import test_additive_separability
 
    result = test_additive_separability(
        log,
@@ -533,7 +533,7 @@ that are separable from each other:
 
 .. code-block:: python
 
-   from pyrevealed import identify_additive_groups
+   from prefgraph import identify_additive_groups
 
    # Find groups using cross-effects matrix
    groups = identify_additive_groups(
@@ -585,7 +585,7 @@ Analyze specific pairs of goods:
 
 .. code-block:: python
 
-   from pyrevealed import check_no_cross_effects
+   from prefgraph import check_no_cross_effects
 
    # Check if goods 0 and 1 have cross-effects
    result = check_no_cross_effects(
@@ -617,7 +617,7 @@ Decompose the total price effect into substitution and income effects:
 
 .. code-block:: python
 
-   from pyrevealed import compute_slutsky_decomposition
+   from prefgraph import compute_slutsky_decomposition
 
    decomp = compute_slutsky_decomposition(log, good_i=0, good_j=1)
 
@@ -649,7 +649,7 @@ my desired bundle?"
 
 .. code-block:: python
 
-   from pyrevealed import validate_price_preferences
+   from prefgraph import validate_price_preferences
 
    result = validate_price_preferences(log)
 
@@ -723,7 +723,7 @@ also decreases (goods are bought together).
 
 .. code-block:: python
 
-   from pyrevealed import check_gross_substitutes
+   from prefgraph import check_gross_substitutes
 
    # Test if goods 0 and 1 are substitutes
    result = check_gross_substitutes(log, good_g=0, good_h=1)
@@ -760,7 +760,7 @@ Analyze all pairwise relationships at once:
 
 .. code-block:: python
 
-   from pyrevealed import compute_substitution_matrix
+   from prefgraph import compute_substitution_matrix
 
    result = compute_substitution_matrix(log)
 
@@ -791,7 +791,7 @@ negative):
 
 .. code-block:: python
 
-   from pyrevealed import check_law_of_demand
+   from prefgraph import check_law_of_demand
 
    result = check_law_of_demand(log, good=0)
 
@@ -818,7 +818,7 @@ Decompose all price effects into substitution and income components:
 
 .. code-block:: python
 
-   from pyrevealed import decompose_price_effects
+   from prefgraph import decompose_price_effects
 
    result = decompose_price_effects(log)
 
@@ -886,7 +886,7 @@ Hicksian demand holds utility constant and minimizes expenditure. This is the
 
 .. code-block:: python
 
-   from pyrevealed import compute_hicksian_demand
+   from prefgraph import compute_hicksian_demand
 
    result = compute_hicksian_demand(log)
 
@@ -939,7 +939,7 @@ Analyze demand structure in grocery data:
 .. code-block:: python
 
    import numpy as np
-   from pyrevealed import (
+   from prefgraph import (
        BehaviorLog,
        test_integrability,
        test_additive_separability,
@@ -1062,7 +1062,7 @@ households, correlated price promotions, and seasonal effects:
 .. code-block:: python
 
    import numpy as np
-   from pyrevealed import (
+   from prefgraph import (
        BehaviorLog,
        test_integrability,
        test_additive_separability,

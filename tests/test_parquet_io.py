@@ -1,6 +1,6 @@
 """Tests for Parquet streaming I/O.
 
-Requires pyarrow: pip install pyrevealed[parquet]
+Requires pyarrow: pip install prefgraph[parquet]
 """
 
 from __future__ import annotations
@@ -96,7 +96,7 @@ def wide_df_and_parquet(tmp_path: Path) -> tuple:
 
 class TestParquetUserIterator:
     def test_wide_format_basic(self, wide_parquet: Path) -> None:
-        from pyrevealed.io.parquet import ParquetUserIterator
+        from prefgraph.io.parquet import ParquetUserIterator
 
         it = ParquetUserIterator(
             wide_parquet,
@@ -123,7 +123,7 @@ class TestParquetUserIterator:
         assert len(all_tuples) == 10
 
     def test_wide_format_user_obs_count(self, wide_parquet: Path) -> None:
-        from pyrevealed.io.parquet import ParquetUserIterator
+        from prefgraph.io.parquet import ParquetUserIterator
 
         it = ParquetUserIterator(
             wide_parquet,
@@ -137,7 +137,7 @@ class TestParquetUserIterator:
                 assert prices.shape[0] == 5  # 5 observations per user
 
     def test_long_format_basic(self, long_parquet: Path) -> None:
-        from pyrevealed.io.parquet import ParquetUserIterator
+        from prefgraph.io.parquet import ParquetUserIterator
 
         it = ParquetUserIterator(
             long_parquet,
@@ -159,7 +159,7 @@ class TestParquetUserIterator:
         assert len(set(all_ids)) == 5
 
     def test_chunking(self, wide_parquet: Path) -> None:
-        from pyrevealed.io.parquet import ParquetUserIterator
+        from prefgraph.io.parquet import ParquetUserIterator
 
         it = ParquetUserIterator(
             wide_parquet,
@@ -175,7 +175,7 @@ class TestParquetUserIterator:
         assert total == 10
 
     def test_format_conflict_raises(self, wide_parquet: Path) -> None:
-        from pyrevealed.io.parquet import ParquetUserIterator
+        from prefgraph.io.parquet import ParquetUserIterator
 
         with pytest.raises(ValueError, match="not both"):
             ParquetUserIterator(
@@ -185,7 +185,7 @@ class TestParquetUserIterator:
             )
 
     def test_missing_params_raises(self, wide_parquet: Path) -> None:
-        from pyrevealed.io.parquet import ParquetUserIterator
+        from prefgraph.io.parquet import ParquetUserIterator
 
         with pytest.raises(ValueError, match="cost_cols.*action_cols"):
             ParquetUserIterator(wide_parquet)
@@ -198,7 +198,7 @@ class TestParquetUserIterator:
 
 class TestPrepareParquet:
     def test_sort_by_user(self, tmp_path: Path) -> None:
-        from pyrevealed.io.parquet import prepare_parquet
+        from prefgraph.io.parquet import prepare_parquet
 
         # Create unsorted data
         rng = np.random.default_rng(42)
@@ -226,7 +226,7 @@ class TestPrepareParquet:
         assert user_ids == sorted(user_ids)
 
     def test_csv_input(self, tmp_path: Path) -> None:
-        from pyrevealed.io.parquet import prepare_parquet
+        from prefgraph.io.parquet import prepare_parquet
 
         csv_path = tmp_path / "data.csv"
         df = pd.DataFrame({
@@ -249,7 +249,7 @@ class TestPrepareParquet:
 
 class TestEngineAnalyzeParquet:
     def test_wide_format_returns_dataframe(self, wide_parquet: Path) -> None:
-        from pyrevealed.engine import Engine
+        from prefgraph.engine import Engine
 
         engine = Engine(metrics=["garp", "ccei"])
         result = engine.analyze_parquet(
@@ -265,8 +265,8 @@ class TestEngineAnalyzeParquet:
 
     def test_parity_with_in_memory(self, wide_df_and_parquet: tuple) -> None:
         """Parquet streaming results must match in-memory analyze() results."""
-        import pyrevealed as rp
-        from pyrevealed.engine import Engine
+        import prefgraph as rp
+        from prefgraph.engine import Engine
 
         df, parquet_path = wide_df_and_parquet
         cost_cols = ["price_A", "price_B", "price_C"]
@@ -299,7 +299,7 @@ class TestEngineAnalyzeParquet:
         np.testing.assert_allclose(mem_result["ccei"].values, pq_result["ccei"].values, atol=0.01)
 
     def test_output_to_parquet_file(self, wide_parquet: Path, tmp_path: Path) -> None:
-        from pyrevealed.engine import Engine
+        from prefgraph.engine import Engine
 
         engine = Engine(metrics=["garp", "ccei"])
         output_path = str(tmp_path / "results.parquet")
@@ -326,7 +326,7 @@ class TestEngineAnalyzeParquet:
 
 class TestAnalyzeParquetPath:
     def test_string_path(self, wide_parquet: Path) -> None:
-        import pyrevealed as rp
+        import prefgraph as rp
 
         result = rp.analyze(
             str(wide_parquet),
@@ -338,7 +338,7 @@ class TestAnalyzeParquetPath:
         assert len(result) == 10
 
     def test_path_object(self, wide_parquet: Path) -> None:
-        import pyrevealed as rp
+        import prefgraph as rp
 
         result = rp.analyze(
             wide_parquet,

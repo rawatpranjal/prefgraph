@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""Comprehensive PyRevealed analysis on Dunnhumby data.
+"""Comprehensive PrefGraph analysis on Dunnhumby data.
 
-Uses ALL available PyRevealed methods:
+Uses ALL available PrefGraph methods:
 1. compute_mpi() - Money Pump Index (exploitability)
 2. compute_houtman_maks_index() - Minimum outliers for consistency
 3. check_warp() - Weak Axiom violations
@@ -24,7 +24,7 @@ from scipy import stats
 # Add parent directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
-from src.pyrevealed import (
+from src.prefgraph import (
     BehaviorLog,
     BehavioralAuditor,
     check_warp,
@@ -96,7 +96,7 @@ def analyze_mpi_distribution(
             mpi_values.append(result.mpi_value)
 
             # Also get AEI for comparison
-            from src.pyrevealed import compute_aei
+            from src.prefgraph import compute_aei
             aei_result = compute_aei(log, tolerance=1e-4)
             aei_values.append(aei_result.efficiency_index)
         except Exception as e:

@@ -190,7 +190,7 @@ not included. Parquet files are 0.7--4.8 MB (zstd compressed).*
 .. code-block:: python
 
    # One-time: convert CSV to sorted Parquet
-   from pyrevealed.io.parquet import prepare_parquet
+   from prefgraph.io.parquet import prepare_parquet
    prepare_parquet("raw.csv", "users.parquet", user_col="user_id")
 
    # Fast repeated analysis
@@ -288,7 +288,7 @@ Reproduce
 
 .. code-block:: bash
 
-   pip install pyrevealed lightgbm scikit-learn
+   pip install prefgraph lightgbm scikit-learn
    python case_studies/benchmarks/runner.py --datasets all
 
 Datasets require ``kaggle`` CLI. See ``case_studies/benchmarks/`` for details.
@@ -301,7 +301,7 @@ Appendix: Pipeline
 .. code-block:: text
 
    Raw CSV
-     -> Loader (pyrevealed.datasets)
+     -> Loader (prefgraph.datasets)
      -> BehaviorPanel / MenuChoiceLog per user
      -> Temporal split: first 70% -> features, last 30% -> targets
      -> Feature extraction:

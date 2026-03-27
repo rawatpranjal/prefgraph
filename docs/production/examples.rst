@@ -9,7 +9,7 @@ Create a production dataset with input/output prices and quantities:
 .. code-block:: python
 
    import numpy as np
-   from pyrevealed import ProductionLog
+   from prefgraph import ProductionLog
 
    log = ProductionLog(
        input_prices=np.array([
@@ -39,7 +39,7 @@ Profit Maximization Test
 
 .. code-block:: python
 
-   from pyrevealed import test_profit_maximization
+   from prefgraph import test_profit_maximization
 
    result = test_profit_maximization(log)
    print(f"Profit maximizing: {result.is_profit_maximizing}")
@@ -55,7 +55,7 @@ Cost Minimization
 
 .. code-block:: python
 
-   from pyrevealed import check_cost_minimization
+   from prefgraph import check_cost_minimization
 
    result = check_cost_minimization(log)
    print(f"Cost minimizing: {result['is_cost_minimizing']}")
@@ -71,7 +71,7 @@ Returns to Scale
 
 .. code-block:: python
 
-   from pyrevealed import estimate_returns_to_scale
+   from prefgraph import estimate_returns_to_scale
 
    rts = estimate_returns_to_scale(log)
    print(f"Returns to scale: {rts}")
@@ -85,7 +85,7 @@ Technical Efficiency
 
 .. code-block:: python
 
-   from pyrevealed import compute_technical_efficiency
+   from prefgraph import compute_technical_efficiency
 
    efficiencies = compute_technical_efficiency(log, method="output_oriented")
    for t, eff in enumerate(efficiencies):
@@ -105,8 +105,8 @@ Score many firms in parallel:
 .. code-block:: python
 
    import numpy as np
-   from pyrevealed import ProductionLog
-   from pyrevealed.algorithms.production import test_profit_maximization
+   from prefgraph import ProductionLog
+   from prefgraph.algorithms.production import test_profit_maximization
 
    rng = np.random.RandomState(42)
    firms = [

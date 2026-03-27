@@ -6,7 +6,7 @@ These tests expose division hazards in algorithms.
 
 import numpy as np
 import pytest
-from pyrevealed.core.session import BehaviorLog, StochasticChoiceLog
+from prefgraph.core.session import BehaviorLog, StochasticChoiceLog
 
 
 class TestMPIDivision:
@@ -22,7 +22,7 @@ class TestMPIDivision:
 
         This tests near-zero denominators.
         """
-        from pyrevealed.algorithms.mpi import compute_mpi
+        from prefgraph.algorithms.mpi import compute_mpi
 
         # Create data with near-zero expenditures
         log = BehaviorLog(
@@ -39,7 +39,7 @@ class TestMPIDivision:
 
     def test_mpi_cycle_with_zero_expenditure(self):
         """EVAL: MPI cycle where one observation has near-zero expenditure."""
-        from pyrevealed.algorithms.mpi import compute_mpi
+        from prefgraph.algorithms.mpi import compute_mpi
 
         # Observation 0 has very low expenditure, obs 1 has normal
         log = BehaviorLog(
@@ -62,7 +62,7 @@ class TestSlutskyDivision:
 
         Near-zero p_bar causes division explosion.
         """
-        from pyrevealed.algorithms.integrability import compute_slutsky_matrix
+        from prefgraph.algorithms.integrability import compute_slutsky_matrix
 
         S = compute_slutsky_matrix(near_zero_prices)
 
@@ -104,7 +104,7 @@ class TestStochasticDivision:
             if p_y > 1e-10:
                 ratio = p_x / p_y
         """
-        from pyrevealed.algorithms.stochastic import check_independence_irrelevant_alternatives
+        from prefgraph.algorithms.stochastic import check_independence_irrelevant_alternatives
 
         # Data with one item never chosen
         log = StochasticChoiceLog(
@@ -130,7 +130,7 @@ class TestWelfareDivision:
             if p[i] > 1e-10:
                 h[i] = x0[i] * (p0[i] / p[i]) ** beta[i]
         """
-        from pyrevealed.algorithms.welfare import compute_cv_vartia
+        from prefgraph.algorithms.welfare import compute_cv_vartia
 
         baseline = BehaviorLog(
             cost_vectors=np.array([[1.0, 1.0]]),
@@ -148,7 +148,7 @@ class TestWelfareDivision:
 
     def test_expenditure_function_zero_budget(self):
         """EVAL: Expenditure function with zero target utility."""
-        from pyrevealed.algorithms.welfare import recover_expenditure_function
+        from prefgraph.algorithms.welfare import recover_expenditure_function
 
         log = BehaviorLog(
             cost_vectors=np.array([[1.0, 2.0], [2.0, 1.0]]),
@@ -179,7 +179,7 @@ class TestInterestRateDivision:
             else:
                 r_upper = float("inf")
         """
-        from pyrevealed.algorithms.intertemporal import recover_discount_factor, DatedChoice
+        from prefgraph.algorithms.intertemporal import recover_discount_factor, DatedChoice
 
         # Extreme choices that imply very low delta
         choices = [
@@ -201,7 +201,7 @@ class TestNormalizationDivision:
 
     def test_budget_share_zero_expenditure(self):
         """EVAL: Budget share computation with zero total expenditure."""
-        from pyrevealed.algorithms.integrability import compute_slutsky_matrix_stone_geary
+        from prefgraph.algorithms.integrability import compute_slutsky_matrix_stone_geary
 
         # Very low expenditure data
         log = BehaviorLog(
@@ -215,7 +215,7 @@ class TestNormalizationDivision:
 
     def test_contribution_normalization(self):
         """EVAL: Observation contribution normalization with zero total."""
-        from pyrevealed.algorithms.garp import compute_observation_contributions
+        from prefgraph.algorithms.garp import compute_observation_contributions
 
         # Consistent data - no violations, zero total contribution
         log = BehaviorLog(
@@ -238,7 +238,7 @@ class TestVarianceDivision:
         In stochastic.py around line 195:
             cv = np.std(odds_ratios) / max(np.mean(odds_ratios), 1e-10)
         """
-        from pyrevealed.algorithms.stochastic import check_independence_irrelevant_alternatives
+        from prefgraph.algorithms.stochastic import check_independence_irrelevant_alternatives
 
         # Create data with odds ratios that average to near zero
         # This is tricky because odds ratios are always positive

@@ -12,7 +12,7 @@ import numpy as np
 from concurrent.futures import ProcessPoolExecutor
 
 from rust_garp import check_garp_batch_rust
-from pyrevealed import BehaviorLog, check_garp
+from prefgraph import BehaviorLog, check_garp
 
 
 CPU = os.cpu_count() or 1

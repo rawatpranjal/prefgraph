@@ -10,7 +10,7 @@ This example shows how to use the auditor to:
 """
 
 import numpy as np
-from pyrevealed import BehaviorLog, BehavioralAuditor
+from prefgraph import BehaviorLog, BehavioralAuditor
 
 # =============================================================================
 # Example 1: Consistent User

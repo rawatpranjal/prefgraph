@@ -3,8 +3,8 @@
 import numpy as np
 import pytest
 
-from pyrevealed import MenuChoiceLog, StochasticChoiceLog
-from pyrevealed import (
+from prefgraph import MenuChoiceLog, StochasticChoiceLog
+from prefgraph import (
     # Result types
     WARPLAResult,
     RandomAttentionResult,
@@ -18,8 +18,8 @@ from pyrevealed import (
     compute_attention_bounds,
 )
 # Import test_* functions with aliases to avoid pytest collecting them as tests
-from pyrevealed import test_warp_la as warp_la_test
-from pyrevealed import test_ram_consistency as ram_consistency_test
+from prefgraph import test_warp_la as warp_la_test
+from prefgraph import test_ram_consistency as ram_consistency_test
 
 
 class TestWARPLA:

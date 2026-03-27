@@ -1,28 +1,28 @@
 Troubleshooting
 ===============
 
-This guide helps diagnose and resolve common errors in PyRevealed.
+This guide helps diagnose and resolve common errors in PrefGraph.
 
 
 Exception Reference
 -------------------
 
-PyRevealed provides a hierarchy of custom exceptions that inherit from
+PrefGraph provides a hierarchy of custom exceptions that inherit from
 ``ValueError`` for backward compatibility. You can catch specific exception
-types or use the base ``PyRevealedError`` to catch all library errors.
+types or use the base ``PrefGraphError`` to catch all library errors.
 
 .. code-block:: python
 
-   from pyrevealed import PyRevealedError, NaNInfError
+   from prefgraph import PrefGraphError, NaNInfError
 
    try:
        log = BehaviorLog(prices, quantities)
    except NaNInfError as e:
        print(f"Data has missing values: {e}")
-   except PyRevealedError as e:
-       print(f"PyRevealed error: {e}")
+   except PrefGraphError as e:
+       print(f"PrefGraph error: {e}")
    except ValueError as e:
-       # Also catches PyRevealedError (for backward compatibility)
+       # Also catches PrefGraphError (for backward compatibility)
        print(f"Validation error: {e}")
 
 
@@ -55,7 +55,7 @@ Raised when array dimensions are incompatible.
 .. code-block:: python
 
    import numpy as np
-   from pyrevealed import BehaviorLog
+   from prefgraph import BehaviorLog
 
    prices = np.array([[1, 2, 3]])      # shape (1, 3)
    quantities = np.array([[1, 2]])     # shape (1, 2) - mismatch!
@@ -93,7 +93,7 @@ Raised when values are outside expected ranges.
 .. code-block:: python
 
    import numpy as np
-   from pyrevealed import BehaviorLog
+   from prefgraph import BehaviorLog
 
    prices = np.array([[1, -2, 3], [2, 1, 0]])  # Negative and zero prices!
    quantities = np.array([[1, 2, 3], [2, 1, 1]])
@@ -133,7 +133,7 @@ Raised when NaN or Inf values are detected in input data.
 .. code-block:: python
 
    import numpy as np
-   from pyrevealed import BehaviorLog
+   from prefgraph import BehaviorLog
 
    prices = np.array([[1, np.nan, 3], [2, 1, 1]])
    quantities = np.array([[1, 2, 3], [2, 1, 1]])
@@ -174,7 +174,7 @@ Raised when an optimization solver fails to find a solution.
 
 .. code-block:: python
 
-   from pyrevealed import BehaviorLog, fit_latent_values, build_value_function
+   from prefgraph import BehaviorLog, fit_latent_values, build_value_function
 
    log = BehaviorLog(prices, quantities)
    result = fit_latent_values(log)
@@ -190,7 +190,7 @@ Raised when an optimization solver fails to find a solution.
 
 .. code-block:: python
 
-   from pyrevealed import compute_integrity_score
+   from prefgraph import compute_integrity_score
 
    # Check consistency first
    integrity = compute_integrity_score(log)
@@ -213,7 +213,7 @@ Raised when an operation requires a fitted model.
 
 .. code-block:: python
 
-   from pyrevealed import PreferenceEncoder, BehaviorLog
+   from prefgraph import PreferenceEncoder, BehaviorLog
 
    encoder = PreferenceEncoder()
 
@@ -252,7 +252,7 @@ Ensure you have enough observations for the analysis you want to perform.
 Handling NaN Values
 -------------------
 
-PyRevealed provides flexible NaN handling via the ``nan_policy`` parameter
+PrefGraph provides flexible NaN handling via the ``nan_policy`` parameter
 available on ``BehaviorLog`` and other data containers.
 
 .. list-table::
@@ -277,7 +277,7 @@ available on ``BehaviorLog`` and other data containers.
 .. code-block:: python
 
    import numpy as np
-   from pyrevealed import BehaviorLog
+   from prefgraph import BehaviorLog
 
    # Data with some NaN values
    prices = np.array([[1, 2], [np.nan, 1], [2, 2]])
@@ -298,7 +298,7 @@ available on ``BehaviorLog`` and other data containers.
 Warning Control
 ---------------
 
-PyRevealed emits warnings for non-critical issues that may affect results.
+PrefGraph emits warnings for non-critical issues that may affect results.
 
 **Warning types:**
 
@@ -310,7 +310,7 @@ PyRevealed emits warnings for non-critical issues that may affect results.
 .. code-block:: python
 
    import warnings
-   from pyrevealed import DataQualityWarning
+   from prefgraph import DataQualityWarning
 
    # Suppress data quality warnings
    warnings.filterwarnings('ignore', category=DataQualityWarning)
@@ -325,7 +325,7 @@ PyRevealed emits warnings for non-critical issues that may affect results.
 Numerical Stability
 -------------------
 
-PyRevealed uses tolerance parameters for floating-point comparisons.
+PrefGraph uses tolerance parameters for floating-point comparisons.
 
 **Default tolerances:**
 
@@ -337,7 +337,7 @@ PyRevealed uses tolerance parameters for floating-point comparisons.
 
 .. code-block:: python
 
-   from pyrevealed import validate_consistency
+   from prefgraph import validate_consistency
 
    # For noisy real-world data, use larger tolerance
    result = validate_consistency(log, tolerance=1e-6)
@@ -378,7 +378,7 @@ A: Check your data's integrity score first:
 
 .. code-block:: python
 
-   from pyrevealed import compute_integrity_score
+   from prefgraph import compute_integrity_score
 
    result = compute_integrity_score(log)
    print(f"Integrity: {result.efficiency_index}")

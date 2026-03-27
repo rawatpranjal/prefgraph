@@ -23,7 +23,7 @@ DATASET_NAME = "Online Retail II"
 
 def load_and_prepare(data_dir=None, n_customers=None):
     """Load Online Retail II with strict out-of-time split."""
-    from pyrevealed.datasets._online_retail_ii import load_online_retail_ii
+    from prefgraph.datasets._online_retail_ii import load_online_retail_ii
 
     print(f"\n[{DATASET_NAME}] Loading dataset...")
     panel = load_online_retail_ii(data_dir=data_dir, n_customers=n_customers, min_months=3)

@@ -6,7 +6,7 @@
 from __future__ import annotations
 
 import numpy as np
-from pyrevealed.core.session import MenuChoiceLog
+from prefgraph.core.session import MenuChoiceLog
 
 from case_studies.benchmarks.config import TRAIN_FRACTION, MIN_OBS_MENU, MIN_TRAIN_MENU, MIN_TEST_MENU
 from case_studies.benchmarks.core.features import extract_menu_baseline, extract_menu_rp
@@ -33,7 +33,7 @@ def _split_menu_log(log: MenuChoiceLog, fraction: float):
 
 
 def load_and_prepare(data_dir=None, max_users=50000):
-    from pyrevealed.datasets._tenrec import load_tenrec
+    from prefgraph.datasets._tenrec import load_tenrec
 
     print(f"\n[{DATASET_NAME}] Loading dataset...")
     user_logs = load_tenrec(data_dir=data_dir, min_sessions=MIN_OBS_MENU, max_users=max_users)

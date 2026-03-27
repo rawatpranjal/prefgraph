@@ -6,7 +6,7 @@ These tests expose numerical vulnerabilities in algorithms.
 
 import numpy as np
 import pytest
-from pyrevealed.core.session import BehaviorLog
+from prefgraph.core.session import BehaviorLog
 
 
 class TestExponentialOverflow:
@@ -20,7 +20,7 @@ class TestExponentialOverflow:
         For delta=0.90, delta^800 = 0.90^800 ≈ 1e-37
         Near delta=0.5, delta^800 underflows to 0.
         """
-        from pyrevealed.algorithms.intertemporal import test_exponential_discounting
+        from prefgraph.algorithms.intertemporal import test_exponential_discounting
 
         result = test_exponential_discounting(extreme_delay_choices)
 
@@ -34,7 +34,7 @@ class TestExponentialOverflow:
 
     def test_discounting_extreme_ratio(self):
         """EVAL: Ratio c_rej/c_chosen at numerical limits."""
-        from pyrevealed.algorithms.intertemporal import (
+        from prefgraph.algorithms.intertemporal import (
             test_exponential_discounting,
             DatedChoice,
         )
@@ -57,8 +57,8 @@ class TestLogitOverflow:
 
     def test_stochastic_extreme_utilities(self):
         """EVAL: Logit softmax with utilities near overflow boundary."""
-        from pyrevealed.core.session import StochasticChoiceLog
-        from pyrevealed.algorithms.stochastic import fit_random_utility_model
+        from prefgraph.core.session import StochasticChoiceLog
+        from prefgraph.algorithms.stochastic import fit_random_utility_model
 
         # Create data that leads to extreme utility estimates
         log = StochasticChoiceLog(
@@ -79,9 +79,9 @@ class TestCRRAOverflow:
 
     def test_crra_extreme_rho(self):
         """EVAL: CRRA u(x) = x^(1-rho)/(1-rho) with extreme rho."""
-        from pyrevealed.algorithms.risk import estimate_crra_parameter
+        from prefgraph.algorithms.risk import estimate_crra_parameter
 
-        from pyrevealed.core.session import RiskChoiceLog
+        from prefgraph.core.session import RiskChoiceLog
 
         # Create risk choice data
         log = RiskChoiceLog(
@@ -108,7 +108,7 @@ class TestFloatPrecision:
 
     def test_garp_near_tolerance_boundary(self, near_tolerance_expenditure_log):
         """EVAL: GARP with expenditures differing by exactly tolerance."""
-        from pyrevealed.algorithms.garp import check_garp
+        from prefgraph.algorithms.garp import check_garp
 
         # Test at various tolerances around the boundary
         for tol in [1e-10, 1e-11, 1e-9]:
@@ -118,7 +118,7 @@ class TestFloatPrecision:
 
     def test_aei_precision_at_boundary(self):
         """EVAL: AEI binary search precision at 0 and 1 boundaries."""
-        from pyrevealed.algorithms.aei import compute_aei
+        from prefgraph.algorithms.aei import compute_aei
 
         # Perfectly consistent data should give AEI = 1.0 exactly
         log = BehaviorLog(
@@ -167,7 +167,7 @@ class TestMatrixCondition:
 
     def test_slutsky_high_condition_number(self, high_condition_number_log):
         """EVAL: Slutsky estimation with ill-conditioned data."""
-        from pyrevealed.algorithms.integrability import compute_slutsky_matrix
+        from prefgraph.algorithms.integrability import compute_slutsky_matrix
 
         S = compute_slutsky_matrix(high_condition_number_log)
 
@@ -176,7 +176,7 @@ class TestMatrixCondition:
 
     def test_utility_recovery_ill_conditioned(self, high_condition_number_log):
         """EVAL: Afriat utility recovery with ill-conditioned constraints."""
-        from pyrevealed.algorithms.utility import recover_utility
+        from prefgraph.algorithms.utility import recover_utility
 
         result = recover_utility(high_condition_number_log)
 
@@ -192,7 +192,7 @@ class TestDenormalized:
 
     def test_subnormal_quantities(self, subnormal_values):
         """EVAL: Quantities in subnormal range."""
-        from pyrevealed.algorithms.garp import check_garp
+        from prefgraph.algorithms.garp import check_garp
 
         # Subnormal values may lose precision in multiplication
         result = check_garp(subnormal_values)
@@ -212,7 +212,7 @@ class TestNaNPropagation:
 
     def test_nan_in_intermediate_computation(self):
         """EVAL: NaN introduced during computation doesn't propagate silently."""
-        from pyrevealed.algorithms.integrability import compute_slutsky_matrix
+        from prefgraph.algorithms.integrability import compute_slutsky_matrix
 
         # Data that might produce 0/0 or inf-inf in intermediate steps
         log = BehaviorLog(
@@ -240,7 +240,7 @@ class TestSpecialValues:
 
     def test_max_float_handling(self, max_float_prices):
         """EVAL: Prices near float64 max."""
-        from pyrevealed.algorithms.garp import check_garp
+        from prefgraph.algorithms.garp import check_garp
 
         try:
             result = check_garp(max_float_prices)
@@ -250,7 +250,7 @@ class TestSpecialValues:
 
     def test_extreme_ratio_handling(self, extreme_ratio_log):
         """EVAL: Price ratio of 1e300 between goods."""
-        from pyrevealed.algorithms.garp import check_garp
+        from prefgraph.algorithms.garp import check_garp
 
         result = check_garp(extreme_ratio_log)
         assert hasattr(result, 'is_consistent')

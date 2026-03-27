@@ -3,7 +3,7 @@
 import numpy as np
 import pytest
 
-from pyrevealed.core.result import (
+from prefgraph.core.result import (
     GARPResult,
     AEIResult,
     MPIResult,

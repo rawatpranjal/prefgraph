@@ -21,7 +21,7 @@ def load_and_prepare(data_dir=None, max_users=None):
     M5 has 10 stores × 7 departments = 70 "users" with ~277 weeks each.
     This is a large-T, small-N dataset ideal for temporal RP analysis.
     """
-    from pyrevealed.datasets._m5 import load_m5
+    from prefgraph.datasets._m5 import load_m5
 
     print(f"\n[{DATASET_NAME}] Loading dataset...")
     panel = load_m5(data_dir=data_dir, aggregation="store_dept")

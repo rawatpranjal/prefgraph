@@ -6,7 +6,7 @@ Tests for AEI (Afriat Efficiency Index) convergence and boundary conditions.
 
 import numpy as np
 import pytest
-from pyrevealed.core.session import BehaviorLog
+from prefgraph.core.session import BehaviorLog
 
 
 class TestAEIBinarySearch:
@@ -22,7 +22,7 @@ class TestAEIBinarySearch:
 
         With tight tolerance and complex data, 50 iterations may be insufficient.
         """
-        from pyrevealed.algorithms.aei import compute_aei
+        from prefgraph.algorithms.aei import compute_aei
 
         # Create data that requires many iterations
         np.random.seed(42)
@@ -39,7 +39,7 @@ class TestAEIBinarySearch:
 
     def test_aei_convergence_at_extremes(self):
         """EVAL: AEI binary search at 0 and 1 boundaries."""
-        from pyrevealed.algorithms.aei import compute_aei
+        from prefgraph.algorithms.aei import compute_aei
 
         # Perfectly consistent data - AEI should be 1.0
         log = BehaviorLog(
@@ -54,7 +54,7 @@ class TestAEIBinarySearch:
 
     def test_aei_boundary_violation(self):
         """EVAL: AEI just below 1.0 (near-consistent data)."""
-        from pyrevealed.algorithms.aei import compute_aei
+        from prefgraph.algorithms.aei import compute_aei
 
         # Data with tiny violation
         log = BehaviorLog(
@@ -73,7 +73,7 @@ class TestAEIPrecision:
 
     def test_aei_very_tight_tolerance(self):
         """EVAL: AEI with tolerance=1e-15 (near machine precision)."""
-        from pyrevealed.algorithms.aei import compute_aei
+        from prefgraph.algorithms.aei import compute_aei
 
         log = BehaviorLog(
             cost_vectors=np.array([[1.0, 2.0], [2.0, 1.0]]),
@@ -87,7 +87,7 @@ class TestAEIPrecision:
 
     def test_aei_precision_loss(self):
         """EVAL: AEI with ill-conditioned data may lose precision."""
-        from pyrevealed.algorithms.aei import compute_aei
+        from prefgraph.algorithms.aei import compute_aei
 
         # Data with extreme scale differences
         log = BehaviorLog(
@@ -106,7 +106,7 @@ class TestAEIEdgeCases:
 
     def test_aei_identical_observations(self):
         """EVAL: AEI with all identical observations."""
-        from pyrevealed.algorithms.aei import compute_aei
+        from prefgraph.algorithms.aei import compute_aei
 
         log = BehaviorLog(
             cost_vectors=np.array([[1.0, 2.0], [1.0, 2.0], [1.0, 2.0]]),
@@ -120,7 +120,7 @@ class TestAEIEdgeCases:
 
     def test_aei_single_good_consistency(self):
         """EVAL: AEI with N=1 single good."""
-        from pyrevealed.algorithms.aei import compute_aei
+        from prefgraph.algorithms.aei import compute_aei
 
         log = BehaviorLog(
             cost_vectors=np.array([[1.0], [2.0], [3.0]]),
@@ -134,7 +134,7 @@ class TestAEIEdgeCases:
 
     def test_aei_monotonicity(self):
         """EVAL: AEI should decrease as violations increase."""
-        from pyrevealed.algorithms.aei import compute_aei
+        from prefgraph.algorithms.aei import compute_aei
 
         # Consistent data
         consistent = BehaviorLog(
@@ -161,7 +161,7 @@ class TestCCEI:
 
     def test_ccei_consistent_data(self):
         """EVAL: CCEI should equal 1.0 for consistent data."""
-        from pyrevealed.algorithms.aei import compute_ccei
+        from prefgraph.algorithms.aei import compute_ccei
 
         log = BehaviorLog(
             cost_vectors=np.array([[1.0, 2.0], [2.0, 1.0]]),
@@ -174,7 +174,7 @@ class TestCCEI:
 
     def test_ccei_equals_aei(self):
         """EVAL: CCEI should equal AEI (they're the same metric)."""
-        from pyrevealed.algorithms.aei import compute_aei, compute_ccei
+        from prefgraph.algorithms.aei import compute_aei, compute_ccei
 
         log = BehaviorLog(
             cost_vectors=np.array([[1.0, 1.0], [1.0, 1.0]]),
@@ -194,8 +194,8 @@ class TestAEIWithTolerance:
 
     def test_aei_tolerance_consistency_with_garp(self):
         """EVAL: AEI=1.0 should imply GARP consistency at same tolerance."""
-        from pyrevealed.algorithms.aei import compute_aei
-        from pyrevealed.algorithms.garp import check_garp
+        from prefgraph.algorithms.aei import compute_aei
+        from prefgraph.algorithms.garp import check_garp
 
         log = BehaviorLog(
             cost_vectors=np.array([[1.0, 2.0], [2.0, 1.0]]),
@@ -211,7 +211,7 @@ class TestAEIWithTolerance:
 
     def test_aei_different_tolerances(self):
         """EVAL: AEI may differ with different tolerances."""
-        from pyrevealed.algorithms.aei import compute_aei
+        from prefgraph.algorithms.aei import compute_aei
 
         log = BehaviorLog(
             cost_vectors=np.array([[1.0, 1.0], [1.0, 1.0]]),

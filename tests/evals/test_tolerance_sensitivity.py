@@ -6,7 +6,7 @@ These tests expose how algorithms behave at tolerance boundaries.
 
 import numpy as np
 import pytest
-from pyrevealed.core.session import BehaviorLog
+from prefgraph.core.session import BehaviorLog
 
 
 class TestGARPToleranceSensitivity:
@@ -17,7 +17,7 @@ class TestGARPToleranceSensitivity:
 
         Data is designed so that p1@q1 - p1@q2 = exactly the tolerance value.
         """
-        from pyrevealed.algorithms.garp import check_garp
+        from prefgraph.algorithms.garp import check_garp
 
         # Create data where expenditure difference is exactly 1e-10
         log = BehaviorLog(
@@ -39,7 +39,7 @@ class TestGARPToleranceSensitivity:
     @pytest.mark.parametrize("tolerance", [1e-15, 1e-12, 1e-10, 1e-8, 1e-5])
     def test_garp_tolerance_sweep(self, tolerance):
         """EVAL: GARP consistency across tolerance values."""
-        from pyrevealed.algorithms.garp import check_garp
+        from prefgraph.algorithms.garp import check_garp
 
         log = BehaviorLog(
             cost_vectors=np.array([[1.0, 2.0], [2.0, 1.0]]),
@@ -53,7 +53,7 @@ class TestGARPToleranceSensitivity:
 
     def test_garp_zero_tolerance(self):
         """EVAL: GARP with tolerance=0 (exact comparison)."""
-        from pyrevealed.algorithms.garp import check_garp
+        from prefgraph.algorithms.garp import check_garp
 
         log = BehaviorLog(
             cost_vectors=np.array([[1.0, 2.0], [2.0, 1.0]]),
@@ -71,7 +71,7 @@ class TestAEIToleranceSensitivity:
 
     def test_aei_tolerance_precision(self):
         """EVAL: AEI precision depends on tolerance."""
-        from pyrevealed.algorithms.aei import compute_aei
+        from prefgraph.algorithms.aei import compute_aei
 
         log = BehaviorLog(
             cost_vectors=np.array([[1.0, 1.0], [1.0, 1.0]]),
@@ -89,7 +89,7 @@ class TestAEIToleranceSensitivity:
 
     def test_aei_binary_search_iterations(self):
         """EVAL: AEI binary search may not converge with tight tolerance."""
-        from pyrevealed.algorithms.aei import compute_aei
+        from prefgraph.algorithms.aei import compute_aei
 
         log = BehaviorLog(
             cost_vectors=np.array([[1.0, 1.0], [1.0, 1.0]]),
@@ -108,7 +108,7 @@ class TestSlutskyToleranceSensitivity:
 
     def test_symmetry_tolerance(self):
         """EVAL: Slutsky symmetry test with different tolerances."""
-        from pyrevealed.algorithms.integrability import check_slutsky_symmetry
+        from prefgraph.algorithms.integrability import check_slutsky_symmetry
 
         # Nearly symmetric matrix
         S = np.array([[1.0, 2.0], [2.0 + 1e-5, 1.0]])
@@ -121,7 +121,7 @@ class TestSlutskyToleranceSensitivity:
 
     def test_nsd_tolerance(self):
         """EVAL: Slutsky NSD test with different eigenvalue tolerances."""
-        from pyrevealed.algorithms.integrability import check_slutsky_nsd
+        from prefgraph.algorithms.integrability import check_slutsky_nsd
 
         # Matrix with tiny positive eigenvalue
         S = np.array([[-1.0, 0.0], [0.0, 1e-8]])
@@ -138,8 +138,8 @@ class TestStochasticToleranceSensitivity:
 
     def test_iia_tolerance(self):
         """EVAL: IIA test with different CV tolerances."""
-        from pyrevealed.core.session import StochasticChoiceLog
-        from pyrevealed.algorithms.stochastic import check_independence_irrelevant_alternatives
+        from prefgraph.core.session import StochasticChoiceLog
+        from prefgraph.algorithms.stochastic import check_independence_irrelevant_alternatives
 
         # Data with slight IIA violation
         log = StochasticChoiceLog(
@@ -158,8 +158,8 @@ class TestStochasticToleranceSensitivity:
 
     def test_regularity_tolerance(self):
         """EVAL: Regularity test with different probability tolerances."""
-        from pyrevealed.core.session import StochasticChoiceLog
-        from pyrevealed.algorithms.stochastic import test_regularity
+        from prefgraph.core.session import StochasticChoiceLog
+        from prefgraph.algorithms.stochastic import test_regularity
 
         # Slight regularity violation
         log = StochasticChoiceLog(
@@ -182,7 +182,7 @@ class TestIntertemporalToleranceSensitivity:
 
     def test_discounting_tolerance(self):
         """EVAL: Exponential discounting test with different tolerances."""
-        from pyrevealed.algorithms.intertemporal import (
+        from prefgraph.algorithms.intertemporal import (
             test_exponential_discounting,
             DatedChoice,
         )
@@ -208,7 +208,7 @@ class TestDefaultToleranceValues:
 
     def test_garp_default_tolerance(self):
         """EVAL: GARP default tolerance (1e-10) is reasonable."""
-        from pyrevealed.algorithms.garp import check_garp
+        from prefgraph.algorithms.garp import check_garp
 
         # Data with very small differences
         log = BehaviorLog(
@@ -225,7 +225,7 @@ class TestDefaultToleranceValues:
 
     def test_aei_default_tolerance(self):
         """EVAL: AEI default tolerance gives reasonable precision."""
-        from pyrevealed.algorithms.aei import compute_aei
+        from prefgraph.algorithms.aei import compute_aei
 
         log = BehaviorLog(
             cost_vectors=np.array([[1.0, 1.0], [1.0, 1.0]]),
@@ -243,8 +243,8 @@ class TestToleranceConsistency:
 
     def test_garp_and_aei_tolerance_consistency(self):
         """EVAL: GARP and AEI should use same tolerance for consistent results."""
-        from pyrevealed.algorithms.garp import check_garp
-        from pyrevealed.algorithms.aei import compute_aei
+        from prefgraph.algorithms.garp import check_garp
+        from prefgraph.algorithms.aei import compute_aei
 
         log = BehaviorLog(
             cost_vectors=np.array([[1.0, 1.0], [1.0, 1.0]]),

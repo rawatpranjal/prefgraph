@@ -1,7 +1,7 @@
 """Session builder: Create BehaviorLog objects for Open E-Commerce 1.0.
 
 This module transforms user purchase data into the format required
-by PyRevealed's revealed preference algorithms.
+by PrefGraph's revealed preference algorithms.
 
 For each user:
 1. Pivot quantities by period and category
@@ -23,7 +23,7 @@ from numpy.typing import NDArray
 # Add parent directories for imports
 sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent))
 
-from src.pyrevealed import BehaviorLog
+from src.prefgraph import BehaviorLog
 
 sys.path.insert(0, str(Path(__file__).parent))
 from config import MIN_OBSERVATIONS

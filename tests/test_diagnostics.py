@@ -12,7 +12,7 @@ Tests for:
 import numpy as np
 import pytest
 
-from pyrevealed import (
+from prefgraph import (
     BehaviorLog,
     MenuChoiceLog,
     StochasticChoiceLog,
@@ -31,7 +31,7 @@ from pyrevealed import (
     compute_observation_contributions,
     validate_consistency,
 )
-from pyrevealed.graph.violation_graph import ViolationGraph
+from prefgraph.graph.violation_graph import ViolationGraph
 
 
 # =============================================================================
@@ -533,8 +533,8 @@ class TestIntegration:
     """Integration tests for Phase 2 extensions."""
 
     def test_all_functions_importable(self):
-        """All new functions should be importable from pyrevealed."""
-        from pyrevealed import (
+        """All new functions should be importable from prefgraph."""
+        from prefgraph import (
             test_regularity,
             test_attention_overload,
             test_status_quo_bias,
@@ -556,7 +556,7 @@ class TestIntegration:
 
     def test_result_types_have_score_method(self):
         """All new result types should have score() method."""
-        from pyrevealed import (
+        from prefgraph import (
             RegularityResult,
             AttentionOverloadResult,
             StatusQuoBiasResult,

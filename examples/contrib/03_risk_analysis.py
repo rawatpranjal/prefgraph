@@ -10,7 +10,7 @@ Based on Constant Relative Risk Aversion (CRRA) utility model.
 """
 
 import numpy as np
-from pyrevealed import (
+from prefgraph import (
     RiskChoiceLog,  # or RiskSession (legacy name)
     compute_risk_profile,
     check_expected_utility_axioms,

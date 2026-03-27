@@ -7,7 +7,7 @@ import time
 
 import numpy as np
 
-from pyrevealed import BehaviorLog, check_garp
+from prefgraph import BehaviorLog, check_garp
 from concurrent.futures import ProcessPoolExecutor
 
 
@@ -69,7 +69,7 @@ def main():
     # 5. Per-process Python interpreter + import overhead
     t0 = time.perf_counter()
     with ProcessPoolExecutor(max_workers=1) as ex:
-        # First call forces import of pyrevealed in child
+        # First call forces import of prefgraph in child
         ex.submit(_garp_one, (p, q)).result()
     first_call_ms = (time.perf_counter() - t0) * 1000
     print(f"  First call (import in child): {first_call_ms:.0f}ms")

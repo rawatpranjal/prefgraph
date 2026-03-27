@@ -80,7 +80,7 @@ policy) and policy (after change).
 .. code-block:: python
 
    import numpy as np
-   from pyrevealed import BehaviorLog
+   from prefgraph import BehaviorLog
 
    # Baseline: consumer faces original prices
    baseline_log = BehaviorLog(
@@ -130,7 +130,7 @@ function, then solves for CV and EV directly.
 
 .. code-block:: python
 
-   from pyrevealed import (
+   from prefgraph import (
        compute_compensating_variation,
        compute_equivalent_variation,
        analyze_welfare_change,
@@ -246,7 +246,7 @@ where :math:`h(p, u)` is Hicksian (compensated) demand.
 
 .. code-block:: python
 
-   from pyrevealed import compute_compensating_variation, compute_equivalent_variation
+   from prefgraph import compute_compensating_variation, compute_equivalent_variation
 
    # Vartia approximation via method parameter
    cv_vartia = compute_compensating_variation(baseline_log, policy_log, method="vartia")
@@ -297,7 +297,7 @@ When detailed computation is not needed, use Laspeyres/Paasche bounds:
 
 .. code-block:: python
 
-   from pyrevealed import compute_compensating_variation, compute_equivalent_variation
+   from prefgraph import compute_compensating_variation, compute_equivalent_variation
 
    cv_bound = compute_compensating_variation(baseline_log, policy_log, method="bounds")
    ev_bound = compute_equivalent_variation(baseline_log, policy_log, method="bounds")
@@ -325,7 +325,7 @@ For deeper analysis, recover the full expenditure function:
 
 .. code-block:: python
 
-   from pyrevealed import recover_cost_function
+   from prefgraph import recover_cost_function
 
    result = recover_cost_function(baseline_log)
 
@@ -371,7 +371,7 @@ The Harberger approximation:
 
 .. code-block:: python
 
-   from pyrevealed import compute_deadweight_loss
+   from prefgraph import compute_deadweight_loss
 
    # Estimate DWL from the price change
    dwl = compute_deadweight_loss(
@@ -400,7 +400,7 @@ Simulate a tax policy that increases prices:
 .. code-block:: python
 
    import numpy as np
-   from pyrevealed import (
+   from prefgraph import (
        BehaviorLog,
        analyze_welfare_change,
        compute_deadweight_loss,
@@ -506,7 +506,7 @@ welfare impact of a gas tax on commuter households with heterogeneous incomes:
 .. code-block:: python
 
    import numpy as np
-   from pyrevealed import (
+   from prefgraph import (
        BehaviorLog,
        analyze_welfare_change,
        compute_deadweight_loss,

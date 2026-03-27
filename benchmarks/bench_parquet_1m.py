@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""PyRevealed — Large-Scale Parquet Benchmark.
+"""PrefGraph — Large-Scale Parquet Benchmark.
 
 End-to-end: generate a multi-GB Parquet file, stream it through the
 Rust engine via PyArrow, and write scored results back to Parquet.
@@ -112,7 +112,7 @@ def run_tier(engine_cls, users, label, metrics, chunk, tolerance=1e-10):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="PyRevealed Parquet Benchmark")
+    parser = argparse.ArgumentParser(description="PrefGraph Parquet Benchmark")
     parser.add_argument("--users", type=int, default=100_000)
     parser.add_argument("--k", type=int, default=5, help="Goods/categories")
     parser.add_argument("--t-min", type=int, default=20)
@@ -142,7 +142,7 @@ def main():
     # ── Header ──────────────────────────────────────────────────────
     print()
     print("=" * 72)
-    print("  PyRevealed  —  Large-Scale Parquet Benchmark")
+    print("  PrefGraph  —  Large-Scale Parquet Benchmark")
     print("  PyArrow  +  Rust  +  Rayon  +  Tarjan's SCC")
     print("=" * 72)
 
@@ -180,7 +180,7 @@ def main():
         print(f"\n  [2/4] SPEED TIERS  (10,000 user sample, {CPU} cores)")
         print("  " + "-" * 70)
 
-        from pyrevealed.engine import Engine
+        from prefgraph.engine import Engine
 
         # Build 10K user sample from numpy (fast, no Parquet overhead)
         rng = np.random.default_rng(42)
@@ -215,8 +215,8 @@ def main():
     print(f"\n  [3/4] FULL PARQUET PIPELINE  ({N:,} users, 5 metrics)")
     print("  " + "-" * 70)
 
-    from pyrevealed.engine import Engine
-    from pyrevealed._rust_backend import HAS_PARQUET_RUST
+    from prefgraph.engine import Engine
+    from prefgraph._rust_backend import HAS_PARQUET_RUST
 
     engine = Engine(metrics=METRICS, chunk_size=CHUNK)
     backend = "Rust-native Parquet" if HAS_PARQUET_RUST else "PyArrow streaming"
@@ -317,7 +317,7 @@ def main():
     print(f"    R revealedPrefs   ~{fmt_time(r_time):>8s}   (single-thread, GARP only)")
     print(f"    Stata checkax     ~{fmt_time(stata_time):>8s}   (single-thread, GARP only)")
     print(f"    Python loops      ~{fmt_time(py_time):>8s}   (no parallelism)")
-    print(f"    PyRevealed         {fmt_time(total_time):>8s}   (Rust+Rayon, 5 metrics)")
+    print(f"    PrefGraph         {fmt_time(total_time):>8s}   (Rust+Rayon, 5 metrics)")
     print()
     speedup_r = r_time / total_time if total_time > 0 else 0
     print(f"    Speedup vs R:     {speedup_r:.0f}x  (with 4 additional metrics)")

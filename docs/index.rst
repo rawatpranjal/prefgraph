@@ -1,7 +1,7 @@
-PyRevealed
+PrefGraph
 ==========
 
-You have data on what people chose. PyRevealed tests whether those choices are rational — whether any coherent preference ordering explains them. Each user gets a score from 0 (incoherent) to 1 (perfectly consistent).
+You have data on what people chose. PrefGraph tests whether those choices are rational — whether any coherent preference ordering explains them. Each user gets a score from 0 (incoherent) to 1 (perfectly consistent).
 
 .. raw:: html
 
@@ -35,7 +35,7 @@ You have data on what people chose. PyRevealed tests whether those choices are r
 
 .. code-block:: bash
 
-   pip install pyrevealed
+   pip install prefgraph
 
 Why Revealed Preference?
 ------------------------

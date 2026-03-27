@@ -132,7 +132,7 @@ purchased item is the choice. Sessions are split by 30-minute gaps.
 
 .. code-block:: python
 
-   from pyrevealed.datasets import load_retailrocket
+   from prefgraph.datasets import load_retailrocket
 
    user_logs = load_retailrocket(min_sessions=5, max_users=200)
    print(f"Users: {len(user_logs)}")
@@ -229,9 +229,9 @@ Single user
 
 .. code-block:: python
 
-   from pyrevealed import MenuChoiceLog
-   from pyrevealed.algorithms.abstract_choice import validate_menu_sarp
-   from pyrevealed.algorithms.abstract_choice import compute_menu_efficiency
+   from prefgraph import MenuChoiceLog
+   from prefgraph.algorithms.abstract_choice import validate_menu_sarp
+   from prefgraph.algorithms.abstract_choice import compute_menu_efficiency
 
    # Using a loaded user
    sarp = validate_menu_sarp(log)
@@ -267,7 +267,7 @@ Scoring all users via the Rust Engine (batch SARP/HM):
 
 .. code-block:: python
 
-   from pyrevealed.engine import Engine
+   from prefgraph.engine import Engine
 
    engine = Engine()
 
@@ -325,8 +325,8 @@ After SARP and HM, the same ``MenuChoiceLog`` supports further analysis:
 
 .. code-block:: python
 
-   from pyrevealed.algorithms.abstract_choice import recover_ordinal_utility
-   from pyrevealed.algorithms.attention import test_warp_la
+   from prefgraph.algorithms.abstract_choice import recover_ordinal_utility
+   from prefgraph.algorithms.attention import test_warp_la
 
    # Recover a preference ranking (requires SARP-consistent subset)
    u = recover_ordinal_utility(log)

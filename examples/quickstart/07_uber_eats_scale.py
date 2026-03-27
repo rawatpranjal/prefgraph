@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Example: Uber Eats at Scale — Revealed Preference for Food Delivery.
 
-Demonstrates PyRevealed on simulated Uber Eats order data with realistic
+Demonstrates PrefGraph on simulated Uber Eats order data with realistic
 user heterogeneity and multi-core parallel processing.
 
 Key features:
@@ -27,8 +27,8 @@ from typing import Optional
 
 import numpy as np
 
-from pyrevealed import BehaviorLog, check_garp, compute_aei
-from pyrevealed.algorithms.mpi import compute_houtman_maks_index
+from prefgraph import BehaviorLog, check_garp, compute_aei
+from prefgraph.algorithms.mpi import compute_houtman_maks_index
 
 
 # =============================================================================

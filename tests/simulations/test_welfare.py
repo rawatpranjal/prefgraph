@@ -21,8 +21,8 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from .generators import generate_rational_data
-from src.pyrevealed import BehaviorLog
-from src.pyrevealed.algorithms.welfare import (
+from src.prefgraph import BehaviorLog
+from src.prefgraph.algorithms.welfare import (
     _recover_afriat_utility,
     compute_cv_exact,
     compute_ev_exact,

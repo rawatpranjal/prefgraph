@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Dunnhumby Integration Test Suite for PyRevealed
+Dunnhumby Integration Test Suite for PrefGraph
 
 Master script that runs the full pipeline:
 1. Load and filter Dunnhumby transaction data
@@ -245,7 +245,7 @@ def main() -> int:
     import argparse
 
     parser = argparse.ArgumentParser(
-        description="Dunnhumby Integration Test Suite for PyRevealed"
+        description="Dunnhumby Integration Test Suite for PrefGraph"
     )
     parser.add_argument(
         "--skip-viz",

@@ -70,7 +70,7 @@ Acceptable single-user patterns:
 
 ## Architecture
 
-PyRevealed tests whether observed choices are consistent with rational optimization — without estimating parameters. We test existence ("does a utility function exist?"), not fit models ("which utility function?"). All graph algorithms and LP solving run in Rust via Rayon; Python handles I/O.
+PrefGraph tests whether observed choices are consistent with rational optimization — without estimating parameters. We test existence ("does a utility function exist?"), not fit models ("which utility function?"). All graph algorithms and LP solving run in Rust via Rayon; Python handles I/O.
 
 ### 4 Choice Categories × 4 Method Types
 
@@ -198,12 +198,12 @@ ProductionLog (inputs × outputs)          Intertemporal data (amounts × dates)
 | `spatial.py` | IdealPointResult, SeparabilityResult |
 | `attention.py` | WARPLAResult, RandomAttentionResult, RUMConsistencyResult |
 
-`from pyrevealed.core.result import XxxResult` still works (backward-compat shim).
+`from prefgraph.core.result import XxxResult` still works (backward-compat shim).
 31 tech-friendly aliases (e.g. `ConsistencyResult = GARPResult`) live in each submodule.
 
 ### Contrib (deprecated — MLE/estimation)
 
-Located in `src/pyrevealed/contrib/`. Logit/Luce MLE, CRRA estimation, Bradley-Terry,
+Located in `src/prefgraph/contrib/`. Logit/Luce MLE, CRRA estimation, Bradley-Terry,
 Slutsky regression, Spatial ideal point. Import shims with DeprecationWarning.
 
 ### Rust Engine (rpt-core)
@@ -346,20 +346,20 @@ When releasing a new version, these files must be kept in sync:
 | File | Field | Example |
 |------|-------|---------|
 | `pyproject.toml` | `version = "X.Y.Z"` | Line 7 |
-| `src/pyrevealed/__init__.py` | `__version__ = "X.Y.Z"` | Line 262 |
+| `src/prefgraph/__init__.py` | `__version__ = "X.Y.Z"` | Line 262 |
 | `docs/conf.py` | `release = "X.Y.Z"` | Line 14 |
 
 ### Verification Commands
 
 ```bash
 # Check all versions match
-grep -E "^version|__version__|release" pyproject.toml src/pyrevealed/__init__.py docs/conf.py
+grep -E "^version|__version__|release" pyproject.toml src/prefgraph/__init__.py docs/conf.py
 
 # Verify module version
-python3 -c "import pyrevealed; print(pyrevealed.__version__)"
+python3 -c "import prefgraph; print(prefgraph.__version__)"
 
 # Check PyPI version
-pip index versions pyrevealed
+pip index versions prefgraph
 
 # Check URLs are correct
 grep -n "github" pyproject.toml docs/conf.py
@@ -371,7 +371,7 @@ grep -n "github" pyproject.toml docs/conf.py
    ```bash
    # Edit these files with new version X.Y.Z:
    # - pyproject.toml (line 7)
-   # - src/pyrevealed/__init__.py (line ~400)
+   # - src/prefgraph/__init__.py (line ~400)
    # - docs/conf.py (line 14)
    ```
 
@@ -396,9 +396,9 @@ grep -n "github" pyproject.toml docs/conf.py
    ```
 
 5. **Verify all surfaces**:
-   - PyPI: https://pypi.org/project/pyrevealed/
-   - ReadTheDocs: https://pyrevealed.readthedocs.io
-   - GitHub: https://github.com/rawatpranjal/PyRevealed
+   - PyPI: https://pypi.org/project/prefgraph/
+   - ReadTheDocs: https://prefgraph.readthedocs.io
+   - GitHub: https://github.com/rawatpranjal/PrefGraph
 
 ### Common Issues
 
@@ -421,8 +421,8 @@ Co-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>"
 git push
 
 # 3. Verify surfaces after 1-2 minutes:
-#    - ReadTheDocs: https://pyrevealed.readthedocs.io
-#    - GitHub: https://github.com/rawatpranjal/PyRevealed
+#    - ReadTheDocs: https://prefgraph.readthedocs.io
+#    - GitHub: https://github.com/rawatpranjal/PrefGraph
 ```
 
 **Note**: This does NOT push to PyPI. For a full PyPI release, follow the Release Checklist above (requires version bump).
@@ -456,16 +456,16 @@ Based on Chambers & Echenique (2016) *Revealed Preference Theory*:
 
 ### Python's Revealed Preference Void
 
-PyRevealed fills a significant gap in Python's scientific ecosystem:
+PrefGraph fills a significant gap in Python's scientific ecosystem:
 
 | Language | Package | Status |
 |----------|---------|--------|
 | **R** | `revealedPrefs` | Active, comprehensive |
 | **Stata** | `checkax`, `aei` | Active, enterprise |
 | **MATLAB** | Varian toolbox | Active, academic |
-| **Python** | PyRevealed | **Only option** |
+| **Python** | PrefGraph | **Only option** |
 
-Before PyRevealed, Python practitioners had to:
+Before PrefGraph, Python practitioners had to:
 - Port R/Stata code manually
 - Implement algorithms from scratch
 - Use fragmented one-off scripts

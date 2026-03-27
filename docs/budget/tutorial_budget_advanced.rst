@@ -34,7 +34,7 @@ same *proportions* of goods regardless of budget level—only the scale changes.
 
 .. code-block:: python
 
-   from pyrevealed import BehaviorLog, validate_proportional_scaling
+   from prefgraph import BehaviorLog, validate_proportional_scaling
 
    # log from Tutorial 1
    result = validate_proportional_scaling(log)
@@ -106,7 +106,7 @@ When Does Lancaster Help?
 .. code-block:: python
 
    import numpy as np
-   from pyrevealed import transform_to_characteristics, validate_consistency
+   from prefgraph import transform_to_characteristics, validate_consistency
 
    # Nutritional characteristics: [Protein, Carbs, Fat, Sodium]
    Z = np.array([
@@ -153,7 +153,7 @@ rationalizes their choices using Afriat's theorem.
 
 .. code-block:: python
 
-   from pyrevealed import fit_latent_values
+   from prefgraph import fit_latent_values
 
    # For a GARP-consistent household
    result = fit_latent_values(log)

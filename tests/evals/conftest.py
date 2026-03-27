@@ -6,7 +6,7 @@ Each fixture creates data that targets specific numerical or algorithmic weaknes
 
 import numpy as np
 import pytest
-from pyrevealed.core.session import (
+from prefgraph.core.session import (
     BehaviorLog,
     MenuChoiceLog,
     StochasticChoiceLog,
@@ -276,7 +276,7 @@ def nested_menus_stochastic():
 @pytest.fixture
 def extreme_delay_choices():
     """Delays up to t=800 - delta^800 underflows for delta < 1."""
-    from pyrevealed.algorithms.intertemporal import DatedChoice
+    from prefgraph.algorithms.intertemporal import DatedChoice
     return [
         DatedChoice(
             amounts=np.array([100.0, 200.0]),
@@ -294,7 +294,7 @@ def extreme_delay_choices():
 @pytest.fixture
 def zero_amount_choices():
     """Zero consumption amounts - log(0) issues."""
-    from pyrevealed.algorithms.intertemporal import DatedChoice
+    from prefgraph.algorithms.intertemporal import DatedChoice
     return [
         DatedChoice(
             amounts=np.array([0.0, 100.0]),
@@ -307,7 +307,7 @@ def zero_amount_choices():
 @pytest.fixture
 def identical_timing_choices():
     """All options at same time - no discounting possible."""
-    from pyrevealed.algorithms.intertemporal import DatedChoice
+    from prefgraph.algorithms.intertemporal import DatedChoice
     return [
         DatedChoice(
             amounts=np.array([100.0, 150.0]),

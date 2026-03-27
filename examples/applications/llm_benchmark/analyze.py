@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Stage 3: Analyze benchmark results using PyRevealed.
+"""Stage 3: Analyze benchmark results using PrefGraph.
 
 Builds MenuChoiceLog per (scenario, prompt, model) group and runs:
   1. Engine.analyze_menus() for batch SARP/WARP/HM scoring
@@ -22,9 +22,9 @@ from pathlib import Path
 
 import numpy as np
 
-from pyrevealed import MenuChoiceLog
-from pyrevealed.algorithms.abstract_choice import validate_menu_sarp, compute_menu_efficiency
-from pyrevealed.engine import Engine
+from prefgraph import MenuChoiceLog
+from prefgraph.algorithms.abstract_choice import validate_menu_sarp, compute_menu_efficiency
+from prefgraph.engine import Engine
 
 from .config import ALL_SCENARIOS, MODEL_CONFIGS, ScenarioConfig
 

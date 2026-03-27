@@ -1,30 +1,30 @@
 [
   {
-    "dataset": "Tenrec",
-    "target": "High Engagement",
+    "dataset": "Dunnhumby",
+    "target": "Churn",
     "task_type": "classification",
-    "n_users": 50000,
-    "n_rp_features": 10,
-    "n_base_features": 10,
-    "positive_rate": 0.26974,
-    "auc_rp": 0.8322017797711748,
-    "auc_base": 0.9931660351668009,
-    "auc_combined": 0.9931650110215591,
-    "auc_rp_std": 0.0023429960283855274,
-    "auc_base_std": 0.00036405222768272984,
-    "auc_combined_std": 0.00039177716041895476,
-    "ap_rp": 0.5871670187646396,
-    "ap_base": 0.9826962896881524,
-    "ap_combined": 0.9826860374227886,
-    "logloss_rp": 0.41729083380477033,
-    "logloss_base": 0.07583537230292539,
-    "logloss_combined": 0.07580981901705104,
-    "f1_rp": 0.5146372365413417,
-    "f1_base": 0.9044938415693089,
-    "f1_combined": 0.9035990344980254,
-    "auc_rp_train": 0.8335853067125802,
-    "auc_base_train": 0.9948366581190723,
-    "auc_combined_train": 0.9948409204735406,
+    "n_users": 2222,
+    "n_rp_features": 53,
+    "n_base_features": 13,
+    "positive_rate": 0.06795679567956796,
+    "auc_rp": 0.6137199732387553,
+    "auc_base": 0.7516333997357671,
+    "auc_combined": 0.7403799208052406,
+    "auc_rp_std": 0.015307131603882682,
+    "auc_base_std": 0.0150424764289589,
+    "auc_combined_std": 0.02018201549342887,
+    "ap_rp": 0.12214169041510829,
+    "ap_base": 0.18351345240651842,
+    "ap_combined": 0.1603362362345105,
+    "logloss_rp": 0.24830054143732322,
+    "logloss_base": 0.22485015067035447,
+    "logloss_combined": 0.22988612241474735,
+    "f1_rp": 0.0,
+    "f1_base": 0.0,
+    "f1_combined": 0.0,
+    "auc_rp_train": 0.9185024350779128,
+    "auc_base_train": 0.93939326108576,
+    "auc_combined_train": 0.9573485630961783,
     "rmse_rp": 0.0,
     "rmse_base": 0.0,
     "rmse_combined": 0.0,
@@ -36,68 +36,270 @@
     "r2_combined_train": 0.0,
     "top_features": [
       [
-        "std_menu_size",
-        392
+        "spend_slope",
+        220
       ],
       [
-        "mean_menu_size",
-        285
+        "strict_pref_density",
+        174
       ],
       [
-        "max_menu_size",
-        167
+        "spend_cv",
+        158
       ],
       [
-        "n_sessions",
-        160
+        "top_category_share",
+        152
       ],
       [
-        "n_unique_items",
-        134
+        "std_spend",
+        146
       ],
       [
-        "choice_concentration",
-        90
+        "pref_graph_density",
+        145
       ],
       [
-        "n_unique_choices",
-        61
+        "herfindahl",
+        141
       ],
       [
-        "min_menu_size",
-        49
+        "min_spend",
+        128
       ],
       [
-        "items_per_session",
-        25
+        "max_spend",
+        125
       ],
       [
-        "scc_ratio",
-        25
+        "mean_abs_spend_change",
+        121
       ],
       [
-        "max_choice_freq",
-        12
+        "total_spend",
+        102
       ],
       [
-        "is_sarp",
-        0
+        "mean_spend",
+        97
       ],
       [
-        "is_warp",
-        0
+        "hm_ratio",
+        96
       ],
       [
-        "is_warp_la",
-        0
+        "scc_mean_size",
+        95
       ],
       [
-        "n_sarp_violations",
-        0
+        "ccei",
+        91
       ]
     ],
-    "auc_lift": -1.0241452418346952e-06,
-    "auc_lift_pct": -0.00010311923742566282,
-    "wall_time_s": 5.772433042526245
+    "auc_lift": -0.011253478930526528,
+    "auc_lift_pct": -1.4972031490993656,
+    "wall_time_s": 8.687627077102661
+  },
+  {
+    "dataset": "Dunnhumby",
+    "target": "High Spender",
+    "task_type": "classification",
+    "n_users": 2222,
+    "n_rp_features": 53,
+    "n_base_features": 13,
+    "positive_rate": 0.3334833483348335,
+    "auc_rp": 0.9244329500088615,
+    "auc_base": 0.9597476774467524,
+    "auc_combined": 0.9597475858359225,
+    "auc_rp_std": 0.010584300517186562,
+    "auc_base_std": 0.004641862933882289,
+    "auc_combined_std": 0.0026321854549891596,
+    "ap_rp": 0.8648648228215535,
+    "ap_base": 0.9315584176211337,
+    "ap_combined": 0.9309812780177417,
+    "logloss_rp": 0.3320957176992381,
+    "logloss_base": 0.2455472310371615,
+    "logloss_combined": 0.24559435189532683,
+    "f1_rp": 0.7748355067481689,
+    "f1_base": 0.8409898898340737,
+    "f1_combined": 0.8377337377966624,
+    "auc_rp_train": 0.9555886027331352,
+    "auc_base_train": 0.9795930641021084,
+    "auc_combined_train": 0.9834712475886647,
+    "rmse_rp": 0.0,
+    "rmse_base": 0.0,
+    "rmse_combined": 0.0,
+    "r2_rp": 0.0,
+    "r2_base": 0.0,
+    "r2_combined": 0.0,
+    "r2_rp_train": 0.0,
+    "r2_base_train": 0.0,
+    "r2_combined_train": 0.0,
+    "top_features": [
+      [
+        "total_spend",
+        284
+      ],
+      [
+        "spend_slope",
+        173
+      ],
+      [
+        "spend_cv",
+        139
+      ],
+      [
+        "n_obs",
+        133
+      ],
+      [
+        "max_spend",
+        133
+      ],
+      [
+        "pref_graph_density",
+        127
+      ],
+      [
+        "mean_spend",
+        124
+      ],
+      [
+        "hm_ratio",
+        122
+      ],
+      [
+        "mean_basket_size",
+        106
+      ],
+      [
+        "std_spend",
+        104
+      ],
+      [
+        "strict_pref_density",
+        95
+      ],
+      [
+        "ccei",
+        88
+      ],
+      [
+        "mpi",
+        88
+      ],
+      [
+        "mean_abs_spend_change",
+        87
+      ],
+      [
+        "top_category_share",
+        83
+      ]
+    ],
+    "auc_lift": -9.161082992203973e-08,
+    "auc_lift_pct": -9.545303632904324e-06,
+    "wall_time_s": 7.069429874420166
+  },
+  {
+    "dataset": "Dunnhumby",
+    "target": "Spend Change",
+    "task_type": "regression",
+    "n_users": 2222,
+    "n_rp_features": 53,
+    "n_base_features": 13,
+    "positive_rate": 0.0,
+    "auc_rp": 0.0,
+    "auc_base": 0.0,
+    "auc_combined": 0.0,
+    "auc_rp_std": 0.0,
+    "auc_base_std": 0.0,
+    "auc_combined_std": 0.0,
+    "ap_rp": 0.0,
+    "ap_base": 0.0,
+    "ap_combined": 0.0,
+    "logloss_rp": 0.0,
+    "logloss_base": 0.0,
+    "logloss_combined": 0.0,
+    "f1_rp": 0.0,
+    "f1_base": 0.0,
+    "f1_combined": 0.0,
+    "auc_rp_train": 0.0,
+    "auc_base_train": 0.0,
+    "auc_combined_train": 0.0,
+    "rmse_rp": 7.437506414012143,
+    "rmse_base": 6.849127263467809,
+    "rmse_combined": 6.874102769338502,
+    "r2_rp": -0.026237786280618236,
+    "r2_base": 0.12874997149851647,
+    "r2_combined": 0.12241618887241665,
+    "r2_rp_train": 0.2187967355295397,
+    "r2_base_train": 0.3608968850070646,
+    "r2_combined_train": 0.40682658563377405,
+    "top_features": [
+      [
+        "spend_slope",
+        212
+      ],
+      [
+        "std_spend",
+        181
+      ],
+      [
+        "mean_abs_spend_change",
+        172
+      ],
+      [
+        "mean_spend",
+        171
+      ],
+      [
+        "mean_basket_size",
+        151
+      ],
+      [
+        "max_spend",
+        121
+      ],
+      [
+        "strict_pref_density",
+        102
+      ],
+      [
+        "herfindahl",
+        96
+      ],
+      [
+        "min_spend",
+        85
+      ],
+      [
+        "harp_severity",
+        85
+      ],
+      [
+        "top_category_share",
+        84
+      ],
+      [
+        "spend_cv",
+        84
+      ],
+      [
+        "total_spend",
+        81
+      ],
+      [
+        "scc_mean_size",
+        80
+      ],
+      [
+        "hm_ratio",
+        66
+      ]
+    ],
+    "auc_lift": 0.0,
+    "auc_lift_pct": 0.0,
+    "wall_time_s": 6.996036052703857
   }
 ]

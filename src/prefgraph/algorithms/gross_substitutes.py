@@ -1,0 +1,13 @@
+"""Deprecated: moved to prefgraph.contrib.gross_substitutes."""
+import warnings as _warnings
+_warnings.warn(
+    "prefgraph.algorithms.gross_substitutes has moved to prefgraph.contrib.gross_substitutes. "
+    "This import path will be removed in a future version.",
+    DeprecationWarning,
+    stacklevel=2,
+)
+import prefgraph.contrib.gross_substitutes as _mod
+import sys as _sys
+_self = _sys.modules[__name__]
+for _name in dir(_mod):
+    setattr(_self, _name, getattr(_mod, _name))

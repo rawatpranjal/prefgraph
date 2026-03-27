@@ -220,7 +220,7 @@ Findings
 - **v1=0% pass, v2=60--100% pass.** Same model, same prompts. The
   difference is entirely experimental design.
 
-What ``pyrevealed`` adds to LLM evaluation:
+What ``prefgraph`` adds to LLM evaluation:
 
 - ``validate_menu_sarp()``: per-input consistency — does a stable ranking exist?
 - ``compute_menu_efficiency()``: which action pairs cycle?
@@ -231,7 +231,7 @@ Reproduce
 
 .. code-block:: bash
 
-   pip install pyrevealed openai
+   pip install prefgraph openai
    export OPENAI_API_KEY=your_key
    cd examples
 
@@ -248,8 +248,8 @@ Appendix
 
 .. code-block:: python
 
-   from pyrevealed import MenuChoiceLog
-   from pyrevealed.algorithms.abstract_choice import validate_menu_sarp
+   from prefgraph import MenuChoiceLog
+   from prefgraph.algorithms.abstract_choice import validate_menu_sarp
 
    log = MenuChoiceLog(
        menus=[frozenset(r["menu"]) for r in records],

@@ -33,7 +33,7 @@ limited attention, random utility, and risk preferences.
 
 .. code-block:: python
 
-   from pyrevealed import MenuChoiceLog, validate_menu_sarp, compute_menu_efficiency
+   from prefgraph import MenuChoiceLog, validate_menu_sarp, compute_menu_efficiency
 
    log = MenuChoiceLog(menus=menus, choices=choices)
    sarp = validate_menu_sarp(log)            # Test: bool

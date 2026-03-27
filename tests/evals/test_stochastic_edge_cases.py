@@ -6,7 +6,7 @@ These tests expose vulnerabilities in stochastic choice algorithms.
 
 import numpy as np
 import pytest
-from pyrevealed.core.session import StochasticChoiceLog
+from prefgraph.core.session import StochasticChoiceLog
 
 
 class TestZeroFrequencies:
@@ -14,7 +14,7 @@ class TestZeroFrequencies:
 
     def test_all_zero_frequencies(self, zero_frequency_stochastic):
         """EVAL: Menu with all zero frequencies."""
-        from pyrevealed.algorithms.stochastic import fit_random_utility_model
+        from prefgraph.algorithms.stochastic import fit_random_utility_model
 
         result = fit_random_utility_model(zero_frequency_stochastic)
 
@@ -23,7 +23,7 @@ class TestZeroFrequencies:
 
     def test_single_nonzero_frequency(self, single_choice_stochastic):
         """EVAL: Only one item ever chosen (100% probability)."""
-        from pyrevealed.algorithms.stochastic import fit_random_utility_model
+        from prefgraph.algorithms.stochastic import fit_random_utility_model
 
         result = fit_random_utility_model(single_choice_stochastic)
 
@@ -43,7 +43,7 @@ class TestFactorialExplosion:
             else:
                 result = _test_rum_column_generation(log, tolerance, max_iterations)
         """
-        from pyrevealed.algorithms.stochastic import test_rum_consistency
+        from prefgraph.algorithms.stochastic import test_rum_consistency
 
         result = test_rum_consistency(many_items_stochastic, max_iterations=100)
 
@@ -60,7 +60,7 @@ class TestFactorialExplosion:
             choice_frequencies=[freqs],
         )
 
-        from pyrevealed.algorithms.stochastic import test_rum_consistency
+        from prefgraph.algorithms.stochastic import test_rum_consistency
 
         # This should use column generation
         result = test_rum_consistency(log, max_iterations=50)
@@ -72,7 +72,7 @@ class TestRegularityViolations:
 
     def test_regularity_nested_menus(self, nested_menus_stochastic):
         """EVAL: Regularity with properly nested menus."""
-        from pyrevealed.algorithms.stochastic import test_regularity
+        from prefgraph.algorithms.stochastic import test_regularity
 
         result = test_regularity(nested_menus_stochastic)
 
@@ -90,7 +90,7 @@ class TestRegularityViolations:
             ],
         )
 
-        from pyrevealed.algorithms.stochastic import test_regularity
+        from prefgraph.algorithms.stochastic import test_regularity
 
         result = test_regularity(log, tolerance=0.01)
 
@@ -111,7 +111,7 @@ class TestIIAEdgeCases:
             ],
         )
 
-        from pyrevealed.algorithms.stochastic import check_independence_irrelevant_alternatives
+        from prefgraph.algorithms.stochastic import check_independence_irrelevant_alternatives
 
         # Should handle zero probabilities
         result = check_independence_irrelevant_alternatives(log)
@@ -127,7 +127,7 @@ class TestIIAEdgeCases:
             ],
         )
 
-        from pyrevealed.algorithms.stochastic import check_independence_irrelevant_alternatives
+        from prefgraph.algorithms.stochastic import check_independence_irrelevant_alternatives
 
         # Can't compute odds ratio with single common item
         result = check_independence_irrelevant_alternatives(log)
@@ -148,7 +148,7 @@ class TestStochasticTransitivity:
             ],
         )
 
-        from pyrevealed.algorithms.stochastic import test_stochastic_transitivity
+        from prefgraph.algorithms.stochastic import test_stochastic_transitivity
 
         result = test_stochastic_transitivity(log)
 
@@ -166,7 +166,7 @@ class TestStochasticTransitivity:
             ],
         )
 
-        from pyrevealed.algorithms.stochastic import test_stochastic_transitivity
+        from prefgraph.algorithms.stochastic import test_stochastic_transitivity
 
         result = test_stochastic_transitivity(log)
 
@@ -188,7 +188,7 @@ class TestRUMConsistency:
             ],
         )
 
-        from pyrevealed.algorithms.stochastic import test_rum_consistency
+        from prefgraph.algorithms.stochastic import test_rum_consistency
 
         result = test_rum_consistency(log)
 
@@ -206,7 +206,7 @@ class TestRUMConsistency:
             ],
         )
 
-        from pyrevealed.algorithms.stochastic import test_rum_consistency
+        from prefgraph.algorithms.stochastic import test_rum_consistency
 
         result = test_rum_consistency(log)
 
@@ -225,7 +225,7 @@ class TestLogLikelihood:
             choice_frequencies=[{0: 100, 1: 0, 2: 0}],  # Only 0 chosen
         )
 
-        from pyrevealed.algorithms.stochastic import fit_random_utility_model
+        from prefgraph.algorithms.stochastic import fit_random_utility_model
 
         result = fit_random_utility_model(log)
 
@@ -239,7 +239,7 @@ class TestLogLikelihood:
             choice_frequencies=[{0: 33, 1: 33, 2: 34}],
         )
 
-        from pyrevealed.algorithms.stochastic import fit_random_utility_model
+        from prefgraph.algorithms.stochastic import fit_random_utility_model
 
         result = fit_random_utility_model(log)
 
@@ -257,7 +257,7 @@ class TestModelFitting:
             choice_frequencies=[{0: 9999999, 1: 1}],
         )
 
-        from pyrevealed.algorithms.stochastic import fit_random_utility_model
+        from prefgraph.algorithms.stochastic import fit_random_utility_model
 
         result = fit_random_utility_model(log, model_type="logit")
 
@@ -271,7 +271,7 @@ class TestModelFitting:
             choice_frequencies=[{0: 100, 1: 0}],
         )
 
-        from pyrevealed.algorithms.stochastic import fit_random_utility_model
+        from prefgraph.algorithms.stochastic import fit_random_utility_model
 
         result = fit_random_utility_model(log, model_type="luce")
 

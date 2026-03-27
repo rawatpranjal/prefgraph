@@ -119,6 +119,6 @@ If the agent's behavior satisfies SARP, the underlying ordinal preference rankin
 2. **Transitive Extension:** The transitive closure :math:`R^*` is computed to identify all indirect preferences.
 3. **Topological Ordering:** A linear ordering of alternatives is generated such that if :math:`x \, R^* \, y`, then :math:`x` is ranked before :math:`y`.
 
-If multiple preference orderings are compatible with the observed data, PyRevealed returns one such consistent ranking.
+If multiple preference orderings are compatible with the observed data, PrefGraph returns one such consistent ranking.
 
 **References:** Richter (1966), Chambers & Echenique (2016).

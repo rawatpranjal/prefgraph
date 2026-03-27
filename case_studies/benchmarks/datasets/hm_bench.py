@@ -30,7 +30,7 @@ DATASET_NAME = "H&M"
 
 def load_and_prepare(data_dir=None, max_users=50000):
     """Load H&M with temporal split."""
-    from pyrevealed.datasets._hm import load_hm
+    from prefgraph.datasets._hm import load_hm
 
     print(f"\n[{DATASET_NAME}] Loading dataset...")
     panel = load_hm(data_dir=data_dir, max_users=max_users, min_months=6)

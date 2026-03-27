@@ -6,15 +6,15 @@ Install
 
 .. code-block:: bash
 
-   pip install pyrevealed
+   pip install prefgraph
 
 Score 100 Users in 5 Lines
 --------------------------
 
 .. code-block:: python
 
-   from pyrevealed.datasets import load_demo
-   from pyrevealed.engine import Engine
+   from prefgraph.datasets import load_demo
+   from prefgraph.engine import Engine
 
    users = load_demo()  # 100 synthetic consumers, no download
    engine = Engine(metrics=["garp", "ccei", "mpi", "hm"])
@@ -61,14 +61,14 @@ Call ``r.summary()`` for a formatted report, or ``r.to_dict()`` for serializatio
 Which API?
 ----------
 
-PyRevealed has two APIs. Use whichever fits your task:
+PrefGraph has two APIs. Use whichever fits your task:
 
 **Engine** — batch scoring (thousands of users, Rust backend):
 
 .. code-block:: python
 
-   from pyrevealed.engine import Engine
-   from pyrevealed.datasets import load_demo
+   from prefgraph.engine import Engine
+   from prefgraph.datasets import load_demo
 
    results = Engine(metrics=["garp", "ccei", "mpi"]).analyze_arrays(load_demo())
    # list[EngineResult] — flat scores, ready for pandas
@@ -77,7 +77,7 @@ PyRevealed has two APIs. Use whichever fits your task:
 
 .. code-block:: python
 
-   from pyrevealed import BehaviorLog, validate_consistency, compute_integrity_score
+   from prefgraph import BehaviorLog, validate_consistency, compute_integrity_score
    import numpy as np
 
    prices = np.array([[1.0, 2.0], [2.0, 1.0], [1.5, 1.5]])
@@ -94,7 +94,7 @@ Your Own Data
 
 .. code-block:: python
 
-   import pyrevealed as rp
+   import prefgraph as rp
 
    # Wide format (one row per observation, items as columns)
    results = rp.analyze(df, user_col="user_id",
@@ -118,8 +118,8 @@ Customize with ``metrics=["garp", "ccei", "mpi", "hm", "harp"]``.
 
 .. code-block:: python
 
-   from pyrevealed import BehaviorPanel
-   from pyrevealed.engine import Engine
+   from prefgraph import BehaviorPanel
+   from prefgraph.engine import Engine
 
    panel = BehaviorPanel.from_dataframe(df, user_col="user_id",
                                         cost_cols=["price_A", "price_B"],

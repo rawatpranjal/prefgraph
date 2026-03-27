@@ -26,7 +26,7 @@ from scipy import stats
 
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
-from src.pyrevealed import (
+from src.prefgraph import (
     BehaviorLog,
     LancasterLog,
     validate_consistency,

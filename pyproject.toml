@@ -3,14 +3,14 @@ requires = ["setuptools>=68.0", "setuptools-rust>=1.8"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "pyrevealed"
+name = "prefgraph"
 version = "0.5.3"
 description = "Revealed preference analysis at scale — rationality scores, efficiency indices, and utility recovery. Rust engine, Python interface."
 readme = "README.md"
 license = {text = "MIT"}
 requires-python = ">=3.10"
 authors = [
-    {name = "PyRevealed Contributors"}
+    {name = "PrefGraph Contributors"}
 ]
 keywords = [
     "revealed-preference",
@@ -80,30 +80,30 @@ benchmarks = [
     "matplotlib>=3.7.0",
 ]
 all = [
-    "pyrevealed[dev,viz,notebooks,docs,parquet]"
+    "prefgraph[dev,viz,notebooks,docs,parquet]"
 ]
 
 [project.urls]
-Homepage = "https://pyrevealed.readthedocs.io"
-Documentation = "https://pyrevealed.readthedocs.io"
-Repository = "https://github.com/rawatpranjal/PyRevealed"
+Homepage = "https://prefgraph.readthedocs.io"
+Documentation = "https://prefgraph.readthedocs.io"
+Repository = "https://github.com/rawatpranjal/PrefGraph"
 
 [tool.setuptools.packages.find]
 where = ["src"]
 
 [tool.setuptools.package-data]
-pyrevealed = ["py.typed"]
+prefgraph = ["py.typed"]
 
 [tool.maturin]
 python-source = "src"
-module-name = "pyrevealed._rust_core"
+module-name = "prefgraph._rust_core"
 manifest-path = "rust/crates/rpt-python/Cargo.toml"
 features = ["pyo3/extension-module", "parquet"]
 include = ["LICENSE"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-addopts = "-v --cov=pyrevealed --cov-report=term-missing"
+addopts = "-v --cov=prefgraph --cov-report=term-missing"
 # Exclude source directory from test collection (functions like test_warp_la are not tests)
 norecursedirs = ["src", "build", "dist", ".git", "references", "case_studies", "tests/simulations"]
 # Only collect test functions that are in test files (not source API functions)

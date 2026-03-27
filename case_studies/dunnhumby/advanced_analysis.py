@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Advanced PyRevealed analysis on Dunnhumby data.
+"""Advanced PrefGraph analysis on Dunnhumby data.
 
 Showcase D: Complementarity Matrix - Product pair relationships
 Showcase E: Mental Accounting - Separability between budget categories
@@ -22,7 +22,7 @@ from scipy import stats
 
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
-from src.pyrevealed import (
+from src.prefgraph import (
     BehaviorLog,
     check_separability,
     compute_mpi,

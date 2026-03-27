@@ -25,8 +25,8 @@ try:
 except ImportError:
     HAS_RUST = False
 
-from pyrevealed import BehaviorLog, check_garp
-from pyrevealed.graph.transitive_closure import _floyd_warshall_direct
+from prefgraph import BehaviorLog, check_garp
+from prefgraph.graph.transitive_closure import _floyd_warshall_direct
 
 
 def bench_python_scc(prices, quantities, warmup=False):

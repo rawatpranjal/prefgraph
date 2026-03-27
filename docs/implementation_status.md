@@ -1,8 +1,8 @@
-# PyRevealed Implementation Status vs. Literature Survey
+# PrefGraph Implementation Status vs. Literature Survey
 
 ## Summary
 
-Based on the comprehensive survey of 65+ revealed preference methods from the academic literature, here's what PyRevealed currently implements and what's missing.
+Based on the comprehensive survey of 65+ revealed preference methods from the academic literature, here's what PrefGraph currently implements and what's missing.
 
 **Overall Coverage: ~60% of methods from the survey are implemented**
 

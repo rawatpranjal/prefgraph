@@ -1,2 +1,4 @@
-Dataset,Target,N,Task,AUC (RP only),AUC (Baseline),AUC (Combined),Lift %
-Tenrec,High Engagement,50000,class,0.832,0.993,0.993,-0.0%
+Dataset,Target,N,Task,AUC (RP only),AUC (Baseline),AUC (Combined),Lift %,RMSE (RP only),RMSE (Baseline),RMSE (Combined),R2 (Combined)
+Dunnhumby,Churn,2222,class,0.614,0.752,0.740,-1.5%,,,,
+Dunnhumby,High Spender,2222,class,0.924,0.960,0.960,-0.0%,,,,
+Dunnhumby,Spend Change,2222,regre,,,,,7.4375,6.8491,6.8741,0.122

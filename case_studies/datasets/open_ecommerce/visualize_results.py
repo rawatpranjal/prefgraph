@@ -1,6 +1,6 @@
 """Visualization generation for Open E-Commerce 1.0 dataset (Phase 5).
 
-This module creates showcase visualizations demonstrating PyRevealed's
+This module creates showcase visualizations demonstrating PrefGraph's
 analysis capabilities on real consumer data.
 
 Visualizations:

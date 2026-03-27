@@ -17,7 +17,7 @@ DATASET_NAME = "Olist"
 
 def load_and_prepare(data_dir=None, max_users=None):
     """Load Olist and prepare train/target splits."""
-    from pyrevealed.datasets._olist import load_olist
+    from prefgraph.datasets._olist import load_olist
 
     print(f"\n[{DATASET_NAME}] Loading dataset...")
     panel = load_olist(data_dir=data_dir, n_customers=max_users, min_orders=4)
