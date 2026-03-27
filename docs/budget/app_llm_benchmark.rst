@@ -117,10 +117,11 @@ SARP Consistency
      - FAIL (10)
      - FAIL (10)
 
-*Numbers in parentheses = SARP violation count. Max possible = C(5,2) = 10.*
+*Violation count in parentheses. Max = C(5,2) = 10. Both models identical.*
 
-All 25 gpt-4o-mini groups fail SARP at n=200. Every pair of items has at
-least one preference reversal somewhere in the 200 trials.
+**50/50 groups fail SARP at n=200.** No prompt strategy, model, or
+scenario achieves transitivity. The one early PASS (procurement ×
+o4-mini × aggressive at n=15) flipped to FAIL at n=200.
 
 Houtman-Maks Efficiency
 ~~~~~~~~~~~~~~~~~~~~~~~
@@ -135,23 +136,29 @@ Houtman-Maks Efficiency
      - Content
      - Jobs
      - Procurement
-   * - Item-level HM
+   * - Item HM
      - 0.60
      - 0.60
      - 0.60
      - 0.60
      - 0.60
-   * - Obs-level HM
-     - 0.946
+   * - Obs HM (gpt)
+     - 0.947
      - 0.948
      - 0.958
      - 0.947
-     - 0.952
+     - 0.950
+   * - Obs HM (o4)
+     - 0.947
+     - 0.948
+     - 0.955
+     - 0.947
+     - 0.950
    * - 95% CI
      - [.93, .96]
+     - [.93, .97]
      - [.94, .97]
-     - [.95, .97]
-     - [.93, .96]
+     - [.93, .97]
      - [.93, .97]
    * - Permutation p
      - 1.000
@@ -160,9 +167,9 @@ Houtman-Maks Efficiency
      - 1.000
      - 1.000
 
-*Item-level HM = 3/5 items form the largest consistent subset (Engine).
-Obs-level HM = ~95% of individual decisions are locally rationalizable
-(bootstrap, 500 resamples). gpt-4o-mini averages, all prompts pooled.*
+*Item HM = 3/5 items in largest consistent subset. Obs HM = ~95% of
+individual decisions rationalizable (bootstrap, 1000 resamples).
+Averages across 5 prompts per scenario.*
 
 Prompt Effects
 ~~~~~~~~~~~~~~
@@ -206,59 +213,58 @@ the only prompt to reduce violations below maximum.*
 Model Comparison
 ~~~~~~~~~~~~~~~~
 
-Where both models have n≥100, o4-mini (reasoning) is slightly *less*
-observation-level consistent than gpt-4o-mini (instinct):
+At n=200 per group, gpt-4o-mini and o4-mini are statistically
+indistinguishable on consistency:
 
 .. list-table::
    :header-rows: 1
-   :widths: 30 20 20 20
+   :widths: 30 18 18 18
 
-   * - Group
+   * - Scenario (avg over 5 prompts)
      - gpt-4o-mini
      - o4-mini
      - Delta
-   * - support × minimal
+   * - Support Router
      - 0.947
      - 0.947
      - 0.000
-   * - support × conservative
+   * - Alert Triage
+     - 0.948
+     - 0.948
+     - 0.000
+   * - Content Review
      - 0.958
+     - 0.955
+     - −0.003
+   * - Job Screen
      - 0.947
-     - −0.011
-   * - alert × conservative
-     - 0.962
-     - 0.944
-     - −0.018
-   * - job × minimal
-     - 0.946
-     - 0.923
-     - −0.024
-   * - procurement × minimal
-     - 0.961
-     - 0.936
-     - −0.025
+     - 0.947
+     - 0.000
+   * - Procurement
+     - 0.950
+     - 0.950
+     - 0.000
 
-*Observation-level HM (bootstrap mean). Negative delta = reasoning model
-less consistent.*
+*Observation-level HM (bootstrap mean, 1000 resamples). Reasoning
+confers no consistency advantage.*
 
 Key Takeaways
 ~~~~~~~~~~~~~
 
-1. **LLM inconsistency is structural.** All 50 prompt-model-scenario
-   combinations produce intransitive preference cycles (49/50 SARP FAIL).
-   This is invisible to standard accuracy benchmarks.
+1. **LLM inconsistency is structural.** 50/50 prompt-model-scenario
+   combinations produce intransitive preference cycles. This is
+   invisible to accuracy benchmarks.
 
 2. **95% locally consistent, 100% globally inconsistent.** Individual
-   decisions are reasonable; the cycles only emerge from rare pairwise
+   decisions are reasonable; cycles emerge from rare pairwise
    contradictions across 200 trials.
 
 3. **Prompts shift distributions, not cycle structure.** Conservative
-   prompts push toward escalation (KL=0.42); aggressive prompts push
-   toward auto-resolve. Neither eliminates transitivity violations.
+   prompts push toward escalation (KL=0.42); aggressive prompts toward
+   auto-resolve. Neither eliminates transitivity violations.
 
-4. **Reasoning does not help.** o4-mini is marginally less consistent
-   than gpt-4o-mini, suggesting chain-of-thought introduces edge-case
-   overthinking.
+4. **Reasoning confers no advantage.** o4-mini and gpt-4o-mini are
+   indistinguishable on consistency at n=200.
 
 Reproduce
 ---------
