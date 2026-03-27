@@ -1,0 +1,34 @@
+name: Test Install
+
+on: workflow_dispatch
+
+jobs:
+  test:
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+        python-version: ["3.10", "3.11", "3.12", "3.13"]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install from PyPI
+        run: pip install pyrevealed==0.5.3
+      - name: Verify
+        run: |
+          python -c "
+          import pyrevealed
+          print(f'Version: {pyrevealed.__version__}')
+          from pyrevealed._rust_backend import HAS_RUST
+          print(f'Rust backend: {HAS_RUST}')
+          from pyrevealed import Engine
+          e = Engine(['ccei'])
+          print('Engine created OK')
+          # Quick smoke test with demo data
+          from pyrevealed import load_demo
+          data = load_demo(n_users=5)
+          result = e.analyze_arrays(data)
+          print(f'Analyzed {len(data)} users, CCEI scores: {[round(r[\"ccei\"], 2) for r in result.to_dict()]}')
+          print('ALL TESTS PASSED')
+          "
