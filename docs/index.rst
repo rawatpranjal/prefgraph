@@ -135,13 +135,13 @@ Full results: :doc:`benchmarks_ecommerce`.
    * - Dunnhumby
      - 2,222
      - High Spender
-     - 0.958
+     - 0.960
      - 0.960
    * - Open E-Commerce
      - 4,694
      - Churn
-     - 0.841
-     - **0.847**
+     - 0.846
+     - 0.846
    * - H&M
      - 46,757
      - High Spender
@@ -150,8 +150,8 @@ Full results: :doc:`benchmarks_ecommerce`.
    * - Instacart
      - 50,000
      - High Value
-     - 0.967
-     - 0.967
+     - 0.966
+     - 0.966
    * - REES46
      - 8,832
      - High Engagement
@@ -161,14 +161,14 @@ Full results: :doc:`benchmarks_ecommerce`.
      - 4,239
      - High Engagement
      - 0.913
-     - 0.913
+     - **0.915**
    * - Tenrec
      - 50,000
      - High Engagement
      - 0.993
      - 0.993
 
-RP features add 0–0.7% AUC over strong RFM baselines. The lift is real but modest.
+Budget datasets: RP adds ~0% over strong RFM baselines. Menu datasets: RP features competitive — Taobao RP-only (0.925) beats baseline (0.913).
 
 Reading List (2020+)
 --------------------
