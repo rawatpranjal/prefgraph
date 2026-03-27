@@ -168,7 +168,7 @@ def generate_budget_hero():
                               edgecolor=PALETTE["accent"], alpha=0.95))
 
     print("  Generating budget_hero.gif...")
-    anim = FuncAnimation(fig, update, frames=TOTAL_FRAMES, interval=350)
+    anim = FuncAnimation(fig, update, frames=TOTAL_FRAMES, interval=900)
     anim.save(OUTPUT_DIR / "budget_hero.gif", writer="pillow", dpi=DPI)
     plt.close(fig)
 
@@ -328,7 +328,7 @@ def generate_menu_hero():
                               edgecolor=PALETTE["accent"], alpha=0.95))
 
     print("  Generating menu_hero.gif...")
-    anim = FuncAnimation(fig, update, frames=TOTAL_FRAMES, interval=400)
+    anim = FuncAnimation(fig, update, frames=TOTAL_FRAMES, interval=900)
     anim.save(OUTPUT_DIR / "menu_hero.gif", writer="pillow", dpi=DPI)
     plt.close(fig)
 
