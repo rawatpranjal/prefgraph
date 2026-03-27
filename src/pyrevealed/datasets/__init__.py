@@ -27,6 +27,7 @@ from pyrevealed.datasets._rees46 import load_rees46
 from pyrevealed.datasets._online_retail_ii import load_online_retail_ii
 from pyrevealed.datasets._hm import load_hm
 from pyrevealed.datasets._pakistan import load_pakistan
+from pyrevealed.datasets._favorita import load_favorita
 
 
 def list_datasets() -> list[dict[str, str]]:
@@ -127,6 +128,13 @@ def list_datasets() -> list[dict[str, str]]:
             "goods": "16 product categories (real PKR prices)",
             "observations": "Monthly aggregation, min 5 months per customer",
         },
+        {
+            "name": "favorita",
+            "description": "Ecuador Favorita grocery sales from 54 stores across 33 product families",
+            "source": "Kaggle (favorita-grocery-sales-forecasting)",
+            "goods": "33 product families (uniform prices)",
+            "observations": "~200+ weeks per store",
+        },
     ]
 
 
@@ -144,5 +152,6 @@ __all__ = [
     "load_online_retail_ii",
     "load_hm",
     "load_pakistan",
+    "load_favorita",
     "list_datasets",
 ]
