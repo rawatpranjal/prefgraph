@@ -18,6 +18,18 @@ PyRevealed is a high-performance computational library designed for the axiomati
        <h3>Computational Engine</h3>
        <p>Optimized Rust backend utilizing graph-theoretic algorithms and HiGHS linear programming, parallelized via Rayon for high-throughput processing.</p>
      </div>
+     <div class="feature-card">
+       <h3>Dual API Design</h3>
+       <p>Tech-friendly names (<code>compute_integrity_score</code>) alongside economics terms (<code>compute_aei</code>). 57 result dataclasses with <code>.to_dict()</code> and <code>.summary()</code>. sklearn-compatible for ML pipelines.</p>
+     </div>
+     <div class="feature-card">
+       <h3>Algorithms</h3>
+       <p>Floyd-Warshall transitive closure, Tarjan SCC, Karp's max-mean cycle, HiGHS LP/ILP, greedy FVS, Bellman-Ford, and binary search. Grounded in Chambers &amp; Echenique (2016).</p>
+     </div>
+     <div class="feature-card">
+       <h3>Post-Estimation Diagnostics</h3>
+       <p>Utility recovery via Afriat LP, welfare analysis (CV/EV), Slutsky symmetry tests, power analysis (Bronars, Selten), separability testing, and ordinal preference ranking.</p>
+     </div>
    </div>
 
 .. code-block:: bash
