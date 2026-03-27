@@ -69,7 +69,7 @@ A ``RiskChoiceLog`` stores choices between safe and risky options:
 .. code-block:: python
 
    import numpy as np
-   from pyrevealed import RiskChoiceLog
+   from prefgraph import RiskChoiceLog
 
    # 5 binary choices: safe amount vs risky lottery
    safe_values = np.array([50.0, 40.0, 30.0, 20.0, 10.0])
@@ -121,7 +121,7 @@ using maximum likelihood estimation:
 
 .. code-block:: python
 
-   from pyrevealed import compute_risk_profile
+   from prefgraph import compute_risk_profile
 
    result = compute_risk_profile(log)
 
@@ -195,7 +195,7 @@ The ``check_expected_utility_axioms`` function tests for basic EU violations:
 
 .. code-block:: python
 
-   from pyrevealed import check_expected_utility_axioms
+   from prefgraph import check_expected_utility_axioms
 
    is_consistent, violations = check_expected_utility_axioms(log)
 
@@ -255,7 +255,7 @@ For rapid classification without detailed analysis, use ``classify_risk_type``:
 
 .. code-block:: python
 
-   from pyrevealed import classify_risk_type
+   from prefgraph import classify_risk_type
 
    risk_type = classify_risk_type(log)
    print(f"Classification: {risk_type}")
@@ -294,7 +294,7 @@ Analyzing Investment Decisions
 .. code-block:: python
 
    import numpy as np
-   from pyrevealed import (
+   from prefgraph import (
        RiskChoiceLog,
        compute_risk_profile,
        check_expected_utility_axioms,

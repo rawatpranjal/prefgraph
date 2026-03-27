@@ -1,1 +1,1 @@
-"""Open E-Commerce 1.0 dataset loader for PyRevealed."""
+"""Open E-Commerce 1.0 dataset loader for PrefGraph."""

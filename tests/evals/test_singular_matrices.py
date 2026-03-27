@@ -6,7 +6,7 @@ These tests expose linear algebra failures in regression and optimization.
 
 import numpy as np
 import pytest
-from pyrevealed.core.session import BehaviorLog
+from prefgraph.core.session import BehaviorLog
 
 
 class TestMulticollinearity:
@@ -20,7 +20,7 @@ class TestMulticollinearity:
 
         Multicollinearity makes XtX singular, requiring pseudo-inverse.
         """
-        from pyrevealed.algorithms.integrability import compute_slutsky_matrix_regression
+        from prefgraph.algorithms.integrability import compute_slutsky_matrix_regression
 
         S = compute_slutsky_matrix_regression(multicollinear_prices)
 
@@ -33,7 +33,7 @@ class TestMulticollinearity:
 
     def test_slutsky_constant_prices(self, constant_prices):
         """EVAL: Slutsky with constant prices - zero variance."""
-        from pyrevealed.algorithms.integrability import compute_slutsky_matrix_regression
+        from prefgraph.algorithms.integrability import compute_slutsky_matrix_regression
 
         S = compute_slutsky_matrix_regression(constant_prices)
 
@@ -46,7 +46,7 @@ class TestProportionalBundles:
 
     def test_garp_proportional_bundles(self, proportional_bundles):
         """EVAL: GARP with all bundles on same ray."""
-        from pyrevealed.algorithms.garp import check_garp
+        from prefgraph.algorithms.garp import check_garp
 
         result = check_garp(proportional_bundles)
 
@@ -56,7 +56,7 @@ class TestProportionalBundles:
 
     def test_utility_recovery_proportional(self, proportional_bundles):
         """EVAL: Utility recovery with collinear bundles."""
-        from pyrevealed.algorithms.utility import recover_utility
+        from prefgraph.algorithms.utility import recover_utility
 
         result = recover_utility(proportional_bundles)
 
@@ -72,7 +72,7 @@ class TestRankDeficiency:
 
         When bundles are identical, constraint matrix has redundant rows.
         """
-        from pyrevealed.algorithms.utility import recover_utility
+        from prefgraph.algorithms.utility import recover_utility
 
         # Identical bundles at different prices
         log = BehaviorLog(
@@ -87,7 +87,7 @@ class TestRankDeficiency:
 
     def test_welfare_lp_rank_deficient(self):
         """EVAL: Welfare LP with rank deficient constraint matrix."""
-        from pyrevealed.algorithms.welfare import compute_cv_exact
+        from prefgraph.algorithms.welfare import compute_cv_exact
 
         # Very similar observations
         baseline = BehaviorLog(
@@ -121,7 +121,7 @@ class TestConditionNumber:
 
     def test_garp_high_condition(self, high_condition_number_log):
         """EVAL: GARP check with ill-conditioned expenditure matrix."""
-        from pyrevealed.algorithms.garp import check_garp
+        from prefgraph.algorithms.garp import check_garp
 
         result = check_garp(high_condition_number_log)
 
@@ -130,7 +130,7 @@ class TestConditionNumber:
 
     def test_aei_high_condition(self, high_condition_number_log):
         """EVAL: AEI binary search with ill-conditioned data."""
-        from pyrevealed.algorithms.aei import compute_aei
+        from prefgraph.algorithms.aei import compute_aei
 
         result = compute_aei(high_condition_number_log)
 
@@ -144,7 +144,7 @@ class TestSingularEigenvalue:
 
     def test_slutsky_nsd_singular(self):
         """EVAL: NSD test on singular Slutsky matrix."""
-        from pyrevealed.algorithms.integrability import check_slutsky_nsd
+        from prefgraph.algorithms.integrability import check_slutsky_nsd
 
         # Singular matrix (rank 1)
         S = np.array([[1.0, 2.0], [2.0, 4.0]])
@@ -156,7 +156,7 @@ class TestSingularEigenvalue:
 
     def test_slutsky_nsd_zero_matrix(self):
         """EVAL: NSD test on zero matrix."""
-        from pyrevealed.algorithms.integrability import check_slutsky_nsd
+        from prefgraph.algorithms.integrability import check_slutsky_nsd
 
         S = np.zeros((3, 3))
 
@@ -181,7 +181,7 @@ class TestPseudoInverse:
 
     def test_regression_with_pinv(self):
         """EVAL: Slutsky regression using pinv on singular XtX."""
-        from pyrevealed.algorithms.integrability import compute_slutsky_matrix_regression
+        from prefgraph.algorithms.integrability import compute_slutsky_matrix_regression
 
         # Data that makes XtX nearly singular
         log = BehaviorLog(
@@ -208,7 +208,7 @@ class TestLinearDependence:
 
     def test_afriat_linearly_dependent_constraints(self):
         """EVAL: Afriat LP with linearly dependent inequality constraints."""
-        from pyrevealed.algorithms.utility import recover_utility
+        from prefgraph.algorithms.utility import recover_utility
 
         # Create data with duplicate observations
         log = BehaviorLog(
@@ -223,8 +223,8 @@ class TestLinearDependence:
 
     def test_rum_exact_dependent_constraints(self):
         """EVAL: RUM LP with dependent probability constraints."""
-        from pyrevealed.core.session import StochasticChoiceLog
-        from pyrevealed.algorithms.stochastic import test_rum_consistency
+        from prefgraph.core.session import StochasticChoiceLog
+        from prefgraph.algorithms.stochastic import test_rum_consistency
 
         # Same menu repeated
         log = StochasticChoiceLog(

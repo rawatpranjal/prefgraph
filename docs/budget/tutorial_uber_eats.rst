@@ -23,7 +23,7 @@ Prerequisites
 .. note::
 
    The full code for this tutorial is available at
-   ``examples/07_uber_eats_scale.py`` in the PyRevealed repository.
+   ``examples/07_uber_eats_scale.py`` in the PrefGraph repository.
 
 
 Part 1: The Data Structure
@@ -110,8 +110,8 @@ Single-user analysis runs GARP, AEI, and Houtman-Maks sequentially:
 
 .. code-block:: python
 
-   from pyrevealed import BehaviorLog, check_garp, compute_aei
-   from pyrevealed.algorithms.mpi import compute_houtman_maks_index
+   from prefgraph import BehaviorLog, check_garp, compute_aei
+   from prefgraph.algorithms.mpi import compute_houtman_maks_index
 
    garp = check_garp(log)
    aei = compute_aei(log, tolerance=1e-4)

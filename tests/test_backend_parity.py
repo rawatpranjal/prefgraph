@@ -12,8 +12,8 @@ Tolerance rationale:
 
 import pytest
 import numpy as np
-from pyrevealed._rust_backend import HAS_RUST
-from pyrevealed.engine import Engine
+from prefgraph._rust_backend import HAS_RUST
+from prefgraph.engine import Engine
 
 pytestmark = pytest.mark.skipif(not HAS_RUST, reason="Rust backend not available")
 

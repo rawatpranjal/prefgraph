@@ -1,6 +1,6 @@
 """Algorithm execution for Open E-Commerce 1.0 dataset (Phase 4).
 
-This module runs PyRevealed's revealed preference algorithms on all users
+This module runs PrefGraph's revealed preference algorithms on all users
 and collects comprehensive statistics.
 
 Algorithms:
@@ -23,7 +23,7 @@ import pandas as pd
 # Add parent directories for imports
 sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent))
 
-from src.pyrevealed import (
+from src.prefgraph import (
     validate_consistency,
     compute_integrity_score,
     compute_confusion_metric,

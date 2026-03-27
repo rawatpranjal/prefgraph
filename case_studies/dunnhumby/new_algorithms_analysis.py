@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""New algorithms PyRevealed analysis on Dunnhumby data.
+"""New algorithms PrefGraph analysis on Dunnhumby data.
 
 Showcase K: Bronars Power - Statistical significance of GARP tests
 Showcase L: Homotheticity (HARP) - Tests if preferences scale with budget
@@ -26,7 +26,7 @@ from scipy import stats
 
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
-from src.pyrevealed import (
+from src.prefgraph import (
     BehaviorLog,
     compute_test_power,
     validate_proportional_scaling,

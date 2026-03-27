@@ -1,8 +1,8 @@
 # Case Study: Dunnhumby Consumer Data
 
-Real-world validation of PyRevealed on 2 years of grocery transactions from 2,222 households.
+Real-world validation of PrefGraph on 2 years of grocery transactions from 2,222 households.
 
-**For the full tutorial with step-by-step code, see the [Tutorial Documentation](https://pyrevealed.readthedocs.io/en/latest/tutorial.html).**
+**For the full tutorial with step-by-step code, see the [Tutorial Documentation](https://prefgraph.readthedocs.io/en/latest/tutorial.html).**
 
 ## Key Findings
 
@@ -28,6 +28,6 @@ python3 dunnhumby/run_all.py
 
 ## Documentation
 
-- [Full Tutorial](https://pyrevealed.readthedocs.io/en/latest/tutorial.html) - Step-by-step walkthrough with code
-- [API Reference](https://pyrevealed.readthedocs.io/en/latest/api.html) - Complete function documentation
-- [Case Study Summary](https://pyrevealed.readthedocs.io/en/latest/case_study.html) - Results overview
+- [Full Tutorial](https://prefgraph.readthedocs.io/en/latest/tutorial.html) - Step-by-step walkthrough with code
+- [API Reference](https://prefgraph.readthedocs.io/en/latest/api.html) - Complete function documentation
+- [Case Study Summary](https://prefgraph.readthedocs.io/en/latest/case_study.html) - Results overview

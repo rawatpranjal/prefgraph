@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Predictive Validation Study: Can PyRevealed features predict future behavior?
+"""Predictive Validation Study: Can PrefGraph features predict future behavior?
 
 Split-sample study:
 - First half of each household's data → Extract features
@@ -23,7 +23,7 @@ warnings.filterwarnings('ignore')
 
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
-from src.pyrevealed import (
+from src.prefgraph import (
     BehaviorLog,
     BehavioralAuditor,
     PreferenceEncoder,
@@ -64,7 +64,7 @@ def split_behavior_log(log: BehaviorLog) -> Tuple[BehaviorLog, BehaviorLog]:
 
 
 def extract_features(log: BehaviorLog, auditor: BehavioralAuditor) -> dict:
-    """Extract PyRevealed features from a BehaviorLog."""
+    """Extract PrefGraph features from a BehaviorLog."""
     features = {}
 
     # Basic stats
@@ -197,15 +197,15 @@ def get_feature_groups(feature_cols: list) -> dict:
     basic_stats = ['n_observations', 'total_spend', 'mean_spend_per_obs', 'std_spend']
     category_shares = [c for c in feature_cols if c.startswith('share_')]
 
-    pyrevealed_auditor = ['integrity_score', 'confusion_score', 'bot_risk',
+    prefgraph_auditor = ['integrity_score', 'confusion_score', 'bot_risk',
                           'shared_account_risk', 'ux_confusion_risk', 'is_consistent']
-    pyrevealed_encoder = ['mean_latent', 'std_latent', 'mean_marginal', 'encoder_fitted']
+    prefgraph_encoder = ['mean_latent', 'std_latent', 'mean_marginal', 'encoder_fitted']
 
     return {
         'basic': basic_stats + category_shares,
-        'pyrevealed': pyrevealed_auditor + pyrevealed_encoder,
-        'auditor': pyrevealed_auditor,
-        'encoder': pyrevealed_encoder,
+        'prefgraph': prefgraph_auditor + prefgraph_encoder,
+        'auditor': prefgraph_auditor,
+        'encoder': prefgraph_encoder,
     }
 
 
@@ -320,13 +320,13 @@ def train_and_evaluate(df: pd.DataFrame) -> dict:
 
         print(f"  {target_name}: RMSE={lgb_rmse:.4f}, R²={lgb_r2:.4f}")
 
-    # Ablation study: Basic vs Basic+PyRevealed
-    print("\n  Running ablation study (Basic vs Basic+PyRevealed)...")
+    # Ablation study: Basic vs Basic+PrefGraph
+    print("\n  Running ablation study (Basic vs Basic+PrefGraph)...")
     ablation_results = {}
 
     feature_groups = get_feature_groups(feature_cols)
     basic_cols = [c for c in feature_groups['basic'] if c in feature_cols]
-    pyrevealed_cols = [c for c in feature_groups['pyrevealed'] if c in feature_cols]
+    prefgraph_cols = [c for c in feature_groups['prefgraph'] if c in feature_cols]
 
     for target_name in ['Integrity (AEI)', 'Total Spending']:
         if target_name not in results:
@@ -342,11 +342,11 @@ def train_and_evaluate(df: pd.DataFrame) -> dict:
         rmse_basic = np.sqrt(mean_squared_error(y, y_pred_basic))
         r2_basic = r2_score(y, y_pred_basic)
 
-        # Full model (basic + pyrevealed)
+        # Full model (basic + prefgraph)
         rmse_full = results[target_name]['lgb_rmse']
         r2_full = results[target_name]['lgb_r2']
 
-        # Incremental value of PyRevealed
+        # Incremental value of PrefGraph
         rmse_reduction = (rmse_basic - rmse_full) / rmse_basic * 100
         r2_lift = r2_full - r2_basic
 
@@ -360,7 +360,7 @@ def train_and_evaluate(df: pd.DataFrame) -> dict:
         }
 
         print(f"    {target_name}: Basic R²={r2_basic:.3f} → Full R²={r2_full:.3f} "
-              f"(+{r2_lift:.3f} from PyRevealed)")
+              f"(+{r2_lift:.3f} from PrefGraph)")
 
     return {
         'results': results,
@@ -475,7 +475,7 @@ def run_predictive_study() -> dict:
     """Run the full predictive validation study."""
     print("=" * 70)
     print(" PREDICTIVE VALIDATION STUDY")
-    print(" Can first-half PyRevealed features predict second-half behavior?")
+    print(" Can first-half PrefGraph features predict second-half behavior?")
     print("=" * 70)
 
     # Load sessions
@@ -528,13 +528,13 @@ if __name__ == "__main__":
     # Ablation study results
     if 'ablation' in study['results'] and study['results']['ablation']:
         print("\n" + "=" * 70)
-        print(" ABLATION STUDY: Incremental Value of PyRevealed Features")
+        print(" ABLATION STUDY: Incremental Value of PrefGraph Features")
         print("=" * 70)
 
         print("\n  Feature Sets:")
         groups = study['results']['feature_groups']
         print(f"    Basic: {len(groups['basic'])} features (spend stats + category shares)")
-        print(f"    PyRevealed: {len(groups['pyrevealed'])} features (auditor + encoder)")
+        print(f"    PrefGraph: {len(groups['prefgraph'])} features (auditor + encoder)")
 
         print("\n  Results:")
         print(f"  {'Target':<20} {'Basic R²':>10} {'Full R²':>10} {'R² Lift':>10} {'RMSE Δ':>10}")
@@ -561,7 +561,7 @@ if __name__ == "__main__":
 
         print("\n  Importance by Feature Group:")
         total_imp = sum(group_importance.values())
-        for group_name in ['basic', 'pyrevealed']:
+        for group_name in ['basic', 'prefgraph']:
             if group_name in group_importance:
                 pct = group_importance[group_name] / total_imp * 100 if total_imp > 0 else 0
                 print(f"    {group_name.capitalize():<12}: {pct:5.1f}%")
@@ -570,8 +570,8 @@ if __name__ == "__main__":
         top_features = sorted(imp.items(), key=lambda x: x[1], reverse=True)[:10]
         print("\n  Top 10 Individual Features:")
         for i, (name, val) in enumerate(top_features, 1):
-            # Mark PyRevealed features
-            marker = " [PyRevealed]" if name in groups['pyrevealed'] else ""
+            # Mark PrefGraph features
+            marker = " [PrefGraph]" if name in groups['prefgraph'] else ""
             print(f"    {i:2}. {name:<25} {val:6.1f}{marker}")
 
     print(f"\nVisualizations saved to: {OUTPUT_DIR}")

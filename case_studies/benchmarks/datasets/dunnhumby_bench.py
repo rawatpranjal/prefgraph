@@ -23,7 +23,7 @@ def load_and_prepare(data_dir=None, n_households=None):
         Tuple of (X_rp, X_base, targets_dict, user_ids)
         where targets_dict maps target_name -> (y_array, task_type)
     """
-    from pyrevealed.datasets import load_dunnhumby
+    from prefgraph.datasets import load_dunnhumby
 
     if data_dir is None:
         data_dir = DEFAULT_DATA_DIR

@@ -6,7 +6,7 @@ Tests for integrability check edge cases and regression failures.
 
 import numpy as np
 import pytest
-from pyrevealed.core.session import BehaviorLog
+from prefgraph.core.session import BehaviorLog
 
 
 class TestSlutskyRegressionFailures:
@@ -20,7 +20,7 @@ class TestSlutskyRegressionFailures:
 
         Multicollinearity makes XtX singular.
         """
-        from pyrevealed.algorithms.integrability import compute_slutsky_matrix_regression
+        from prefgraph.algorithms.integrability import compute_slutsky_matrix_regression
 
         S = compute_slutsky_matrix_regression(multicollinear_prices)
 
@@ -33,7 +33,7 @@ class TestSlutskyRegressionFailures:
 
     def test_slutsky_regression_constant_prices(self, constant_prices):
         """EVAL: Slutsky regression with constant prices (zero variance)."""
-        from pyrevealed.algorithms.integrability import compute_slutsky_matrix_regression
+        from prefgraph.algorithms.integrability import compute_slutsky_matrix_regression
 
         S = compute_slutsky_matrix_regression(constant_prices)
 
@@ -42,7 +42,7 @@ class TestSlutskyRegressionFailures:
 
     def test_slutsky_regression_underdetermined(self, two_observations_log):
         """EVAL: Slutsky regression with T < N+1 (underdetermined)."""
-        from pyrevealed.algorithms.integrability import compute_slutsky_matrix_regression
+        from prefgraph.algorithms.integrability import compute_slutsky_matrix_regression
 
         S = compute_slutsky_matrix_regression(two_observations_log)
 
@@ -55,7 +55,7 @@ class TestSlutskySymmetry:
 
     def test_symmetry_perfectly_symmetric(self):
         """EVAL: Symmetry test for perfectly symmetric matrix."""
-        from pyrevealed.algorithms.integrability import check_slutsky_symmetry
+        from prefgraph.algorithms.integrability import check_slutsky_symmetry
 
         S = np.array([[1.0, 2.0], [2.0, 3.0]])
 
@@ -66,7 +66,7 @@ class TestSlutskySymmetry:
 
     def test_symmetry_asymmetric(self):
         """EVAL: Symmetry test for asymmetric matrix."""
-        from pyrevealed.algorithms.integrability import check_slutsky_symmetry
+        from prefgraph.algorithms.integrability import check_slutsky_symmetry
 
         S = np.array([[1.0, 2.0], [3.0, 4.0]])
 
@@ -77,7 +77,7 @@ class TestSlutskySymmetry:
 
     def test_symmetry_near_symmetric(self):
         """EVAL: Symmetry test for nearly symmetric matrix."""
-        from pyrevealed.algorithms.integrability import check_slutsky_symmetry
+        from prefgraph.algorithms.integrability import check_slutsky_symmetry
 
         S = np.array([[1.0, 2.0], [2.0 + 1e-8, 3.0]])
 
@@ -94,7 +94,7 @@ class TestSlutskyNSD:
 
     def test_nsd_negative_definite(self):
         """EVAL: NSD test for negative definite matrix."""
-        from pyrevealed.algorithms.integrability import check_slutsky_nsd
+        from prefgraph.algorithms.integrability import check_slutsky_nsd
 
         S = np.array([[-2.0, 0.5], [0.5, -2.0]])
 
@@ -105,7 +105,7 @@ class TestSlutskyNSD:
 
     def test_nsd_positive_eigenvalue(self):
         """EVAL: NSD test for matrix with positive eigenvalue."""
-        from pyrevealed.algorithms.integrability import check_slutsky_nsd
+        from prefgraph.algorithms.integrability import check_slutsky_nsd
 
         S = np.array([[1.0, 0.0], [0.0, -1.0]])
 
@@ -116,7 +116,7 @@ class TestSlutskyNSD:
 
     def test_nsd_singular_matrix(self):
         """EVAL: NSD test for singular matrix (has zero eigenvalue)."""
-        from pyrevealed.algorithms.integrability import check_slutsky_nsd
+        from prefgraph.algorithms.integrability import check_slutsky_nsd
 
         S = np.array([[1.0, 2.0], [2.0, 4.0]])  # Rank 1
 
@@ -132,7 +132,7 @@ class TestIntegrabilityTest:
 
     def test_integrability_simple(self):
         """EVAL: Integrability test for simple data."""
-        from pyrevealed.algorithms.integrability import test_integrability
+        from prefgraph.algorithms.integrability import test_integrability
 
         log = BehaviorLog(
             cost_vectors=np.array([
@@ -154,7 +154,7 @@ class TestIntegrabilityTest:
 
     def test_integrability_single_observation(self, single_observation_log):
         """EVAL: Integrability test with T=1."""
-        from pyrevealed.algorithms.integrability import test_integrability
+        from prefgraph.algorithms.integrability import test_integrability
 
         result = test_integrability(single_observation_log)
 
@@ -167,7 +167,7 @@ class TestSlutskyMethods:
 
     def test_slutsky_finite_difference(self):
         """EVAL: Slutsky via finite difference method."""
-        from pyrevealed.algorithms.integrability import compute_slutsky_matrix
+        from prefgraph.algorithms.integrability import compute_slutsky_matrix
 
         log = BehaviorLog(
             cost_vectors=np.array([
@@ -189,7 +189,7 @@ class TestSlutskyMethods:
 
     def test_slutsky_stone_geary(self):
         """EVAL: Slutsky via Stone-Geary estimation."""
-        from pyrevealed.algorithms.integrability import compute_slutsky_matrix_stone_geary
+        from prefgraph.algorithms.integrability import compute_slutsky_matrix_stone_geary
 
         log = BehaviorLog(
             cost_vectors=np.array([
@@ -216,7 +216,7 @@ class TestSlutskyDecomposition:
 
     def test_slutsky_decomposition_simple(self):
         """EVAL: Slutsky decomposition into substitution and income effects."""
-        from pyrevealed.algorithms.integrability import compute_slutsky_matrix
+        from prefgraph.algorithms.integrability import compute_slutsky_matrix
 
         log = BehaviorLog(
             cost_vectors=np.array([
@@ -243,7 +243,7 @@ class TestLargeNGoods:
 
     def test_slutsky_n100(self, large_n_100):
         """EVAL: Slutsky matrix for N=100 goods."""
-        from pyrevealed.algorithms.integrability import compute_slutsky_matrix
+        from prefgraph.algorithms.integrability import compute_slutsky_matrix
 
         S = compute_slutsky_matrix(large_n_100)
 

@@ -12,7 +12,7 @@ Based on Echenique, Imai & Saito (2020, *AEJ: Micro*) and Laibson (1997, *QJE*).
 
 .. code-block:: python
 
-   from pyrevealed.contrib.intertemporal import (
+   from prefgraph.contrib.intertemporal import (
        test_exponential_discounting, recover_discount_factor
    )
 

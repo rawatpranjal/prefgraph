@@ -12,19 +12,19 @@ Test Coverage:
 import numpy as np
 import pytest
 
-from pyrevealed.algorithms.intertemporal import (
+from prefgraph.algorithms.intertemporal import (
     DatedChoice,
     _collect_quasi_hyperbolic_constraints,
     _compute_delta_bounds_for_beta,
 )
 # Import with aliases to avoid pytest collection (functions start with 'test_')
-from pyrevealed.algorithms.intertemporal import (
+from prefgraph.algorithms.intertemporal import (
     test_exponential_discounting as exponential_discounting_test,
     test_quasi_hyperbolic as quasi_hyperbolic_test,
     test_present_bias as present_bias_test,
     recover_discount_factor as discount_factor_recovery,
 )
-from pyrevealed.algorithms.risk import (
+from prefgraph.algorithms.risk import (
     LotteryChoice,
     _violates_independence,
     _check_risk_attitude_consistency,
@@ -32,7 +32,7 @@ from pyrevealed.algorithms.risk import (
     _fosd_dominates,
 )
 # Import with aliases to avoid pytest collection
-from pyrevealed.algorithms.risk import (
+from prefgraph.algorithms.risk import (
     test_expected_utility as expected_utility_test,
     test_rank_dependent_utility as rank_dependent_utility_test,
 )

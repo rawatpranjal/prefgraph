@@ -1,12 +1,12 @@
-"""Tests for pyrevealed.analyze() one-liner API."""
+"""Tests for prefgraph.analyze() one-liner API."""
 
 import numpy as np
 import pandas as pd
 import pytest
 
-import pyrevealed as rp
-from pyrevealed.analyze import analyze, _detect_format
-from pyrevealed.engine import Engine, EngineResult
+import prefgraph as rp
+from prefgraph.analyze import analyze, _detect_format
+from prefgraph.engine import Engine, EngineResult
 
 
 # ---------------------------------------------------------------------------
@@ -392,7 +392,7 @@ class TestMatchesEngine:
                             metrics=["garp", "ccei", "mpi"])
 
         # Via Engine directly
-        from pyrevealed.core.panel import BehaviorPanel
+        from prefgraph.core.panel import BehaviorPanel
         panel = BehaviorPanel.from_dataframe(
             df, user_col="user_id",
             cost_cols=["price_x", "price_y"],

@@ -67,7 +67,7 @@ different menu configurations.
 
 .. code-block:: python
 
-   from pyrevealed import StochasticChoiceLog
+   from prefgraph import StochasticChoiceLog
 
    # Subscription pricing experiment
    # Items: 0=Basic ($5), 1=Standard ($10), 2=Premium ($15), 3=Decoy ($12)
@@ -107,7 +107,7 @@ choice probability of the dominating option.
 
 .. code-block:: python
 
-   from pyrevealed import detect_decoy_effect
+   from prefgraph import detect_decoy_effect
 
    result = detect_decoy_effect(log, threshold=0.05)
 
@@ -175,7 +175,7 @@ avoiding extremes.
 .. code-block:: python
 
    import numpy as np
-   from pyrevealed import detect_compromise_effect
+   from prefgraph import detect_compromise_effect
 
    # Create data with compromise effect
    # Items: 0=Economy, 1=Standard, 2=Luxury
@@ -265,7 +265,7 @@ Test for all context effects at once:
 
 .. code-block:: python
 
-   from pyrevealed import test_context_effects
+   from prefgraph import test_context_effects
 
    result = test_context_effects(log, threshold=0.05)
 
@@ -307,7 +307,7 @@ Use context effects to optimize pricing tiers:
 .. code-block:: python
 
    import numpy as np
-   from pyrevealed import StochasticChoiceLog, detect_decoy_effect, detect_compromise_effect
+   from prefgraph import StochasticChoiceLog, detect_decoy_effect, detect_compromise_effect
 
    np.random.seed(42)
 

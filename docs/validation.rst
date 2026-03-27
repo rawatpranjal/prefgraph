@@ -1,7 +1,7 @@
 Validation
 ==========
 
-PyRevealed is validated against the R `revealedPrefs <https://cran.r-project.org/package=revealedPrefs>`_ package,
+PrefGraph is validated against the R `revealedPrefs <https://cran.r-project.org/package=revealedPrefs>`_ package,
 the standard academic implementation for revealed preference analysis.
 
 Axiom Tests
@@ -15,7 +15,7 @@ All three major axioms (GARP, WARP, SARP) are cross-validated:
 
    * - Axiom
      - Test Case
-     - PyRevealed
+     - PrefGraph
      - revealedPrefs
      - Match
    * - GARP
@@ -77,14 +77,14 @@ All three major axioms (GARP, WARP, SARP) are cross-validated:
 Afriat Efficiency Tests
 -----------------------
 
-The ``afriat.par`` parameter in R corresponds to PyRevealed's efficiency in AEI:
+The ``afriat.par`` parameter in R corresponds to PrefGraph's efficiency in AEI:
 
 .. list-table:: Efficiency Validation
    :header-rows: 1
    :widths: 25 25 25 25
 
    * - Efficiency
-     - PyRevealed
+     - PrefGraph
      - revealedPrefs
      - Match
    * - 1.0
@@ -123,14 +123,14 @@ The direct revealed preference matrices match exactly:
 Performance Comparison
 ----------------------
 
-PyRevealed is significantly faster due to Numba JIT compilation with parallel execution:
+PrefGraph is significantly faster due to Numba JIT compilation with parallel execution:
 
 .. list-table:: GARP Performance (T observations, N=10 goods)
    :header-rows: 1
    :widths: 20 20 25 20
 
    * - Observations
-     - PyRevealed
+     - PrefGraph
      - revealedPrefs
      - Speedup
    * - 100
@@ -159,9 +159,9 @@ Average speedup: **132x faster** than R.
 Known Differences
 -----------------
 
-**WARP Definition**: PyRevealed and R have slightly different WARP definitions:
+**WARP Definition**: PrefGraph and R have slightly different WARP definitions:
 
-- **PyRevealed**: Violation if ``R[i,j] AND P[j,i]`` (strict-weak asymmetry)
+- **PrefGraph**: Violation if ``R[i,j] AND P[j,i]`` (strict-weak asymmetry)
 - **R revealedPrefs**: Violation if ``R[i,j] AND R[j,i]`` (any mutual preference)
 
 Both are valid interpretations in the literature. Tests avoid cases where definitions diverge.
@@ -174,7 +174,7 @@ Function Mapping
    :widths: 35 35 30
 
    * - revealedPrefs (R)
-     - PyRevealed
+     - PrefGraph
      - Notes
    * - ``checkGarp(x, p)``
      - ``check_garp(session)``
@@ -240,7 +240,7 @@ Example output:
    ======================================================================
     AXIOM TESTS
    ======================================================================
-   Axiom    Test Case            PyRevealed   revealedPrefs  Match
+   Axiom    Test Case            PrefGraph   revealedPrefs  Match
    ----------------------------------------------------------------------
    GARP     consistent_3obs      PASS         PASS           OK
    WARP     consistent_3obs      PASS         PASS           OK
@@ -253,7 +253,7 @@ Example output:
    ======================================================================
     AFRIAT EFFICIENCY TESTS
    ======================================================================
-   Efficiency   PyRevealed   revealedPrefs  Match
+   Efficiency   PrefGraph   revealedPrefs  Match
    --------------------------------------------------
    1.0          FAIL         FAIL           OK
    0.9          FAIL         FAIL           OK

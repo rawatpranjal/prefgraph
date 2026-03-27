@@ -6,7 +6,7 @@ Tests for consideration set and attention model edge cases.
 
 import numpy as np
 import pytest
-from pyrevealed.core.session import MenuChoiceLog, StochasticChoiceLog
+from prefgraph.core.session import MenuChoiceLog, StochasticChoiceLog
 
 
 class TestConsiderationSets:
@@ -14,7 +14,7 @@ class TestConsiderationSets:
 
     def test_attention_empty_consideration(self):
         """EVAL: Attention model when consideration set could be empty."""
-        from pyrevealed.algorithms.attention import test_limited_attention
+        from prefgraph.algorithms.attention import test_limited_attention
 
         log = MenuChoiceLog(
             menus=[
@@ -40,7 +40,7 @@ class TestConsiderationSets:
             choices=[0, 1, 0],
         )
 
-        from pyrevealed.algorithms.attention import test_limited_attention
+        from prefgraph.algorithms.attention import test_limited_attention
 
         result = test_limited_attention(log)
 
@@ -53,7 +53,7 @@ class TestAttentionModels:
 
     def test_warp_la_simple(self):
         """EVAL: WARP-LA (Limited Attention WARP) test."""
-        from pyrevealed.algorithms.attention import test_warp_la
+        from prefgraph.algorithms.attention import test_warp_la
 
         log = MenuChoiceLog(
             menus=[
@@ -78,7 +78,7 @@ class TestAttentionModels:
             choices=[0, 1],
         )
 
-        from pyrevealed.algorithms.attention import test_limited_attention
+        from prefgraph.algorithms.attention import test_limited_attention
 
         result = test_limited_attention(log)
 
@@ -91,7 +91,7 @@ class TestRAMModel:
 
     def test_ram_consistency(self):
         """EVAL: RAM consistency test."""
-        from pyrevealed.algorithms.attention import test_ram_consistency
+        from prefgraph.algorithms.attention import test_ram_consistency
 
         log = StochasticChoiceLog(
             menus=[
@@ -121,7 +121,7 @@ class TestRAMModel:
             ],
         )
 
-        from pyrevealed.algorithms.attention import test_ram_consistency
+        from prefgraph.algorithms.attention import test_ram_consistency
 
         result = test_ram_consistency(log)
 
@@ -134,7 +134,7 @@ class TestAttentionFilters:
 
     def test_infer_attention_filters(self):
         """EVAL: Infer attention filters from choice data."""
-        from pyrevealed.algorithms.attention import infer_attention_filters
+        from prefgraph.algorithms.attention import infer_attention_filters
 
         log = MenuChoiceLog(
             menus=[
@@ -159,7 +159,7 @@ class TestAttentionFilters:
             choices=[0, 1],  # Different choices from same menu!
         )
 
-        from pyrevealed.algorithms.attention import infer_attention_filters
+        from prefgraph.algorithms.attention import infer_attention_filters
 
         # This is inconsistent with deterministic attention
         try:
@@ -183,7 +183,7 @@ class TestAttentionGraphs:
             choices=[0, 2],
         )
 
-        from pyrevealed.algorithms.attention import test_limited_attention
+        from prefgraph.algorithms.attention import test_limited_attention
 
         result = test_limited_attention(log)
 
@@ -201,7 +201,7 @@ class TestAttentionGraphs:
             choices=[0, 1, 0],
         )
 
-        from pyrevealed.algorithms.attention import test_limited_attention
+        from prefgraph.algorithms.attention import test_limited_attention
 
         result = test_limited_attention(log)
 
@@ -219,7 +219,7 @@ class TestAttentionPower:
             choices=[0],
         )
 
-        from pyrevealed.algorithms.attention import test_limited_attention
+        from prefgraph.algorithms.attention import test_limited_attention
 
         result = test_limited_attention(log)
 
@@ -238,7 +238,7 @@ class TestAttentionPower:
 
         log = MenuChoiceLog(menus=menus, choices=choices)
 
-        from pyrevealed.algorithms.attention import test_limited_attention
+        from prefgraph.algorithms.attention import test_limited_attention
 
         result = test_limited_attention(log)
 
@@ -256,7 +256,7 @@ class TestAttentionStochastic:
             choice_frequencies=[{0: 100, 1: 0, 2: 0}],
         )
 
-        from pyrevealed.algorithms.attention import test_ram_consistency
+        from prefgraph.algorithms.attention import test_ram_consistency
 
         result = test_ram_consistency(log)
 
@@ -270,7 +270,7 @@ class TestAttentionStochastic:
             choice_frequencies=[{0: 33, 1: 34, 2: 33}],
         )
 
-        from pyrevealed.algorithms.attention import test_ram_consistency
+        from prefgraph.algorithms.attention import test_ram_consistency
 
         result = test_ram_consistency(log)
 

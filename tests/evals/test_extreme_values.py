@@ -6,7 +6,7 @@ These tests expose behavior at the limits of floating point representation.
 
 import numpy as np
 import pytest
-from pyrevealed.core.session import BehaviorLog
+from prefgraph.core.session import BehaviorLog
 
 
 class TestFloatBoundaries:
@@ -45,7 +45,7 @@ class TestFloatBoundaries:
             ]),
         )
 
-        from pyrevealed.algorithms.garp import check_garp
+        from prefgraph.algorithms.garp import check_garp
         result = check_garp(log)
 
         # Epsilon differences should be handled correctly
@@ -62,21 +62,21 @@ class TestExtremeRatios:
             action_vectors=np.array([[1.0, 1e15], [1e15, 1.0]]),
         )
 
-        from pyrevealed.algorithms.garp import check_garp
+        from prefgraph.algorithms.garp import check_garp
         result = check_garp(log)
 
         assert hasattr(result, 'is_consistent')
 
     def test_quantity_ratio_1e300(self, extreme_ratio_log):
         """EVAL: Quantity ratio of 1e300 between observations."""
-        from pyrevealed.algorithms.garp import check_garp
+        from prefgraph.algorithms.garp import check_garp
 
         result = check_garp(extreme_ratio_log)
         assert hasattr(result, 'is_consistent')
 
     def test_mixed_extreme_scales(self, mixed_scale_prices):
         """EVAL: Values varying by 15 orders of magnitude."""
-        from pyrevealed.algorithms.garp import check_garp
+        from prefgraph.algorithms.garp import check_garp
 
         result = check_garp(mixed_scale_prices)
 
@@ -90,7 +90,7 @@ class TestZeroBoundary:
 
     def test_quantities_approaching_zero(self, near_zero_quantities):
         """EVAL: Quantities at 1e-300."""
-        from pyrevealed.algorithms.garp import check_garp
+        from prefgraph.algorithms.garp import check_garp
 
         result = check_garp(near_zero_quantities)
         assert hasattr(result, 'is_consistent')
@@ -123,7 +123,7 @@ class TestInfinityHandling:
 
     def test_division_creating_infinity(self):
         """EVAL: Operations that could create infinity."""
-        from pyrevealed.algorithms.integrability import compute_slutsky_matrix
+        from prefgraph.algorithms.integrability import compute_slutsky_matrix
 
         # Very small prices could create large 1/p values
         log = BehaviorLog(
@@ -165,7 +165,7 @@ class TestLargeAbsoluteValues:
             action_vectors=np.array([[1e12, 1e12], [1e12, 1e12]]),
         )
 
-        from pyrevealed.algorithms.garp import check_garp
+        from prefgraph.algorithms.garp import check_garp
         result = check_garp(log)
         assert hasattr(result, 'is_consistent')
 
@@ -175,7 +175,7 @@ class TestSpecialFloatValues:
 
     def test_denormalized_numbers(self, subnormal_values):
         """EVAL: Subnormal/denormalized floating point values."""
-        from pyrevealed.algorithms.garp import check_garp
+        from prefgraph.algorithms.garp import check_garp
 
         result = check_garp(subnormal_values)
 
@@ -203,7 +203,7 @@ class TestRiskChoiceExtremes:
 
     def test_extreme_lottery_outcomes(self, extreme_outcomes_lottery):
         """EVAL: Lottery with outcomes at 1e150 and 1e-150."""
-        from pyrevealed.algorithms.risk import estimate_crra_parameter
+        from prefgraph.algorithms.risk import estimate_crra_parameter
 
         result = estimate_crra_parameter(extreme_outcomes_lottery)
 
@@ -212,7 +212,7 @@ class TestRiskChoiceExtremes:
 
     def test_near_zero_probability(self, zero_probability_lottery):
         """EVAL: Lottery with zero probability outcomes."""
-        from pyrevealed.algorithms.risk import estimate_crra_parameter
+        from prefgraph.algorithms.risk import estimate_crra_parameter
 
         result = estimate_crra_parameter(zero_probability_lottery)
 
@@ -227,7 +227,7 @@ class TestWelfareExtremes:
         """EVAL: CV/EV with 1000x price change."""
         baseline, policy = extreme_price_change
 
-        from pyrevealed.algorithms.welfare import compute_cv_bounds, compute_ev_bounds
+        from prefgraph.algorithms.welfare import compute_cv_bounds, compute_ev_bounds
 
         cv = compute_cv_bounds(baseline, policy)
         ev = compute_ev_bounds(baseline, policy)
@@ -240,7 +240,7 @@ class TestWelfareExtremes:
         """EVAL: CV/EV when baseline equals policy."""
         baseline, policy = baseline_equals_policy_log
 
-        from pyrevealed.algorithms.welfare import compute_cv_bounds, compute_ev_bounds
+        from prefgraph.algorithms.welfare import compute_cv_bounds, compute_ev_bounds
 
         cv = compute_cv_bounds(baseline, policy)
         ev = compute_ev_bounds(baseline, policy)
@@ -255,7 +255,7 @@ class TestProductionExtremes:
 
     def test_zero_output_production(self, zero_output_production):
         """EVAL: Production with zero output."""
-        from pyrevealed.algorithms.production import test_profit_maximization
+        from prefgraph.algorithms.production import test_profit_maximization
 
         result = test_profit_maximization(zero_output_production)
 
@@ -264,7 +264,7 @@ class TestProductionExtremes:
 
     def test_negative_profit_production(self, negative_profit_production):
         """EVAL: Production with negative profit."""
-        from pyrevealed.algorithms.production import test_profit_maximization
+        from prefgraph.algorithms.production import test_profit_maximization
 
         result = test_profit_maximization(negative_profit_production)
 

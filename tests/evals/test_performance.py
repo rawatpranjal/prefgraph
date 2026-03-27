@@ -7,7 +7,7 @@ Tests for O(T^3) scaling, memory usage, and computational limits.
 import numpy as np
 import pytest
 import time
-from pyrevealed.core.session import BehaviorLog, StochasticChoiceLog
+from prefgraph.core.session import BehaviorLog, StochasticChoiceLog
 
 
 class TestFloydWarshallScaling:
@@ -15,7 +15,7 @@ class TestFloydWarshallScaling:
 
     def test_garp_scaling_t50(self):
         """EVAL: GARP timing for T=50."""
-        from pyrevealed.algorithms.garp import check_garp
+        from prefgraph.algorithms.garp import check_garp
 
         np.random.seed(42)
         log = BehaviorLog(
@@ -32,7 +32,7 @@ class TestFloydWarshallScaling:
 
     def test_garp_scaling_t100(self):
         """EVAL: GARP timing for T=100."""
-        from pyrevealed.algorithms.garp import check_garp
+        from prefgraph.algorithms.garp import check_garp
 
         np.random.seed(42)
         log = BehaviorLog(
@@ -49,7 +49,7 @@ class TestFloydWarshallScaling:
 
     def test_garp_scaling_t200(self):
         """EVAL: GARP timing for T=200."""
-        from pyrevealed.algorithms.garp import check_garp
+        from prefgraph.algorithms.garp import check_garp
 
         np.random.seed(42)
         log = BehaviorLog(
@@ -67,7 +67,7 @@ class TestFloydWarshallScaling:
     @pytest.mark.slow
     def test_garp_scaling_t500(self, large_t_500):
         """EVAL: GARP timing for T=500 (target: <10s)."""
-        from pyrevealed.algorithms.garp import check_garp
+        from prefgraph.algorithms.garp import check_garp
 
         start = time.time()
         result = check_garp(large_t_500)
@@ -79,7 +79,7 @@ class TestFloydWarshallScaling:
     @pytest.mark.slow
     def test_garp_scaling_t1000(self, large_t_1000):
         """EVAL: GARP timing for T=1000 (target: <60s)."""
-        from pyrevealed.algorithms.garp import check_garp
+        from prefgraph.algorithms.garp import check_garp
 
         start = time.time()
         result = check_garp(large_t_1000)
@@ -94,7 +94,7 @@ class TestMemoryUsage:
 
     def test_memory_t500(self, large_t_500):
         """EVAL: Memory for T=500 (~250KB per TxT boolean matrix)."""
-        from pyrevealed.algorithms.garp import check_garp
+        from prefgraph.algorithms.garp import check_garp
 
         result = check_garp(large_t_500)
 
@@ -120,7 +120,7 @@ class TestMemoryUsage:
             action_vectors=np.random.rand(T, 5) + 0.1,
         )
 
-        from pyrevealed.algorithms.garp import check_garp
+        from prefgraph.algorithms.garp import check_garp
 
         result = check_garp(log)
 
@@ -133,7 +133,7 @@ class TestAEIScaling:
 
     def test_aei_scaling_t100(self):
         """EVAL: AEI timing for T=100."""
-        from pyrevealed.algorithms.aei import compute_aei
+        from prefgraph.algorithms.aei import compute_aei
 
         np.random.seed(42)
         log = BehaviorLog(
@@ -155,7 +155,7 @@ class TestMPIScaling:
 
     def test_mpi_scaling_t100(self):
         """EVAL: MPI timing for T=100."""
-        from pyrevealed.algorithms.mpi import compute_mpi
+        from prefgraph.algorithms.mpi import compute_mpi
 
         np.random.seed(42)
         log = BehaviorLog(
@@ -176,7 +176,7 @@ class TestStochasticScaling:
 
     def test_rum_scaling_5_items(self):
         """EVAL: RUM timing for 5 items (120 orderings)."""
-        from pyrevealed.algorithms.stochastic import test_rum_consistency
+        from prefgraph.algorithms.stochastic import test_rum_consistency
 
         log = StochasticChoiceLog(
             menus=[frozenset(range(5))],
@@ -192,7 +192,7 @@ class TestStochasticScaling:
 
     def test_rum_scaling_6_items(self):
         """EVAL: RUM timing for 6 items (720 orderings) - boundary."""
-        from pyrevealed.algorithms.stochastic import test_rum_consistency
+        from prefgraph.algorithms.stochastic import test_rum_consistency
 
         log = StochasticChoiceLog(
             menus=[frozenset(range(6))],
@@ -212,7 +212,7 @@ class TestLPSolverScaling:
 
     def test_utility_recovery_scaling_t50(self):
         """EVAL: Utility recovery LP timing for T=50."""
-        from pyrevealed.algorithms.utility import recover_utility
+        from prefgraph.algorithms.utility import recover_utility
 
         np.random.seed(42)
         log = BehaviorLog(
@@ -233,7 +233,7 @@ class TestSlutksyScaling:
 
     def test_slutsky_scaling_n10(self):
         """EVAL: Slutsky timing for N=10 goods."""
-        from pyrevealed.algorithms.integrability import compute_slutsky_matrix
+        from prefgraph.algorithms.integrability import compute_slutsky_matrix
 
         np.random.seed(42)
         log = BehaviorLog(
@@ -250,7 +250,7 @@ class TestSlutksyScaling:
 
     def test_slutsky_scaling_n50(self):
         """EVAL: Slutsky timing for N=50 goods."""
-        from pyrevealed.algorithms.integrability import compute_slutsky_matrix
+        from prefgraph.algorithms.integrability import compute_slutsky_matrix
 
         np.random.seed(42)
         log = BehaviorLog(
@@ -271,7 +271,7 @@ class TestParallelization:
 
     def test_multiple_garp_calls_sequential(self):
         """EVAL: Multiple GARP calls (potential for parallelization)."""
-        from pyrevealed.algorithms.garp import check_garp
+        from prefgraph.algorithms.garp import check_garp
 
         np.random.seed(42)
         logs = [

@@ -6,7 +6,7 @@ These tests expose mutable cache issues and array aliasing problems.
 
 import numpy as np
 import pytest
-from pyrevealed.core.session import BehaviorLog
+from prefgraph.core.session import BehaviorLog
 
 
 class TestSpendMatrixMutation:
@@ -163,7 +163,7 @@ class TestReturnedArrayMutation:
 
     def test_transitive_closure_mutation(self):
         """EVAL: Mutating GARP transitive closure doesn't corrupt results."""
-        from pyrevealed.algorithms.garp import check_garp
+        from prefgraph.algorithms.garp import check_garp
 
         log = BehaviorLog(
             cost_vectors=np.array([[1.0, 2.0], [2.0, 1.0]]),
@@ -190,7 +190,7 @@ class TestAlgorithmInternalState:
 
     def test_garp_doesnt_mutate_log(self):
         """EVAL: check_garp should not mutate the BehaviorLog."""
-        from pyrevealed.algorithms.garp import check_garp
+        from prefgraph.algorithms.garp import check_garp
 
         log = BehaviorLog(
             cost_vectors=np.array([[1.0, 2.0], [2.0, 1.0]]),
@@ -207,7 +207,7 @@ class TestAlgorithmInternalState:
 
     def test_aei_doesnt_mutate_log(self):
         """EVAL: compute_aei should not mutate the BehaviorLog."""
-        from pyrevealed.algorithms.aei import compute_aei
+        from prefgraph.algorithms.aei import compute_aei
 
         log = BehaviorLog(
             cost_vectors=np.array([[1.0, 2.0], [2.0, 1.0]]),

@@ -23,7 +23,7 @@ Prerequisites
 .. note::
 
    The full code for this tutorial is available in the ``case_studies/dunnhumby/`` directory
-   of the PyRevealed repository.
+   of the PrefGraph repository.
 
 
 .. _important-assumptions:
@@ -94,7 +94,7 @@ Transactions are aggregated to **monthly** observations:
 
 .. code-block:: bash
 
-   pip install pyrevealed[viz]
+   pip install prefgraph[viz]
 
    # Download the Dunnhumby dataset (requires Kaggle API)
    cd dunnhumby && ./download_data.sh
@@ -111,7 +111,7 @@ A ``BehaviorLog`` stores a sequence of choice observations:
 .. code-block:: python
 
    import numpy as np
-   from pyrevealed import BehaviorLog
+   from prefgraph import BehaviorLog
 
    # For a single household: 24 months, 10 products
    prices = np.array([
@@ -190,7 +190,7 @@ reveals A ≿ B. GARP checks whether these revealed preferences form a consisten
 
 .. code-block:: python
 
-   from pyrevealed import validate_consistency
+   from prefgraph import validate_consistency
 
    # Test a single household
    result = validate_consistency(log)
@@ -269,7 +269,7 @@ only checking strict preferences.
 
 .. code-block:: python
 
-   from pyrevealed import validate_strict_consistency
+   from prefgraph import validate_strict_consistency
 
    result = validate_strict_consistency(log)
 
@@ -331,7 +331,7 @@ simulating random behavior on the same budgets and measuring violation rates.
 
 .. code-block:: python
 
-   from pyrevealed import compute_test_power
+   from prefgraph import compute_test_power
 
    # Test power for a sample of households
    power_scores = []
@@ -375,7 +375,7 @@ For deeper analysis, use the full result object which includes simulation detail
 
 .. code-block:: python
 
-   from pyrevealed import compute_test_power
+   from prefgraph import compute_test_power
 
    result = compute_test_power(log, n_simulations=1000)
 
@@ -401,7 +401,7 @@ For faster computation (without AEI tracking), use:
 
 .. code-block:: python
 
-   from pyrevealed import compute_test_power_fast
+   from prefgraph import compute_test_power_fast
 
    result = compute_test_power_fast(log, n_simulations=5000)
    print(f"Power: {result.power_index:.3f}")
@@ -417,7 +417,7 @@ rationalize behavior.
 
 .. code-block:: python
 
-   from pyrevealed import compute_integrity_score
+   from prefgraph import compute_integrity_score
 
    ccei_scores = []
    for household_id, session_data in sessions.items():
@@ -523,7 +523,7 @@ cycles (e.g., A ≻ B ≻ C ≻ A).
 
 .. code-block:: python
 
-   from pyrevealed import compute_confusion_metric
+   from prefgraph import compute_confusion_metric
 
    mpi_scores = []
    for household_id, session_data in sessions.items():
@@ -593,7 +593,7 @@ for GARP consistency.
 
 .. code-block:: python
 
-   from pyrevealed import compute_minimal_outlier_fraction
+   from prefgraph import compute_minimal_outlier_fraction
 
    result = compute_minimal_outlier_fraction(log)
    print(f"Observations to remove: {result.fraction:.1%}")
@@ -643,7 +643,7 @@ identifies *which specific observations* are problematic.
 
 .. code-block:: python
 
-   from pyrevealed import compute_granular_integrity
+   from prefgraph import compute_granular_integrity
 
    result = compute_granular_integrity(log, efficiency_threshold=0.9)
 
@@ -686,7 +686,7 @@ L2 variant which minimizes squared deviations:
 
 .. code-block:: python
 
-   from pyrevealed import compute_granular_integrity_l2
+   from prefgraph import compute_granular_integrity_l2
 
    result_l2 = compute_granular_integrity_l2(log)
    print(f"L2 mean efficiency: {result_l2.mean_efficiency:.3f}")
@@ -701,7 +701,7 @@ rationalizes behavior?", it asks "how many preference reversals are needed?"
 
 .. code-block:: python
 
-   from pyrevealed import compute_swaps_index
+   from prefgraph import compute_swaps_index
 
    result = compute_swaps_index(log)
 
@@ -802,7 +802,7 @@ data quality analysis.
 
 .. code-block:: python
 
-   from pyrevealed import compute_observation_contributions
+   from prefgraph import compute_observation_contributions
 
    result = compute_observation_contributions(log, method="cycle_count")
 
@@ -927,7 +927,7 @@ One-Liner Analysis
 
 .. code-block:: python
 
-   from pyrevealed import BehavioralSummary
+   from prefgraph import BehavioralSummary
 
    # Run all tests with one command
    summary = BehavioralSummary.from_log(log)
@@ -978,7 +978,7 @@ For quick status checks, use ``short_summary()``:
    # Output: BehavioralSummary: [+] AEI=0.9500, MPI=0.0200
 
    # Individual results also have short summaries
-   from pyrevealed import validate_consistency, compute_integrity_score
+   from prefgraph import validate_consistency, compute_integrity_score
 
    garp = validate_consistency(log)
    print(garp.short_summary())
@@ -1000,7 +1000,7 @@ For quick status checks, use ``short_summary()``:
 Part 9: Diagnostic Visualizations
 ----------------------------------
 
-PyRevealed includes visualization functions for deeper analysis of behavioral
+PrefGraph includes visualization functions for deeper analysis of behavioral
 consistency. These are useful for presentations, reports, and debugging.
 
 CCEI Sensitivity Plot
@@ -1011,7 +1011,7 @@ improves as problematic observations are removed:
 
 .. code-block:: python
 
-   from pyrevealed.viz import plot_ccei_sensitivity
+   from prefgraph.viz import plot_ccei_sensitivity
    import matplotlib.pyplot as plt
 
    # How does AEI change as outliers are removed?
@@ -1038,7 +1038,7 @@ simulated random behavior:
 
 .. code-block:: python
 
-   from pyrevealed.viz import plot_power_analysis
+   from prefgraph.viz import plot_power_analysis
    import matplotlib.pyplot as plt
 
    # Compare observed CCEI to random behavior

@@ -11,13 +11,13 @@ sys.path.insert(0, os.path.abspath("../src"))
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 
 # Mock the compiled Rust extension so autodoc works without Rust toolchain (RTD)
-autodoc_mock_imports = ["pyrevealed._rust_core", "numba"]
+autodoc_mock_imports = ["prefgraph._rust_core", "numba"]
 
 # -- Project information -----------------------------------------------------
 
-project = "PyRevealed"
-copyright = "2024, PyRevealed Contributors"
-author = "PyRevealed Contributors"
+project = "PrefGraph"
+copyright = "2024, PrefGraph Contributors"
+author = "PrefGraph Contributors"
 release = "0.5.3"
 
 # -- General configuration ---------------------------------------------------
@@ -44,7 +44,7 @@ html_logo = "_static/logo.svg"
 html_favicon = "_static/logo.svg"
 
 html_theme_options = {
-    "github_url": "https://github.com/rawatpranjal/PyRevealed",
+    "github_url": "https://github.com/rawatpranjal/PrefGraph",
     "show_toc_level": 2,
     "navigation_with_keys": True,
     "show_prev_next": False,

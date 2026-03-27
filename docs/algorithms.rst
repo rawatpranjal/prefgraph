@@ -3,7 +3,7 @@ Algorithms
 
 .. admonition:: Design Philosophy
 
-   Every default in PyRevealed is paper-led. Algorithms are chosen to be provably
+   Every default in PrefGraph is paper-led. Algorithms are chosen to be provably
    optimal or best-in-class. The Rust engine (``rpt-core``) handles all graph and LP
    computation; Python is I/O only. Rayon thread-pool parallelism gives linear
    scaling across cores.
@@ -205,7 +205,7 @@ The MPI for this cycle is 0.20.
 We model this as finding the **Maximum Mean-Weight Cycle** in a directed graph
 where edge weights are relative savings :math:`w_{ij} = (E_{ii} - E_{ij})/E_{ii}`.
 
-PyRevealed uses **Karp's Algorithm**, which uses dynamic programming to find the
+PrefGraph uses **Karp's Algorithm**, which uses dynamic programming to find the
 optimal cycle in :math:`O(VE)` time, which is :math:`O(T^3)` here.
 
 .. math::
@@ -310,7 +310,7 @@ perfect (e=1.0)." This provides much higher diagnostic resolution for identifyin
 *when* behavior became inconsistent.
 
 **Algorithm (Mononen, 2023)**:
-PyRevealed implements the state-of-the-art **Row Generation** algorithm.
+PrefGraph implements the state-of-the-art **Row Generation** algorithm.
 1. Formulate the problem as a **Weighted Minimum Feedback Arc Set (WFAS)** — find the minimum-cost set of strict revealed preferences to remove so that no directed cycle remains.
 2. Initialize with all 2-cycles (WARP violations).
 3. Solve the MILP with the current constraint set.
@@ -325,7 +325,7 @@ as a fast polynomial-time heuristic.
 
    Mononen (2023) documents a 15–62% error rate in the Demuynck & Rehbeck MILP
    formulation, caused by treating strict inequality constraints as weak in the
-   LP relaxation. The WFAS reformulation used in PyRevealed avoids this entirely.
+   LP relaxation. The WFAS reformulation used in PrefGraph avoids this entirely.
 
 .. rubric:: Implementation
 
@@ -380,13 +380,13 @@ a random error term.
   containing both :math:`x` and :math:`y`.
 
 **Algorithms**:
-PyRevealed implements maximum likelihood estimation for:
+PrefGraph implements maximum likelihood estimation for:
 - **Logit**: Errors :math:`\epsilon` follow a Gumbel distribution (IIA holds).
 - **Luce Model**: Probability of choosing :math:`x` is proportional to its weight :math:`w_x`.
 
 .. rubric:: Implementation
 
-- **Python**: ``src/pyrevealed/contrib/stochastic.py`` — ``fit_random_utility_model()``.
+- **Python**: ``src/prefgraph/contrib/stochastic.py`` — ``fit_random_utility_model()``.
 
 **References**: McFadden (1974); Chambers & Echenique (2016), Chapter 13.
 
@@ -401,7 +401,7 @@ Python API.
 
 .. code-block:: python
 
-   from pyrevealed import BehaviorLog, validate_consistency, compute_integrity_score
+   from prefgraph import BehaviorLog, validate_consistency, compute_integrity_score
 
    # 1. Create a log (Prices p and Quantities x)
    log = BehaviorLog(cost_vectors=p, action_vectors=x)
@@ -418,7 +418,7 @@ Python API.
 
 .. code-block:: python
 
-   from pyrevealed import MenuChoiceLog, menu_sarp_check
+   from prefgraph import MenuChoiceLog, menu_sarp_check
 
    # 1. Create a log (Menus and chosen item indices)
    log = MenuChoiceLog(menus=menus, picks=picks)
@@ -431,7 +431,7 @@ Python API.
 
 .. code-block:: python
 
-   from pyrevealed import compute_confusion_metric
+   from prefgraph import compute_confusion_metric
 
    # Calculate the max average savings per cycle (O(T³))
    mpi = compute_confusion_metric(log)
@@ -441,7 +441,7 @@ Python API.
 
 .. code-block:: python
 
-   from pyrevealed import StochasticChoiceLog, fit_random_utility_model
+   from prefgraph import StochasticChoiceLog, fit_random_utility_model
 
    # 1. Create a log (Menus and choice frequencies)
    log = StochasticChoiceLog(menus=menus, counts=counts)

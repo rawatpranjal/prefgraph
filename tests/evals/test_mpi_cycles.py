@@ -6,7 +6,7 @@ Tests for Money Pump Index edge cases and cycle detection.
 
 import numpy as np
 import pytest
-from pyrevealed.core.session import BehaviorLog
+from prefgraph.core.session import BehaviorLog
 
 
 class TestMPIDenominator:
@@ -20,7 +20,7 @@ class TestMPIDenominator:
                 return 0.0
             mpi = numerator / denominator
         """
-        from pyrevealed.algorithms.mpi import compute_mpi
+        from prefgraph.algorithms.mpi import compute_mpi
 
         # Very low expenditure data
         log = BehaviorLog(
@@ -35,7 +35,7 @@ class TestMPIDenominator:
 
     def test_mpi_zero_cycle_expenditure(self):
         """EVAL: MPI when cycle expenditure approaches zero."""
-        from pyrevealed.algorithms.mpi import compute_mpi
+        from prefgraph.algorithms.mpi import compute_mpi
 
         # Nearly zero expenditures
         log = BehaviorLog(
@@ -53,7 +53,7 @@ class TestMPICycleDetection:
 
     def test_mpi_no_cycles(self):
         """EVAL: MPI for consistent data (no cycles)."""
-        from pyrevealed.algorithms.mpi import compute_mpi
+        from prefgraph.algorithms.mpi import compute_mpi
 
         log = BehaviorLog(
             cost_vectors=np.array([[1.0, 2.0], [2.0, 1.0]]),
@@ -67,7 +67,7 @@ class TestMPICycleDetection:
 
     def test_mpi_simple_2_cycle(self, warp_violation_log):
         """EVAL: MPI for simple 2-cycle violation."""
-        from pyrevealed.algorithms.mpi import compute_mpi
+        from prefgraph.algorithms.mpi import compute_mpi
 
         result = compute_mpi(warp_violation_log)
 
@@ -76,7 +76,7 @@ class TestMPICycleDetection:
 
     def test_mpi_3_cycle(self, garp_3_cycle_log):
         """EVAL: MPI for 3-cycle violation."""
-        from pyrevealed.algorithms.mpi import compute_mpi
+        from prefgraph.algorithms.mpi import compute_mpi
 
         result = compute_mpi(garp_3_cycle_log)
 
@@ -88,7 +88,7 @@ class TestMPIBounds:
 
     def test_mpi_between_zero_and_one(self):
         """EVAL: MPI should always be in [0, 1]."""
-        from pyrevealed.algorithms.mpi import compute_mpi
+        from prefgraph.algorithms.mpi import compute_mpi
 
         # Generate random data that likely has violations
         np.random.seed(42)
@@ -106,7 +106,7 @@ class TestMPIBounds:
 
     def test_mpi_maximum_theoretical(self):
         """EVAL: MPI should approach 1 for maximally irrational behavior."""
-        from pyrevealed.algorithms.mpi import compute_mpi
+        from prefgraph.algorithms.mpi import compute_mpi
 
         # Extremely irrational data - always choosing the wrong bundle
         log = BehaviorLog(
@@ -125,7 +125,7 @@ class TestMPIMultipleCycles:
 
     def test_mpi_worst_cycle_selection(self, dense_violation_log):
         """EVAL: MPI correctly identifies worst (highest MPI) cycle."""
-        from pyrevealed.algorithms.mpi import compute_mpi
+        from prefgraph.algorithms.mpi import compute_mpi
 
         result = compute_mpi(dense_violation_log)
 
@@ -136,7 +136,7 @@ class TestMPIMultipleCycles:
 
     def test_mpi_all_cycles_tracked(self):
         """EVAL: MPI cycle_costs should include all positive-MPI cycles."""
-        from pyrevealed.algorithms.mpi import compute_mpi
+        from prefgraph.algorithms.mpi import compute_mpi
 
         # Data with multiple violations
         log = BehaviorLog(
@@ -163,7 +163,7 @@ class TestHoutmanMaks:
 
     def test_houtman_maks_consistent(self):
         """EVAL: Houtman-Maks for consistent data should be 0."""
-        from pyrevealed.algorithms.mpi import compute_houtman_maks_index
+        from prefgraph.algorithms.mpi import compute_houtman_maks_index
 
         log = BehaviorLog(
             cost_vectors=np.array([[1.0, 2.0], [2.0, 1.0]]),
@@ -177,7 +177,7 @@ class TestHoutmanMaks:
 
     def test_houtman_maks_single_violation(self, warp_violation_log):
         """EVAL: Houtman-Maks for single violation."""
-        from pyrevealed.algorithms.mpi import compute_houtman_maks_index
+        from prefgraph.algorithms.mpi import compute_houtman_maks_index
 
         result = compute_houtman_maks_index(warp_violation_log)
 
@@ -186,7 +186,7 @@ class TestHoutmanMaks:
 
     def test_houtman_maks_greedy_approximation(self, dense_violation_log):
         """EVAL: Houtman-Maks greedy approximation quality."""
-        from pyrevealed.algorithms.mpi import compute_houtman_maks_index
+        from prefgraph.algorithms.mpi import compute_houtman_maks_index
 
         result = compute_houtman_maks_index(dense_violation_log)
 
@@ -202,7 +202,7 @@ class TestMPITotalExpenditure:
 
     def test_mpi_total_expenditure_correct(self):
         """EVAL: MPI total_expenditure should match sum of own expenditures."""
-        from pyrevealed.algorithms.mpi import compute_mpi
+        from prefgraph.algorithms.mpi import compute_mpi
 
         log = BehaviorLog(
             cost_vectors=np.array([[1.0, 2.0], [2.0, 1.0]]),
@@ -216,7 +216,7 @@ class TestMPITotalExpenditure:
 
     def test_mpi_computation_time(self):
         """EVAL: MPI computation time should be reasonable."""
-        from pyrevealed.algorithms.mpi import compute_mpi
+        from prefgraph.algorithms.mpi import compute_mpi
 
         log = BehaviorLog(
             cost_vectors=np.random.rand(50, 5) + 0.1,

@@ -21,9 +21,9 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from .generators import generate_rational_data, generate_irrational_data
-from src.pyrevealed import ConsumerSession
-from src.pyrevealed.algorithms.garp import check_garp
-from src.pyrevealed.algorithms.utility import (
+from src.prefgraph import ConsumerSession
+from src.prefgraph.algorithms.garp import check_garp
+from src.prefgraph.algorithms.utility import (
     recover_utility,
     construct_afriat_utility,
 )

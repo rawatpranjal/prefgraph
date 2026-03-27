@@ -12,7 +12,7 @@ Tests for:
 import numpy as np
 import pytest
 
-from pyrevealed import (
+from prefgraph import (
     BehaviorLog,
     # Result types
     SeltenMeasureResult,
@@ -424,7 +424,7 @@ class TestPowerAnalysisIntegration:
 
     def test_relationship_area_and_bronars(self, consistent_log):
         """Relative area should be approximately 1 - Bronars power."""
-        from pyrevealed import compute_bronars_power
+        from prefgraph import compute_bronars_power
 
         area_result = compute_relative_area(
             consistent_log, n_simulations=200, random_seed=42

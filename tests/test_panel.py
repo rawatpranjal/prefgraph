@@ -3,7 +3,7 @@
 import numpy as np
 import pytest
 
-from pyrevealed import BehaviorLog, BehaviorPanel, PanelSummary
+from prefgraph import BehaviorLog, BehaviorPanel, PanelSummary
 
 
 @pytest.fixture

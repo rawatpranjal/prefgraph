@@ -11,7 +11,7 @@ This module demonstrates advanced features:
 
 import numpy as np
 import pandas as pd
-from pyrevealed import (
+from prefgraph import (
     BehaviorLog,
     test_feature_independence,  # or check_separability
     discover_independent_groups,  # or find_separable_partition

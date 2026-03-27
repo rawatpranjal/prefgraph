@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""PyRevealed v2 — 1,000,000 User Benchmark.
+"""PrefGraph v2 — 1,000,000 User Benchmark.
 
 Demonstrates the Rust-powered Engine analyzing 1M users with GARP + CCEI
 using streaming chunks and thread-local scratchpads.
@@ -14,7 +14,7 @@ import numpy as np
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-from pyrevealed.engine import Engine
+from prefgraph.engine import Engine
 
 
 def generate_users(n_users, t_range=(20, 100), k=5, seed=42):
@@ -44,7 +44,7 @@ def main():
     CHUNK = 50_000
 
     print("=" * 70)
-    print(f" PyRevealed v2 — {N_USERS:,} User Benchmark")
+    print(f" PrefGraph v2 — {N_USERS:,} User Benchmark")
     print("=" * 70)
 
     engine = Engine(metrics=["garp", "ccei"], chunk_size=CHUNK)

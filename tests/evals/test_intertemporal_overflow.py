@@ -13,7 +13,7 @@ class TestExponentialDiscountingOverflow:
 
     def test_discounting_t100(self):
         """EVAL: Discounting with t=100 time periods."""
-        from pyrevealed.algorithms.intertemporal import (
+        from prefgraph.algorithms.intertemporal import (
             test_exponential_discounting,
             DatedChoice,
         )
@@ -34,7 +34,7 @@ class TestExponentialDiscountingOverflow:
 
     def test_discounting_t500(self):
         """EVAL: Discounting with t=500 time periods."""
-        from pyrevealed.algorithms.intertemporal import (
+        from prefgraph.algorithms.intertemporal import (
             test_exponential_discounting,
             DatedChoice,
         )
@@ -60,7 +60,7 @@ class TestExponentialDiscountingOverflow:
         For delta=0.9, delta^800 ≈ 1e-37
         For delta=0.5, delta^800 ≈ 1e-241 (underflows)
         """
-        from pyrevealed.algorithms.intertemporal import test_exponential_discounting
+        from prefgraph.algorithms.intertemporal import test_exponential_discounting
 
         result = test_exponential_discounting(extreme_delay_choices)
 
@@ -74,7 +74,7 @@ class TestZeroAmounts:
 
     def test_zero_present_amount(self, zero_amount_choices):
         """EVAL: Zero consumption at present period (log(0) issue)."""
-        from pyrevealed.algorithms.intertemporal import test_exponential_discounting
+        from prefgraph.algorithms.intertemporal import test_exponential_discounting
 
         # Should handle gracefully (not crash)
         try:
@@ -85,7 +85,7 @@ class TestZeroAmounts:
 
     def test_zero_future_amount(self):
         """EVAL: Zero consumption at future period."""
-        from pyrevealed.algorithms.intertemporal import (
+        from prefgraph.algorithms.intertemporal import (
             test_exponential_discounting,
             DatedChoice,
         )
@@ -109,7 +109,7 @@ class TestIdenticalTiming:
 
     def test_same_date_choices(self, identical_timing_choices):
         """EVAL: All options at same time - no discounting possible."""
-        from pyrevealed.algorithms.intertemporal import test_exponential_discounting
+        from prefgraph.algorithms.intertemporal import test_exponential_discounting
 
         result = test_exponential_discounting(identical_timing_choices)
 
@@ -123,7 +123,7 @@ class TestQuasiHyperbolicDiscounting:
 
     def test_beta_delta_extreme_present_bias(self):
         """EVAL: Extreme present bias (beta near 0)."""
-        from pyrevealed.algorithms.intertemporal import (
+        from prefgraph.algorithms.intertemporal import (
             test_quasi_hyperbolic_discounting,
             DatedChoice,
         )
@@ -149,7 +149,7 @@ class TestQuasiHyperbolicDiscounting:
 
     def test_beta_delta_no_present_bias(self):
         """EVAL: No present bias (beta = 1)."""
-        from pyrevealed.algorithms.intertemporal import (
+        from prefgraph.algorithms.intertemporal import (
             test_quasi_hyperbolic_discounting,
             DatedChoice,
         )
@@ -179,7 +179,7 @@ class TestDiscountRateBounds:
 
     def test_interest_rate_from_small_delta(self):
         """EVAL: r = 1/delta - 1 for small delta (high interest rate)."""
-        from pyrevealed.algorithms.intertemporal import (
+        from prefgraph.algorithms.intertemporal import (
             recover_discount_factor,
             DatedChoice,
         )
@@ -201,7 +201,7 @@ class TestDiscountRateBounds:
 
     def test_interest_rate_overflow(self):
         """EVAL: Interest rate computation when delta near 0."""
-        from pyrevealed.algorithms.intertemporal import (
+        from prefgraph.algorithms.intertemporal import (
             recover_discount_factor,
             DatedChoice,
         )
@@ -229,7 +229,7 @@ class TestIntertemporalCRRA:
 
     def test_crra_extreme_consumption_ratio(self):
         """EVAL: CRRA with extreme consumption ratios."""
-        from pyrevealed.algorithms.intertemporal import (
+        from prefgraph.algorithms.intertemporal import (
             estimate_intertemporal_crra,
             DatedChoice,
         )
@@ -249,7 +249,7 @@ class TestIntertemporalCRRA:
 
     def test_crra_rho_bounds(self):
         """EVAL: CRRA rho estimation produces valid bounds."""
-        from pyrevealed.algorithms.intertemporal import (
+        from prefgraph.algorithms.intertemporal import (
             estimate_intertemporal_crra,
             DatedChoice,
         )
@@ -273,7 +273,7 @@ class TestIntertemporalConsistency:
 
     def test_consistent_exponential_discounter(self):
         """EVAL: Perfectly consistent exponential discounter."""
-        from pyrevealed.algorithms.intertemporal import (
+        from prefgraph.algorithms.intertemporal import (
             test_exponential_discounting,
             DatedChoice,
         )
@@ -300,7 +300,7 @@ class TestIntertemporalConsistency:
 
     def test_inconsistent_choices(self):
         """EVAL: Choices inconsistent with exponential discounting."""
-        from pyrevealed.algorithms.intertemporal import (
+        from prefgraph.algorithms.intertemporal import (
             test_exponential_discounting,
             DatedChoice,
         )

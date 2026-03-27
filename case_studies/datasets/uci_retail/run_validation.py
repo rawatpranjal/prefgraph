@@ -15,7 +15,7 @@ from pathlib import Path
 # Add parent directories for imports
 sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent))
 
-from src.pyrevealed import validate_consistency, compute_integrity_score
+from src.prefgraph import validate_consistency, compute_integrity_score
 
 from session_builder import load_sessions, get_session_summary
 
@@ -29,7 +29,7 @@ def run_validation(quick: bool = False, sample_size: int = 50):
         sample_size: Number of customers to validate in quick mode
     """
     print("=" * 60)
-    print("UCI Online Retail - PyRevealed Validation")
+    print("UCI Online Retail - PrefGraph Validation")
     print("=" * 60)
 
     # Load sessions

@@ -17,7 +17,7 @@ pd = pytest.importorskip("pandas")
 
 def _has_rust_parquet() -> bool:
     try:
-        from pyrevealed._rust_backend import HAS_PARQUET_RUST
+        from prefgraph._rust_backend import HAS_PARQUET_RUST
         return HAS_PARQUET_RUST
     except ImportError:
         return False
@@ -76,7 +76,7 @@ def parity_data(tmp_path: Path) -> tuple:
 
 class TestRustParquetDirect:
     def test_analyze_parquet_file_basic(self, wide_parquet: Path) -> None:
-        from pyrevealed._rust_core import analyze_parquet_file
+        from prefgraph._rust_core import analyze_parquet_file
 
         results = analyze_parquet_file(
             str(wide_parquet),
@@ -92,7 +92,7 @@ class TestRustParquetDirect:
             assert isinstance(result_dict["ccei"], float)
 
     def test_returns_user_ids(self, wide_parquet: Path) -> None:
-        from pyrevealed._rust_core import analyze_parquet_file
+        from prefgraph._rust_core import analyze_parquet_file
 
         results = analyze_parquet_file(
             str(wide_parquet),
@@ -104,7 +104,7 @@ class TestRustParquetDirect:
         assert len(set(user_ids)) == 20
 
     def test_small_chunk_size(self, wide_parquet: Path) -> None:
-        from pyrevealed._rust_core import analyze_parquet_file
+        from prefgraph._rust_core import analyze_parquet_file
 
         results = analyze_parquet_file(
             str(wide_parquet),
@@ -118,7 +118,7 @@ class TestRustParquetDirect:
 
 class TestRustParquetViaEngine:
     def test_engine_routes_to_rust(self, wide_parquet: Path) -> None:
-        from pyrevealed.engine import Engine
+        from prefgraph.engine import Engine
 
         engine = Engine(metrics=["garp", "ccei"])
         result = engine.analyze_parquet(
@@ -133,8 +133,8 @@ class TestRustParquetViaEngine:
 
     def test_parity_rust_vs_python_pyarrow(self, parity_data: tuple) -> None:
         """Rust Parquet path must match PyArrow streaming path."""
-        import pyrevealed as rp
-        from pyrevealed.engine import Engine
+        import prefgraph as rp
+        from prefgraph.engine import Engine
 
         df, parquet_path = parity_data
         cost_cols = ["price_A", "price_B", "price_C"]

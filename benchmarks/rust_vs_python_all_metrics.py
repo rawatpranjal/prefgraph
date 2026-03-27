@@ -5,9 +5,9 @@ import os
 import time
 import numpy as np
 
-from pyrevealed import BehaviorLog, check_garp, compute_aei, compute_mpi
-from pyrevealed.algorithms.harp import check_harp
-from pyrevealed.engine import Engine
+from prefgraph import BehaviorLog, check_garp, compute_aei, compute_mpi
+from prefgraph.algorithms.harp import check_harp
+from prefgraph.engine import Engine
 
 CPU = os.cpu_count() or 1
 

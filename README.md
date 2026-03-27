@@ -1,13 +1,13 @@
-# PyRevealed
+# PrefGraph
 
 Rationality scores for every user, at scale. Rust engine, Python interface.
 
-[![PyPI](https://img.shields.io/pypi/v/pyrevealed)](https://pypi.org/project/pyrevealed/)
-[![Documentation](https://readthedocs.org/projects/pyrevealed/badge/?version=latest)](https://pyrevealed.readthedocs.io/)
+[![PyPI](https://img.shields.io/pypi/v/prefgraph)](https://pypi.org/project/prefgraph/)
+[![Documentation](https://readthedocs.org/projects/prefgraph/badge/?version=latest)](https://prefgraph.readthedocs.io/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 
 ```bash
-pip install pyrevealed
+pip install prefgraph
 ```
 
 ## Quick Example
@@ -15,8 +15,8 @@ pip install pyrevealed
 Score how consistently each user's choices align with rational utility maximization. Paste and run:
 
 ```python
-from pyrevealed.datasets import load_demo
-from pyrevealed.engine import Engine
+from prefgraph.datasets import load_demo
+from prefgraph.engine import Engine
 
 users = load_demo()  # 100 synthetic consumers, no download needed
 engine = Engine(metrics=["garp", "ccei", "mpi", "harp", "hm"])
@@ -40,7 +40,7 @@ Every score is a feature. Use them for fraud detection, user segmentation, A/B t
 Have a pandas DataFrame? One line:
 
 ```python
-import pyrevealed as rp
+import prefgraph as rp
 
 # Transaction logs (one row per item per time)
 results = rp.analyze(df, user_col="user_id", item_col="product",
@@ -83,7 +83,7 @@ Returns a pandas DataFrame with one row per user. Customize with `metrics=["garp
 **Engine** for batch scoring. **Function API** when you need violation details, preference graphs, or advanced tests:
 
 ```python
-from pyrevealed import BehaviorLog, validate_consistency, compute_integrity_score
+from prefgraph import BehaviorLog, validate_consistency, compute_integrity_score
 session = BehaviorLog(cost_vectors=prices, action_vectors=quantities)
 garp = validate_consistency(session)       # GARPResult with violation cycles, matrices
 ccei = compute_integrity_score(session)    # AEIResult with binary search details
@@ -120,11 +120,11 @@ The Rust engine (`rpt-core`) handles graph algorithms and LP solving via Rayon t
 
 ## Documentation
 
-**[Full docs](https://pyrevealed.readthedocs.io/)** — examples, theory, API reference, application case studies.
+**[Full docs](https://prefgraph.readthedocs.io/)** — examples, theory, API reference, application case studies.
 
-**[7-dataset benchmark](https://pyrevealed.readthedocs.io/en/latest/benchmarks_ecommerce.html)** — 167K users, 15 tasks. RP features add 0–0.7% AUC over RFM baselines.
+**[7-dataset benchmark](https://prefgraph.readthedocs.io/en/latest/benchmarks_ecommerce.html)** — 167K users, 15 tasks. RP features add 0–0.7% AUC over RFM baselines.
 
-**[15 dataset loaders](https://pyrevealed.readthedocs.io/en/latest/api.html#dataset-loaders)** — Dunnhumby, Instacart, H&M, Taobao, and 11 more real-world datasets.
+**[15 dataset loaders](https://prefgraph.readthedocs.io/en/latest/api.html#dataset-loaders)** — Dunnhumby, Instacart, H&M, Taobao, and 11 more real-world datasets.
 
 ## License
 

@@ -8,8 +8,8 @@ from pathlib import Path
 # Ensure we're using a non-interactive backend
 plt.switch_backend('Agg')
 
-from pyrevealed import BehaviorLog
-from pyrevealed.viz import (
+from prefgraph import BehaviorLog
+from prefgraph.viz import (
     plot_budget_sets,
     plot_aei_distribution,
     plot_power_analysis,

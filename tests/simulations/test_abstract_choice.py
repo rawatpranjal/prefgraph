@@ -26,8 +26,8 @@ from .generators import (
     generate_sarp_violation_cycle,
     generate_random_menu_choices,
 )
-from src.pyrevealed import MenuChoiceLog
-from src.pyrevealed.algorithms.abstract_choice import (
+from src.prefgraph import MenuChoiceLog
+from src.prefgraph.algorithms.abstract_choice import (
     validate_menu_warp,
     validate_menu_sarp,
     validate_menu_consistency,

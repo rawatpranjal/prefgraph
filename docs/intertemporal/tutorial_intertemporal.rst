@@ -80,7 +80,7 @@ Intertemporal choices are represented using ``DatedChoice``:
 .. code-block:: python
 
    import numpy as np
-   from pyrevealed.algorithms.intertemporal import DatedChoice
+   from prefgraph.algorithms.intertemporal import DatedChoice
 
    # A choice between $100 today or $110 in 30 days
    # User chose the $100 today (index 0)
@@ -145,7 +145,7 @@ Test whether choices are consistent with time-consistent preferences:
 
 .. code-block:: python
 
-   from pyrevealed.algorithms.intertemporal import test_exponential_discounting, DatedChoice
+   from prefgraph.algorithms.intertemporal import test_exponential_discounting, DatedChoice
    import numpy as np
 
    # Create a set of consistent choices
@@ -237,7 +237,7 @@ but patient for future tradeoffs:
 
 .. code-block:: python
 
-   from pyrevealed.algorithms.intertemporal import test_present_bias, DatedChoice
+   from prefgraph.algorithms.intertemporal import test_present_bias, DatedChoice
    import numpy as np
 
    # Classic present bias pattern
@@ -303,7 +303,7 @@ The beta-delta model captures present bias with two parameters:
 
 .. code-block:: python
 
-   from pyrevealed.algorithms.intertemporal import test_quasi_hyperbolic, DatedChoice
+   from prefgraph.algorithms.intertemporal import test_quasi_hyperbolic, DatedChoice
    import numpy as np
 
    # Choices exhibiting present bias
@@ -403,7 +403,7 @@ Bound the discount factor implied by observed choices:
 
 .. code-block:: python
 
-   from pyrevealed.algorithms.intertemporal import recover_discount_factor, DatedChoice
+   from prefgraph.algorithms.intertemporal import recover_discount_factor, DatedChoice
    import numpy as np
 
    # Choices that reveal discount rate preferences
@@ -465,7 +465,7 @@ Use intertemporal analysis to optimize subscription pricing:
 .. code-block:: python
 
    import numpy as np
-   from pyrevealed.algorithms.intertemporal import (
+   from prefgraph.algorithms.intertemporal import (
        DatedChoice,
        test_exponential_discounting,
        test_present_bias,

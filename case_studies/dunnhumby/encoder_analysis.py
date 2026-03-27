@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Encoder-based PyRevealed analysis on Dunnhumby data.
+"""Encoder-based PrefGraph analysis on Dunnhumby data.
 
 Showcase H: Preference Encoder Features - Extract ML features for household clustering
 Showcase I: Auto-Discovered Product Groups - Data-driven separability groupings
@@ -20,7 +20,7 @@ from scipy import stats
 
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
-from src.pyrevealed import (
+from src.prefgraph import (
     BehaviorLog,
     PreferenceEncoder,
     discover_independent_groups,

@@ -8,7 +8,7 @@ to full Floyd-Warshall, and that the optimized algorithms scale properly.
 import numpy as np
 import pytest
 import time
-from pyrevealed.core.session import BehaviorLog, MenuChoiceLog
+from prefgraph.core.session import BehaviorLog, MenuChoiceLog
 
 
 # =============================================================================
@@ -21,7 +21,7 @@ class TestSCCTransitiveClosureCorrectness:
 
     def _compare_tc(self, adjacency):
         """Helper: compare SCC TC vs direct FW on the same adjacency matrix."""
-        from pyrevealed.graph.transitive_closure import (
+        from prefgraph.graph.transitive_closure import (
             scc_transitive_closure,
             _floyd_warshall_direct,
         )
@@ -106,7 +106,7 @@ class TestGARPSCCCorrectness:
 
     def test_consistent_data(self):
         """Consistent data still identified as consistent."""
-        from pyrevealed.algorithms.garp import check_garp
+        from prefgraph.algorithms.garp import check_garp
 
         log = BehaviorLog(
             cost_vectors=np.array([[1.0, 2.0], [2.0, 1.0]]),
@@ -117,7 +117,7 @@ class TestGARPSCCCorrectness:
 
     def test_warp_violation(self):
         """Simple WARP violation still detected."""
-        from pyrevealed.algorithms.garp import check_garp
+        from prefgraph.algorithms.garp import check_garp
 
         # Obs 0 can afford obs 1's bundle (strictly), and vice versa
         log = BehaviorLog(
@@ -130,7 +130,7 @@ class TestGARPSCCCorrectness:
 
     def test_3cycle_violation(self):
         """3-cycle GARP violation still detected."""
-        from pyrevealed.algorithms.garp import check_garp
+        from prefgraph.algorithms.garp import check_garp
 
         # Each obs spends 10 on own bundle, but others cost only 7
         # Creates full revealed preference graph with strict preferences
@@ -151,7 +151,7 @@ class TestGARPSCCCorrectness:
 
     def test_random_t100(self):
         """Random T=100 produces a result (smoke test)."""
-        from pyrevealed.algorithms.garp import check_garp
+        from prefgraph.algorithms.garp import check_garp
 
         np.random.seed(42)
         log = BehaviorLog(
@@ -172,7 +172,7 @@ class TestAEISCCCorrectness:
 
     def test_consistent_aei_is_one(self):
         """Consistent data has AEI = 1.0."""
-        from pyrevealed.algorithms.aei import compute_aei
+        from prefgraph.algorithms.aei import compute_aei
 
         log = BehaviorLog(
             cost_vectors=np.array([[1.0, 2.0], [2.0, 1.0]]),
@@ -184,7 +184,7 @@ class TestAEISCCCorrectness:
 
     def test_inconsistent_aei_less_than_one(self):
         """Inconsistent data has AEI < 1.0."""
-        from pyrevealed.algorithms.aei import compute_aei
+        from prefgraph.algorithms.aei import compute_aei
 
         log = BehaviorLog(
             cost_vectors=np.array([[2.0, 1.0], [1.0, 2.0]]),
@@ -204,7 +204,7 @@ class TestHoutmanMaksSCCCorrectness:
 
     def test_consistent_data_no_removal(self):
         """Consistent data requires no removals."""
-        from pyrevealed.algorithms.mpi import compute_houtman_maks_index
+        from prefgraph.algorithms.mpi import compute_houtman_maks_index
 
         log = BehaviorLog(
             cost_vectors=np.array([[1.0, 2.0], [2.0, 1.0]]),
@@ -216,7 +216,7 @@ class TestHoutmanMaksSCCCorrectness:
 
     def test_violation_requires_removal(self):
         """Inconsistent data requires at least one removal."""
-        from pyrevealed.algorithms.mpi import compute_houtman_maks_index
+        from prefgraph.algorithms.mpi import compute_houtman_maks_index
 
         log = BehaviorLog(
             cost_vectors=np.array([[2.0, 1.0], [1.0, 2.0]]),
@@ -228,7 +228,7 @@ class TestHoutmanMaksSCCCorrectness:
 
     def test_menu_consistent_no_removal(self):
         """Consistent menu data requires no removals."""
-        from pyrevealed.algorithms.abstract_choice import compute_menu_efficiency
+        from prefgraph.algorithms.abstract_choice import compute_menu_efficiency
 
         log = MenuChoiceLog(
             menus=[frozenset({0, 1, 2}), frozenset({1, 2})],
@@ -239,7 +239,7 @@ class TestHoutmanMaksSCCCorrectness:
 
     def test_menu_violation_requires_removal(self):
         """Menu SARP violation requires removal."""
-        from pyrevealed.algorithms.abstract_choice import compute_menu_efficiency
+        from prefgraph.algorithms.abstract_choice import compute_menu_efficiency
 
         log = MenuChoiceLog(
             menus=[frozenset({0, 1}), frozenset({0, 1})],
@@ -259,7 +259,7 @@ class TestGARPPerformance:
 
     def test_garp_t100_under_1s(self):
         """GARP T=100 completes in under 1 second."""
-        from pyrevealed.algorithms.garp import check_garp
+        from prefgraph.algorithms.garp import check_garp
 
         np.random.seed(42)
         log = BehaviorLog(
@@ -276,7 +276,7 @@ class TestGARPPerformance:
 
     def test_garp_t500_under_5s(self):
         """GARP T=500 completes in under 5 seconds (was 46s before SCC)."""
-        from pyrevealed.algorithms.garp import check_garp
+        from prefgraph.algorithms.garp import check_garp
 
         np.random.seed(42)
         log = BehaviorLog(
@@ -294,7 +294,7 @@ class TestGARPPerformance:
     @pytest.mark.slow
     def test_garp_t1000_under_10s(self):
         """GARP T=1000 completes in under 10 seconds (previously timed out)."""
-        from pyrevealed.algorithms.garp import check_garp
+        from prefgraph.algorithms.garp import check_garp
 
         np.random.seed(42)
         log = BehaviorLog(
@@ -312,7 +312,7 @@ class TestGARPPerformance:
     @pytest.mark.slow
     def test_garp_t2000_under_60s(self):
         """GARP T=2000 completes in under 60 seconds."""
-        from pyrevealed.algorithms.garp import check_garp
+        from prefgraph.algorithms.garp import check_garp
 
         np.random.seed(42)
         log = BehaviorLog(
@@ -354,7 +354,7 @@ class TestGARPNearConsistentPerformance:
     @pytest.mark.slow
     def test_near_consistent_t1000(self):
         """Near-consistent T=1000 should be very fast due to small SCCs."""
-        from pyrevealed.algorithms.garp import check_garp
+        from prefgraph.algorithms.garp import check_garp
 
         log = self._make_near_consistent(1000)
         start = time.time()
@@ -367,7 +367,7 @@ class TestGARPNearConsistentPerformance:
     @pytest.mark.slow
     def test_near_consistent_t5000(self):
         """Near-consistent T=5000 should complete due to tiny SCCs."""
-        from pyrevealed.algorithms.garp import check_garp
+        from prefgraph.algorithms.garp import check_garp
 
         log = self._make_near_consistent(5000)
         start = time.time()
@@ -383,7 +383,7 @@ class TestAEIPerformance:
 
     def test_aei_t100_under_5s(self):
         """AEI T=100 completes in under 5 seconds."""
-        from pyrevealed.algorithms.aei import compute_aei
+        from prefgraph.algorithms.aei import compute_aei
 
         np.random.seed(42)
         log = BehaviorLog(
@@ -401,7 +401,7 @@ class TestAEIPerformance:
     @pytest.mark.slow
     def test_aei_t500_under_30s(self):
         """AEI T=500 completes in under 30 seconds."""
-        from pyrevealed.algorithms.aei import compute_aei
+        from prefgraph.algorithms.aei import compute_aei
 
         np.random.seed(42)
         log = BehaviorLog(
@@ -422,7 +422,7 @@ class TestHoutmanMaksPerformance:
 
     def test_hm_t100_under_2s(self):
         """Houtman-Maks T=100 completes in under 2 seconds."""
-        from pyrevealed.algorithms.mpi import compute_houtman_maks_index
+        from prefgraph.algorithms.mpi import compute_houtman_maks_index
 
         np.random.seed(42)
         log = BehaviorLog(
@@ -440,7 +440,7 @@ class TestHoutmanMaksPerformance:
     @pytest.mark.slow
     def test_hm_t500_under_30s(self):
         """Houtman-Maks T=500 completes in under 30 seconds."""
-        from pyrevealed.algorithms.mpi import compute_houtman_maks_index
+        from prefgraph.algorithms.mpi import compute_houtman_maks_index
 
         np.random.seed(42)
         log = BehaviorLog(

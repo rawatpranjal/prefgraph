@@ -173,9 +173,9 @@ Single household
 
 .. code-block:: python
 
-   from pyrevealed import BehaviorLog, validate_consistency
-   from pyrevealed import compute_integrity_score, compute_confusion_metric
-   from pyrevealed.algorithms.mpi import compute_houtman_maks_index
+   from prefgraph import BehaviorLog, validate_consistency
+   from prefgraph import compute_integrity_score, compute_confusion_metric
+   from prefgraph.algorithms.mpi import compute_houtman_maks_index
 
    # Pick one household
    hh = list(households.values())[0]
@@ -254,7 +254,7 @@ Scoring all 2,222 households via the Rust Engine:
 
 .. code-block:: python
 
-   from pyrevealed.engine import Engine
+   from prefgraph.engine import Engine
 
    engine = Engine(metrics=["garp", "ccei", "mpi", "hm"])
 
@@ -326,7 +326,7 @@ Key statistics:
 Beyond Consistency Scores
 -------------------------
 
-GARP and CCEI answer one question: *is behavior consistent?* PyRevealed
+GARP and CCEI answer one question: *is behavior consistent?* PrefGraph
 goes much further. On the same data, without re-estimation, you can
 assess test power, diagnose individual observations, test preference
 structure, recover utility, and measure welfare.
@@ -340,8 +340,8 @@ sets; the fraction that violates GARP is the test's **power**.
 
 .. code-block:: python
 
-   from pyrevealed.contrib.bronars import compute_bronars_power
-   from pyrevealed.contrib.power_analysis import compute_selten_measure
+   from prefgraph.contrib.bronars import compute_bronars_power
+   from prefgraph.contrib.power_analysis import compute_selten_measure
 
    bp = compute_bronars_power(log, n_simulations=500, random_seed=42)
    sm = compute_selten_measure(log, n_simulations=500, random_seed=42)
@@ -397,8 +397,8 @@ minimum adjacent swaps to restore consistency.
 
 .. code-block:: python
 
-   from pyrevealed.algorithms.vei import compute_vei
-   from pyrevealed.algorithms.mpi import compute_houtman_maks_index
+   from prefgraph.algorithms.vei import compute_vei
+   from prefgraph.algorithms.mpi import compute_houtman_maks_index
 
    vei = compute_vei(log)
    hm  = compute_houtman_maks_index(log)
@@ -431,9 +431,9 @@ Test what *kind* of utility function could generate the data:
 
 .. code-block:: python
 
-   from pyrevealed.algorithms.harp import check_harp
-   from pyrevealed.algorithms.quasilinear import check_quasilinearity
-   from pyrevealed.contrib.additive import test_additive_separability
+   from prefgraph.algorithms.harp import check_harp
+   from prefgraph.algorithms.quasilinear import check_quasilinearity
+   from prefgraph.contrib.additive import test_additive_separability
 
    harp = check_harp(log)
    ql   = check_quasilinearity(log)
@@ -471,8 +471,8 @@ Afriat's LP, then measure welfare impact of price changes:
 
 .. code-block:: python
 
-   from pyrevealed import recover_utility
-   from pyrevealed.contrib.welfare import analyze_welfare_change
+   from prefgraph import recover_utility
+   from prefgraph.contrib.welfare import analyze_welfare_change
 
    # Household 9 (GARP-consistent, T=15)
    u = recover_utility(log)  # Afriat LP

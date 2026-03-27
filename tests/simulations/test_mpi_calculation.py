@@ -26,9 +26,9 @@ from .generators import (
     generate_garp_violation_cycle,
     compute_theoretical_mpi,
 )
-from src.pyrevealed import ConsumerSession
-from src.pyrevealed.algorithms.garp import check_garp
-from src.pyrevealed.algorithms.mpi import compute_mpi, compute_houtman_maks_index
+from src.prefgraph import ConsumerSession
+from src.prefgraph.algorithms.garp import check_garp
+from src.prefgraph.algorithms.mpi import compute_mpi, compute_houtman_maks_index
 
 
 class SimulationResults:

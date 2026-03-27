@@ -18,7 +18,7 @@ DEFAULT_DATA_DIR = str(Path(__file__).resolve().parents[2] / "datasets" / "uci_r
 
 def load_and_prepare(data_dir=None, n_customers=None):
     """Load UCI Retail and prepare train/target splits."""
-    from pyrevealed.datasets import load_uci_retail
+    from prefgraph.datasets import load_uci_retail
 
     if data_dir is None:
         data_dir = DEFAULT_DATA_DIR

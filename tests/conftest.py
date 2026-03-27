@@ -11,13 +11,13 @@ collect_ignore_glob = [
 # by filtering them out based on their module
 def pytest_collection_modifyitems(config, items):
     """Filter out test functions that are actually API functions from source code."""
-    # Filter items that come from pyrevealed source modules
+    # Filter items that come from prefgraph source modules
     filtered = []
     for item in items:
-        # Skip items that come from pyrevealed.* modules (these are API functions, not tests)
+        # Skip items that come from prefgraph.* modules (these are API functions, not tests)
         if hasattr(item, 'module') and item.module:
             module_name = item.module.__name__ if hasattr(item.module, '__name__') else ''
-            if module_name.startswith('pyrevealed.'):
+            if module_name.startswith('prefgraph.'):
                 continue
         filtered.append(item)
     items[:] = filtered

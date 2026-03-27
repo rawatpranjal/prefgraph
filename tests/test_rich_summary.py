@@ -3,7 +3,7 @@
 import numpy as np
 import pytest
 
-from pyrevealed import BehaviorLog, BehavioralSummary
+from prefgraph import BehaviorLog, BehavioralSummary
 
 
 @pytest.fixture
@@ -110,9 +110,9 @@ class TestBehavioralSummaryRich:
     def test_backward_compat_positional_construction(self, consistent_log):
         """Existing code that constructs BehavioralSummary positionally
         should still work (new fields have defaults)."""
-        from pyrevealed.algorithms.garp import validate_consistency
-        from pyrevealed.algorithms.aei import compute_integrity_score
-        from pyrevealed.algorithms.mpi import compute_confusion_metric
+        from prefgraph.algorithms.garp import validate_consistency
+        from prefgraph.algorithms.aei import compute_integrity_score
+        from prefgraph.algorithms.mpi import compute_confusion_metric
 
         garp = validate_consistency(consistent_log)
         aei = compute_integrity_score(consistent_log)

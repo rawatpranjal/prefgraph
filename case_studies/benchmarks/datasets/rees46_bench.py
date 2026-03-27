@@ -7,7 +7,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from pyrevealed.core.session import MenuChoiceLog
+from prefgraph.core.session import MenuChoiceLog
 
 from case_studies.benchmarks.config import TRAIN_FRACTION, MIN_OBS_MENU, MIN_TRAIN_MENU, MIN_TEST_MENU
 from case_studies.benchmarks.core.features import extract_menu_baseline, extract_menu_rp
@@ -38,7 +38,7 @@ def _split_menu_log(log: MenuChoiceLog, fraction: float):
 
 def load_and_prepare(data_dir=None, max_users=50000):
     """Load REES46 and prepare train/target splits."""
-    from pyrevealed.datasets._rees46 import load_rees46
+    from prefgraph.datasets._rees46 import load_rees46
 
     print(f"\n[{DATASET_NAME}] Loading dataset...")
     user_logs = load_rees46(

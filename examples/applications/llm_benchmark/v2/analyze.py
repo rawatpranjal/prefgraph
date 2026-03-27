@@ -15,8 +15,8 @@ import json
 from collections import defaultdict
 from pathlib import Path
 
-from pyrevealed import MenuChoiceLog
-from pyrevealed.algorithms.abstract_choice import validate_menu_sarp, compute_menu_efficiency
+from prefgraph import MenuChoiceLog
+from prefgraph.algorithms.abstract_choice import validate_menu_sarp, compute_menu_efficiency
 
 from ..config import ALL_SCENARIOS
 

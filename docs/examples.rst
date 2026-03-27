@@ -12,7 +12,7 @@ Score many users in parallel. The Engine auto-selects Rust or Python backend.
 
 .. code-block:: python
 
-   from pyrevealed.engine import Engine
+   from prefgraph.engine import Engine
    import numpy as np
 
    rng = np.random.RandomState(42)
@@ -48,7 +48,7 @@ Individual functions for one user at a time. Each returns a detailed result obje
 
 .. code-block:: python
 
-   from pyrevealed import BehaviorLog, check_garp, compute_aei, compute_mpi
+   from prefgraph import BehaviorLog, check_garp, compute_aei, compute_mpi
    import numpy as np
 
    prices = np.array([[2.0, 1.0], [1.0, 2.0], [1.5, 1.5]])
@@ -86,7 +86,7 @@ all consistency tests, efficiency metrics, and interpretation:
 
 .. code-block:: python
 
-   from pyrevealed import BehaviorLog, BehavioralAuditor
+   from prefgraph import BehaviorLog, BehavioralAuditor
    import numpy as np
 
    prices = np.array([[2.0, 1.0], [1.0, 2.0], [1.5, 1.5]])
@@ -152,8 +152,8 @@ Test whether preferences scale proportionally with income:
 
 .. code-block:: python
 
-   from pyrevealed import BehaviorLog
-   from pyrevealed.algorithms.harp import check_harp
+   from prefgraph import BehaviorLog
+   from prefgraph.algorithms.harp import check_harp
    import numpy as np
 
    prices = np.array([[2.0, 1.0], [1.0, 2.0], [1.5, 1.5]])
@@ -175,8 +175,8 @@ observations are problematic:
 
 .. code-block:: python
 
-   from pyrevealed import BehaviorLog
-   from pyrevealed.algorithms.vei import compute_vei
+   from prefgraph import BehaviorLog
+   from prefgraph.algorithms.vei import compute_vei
    import numpy as np
 
    prices = np.array([[2.0, 1.0], [1.0, 2.0], [1.5, 1.5]])
@@ -206,7 +206,7 @@ If data is GARP-consistent, recover latent utility values via Afriat's LP:
 
 .. code-block:: python
 
-   from pyrevealed import BehaviorLog, recover_utility
+   from prefgraph import BehaviorLog, recover_utility
    import numpy as np
 
    # Consistent data (GARP passes)
@@ -232,8 +232,8 @@ Test whether utility has the form U(x, m) = v(x) + m (no income effects):
 
 .. code-block:: python
 
-   from pyrevealed import BehaviorLog
-   from pyrevealed.algorithms.quasilinear import check_quasilinearity
+   from prefgraph import BehaviorLog
+   from prefgraph.algorithms.quasilinear import check_quasilinearity
    import numpy as np
 
    prices = np.array([[2.0, 1.0], [1.0, 2.0], [1.5, 1.5]])
@@ -257,7 +257,7 @@ form a consistent ranking:
 
 .. code-block:: python
 
-   from pyrevealed import MenuChoiceLog, validate_menu_sarp, compute_menu_efficiency
+   from prefgraph import MenuChoiceLog, validate_menu_sarp, compute_menu_efficiency
    import numpy as np
 
    menus = [
@@ -292,8 +292,8 @@ maximization:
 
 .. code-block:: python
 
-   from pyrevealed import ProductionLog
-   from pyrevealed.algorithms.production import test_profit_maximization
+   from prefgraph import ProductionLog
+   from prefgraph.algorithms.production import test_profit_maximization
    import numpy as np
 
    rng = np.random.RandomState(42)
@@ -320,7 +320,7 @@ From a pandas DataFrame:
 
 .. code-block:: python
 
-   from pyrevealed import BehaviorPanel
+   from prefgraph import BehaviorPanel
 
    panel = BehaviorPanel.from_dataframe(
        df,
@@ -333,7 +333,7 @@ From individual logs:
 
 .. code-block:: python
 
-   from pyrevealed import BehaviorLog, BehaviorPanel
+   from prefgraph import BehaviorLog, BehaviorPanel
    import numpy as np
 
    logs = [
@@ -346,7 +346,7 @@ Built-in datasets (require separate download):
 
 .. code-block:: python
 
-   from pyrevealed.datasets import load_dunnhumby, load_open_ecommerce, load_uci_retail
+   from prefgraph.datasets import load_dunnhumby, load_open_ecommerce, load_uci_retail
 
    panel = load_dunnhumby()           # 2,500 households, 10 goods, 104 weeks
    panel = load_open_ecommerce()      # 4,700 consumers, 50 categories, 66 months

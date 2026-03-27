@@ -1,12 +1,12 @@
 References
 ==========
 
-This page provides a comprehensive bibliography of the academic literature underlying PyRevealed,
+This page provides a comprehensive bibliography of the academic literature underlying PrefGraph,
 organized by topic.
 
 .. note::
 
-   The core reference for PyRevealed is Chambers & Echenique (2016), *Revealed Preference Theory*.
+   The core reference for PrefGraph is Chambers & Echenique (2016), *Revealed Preference Theory*.
    Chapter numbers throughout the documentation refer to this textbook.
 
 

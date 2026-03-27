@@ -3,7 +3,7 @@
 import argparse
 import time
 import numpy as np
-from pyrevealed.engine import Engine
+from prefgraph.engine import Engine
 
 
 def generate_heterogeneous_users(n_users, seed=42):

@@ -8,7 +8,7 @@ latent preference values from user behavior. Use it for:
 """
 
 import numpy as np
-from pyrevealed import BehaviorLog, PreferenceEncoder
+from prefgraph import BehaviorLog, PreferenceEncoder
 
 # =============================================================================
 # Example 1: Basic Fit and Extract

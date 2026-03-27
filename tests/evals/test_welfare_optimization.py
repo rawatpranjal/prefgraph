@@ -6,8 +6,8 @@ Tests for CV/EV computation edge cases and solver failures.
 
 import numpy as np
 import pytest
-from pyrevealed.core.session import BehaviorLog
-from pyrevealed.core.exceptions import SolverError, OptimizationError
+from prefgraph.core.session import BehaviorLog
+from prefgraph.core.exceptions import SolverError, OptimizationError
 
 
 class TestAfriatRecovery:
@@ -15,7 +15,7 @@ class TestAfriatRecovery:
 
     def test_afriat_recovery_simple(self):
         """EVAL: Basic Afriat utility recovery."""
-        from pyrevealed.algorithms.welfare import _recover_afriat_utility
+        from prefgraph.algorithms.welfare import _recover_afriat_utility
 
         log = BehaviorLog(
             cost_vectors=np.array([[1.0, 2.0], [2.0, 1.0]]),
@@ -31,7 +31,7 @@ class TestAfriatRecovery:
 
     def test_afriat_recovery_ill_conditioned(self, high_condition_number_log):
         """EVAL: Afriat recovery with ill-conditioned data."""
-        from pyrevealed.algorithms.welfare import _recover_afriat_utility
+        from prefgraph.algorithms.welfare import _recover_afriat_utility
 
         try:
             U, lambdas, success = _recover_afriat_utility(high_condition_number_log)
@@ -46,7 +46,7 @@ class TestCVExact:
 
     def test_cv_exact_simple(self):
         """EVAL: CV exact computation for simple case."""
-        from pyrevealed.algorithms.welfare import compute_cv_exact
+        from prefgraph.algorithms.welfare import compute_cv_exact
 
         baseline = BehaviorLog(
             cost_vectors=np.array([[1.0, 1.0]]),
@@ -65,7 +65,7 @@ class TestCVExact:
 
     def test_cv_exact_identical_logs(self):
         """EVAL: CV when baseline equals policy (should be ~0)."""
-        from pyrevealed.algorithms.welfare import compute_cv_exact
+        from prefgraph.algorithms.welfare import compute_cv_exact
 
         log = BehaviorLog(
             cost_vectors=np.array([[1.0, 1.0]]),
@@ -85,7 +85,7 @@ class TestCVVartia:
 
     def test_cv_vartia_simple(self):
         """EVAL: CV via Vartia approximation."""
-        from pyrevealed.algorithms.welfare import compute_cv_vartia
+        from prefgraph.algorithms.welfare import compute_cv_vartia
 
         baseline = BehaviorLog(
             cost_vectors=np.array([[1.0, 1.0]]),
@@ -102,7 +102,7 @@ class TestCVVartia:
 
     def test_cv_vartia_extreme_price_change(self, extreme_price_change):
         """EVAL: Vartia CV with extreme price change."""
-        from pyrevealed.algorithms.welfare import compute_cv_vartia
+        from prefgraph.algorithms.welfare import compute_cv_vartia
 
         baseline, policy = extreme_price_change
 
@@ -116,7 +116,7 @@ class TestCVBounds:
 
     def test_cv_bounds_simple(self):
         """EVAL: CV Laspeyres bound computation."""
-        from pyrevealed.algorithms.welfare import compute_cv_bounds
+        from prefgraph.algorithms.welfare import compute_cv_bounds
 
         baseline = BehaviorLog(
             cost_vectors=np.array([[1.0, 1.0]]),
@@ -133,7 +133,7 @@ class TestCVBounds:
 
     def test_ev_bounds_simple(self):
         """EVAL: EV Paasche bound computation."""
-        from pyrevealed.algorithms.welfare import compute_ev_bounds
+        from prefgraph.algorithms.welfare import compute_ev_bounds
 
         baseline = BehaviorLog(
             cost_vectors=np.array([[1.0, 1.0]]),
@@ -154,7 +154,7 @@ class TestWelfareAnalysis:
 
     def test_analyze_welfare_change_simple(self):
         """EVAL: Full welfare change analysis."""
-        from pyrevealed.algorithms.welfare import analyze_welfare_change
+        from prefgraph.algorithms.welfare import analyze_welfare_change
 
         baseline = BehaviorLog(
             cost_vectors=np.array([[1.0, 1.0], [1.0, 1.0]]),
@@ -175,7 +175,7 @@ class TestWelfareAnalysis:
 
     def test_analyze_welfare_change_bounds_method(self):
         """EVAL: Welfare analysis with bounds method (most robust)."""
-        from pyrevealed.algorithms.welfare import analyze_welfare_change
+        from prefgraph.algorithms.welfare import analyze_welfare_change
 
         baseline = BehaviorLog(
             cost_vectors=np.array([[1.0, 1.0]]),
@@ -197,7 +197,7 @@ class TestExpenditureFunctionRecovery:
 
     def test_expenditure_function_recovery(self):
         """EVAL: Recover expenditure function from data."""
-        from pyrevealed.algorithms.welfare import recover_expenditure_function
+        from prefgraph.algorithms.welfare import recover_expenditure_function
 
         log = BehaviorLog(
             cost_vectors=np.array([[1.0, 2.0], [2.0, 1.0]]),
@@ -212,7 +212,7 @@ class TestExpenditureFunctionRecovery:
 
     def test_expenditure_function_evaluation(self):
         """EVAL: Evaluate recovered expenditure function."""
-        from pyrevealed.algorithms.welfare import recover_expenditure_function
+        from prefgraph.algorithms.welfare import recover_expenditure_function
 
         log = BehaviorLog(
             cost_vectors=np.array([[1.0, 2.0], [2.0, 1.0]]),
@@ -237,7 +237,7 @@ class TestDeadweightLoss:
 
     def test_deadweight_loss_simple(self):
         """EVAL: Deadweight loss from price distortion."""
-        from pyrevealed.algorithms.welfare import compute_deadweight_loss
+        from prefgraph.algorithms.welfare import compute_deadweight_loss
 
         baseline = BehaviorLog(
             cost_vectors=np.array([[1.0, 1.0]]),
@@ -259,7 +259,7 @@ class TestEBounds:
 
     def test_e_bounds_simple(self):
         """EVAL: E-bounds for demand prediction."""
-        from pyrevealed.algorithms.welfare import compute_e_bounds
+        from prefgraph.algorithms.welfare import compute_e_bounds
 
         log = BehaviorLog(
             cost_vectors=np.array([
@@ -289,7 +289,7 @@ class TestPopulationWelfareBounds:
 
     def test_population_welfare_bounds(self):
         """EVAL: Welfare bounds for heterogeneous population."""
-        from pyrevealed.algorithms.welfare import compute_population_welfare_bounds
+        from prefgraph.algorithms.welfare import compute_population_welfare_bounds
 
         # Create several consumers
         consumers = [
@@ -323,7 +323,7 @@ class TestPopulationWelfareBounds:
 
     def test_population_welfare_empty_consumers(self):
         """EVAL: Population welfare with empty consumer list."""
-        from pyrevealed.algorithms.welfare import compute_population_welfare_bounds
+        from prefgraph.algorithms.welfare import compute_population_welfare_bounds
 
         result = compute_population_welfare_bounds(
             [], (np.array([1.0, 1.0]), np.array([1.5, 0.8]))

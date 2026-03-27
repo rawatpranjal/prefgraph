@@ -45,7 +45,7 @@ Consider a consumer who makes these choices:
 
 .. code-block:: python
 
-   from pyrevealed import MenuChoiceLog, validate_menu_sarp
+   from prefgraph import MenuChoiceLog, validate_menu_sarp
 
    # Standard SARP test sees a violation
    log = MenuChoiceLog(
@@ -97,7 +97,7 @@ A3: Testing WARP(LA)
 
 .. code-block:: python
 
-   from pyrevealed import MenuChoiceLog, test_warp_la
+   from prefgraph import MenuChoiceLog, test_warp_la
 
    log = MenuChoiceLog(
        menus=[
@@ -136,7 +136,7 @@ that maps each menu to the items actually considered:
 
 .. code-block:: python
 
-   from pyrevealed import recover_preference_with_attention
+   from prefgraph import recover_preference_with_attention
 
    preference, attention_filter = recover_preference_with_attention(log)
 
@@ -168,7 +168,7 @@ You can test whether a proposed attention filter rationalizes the data:
 
 .. code-block:: python
 
-   from pyrevealed import validate_attention_filter_consistency
+   from prefgraph import validate_attention_filter_consistency
 
    # Propose an attention filter
    proposed_filter = {
@@ -220,7 +220,7 @@ B2: Creating Stochastic Choice Data
 
 .. code-block:: python
 
-   from pyrevealed import StochasticChoiceLog
+   from prefgraph import StochasticChoiceLog
 
    # Choice frequencies from 100 observations per menu
    log = StochasticChoiceLog(
@@ -249,7 +249,7 @@ B3: Testing RAM Consistency
 
 .. code-block:: python
 
-   from pyrevealed import fit_random_attention_model
+   from prefgraph import fit_random_attention_model
 
    result = fit_random_attention_model(log, assumption="monotonic")
 
@@ -277,7 +277,7 @@ Given a preference ordering, we can estimate how often each item captures attent
 
 .. code-block:: python
 
-   from pyrevealed import estimate_attention_probabilities
+   from prefgraph import estimate_attention_probabilities
 
    preference = (0, 1, 2)  # News > Sports > Tech
    attention_probs = estimate_attention_probabilities(log, preference)
@@ -307,7 +307,7 @@ RAM provides bounds on attention probabilities rather than point estimates:
 
 .. code-block:: python
 
-   from pyrevealed import compute_attention_bounds
+   from prefgraph import compute_attention_bounds
 
    preference = (0, 1, 2)
    menu = frozenset({0, 1, 2})
@@ -358,7 +358,7 @@ Analyze whether click patterns can be explained by attention effects:
 .. code-block:: python
 
    import numpy as np
-   from pyrevealed import (
+   from prefgraph import (
        MenuChoiceLog,
        validate_menu_sarp,
        test_warp_la,
@@ -442,7 +442,7 @@ Compare recommendation layouts accounting for attention effects:
 .. code-block:: python
 
    import numpy as np
-   from pyrevealed import StochasticChoiceLog, fit_random_attention_model
+   from prefgraph import StochasticChoiceLog, fit_random_attention_model
 
    # Layout A: Grid view (higher baseline attention)
    layout_a = StochasticChoiceLog(
@@ -514,7 +514,7 @@ Sometimes data genuinely reflects irrational preferences, not attention effects:
 
 .. code-block:: python
 
-   from pyrevealed import MenuChoiceLog, test_warp_la, validate_menu_sarp
+   from prefgraph import MenuChoiceLog, test_warp_la, validate_menu_sarp
 
    # True preference reversals (not explained by attention)
    log = MenuChoiceLog(
@@ -594,7 +594,7 @@ E1: Testing for Overload
 
 .. code-block:: python
 
-   from pyrevealed import test_attention_overload
+   from prefgraph import test_attention_overload
 
    result = test_attention_overload(log, quality_metric="consistency")
 
@@ -745,7 +745,7 @@ F1: Testing for Status Quo Bias
 
 .. code-block:: python
 
-   from pyrevealed import test_status_quo_bias
+   from prefgraph import test_status_quo_bias
 
    # Let the algorithm detect defaults (most common choice per menu)
    result = test_status_quo_bias(log, defaults=None)
@@ -873,7 +873,7 @@ F4: Practical Implications
 Part G: Attention Visualizations
 ---------------------------------
 
-PyRevealed includes visualization functions for analyzing attention patterns.
+PrefGraph includes visualization functions for analyzing attention patterns.
 These help understand how attention varies across items and menu positions.
 
 Attention Decay by Position
@@ -884,8 +884,8 @@ by item position in menus:
 
 .. code-block:: python
 
-   from pyrevealed import fit_random_attention_model
-   from pyrevealed.viz import plot_attention_decay
+   from prefgraph import fit_random_attention_model
+   from prefgraph.viz import plot_attention_decay
    import matplotlib.pyplot as plt
 
    result = fit_random_attention_model(log)
@@ -909,7 +909,7 @@ items are typically considered:
 
 .. code-block:: python
 
-   from pyrevealed.viz import plot_consideration_sizes
+   from prefgraph.viz import plot_consideration_sizes
    import matplotlib.pyplot as plt
 
    # Distribution of consideration set sizes
@@ -931,7 +931,7 @@ across items and menus:
 
 .. code-block:: python
 
-   from pyrevealed.viz import plot_attention_heatmap
+   from prefgraph.viz import plot_attention_heatmap
    import matplotlib.pyplot as plt
 
    # Attention probability heatmap
@@ -951,7 +951,7 @@ This visualization is useful for:
 
    .. code-block:: bash
 
-      pip install pyrevealed[viz]
+      pip install prefgraph[viz]
 
 
 Function Reference

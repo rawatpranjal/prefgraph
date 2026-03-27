@@ -16,8 +16,8 @@ Chambers & Echenique (2016) Chapter 15.
 
 .. code-block:: python
 
-   from pyrevealed import ProductionLog
-   from pyrevealed.algorithms.production import test_profit_maximization
+   from prefgraph import ProductionLog
+   from prefgraph.algorithms.production import test_profit_maximization
 
    log = ProductionLog(input_prices=ip, input_quantities=iq,
                        output_prices=op, output_quantities=oq)

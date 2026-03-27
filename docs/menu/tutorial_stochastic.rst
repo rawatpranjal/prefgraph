@@ -31,7 +31,7 @@ presented multiple times, with potentially different choices each time.
 
 .. code-block:: python
 
-   from pyrevealed import StochasticChoiceLog
+   from prefgraph import StochasticChoiceLog
 
    # A menu presented 100 times with observed choice frequencies
    log = StochasticChoiceLog(
@@ -114,7 +114,7 @@ Fitting a Logit Model
 
 .. code-block:: python
 
-   from pyrevealed import fit_random_utility_model
+   from prefgraph import fit_random_utility_model
 
    # Fit logit model to stochastic choice data
    result = fit_random_utility_model(
@@ -182,7 +182,7 @@ Predicting Choice Probabilities
 
 .. code-block:: python
 
-   from pyrevealed import estimate_choice_probabilities
+   from prefgraph import estimate_choice_probabilities
 
    # Get predicted probabilities from fitted utilities
    utilities = result.choice_probabilities[:3]  # First 3 items
@@ -208,7 +208,7 @@ McFadden's axioms characterize random utility maximization:
 
 .. code-block:: python
 
-   from pyrevealed import test_mcfadden_axioms
+   from prefgraph import test_mcfadden_axioms
 
    axiom_results = test_mcfadden_axioms(log)
 
@@ -245,7 +245,7 @@ beyond simple utility maximization is at play.
 
 .. code-block:: python
 
-   from pyrevealed import test_regularity
+   from prefgraph import test_regularity
 
    result = test_regularity(stochastic_log, tolerance=0.01)
 
@@ -369,7 +369,7 @@ The IIA property is tested by checking if relative odds are stable:
 
 .. code-block:: python
 
-   from pyrevealed import check_independence_irrelevant_alternatives
+   from prefgraph import check_independence_irrelevant_alternatives
 
    satisfies_iia = check_independence_irrelevant_alternatives(
        log,
@@ -429,7 +429,7 @@ Analyze a recommendation system's click data:
 .. code-block:: python
 
    import numpy as np
-   from pyrevealed import (
+   from prefgraph import (
        StochasticChoiceLog,
        fit_random_utility_model,
        test_mcfadden_axioms,
@@ -511,7 +511,7 @@ including context effects and IIA violations from similar alternatives:
 .. code-block:: python
 
    import numpy as np
-   from pyrevealed import (
+   from prefgraph import (
        StochasticChoiceLog,
        fit_random_utility_model,
        test_mcfadden_axioms,

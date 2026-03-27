@@ -1,5 +1,5 @@
 """
-Comprehensive analysis of Prest example datasets using PyRevealed.
+Comprehensive analysis of Prest example datasets using PrefGraph.
 
 This script loads the budgetary dataset from the prest project and runs
 all available revealed preference analyses: GARP, AEI, MPI, Houtman-Maks,
@@ -16,14 +16,14 @@ import urllib.request
 import numpy as np
 import pandas as pd
 
-from pyrevealed import (
+from prefgraph import (
     ConsumerSession,
     check_garp,
     compute_aei,
     compute_mpi,
     recover_utility,
 )
-from pyrevealed.algorithms.mpi import compute_houtman_maks_index
+from prefgraph.algorithms.mpi import compute_houtman_maks_index
 
 
 def load_prest_datasets() -> dict[str, pd.DataFrame]:
@@ -148,8 +148,8 @@ def visualize_results(
 ) -> None:
     """Generate visualizations for the analysis results."""
     import matplotlib.pyplot as plt
-    from pyrevealed.viz import plot_aei_distribution, plot_budget_sets
-    from pyrevealed.viz.plots import plot_preference_heatmap
+    from prefgraph.viz import plot_aei_distribution, plot_budget_sets
+    from prefgraph.viz.plots import plot_preference_heatmap
 
     print("\nGenerating visualizations...")
 

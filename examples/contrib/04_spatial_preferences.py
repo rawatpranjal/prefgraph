@@ -12,7 +12,7 @@ Use cases:
 """
 
 import numpy as np
-from pyrevealed import (
+from prefgraph import (
     EmbeddingChoiceLog,  # or SpatialSession (legacy name)
     find_preference_anchor,  # or find_ideal_point (legacy name)
     validate_embedding_consistency,  # or check_euclidean_rationality

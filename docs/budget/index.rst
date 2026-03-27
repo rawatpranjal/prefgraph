@@ -16,7 +16,7 @@ The classical setting of Samuelson (1938), Afriat (1967), and Varian (1982).
 
 .. code-block:: python
 
-   from pyrevealed import BehaviorLog, validate_consistency, compute_integrity_score
+   from prefgraph import BehaviorLog, validate_consistency, compute_integrity_score
 
    log = BehaviorLog(cost_vectors=prices, action_vectors=quantities)
    garp = validate_consistency(log)          # Test: bool

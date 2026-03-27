@@ -11,7 +11,7 @@ from numpy.typing import NDArray
 import sys
 sys.path.insert(0, '/Users/pranjal/Code/revealed/src')
 
-from pyrevealed.core.session import RiskSession
+from prefgraph.core.session import RiskSession
 
 
 def generate_gambler(

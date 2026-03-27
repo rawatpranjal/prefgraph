@@ -30,8 +30,8 @@ from pathlib import Path
 
 import numpy as np
 
-from pyrevealed import BehaviorLog, validate_consistency, compute_integrity_score
-from pyrevealed.engine import Engine
+from prefgraph import BehaviorLog, validate_consistency, compute_integrity_score
+from prefgraph.engine import Engine
 
 
 # =============================================================================

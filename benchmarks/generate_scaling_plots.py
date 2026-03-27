@@ -30,7 +30,7 @@ COLORS = {
 }
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
-from pyrevealed.engine import Engine
+from prefgraph.engine import Engine
 
 OUT_DIR = os.path.join(os.path.dirname(__file__), "..", "docs", "_static")
 os.makedirs(OUT_DIR, exist_ok=True)

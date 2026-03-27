@@ -31,7 +31,7 @@ and output prices/quantities over multiple observations.
 .. code-block:: python
 
    import numpy as np
-   from pyrevealed import ProductionLog
+   from prefgraph import ProductionLog
 
    # A firm with 2 inputs (labor, capital) and 1 output (widgets)
    log = ProductionLog(
@@ -81,7 +81,7 @@ with profit maximization:
 
 .. code-block:: python
 
-   from pyrevealed import test_profit_maximization
+   from prefgraph import test_profit_maximization
 
    result = test_profit_maximization(log)
 
@@ -163,7 +163,7 @@ Cost minimization is the dual of profit maximization:
 
 .. code-block:: python
 
-   from pyrevealed import check_cost_minimization
+   from prefgraph import check_cost_minimization
 
    result = check_cost_minimization(log)
 
@@ -194,7 +194,7 @@ or decreasing returns to scale:
 
 .. code-block:: python
 
-   from pyrevealed import estimate_returns_to_scale
+   from prefgraph import estimate_returns_to_scale
 
    rts = estimate_returns_to_scale(log)
 
@@ -230,7 +230,7 @@ production frontier:
 
 .. code-block:: python
 
-   from pyrevealed import compute_technical_efficiency
+   from prefgraph import compute_technical_efficiency
 
    efficiencies = compute_technical_efficiency(log, method="output_oriented")
 
@@ -260,7 +260,7 @@ Compare efficiency across multiple firms:
 .. code-block:: python
 
    import numpy as np
-   from pyrevealed import (
+   from prefgraph import (
        ProductionLog,
        test_profit_maximization,
        check_cost_minimization,
@@ -356,7 +356,7 @@ heterogeneous productivity, scale effects, and time trends:
 .. code-block:: python
 
    import numpy as np
-   from pyrevealed import (
+   from prefgraph import (
        ProductionLog,
        test_profit_maximization,
        check_cost_minimization,

@@ -18,7 +18,7 @@ DATASET_NAME = "Favorita"
 
 
 def load_and_prepare(data_dir=None, max_users=None):
-    from pyrevealed.datasets._favorita import load_favorita
+    from prefgraph.datasets._favorita import load_favorita
 
     print(f"\n[{DATASET_NAME}] Loading dataset...")
     panel = load_favorita(data_dir=data_dir, min_weeks=50)

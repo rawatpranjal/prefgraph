@@ -1,5 +1,5 @@
 """
-EVALs Suite for PyRevealed - Brutal Tests Designed to Break the Library
+EVALs Suite for PrefGraph - Brutal Tests Designed to Break the Library
 
 Philosophy:
     These tests are MEANT TO FAIL. The goal is to expose weaknesses, not prove correctness.

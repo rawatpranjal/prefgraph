@@ -74,7 +74,7 @@ Utility Recovery via Afriat’s Inequalities
 
 **Reference Implementation:** ``fit_latent_values(log)``
 
-If the observed data satisfy GARP, Afriat's Theorem guarantees the existence of a continuous, monotonic, and concave utility function that rationalizes the behavior. PyRevealed recovers the latent utility values :math:`U_k` and marginal utilities of income (Lagrange multipliers) :math:`\lambda_k > 0`.
+If the observed data satisfy GARP, Afriat's Theorem guarantees the existence of a continuous, monotonic, and concave utility function that rationalizes the behavior. PrefGraph recovers the latent utility values :math:`U_k` and marginal utilities of income (Lagrange multipliers) :math:`\lambda_k > 0`.
 
 **Linear Programming Formulation:**
 

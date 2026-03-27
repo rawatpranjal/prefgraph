@@ -11,7 +11,7 @@ from numpy.typing import NDArray
 import sys
 sys.path.insert(0, '/Users/pranjal/Code/revealed/src')
 
-from pyrevealed.core.session import ConsumerSession
+from prefgraph.core.session import ConsumerSession
 
 
 def generate_separable_superapp(

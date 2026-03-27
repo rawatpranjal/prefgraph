@@ -1,7 +1,7 @@
 Performance
 ===========
 
-PyRevealed utilizes a high-performance Rust compute engine (``rpt-core``) designed for large-scale longitudinal choice analysis. The architecture leverages Rayon for thread-level parallelism, SCC-optimized algorithms for transitive closure, and the HiGHS solver for linear programming (LP) tasks.
+PrefGraph utilizes a high-performance Rust compute engine (``rpt-core``) designed for large-scale longitudinal choice analysis. The architecture leverages Rayon for thread-level parallelism, SCC-optimized algorithms for transitive closure, and the HiGHS solver for linear programming (LP) tasks.
 
 .. raw:: html
 
@@ -71,7 +71,7 @@ The computational cost varies significantly across metrics. Axiomatic tests (e.g
 
    <div style="margin: 1.5em 0;"></div>
 
-PyRevealed implements the O(T²) SCC-based algorithm (Talla Nobibon et al., 2015) for GARP verification, avoiding the O(T³) overhead of Floyd-Warshall. CCEI computation thus achieves O(T² log T) complexity. Metrics such as MPI, HARP, and VEI necessitate O(T³) transitive closure operations. Technical details are available in the :doc:`algorithms` section.
+PrefGraph implements the O(T²) SCC-based algorithm (Talla Nobibon et al., 2015) for GARP verification, avoiding the O(T³) overhead of Floyd-Warshall. CCEI computation thus achieves O(T² log T) complexity. Metrics such as MPI, HARP, and VEI necessitate O(T³) transitive closure operations. Technical details are available in the :doc:`algorithms` section.
 
 .. raw:: html
 

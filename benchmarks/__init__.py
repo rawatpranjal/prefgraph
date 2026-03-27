@@ -1,1 +1,1 @@
-"""PyRevealed Scaling Benchmark Suite."""
+"""PrefGraph Scaling Benchmark Suite."""

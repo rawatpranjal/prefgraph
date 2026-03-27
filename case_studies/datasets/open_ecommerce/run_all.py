@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Open E-Commerce 1.0 - PyRevealed Validation Suite.
+"""Open E-Commerce 1.0 - PrefGraph Validation Suite.
 
 This is the master orchestrator that runs the complete 5-phase validation
 pipeline on the Open E-Commerce 1.0 dataset from Harvard Dataverse.
@@ -13,7 +13,7 @@ Phases:
     1. Data Ingestion & Filtering
     2. Price Oracle Construction
     3. Building BehaviorLog Objects
-    4. Running PyRevealed Algorithms
+    4. Running PrefGraph Algorithms
     5. Generating Visualizations
 """
 
@@ -68,7 +68,7 @@ def run_suite(
     """
     suite_start = time.time()
 
-    print_banner("Open E-Commerce 1.0 - PyRevealed Validation Suite")
+    print_banner("Open E-Commerce 1.0 - PrefGraph Validation Suite")
 
     if quick_mode:
         print("\n[Quick mode: analyzing 500 users sample]")
@@ -145,7 +145,7 @@ def run_suite(
         return False
 
     # =========================================================================
-    # Phase 4: Running PyRevealed Algorithms
+    # Phase 4: Running PrefGraph Algorithms
     # =========================================================================
     print_phase(4, "RUNNING PYREVEALED ALGORITHMS")
 
@@ -219,7 +219,7 @@ def run_suite(
 def main():
     """Main entry point."""
     parser = argparse.ArgumentParser(
-        description="Open E-Commerce 1.0 PyRevealed Validation Suite"
+        description="Open E-Commerce 1.0 PrefGraph Validation Suite"
     )
     parser.add_argument(
         "--quick",

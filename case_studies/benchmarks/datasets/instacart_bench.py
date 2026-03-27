@@ -29,7 +29,7 @@ def load_and_prepare(data_dir=None, max_users=50000):
             order_products__prior.csv, products.csv, departments.csv.
         max_users: Cap on number of users (default: 5000 for speed).
     """
-    from pyrevealed.datasets._instacart import load_instacart
+    from prefgraph.datasets._instacart import load_instacart
 
     print(f"\n[{DATASET_NAME}] Loading dataset...")
     panel = load_instacart(data_dir=data_dir, max_users=max_users, min_orders=MIN_OBS_BUDGET)

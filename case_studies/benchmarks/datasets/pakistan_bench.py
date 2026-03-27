@@ -16,7 +16,7 @@ DATASET_NAME = "Pakistan"
 
 
 def load_and_prepare(data_dir=None, max_users=50000):
-    from pyrevealed.datasets._pakistan import load_pakistan
+    from prefgraph.datasets._pakistan import load_pakistan
 
     print(f"\n[{DATASET_NAME}] Loading dataset...")
     panel = load_pakistan(data_dir=data_dir, max_users=max_users, min_months=3)

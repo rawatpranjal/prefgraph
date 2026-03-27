@@ -15,7 +15,7 @@ import warnings
 import numpy as np
 import pandas as pd
 
-from pyrevealed.engine import Engine, results_to_dataframe
+from prefgraph.engine import Engine, results_to_dataframe
 
 
 # ---------------------------------------------------------------------------
@@ -157,7 +157,7 @@ def extract_budget_rp_deep(
         user_ids: Matching user IDs.
         n_windows: Number of rolling windows for temporal consistency.
     """
-    from pyrevealed import BehaviorLog, BehavioralAuditor, PreferenceEncoder
+    from prefgraph import BehaviorLog, BehavioralAuditor, PreferenceEncoder
 
     auditor = BehavioralAuditor()
     records = []
@@ -218,7 +218,7 @@ def extract_budget_rp_deep(
                         cost_vectors=prices[start:end],
                         action_vectors=quantities[start:end],
                     )
-                    from pyrevealed import compute_integrity_score
+                    from prefgraph import compute_integrity_score
                     result = compute_integrity_score(window_log, tolerance=1e-4)
                     window_cceis.append(result.efficiency_index)
                 except Exception:
@@ -261,11 +261,11 @@ def extract_budget_rp_extended(
       - Alternative scores: swaps index, observation contributions
       - Temporal: early vs late violation patterns
     """
-    from pyrevealed import BehaviorLog
-    from pyrevealed.algorithms.garp import check_garp
-    from pyrevealed.algorithms.mpi import compute_mpi
-    from pyrevealed.algorithms.vei import compute_vei
-    from pyrevealed.algorithms.utility import recover_utility
+    from prefgraph import BehaviorLog
+    from prefgraph.algorithms.garp import check_garp
+    from prefgraph.algorithms.mpi import compute_mpi
+    from prefgraph.algorithms.vei import compute_vei
+    from prefgraph.algorithms.utility import recover_utility
 
     records = []
 
@@ -421,7 +421,7 @@ def extract_menu_rp_extended(
       - Congruence: full rationalizability test
       - Ordinal utility: preference ranking stats
     """
-    from pyrevealed.algorithms.abstract_choice import (
+    from prefgraph.algorithms.abstract_choice import (
         validate_menu_sarp,
         validate_menu_warp,
         validate_menu_consistency,

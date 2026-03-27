@@ -6,7 +6,7 @@ Tests for factorial explosion and IIA edge cases.
 
 import numpy as np
 import pytest
-from pyrevealed.core.session import StochasticChoiceLog
+from prefgraph.core.session import StochasticChoiceLog
 
 
 class TestFactorialExplosion:
@@ -21,7 +21,7 @@ class TestFactorialExplosion:
             else:
                 result = _test_rum_column_generation(log, tolerance, max_iterations)
         """
-        from pyrevealed.algorithms.stochastic import test_rum_consistency
+        from prefgraph.algorithms.stochastic import test_rum_consistency
 
         items = frozenset(range(6))
         freqs = {i: 10 + i * 5 for i in range(6)}
@@ -42,7 +42,7 @@ class TestFactorialExplosion:
 
     def test_rum_7_items_column_generation(self, many_items_stochastic):
         """EVAL: RUM with 7 items (5040 orderings) - uses column generation."""
-        from pyrevealed.algorithms.stochastic import test_rum_consistency
+        from prefgraph.algorithms.stochastic import test_rum_consistency
 
         import time
         start = time.time()
@@ -64,7 +64,7 @@ class TestFactorialExplosion:
             choice_frequencies=[freqs],
         )
 
-        from pyrevealed.algorithms.stochastic import test_rum_consistency
+        from prefgraph.algorithms.stochastic import test_rum_consistency
 
         import time
         start = time.time()
@@ -85,7 +85,7 @@ class TestIIAEdgeCases:
             if p_y > 1e-10:
                 ratio = p_x / p_y
         """
-        from pyrevealed.algorithms.stochastic import check_independence_irrelevant_alternatives
+        from prefgraph.algorithms.stochastic import check_independence_irrelevant_alternatives
 
         log = StochasticChoiceLog(
             menus=[frozenset({0, 1, 2}), frozenset({0, 1})],
@@ -102,7 +102,7 @@ class TestIIAEdgeCases:
 
     def test_iia_extreme_odds_ratio(self):
         """EVAL: IIA with extreme odds ratios."""
-        from pyrevealed.algorithms.stochastic import check_independence_irrelevant_alternatives
+        from prefgraph.algorithms.stochastic import check_independence_irrelevant_alternatives
 
         log = StochasticChoiceLog(
             menus=[frozenset({0, 1}), frozenset({0, 1, 2})],
@@ -117,7 +117,7 @@ class TestIIAEdgeCases:
 
     def test_iia_single_common_item(self):
         """EVAL: IIA when menus share only one item."""
-        from pyrevealed.algorithms.stochastic import check_independence_irrelevant_alternatives
+        from prefgraph.algorithms.stochastic import check_independence_irrelevant_alternatives
 
         log = StochasticChoiceLog(
             menus=[frozenset({0, 1}), frozenset({0, 2})],
@@ -137,7 +137,7 @@ class TestRUMDistribution:
 
     def test_rum_sparse_distribution(self):
         """EVAL: RUM distribution should be sparse (few orderings with positive prob)."""
-        from pyrevealed.algorithms.stochastic import fit_rum_distribution
+        from prefgraph.algorithms.stochastic import fit_rum_distribution
 
         log = StochasticChoiceLog(
             menus=[frozenset({0, 1, 2}), frozenset({0, 1}), frozenset({1, 2})],
@@ -157,7 +157,7 @@ class TestRUMDistribution:
 
     def test_rum_deterministic_choices(self):
         """EVAL: RUM with deterministic (100%) choices."""
-        from pyrevealed.algorithms.stochastic import fit_rum_distribution
+        from prefgraph.algorithms.stochastic import fit_rum_distribution
 
         log = StochasticChoiceLog(
             menus=[frozenset({0, 1}), frozenset({1, 2}), frozenset({0, 2})],
@@ -181,7 +181,7 @@ class TestRUMDistance:
 
     def test_rum_distance_consistent(self):
         """EVAL: Distance to RUM for consistent data should be 0."""
-        from pyrevealed.algorithms.stochastic import compute_distance_to_rum
+        from prefgraph.algorithms.stochastic import compute_distance_to_rum
 
         log = StochasticChoiceLog(
             menus=[frozenset({0, 1}), frozenset({1, 2})],
@@ -198,7 +198,7 @@ class TestRUMDistance:
 
     def test_rum_distance_inconsistent(self):
         """EVAL: Distance to RUM for inconsistent data should be positive."""
-        from pyrevealed.algorithms.stochastic import compute_distance_to_rum
+        from prefgraph.algorithms.stochastic import compute_distance_to_rum
 
         # Intransitive cycle
         log = StochasticChoiceLog(
@@ -221,7 +221,7 @@ class TestAPUModel:
 
     def test_apu_consistent_logit(self):
         """EVAL: APU test for logit-consistent data."""
-        from pyrevealed.algorithms.stochastic import test_additive_perturbed_utility
+        from prefgraph.algorithms.stochastic import test_additive_perturbed_utility
 
         log = StochasticChoiceLog(
             menus=[frozenset({0, 1, 2}), frozenset({0, 1})],
@@ -238,7 +238,7 @@ class TestAPUModel:
 
     def test_apu_regularity_violation(self):
         """EVAL: APU with regularity violation."""
-        from pyrevealed.algorithms.stochastic import test_additive_perturbed_utility
+        from prefgraph.algorithms.stochastic import test_additive_perturbed_utility
 
         # Regularity violation: P(0|{0,1}) < P(0|{0,1,2})
         log = StochasticChoiceLog(
@@ -260,7 +260,7 @@ class TestLogLikelihoodLimits:
 
     def test_loglikelihood_extreme_counts(self):
         """EVAL: Log-likelihood with very large observation counts."""
-        from pyrevealed.algorithms.stochastic import fit_random_utility_model
+        from prefgraph.algorithms.stochastic import fit_random_utility_model
 
         log = StochasticChoiceLog(
             menus=[frozenset({0, 1, 2})],
@@ -274,7 +274,7 @@ class TestLogLikelihoodLimits:
 
     def test_loglikelihood_uniform_distribution(self):
         """EVAL: Log-likelihood for uniform choice distribution."""
-        from pyrevealed.algorithms.stochastic import fit_random_utility_model
+        from prefgraph.algorithms.stochastic import fit_random_utility_model
 
         log = StochasticChoiceLog(
             menus=[frozenset({0, 1, 2, 3})],

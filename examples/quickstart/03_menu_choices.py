@@ -4,7 +4,7 @@ import os
 os.environ["NUMBA_DISABLE_JIT"] = "1"
 
 import numpy as np
-from pyrevealed import MenuChoiceLog, validate_menu_sarp, compute_menu_efficiency
+from prefgraph import MenuChoiceLog, validate_menu_sarp, compute_menu_efficiency
 
 
 def simulate_menu_data(n_items=10, n_observations=30, seed=42):

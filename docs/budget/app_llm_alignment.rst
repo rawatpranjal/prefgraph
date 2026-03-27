@@ -138,7 +138,7 @@ Trials
 
    For a rigorous treatment, repeat identical menus to estimate **choice
    probabilities**, then test with stochastic choice axioms (RUM
-   consistency, regularity) available in ``pyrevealed.contrib.stochastic``.
+   consistency, regularity) available in ``prefgraph.contrib.stochastic``.
    Also run a **temperature-0 baseline**: if violations vanish at temp=0,
    they are sampling artifacts, not prompt-induced inconsistency.
 
@@ -277,7 +277,7 @@ Limitations
   a stochastic process. SARP violations may be sampling noise, not
   genuine preference cycles. The correct axioms for probabilistic choice
   are RUM consistency and regularity (Block & Marschak 1960; Kitamura &
-  Stoye 2018), available in ``pyrevealed.contrib.stochastic``. A temp=0
+  Stoye 2018), available in ``prefgraph.contrib.stochastic``. A temp=0
   baseline is essential to separate prompt effects from sampling noise.
 - Only tests 5 packages in one domain (HTTP libraries). Real deployments
   involve more items and domains.

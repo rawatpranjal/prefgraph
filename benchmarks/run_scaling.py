@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Scaling Benchmark Suite for PyRevealed Algorithms
+Scaling Benchmark Suite for PrefGraph Algorithms
 
 Tests algorithm performance scaling up to 10K observations.
 
@@ -35,14 +35,14 @@ from benchmarks.config import (
 )
 from benchmarks.generators import generate_benchmark_data
 
-from pyrevealed import ConsumerSession
-from pyrevealed.algorithms.garp import check_garp
-from pyrevealed.algorithms.aei import compute_aei
-from pyrevealed.algorithms.mpi import compute_mpi
-from pyrevealed.algorithms.harp import check_harp
-from pyrevealed.algorithms.differentiable import check_differentiable
-from pyrevealed.algorithms.acyclical_p import check_acyclical_p
-from pyrevealed.algorithms.gapp import check_gapp
+from prefgraph import ConsumerSession
+from prefgraph.algorithms.garp import check_garp
+from prefgraph.algorithms.aei import compute_aei
+from prefgraph.algorithms.mpi import compute_mpi
+from prefgraph.algorithms.harp import check_harp
+from prefgraph.algorithms.differentiable import check_differentiable
+from prefgraph.algorithms.acyclical_p import check_acyclical_p
+from prefgraph.algorithms.gapp import check_gapp
 
 
 @dataclass
@@ -305,7 +305,7 @@ def print_summary_table(suite: BenchmarkSuite) -> None:
 
 def main() -> int:
     """Main entry point."""
-    parser = argparse.ArgumentParser(description="PyRevealed Scaling Benchmarks")
+    parser = argparse.ArgumentParser(description="PrefGraph Scaling Benchmarks")
     parser.add_argument("--quick", action="store_true", help="Quick mode (small scale)")
     parser.add_argument("--algorithm", type=str, help="Single algorithm to benchmark")
     parser.add_argument(

@@ -3,8 +3,8 @@
 import numpy as np
 import pytest
 
-from pyrevealed import StochasticChoiceLog
-from pyrevealed import (
+from prefgraph import StochasticChoiceLog
+from prefgraph import (
     # Result types
     RUMConsistencyResult,
     # RUM functions - import with alias to avoid pytest collection
@@ -13,7 +13,7 @@ from pyrevealed import (
     check_rum_consistency,
 )
 # Import test_rum_consistency with alias to avoid pytest collecting it as a test
-from pyrevealed import test_rum_consistency as rum_consistency_test
+from prefgraph import test_rum_consistency as rum_consistency_test
 
 
 class TestRUMConsistency:

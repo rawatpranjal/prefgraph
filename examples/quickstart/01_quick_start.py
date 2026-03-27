@@ -1,7 +1,7 @@
 """Quick start: Score 100 simulated users with the Rust engine."""
 
 import numpy as np
-from pyrevealed.engine import Engine
+from prefgraph.engine import Engine
 
 # Generate 100 users: random prices + quantities (20 observations, 5 goods each)
 rng = np.random.RandomState(42)

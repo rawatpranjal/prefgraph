@@ -17,7 +17,7 @@ Use Cases:
 
 import numpy as np
 
-from pyrevealed import (
+from prefgraph import (
     BehaviorLog,
     LancasterLog,
     transform_to_characteristics,

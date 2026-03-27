@@ -40,7 +40,7 @@ Chambers & Echenique 2016).
 
 .. code-block:: python
 
-   from pyrevealed import MenuChoiceLog
+   from prefgraph import MenuChoiceLog
 
    # A user's choices from restaurant menus
    log = MenuChoiceLog(
@@ -71,7 +71,7 @@ For recommendation systems, use the convenience method:
 
 .. code-block:: python
 
-   from pyrevealed import MenuChoiceLog
+   from prefgraph import MenuChoiceLog
 
    # User saw 3 recommendation slates and clicked one item each time
    shown_items = [[0, 1, 2, 3], [1, 2, 4, 5], [0, 3, 4]]
@@ -106,7 +106,7 @@ from any menu containing x.
 
 .. code-block:: python
 
-   from pyrevealed import MenuChoiceLog, validate_menu_warp
+   from prefgraph import MenuChoiceLog, validate_menu_warp
 
    # WARP violation: choose 0 over 1, then 1 over 0
    violation_log = MenuChoiceLog(
@@ -185,7 +185,7 @@ preferences must be acyclic.
 
 .. code-block:: python
 
-   from pyrevealed import validate_menu_sarp
+   from prefgraph import validate_menu_sarp
 
    # SARP violation via 3-cycle: 0 > 1 > 2 > 0
    cycle_log = MenuChoiceLog(
@@ -270,7 +270,7 @@ a strict preference ordering (Richter's Theorem).
 
 .. code-block:: python
 
-   from pyrevealed import validate_menu_consistency
+   from prefgraph import validate_menu_consistency
 
    # Test for full rationalizability
    log = MenuChoiceLog(
@@ -358,7 +358,7 @@ A score of 1.0 means fully consistent; lower values indicate more violations.
 
 .. code-block:: python
 
-   from pyrevealed import compute_menu_efficiency
+   from prefgraph import compute_menu_efficiency
 
    # Data with one inconsistent observation
    log = MenuChoiceLog(
@@ -442,7 +442,7 @@ using topological sort of the revealed preference graph.
 
 .. code-block:: python
 
-   from pyrevealed import fit_menu_preferences
+   from prefgraph import fit_menu_preferences
 
    log = MenuChoiceLog(
        menus=[
@@ -524,7 +524,7 @@ Such that each choice is optimal among considered items.
 
 .. code-block:: python
 
-   from pyrevealed import test_attention_rationality
+   from prefgraph import test_attention_rationality
 
    # Data that violates SARP but might be attention-rational
    log = MenuChoiceLog(
@@ -559,7 +559,7 @@ Estimating Consideration Sets
 
 .. code-block:: python
 
-   from pyrevealed import estimate_consideration_sets, compute_salience_weights
+   from prefgraph import estimate_consideration_sets, compute_salience_weights
 
    log = MenuChoiceLog(
        menus=[frozenset({0, 1, 2, 3})] * 10,
@@ -592,7 +592,7 @@ Consider a recommender system where we want to understand user preferences:
 .. code-block:: python
 
    import numpy as np
-   from pyrevealed import (
+   from prefgraph import (
        MenuChoiceLog,
        validate_menu_warp,
        validate_menu_sarp,
@@ -678,7 +678,7 @@ multiple users, position bias, and partial attention effects:
 .. code-block:: python
 
    import numpy as np
-   from pyrevealed import (
+   from prefgraph import (
        MenuChoiceLog,
        validate_menu_warp,
        validate_menu_sarp,
@@ -749,7 +749,7 @@ multiple users, position bias, and partial attention effects:
        all_logs.append(log)
 
    # --- Batch analysis via Rust Engine ---
-   from pyrevealed.engine import Engine
+   from prefgraph.engine import Engine
 
    engine = Engine()
    user_tuples = [log.to_engine_tuple() for log in all_logs]
@@ -923,7 +923,7 @@ One-Liner Analysis
 
 .. code-block:: python
 
-   from pyrevealed import MenuChoiceSummary
+   from prefgraph import MenuChoiceSummary
 
    # Run all menu choice tests with one command
    summary = MenuChoiceSummary.from_log(log)
@@ -973,7 +973,7 @@ For quick status checks, use ``short_summary()``:
    # Output: MenuChoiceSummary: [+] WARP, [+] SARP, [+] Congruence, HM=1.00
 
    # Individual results also have short summaries
-   from pyrevealed import validate_menu_sarp, compute_menu_efficiency
+   from prefgraph import validate_menu_sarp, compute_menu_efficiency
 
    sarp = validate_menu_sarp(log)
    print(sarp.short_summary())
