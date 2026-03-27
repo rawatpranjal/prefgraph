@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.5.3] - 2026-03-27
+
+### Fixed
+- Linux/Windows install broken — v0.5.2 shipped with only 1 macOS wheel; all other platforms fell back to source build requiring Rust toolchain
+
+### Added
+- Python 3.13 wheels for all platforms
+- Linux aarch64 (ARM64) wheels
+- Rust build now optional for source installs — pure-Python fallback activates automatically via setuptools-rust
+
 ## [0.5.2] - 2026-03-26
 
 ### Changed
