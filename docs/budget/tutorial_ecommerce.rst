@@ -702,26 +702,3 @@ Exercises
    How do results change?
 
 
-References
-----------
-
-**Theory:**
-
-- Afriat, S. (1967). The construction of utility functions from expenditure
-  data. *International Economic Review*, 8(1), 67-77.
-
-- Varian, H. (1982). The nonparametric approach to demand analysis.
-  *Econometrica*, 50(4), 945-973.
-
-**Empirical Studies:**
-
-- Choi, S., Kariv, S., Müller, W., & Silverman, D. (2014). Who is (more)
-  rational? *American Economic Review*, 104(6), 1518-1550.
-
-- Bronars, S. (1987). The power of nonparametric tests of preference
-  maximization. *Econometrica*, 55(3), 693-698.
-
-**Data:**
-
-- Goldfarb, A., Tucker, C., & Wang, Y. (2024). Open e-commerce 1.0.
-  *Scientific Data*, 11(527).

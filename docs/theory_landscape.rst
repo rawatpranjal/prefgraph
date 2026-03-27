@@ -1,6 +1,3 @@
-:html_theme.sidebar_secondary.remove:
-:html_theme.sidebar_primary.remove:
-
 Methods
 =======
 

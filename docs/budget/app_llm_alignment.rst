@@ -273,22 +273,3 @@ Limitations
 - 100 trials per prompt may be insufficient for rare menu combinations.
   Increase trials for production-grade audits.
 
-References
-----------
-
-- Chen, Y., Liu, T., Shan, Y., & Zhong, S. (2023). "The Emergence of
-  Economic Rationality of GPT." *PNAS*, 120(51), e2316205120.
-  `doi:10.1073/pnas.2316205120 <https://doi.org/10.1073/pnas.2316205120>`_
-
-- "Economic Rationality under Specialization" (2025). arXiv:2501.18190.
-  Persona prompting reduces GARP consistency.
-
-- Richter, M. K. (1966). "Revealed Preference Theory." *Econometrica*,
-  34(3), 635--645.
-
-- Kallus, N. & Udell, M. (2016). "Revealed Preference at Scale." *EC '16*.
-
-.. seealso::
-
-   :doc:`/menu/app_recsys` for SARP on real recommendation click data.
-   :doc:`/menu/theory_abstract` for the mathematical foundations of SARP.
