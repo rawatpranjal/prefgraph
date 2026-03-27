@@ -166,6 +166,15 @@ efficiency ratios :math:`\{E_{ij} / E_{ii}\}`.
 - **Rust**: ``rpt-core/src/ccei.rs`` — ``ccei_search()`` performs the discrete binary
   search.
 
+.. raw:: html
+
+   <div style="margin: 2em 0;">
+       <div style="text-align: center;">
+           <img src="_static/ccei_algorithm.gif" style="width: 100%; max-width: 550px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
+           <p style="font-size: 0.9em; color: #666; margin-top: 8px;">CCEI shrinks budget sets until preference cycles disappear</p>
+       </div>
+   </div>
+
 
 MPI (Money Pump Index) — :math:`O(T^3)` Karp's Algorithm
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -272,6 +281,15 @@ Directed Feedback Vertex Set (DFVS)** on the preference graph.
 - **ILP solver**: ``rpt-core/src/lp.rs`` — ``solve_hm_ilp()``.
 
 **References**: Houtman & Maks (1985); Heufer & Hjertstrand (2015).
+
+.. raw:: html
+
+   <div style="margin: 2em 0;">
+       <div style="text-align: center;">
+           <img src="_static/hm_algorithm.gif" style="width: 100%; max-width: 550px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
+           <p style="font-size: 0.9em; color: #666; margin-top: 8px;">Houtman-Maks removes the minimum observations to break all preference cycles</p>
+       </div>
+   </div>
 
 
 VEI (Varian Efficiency Index) — NP-hard; Exact MILP

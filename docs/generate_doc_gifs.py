@@ -669,68 +669,336 @@ def generate_attention_decay():
 # GIF: CCEI (Afriat Efficiency Index) Pedagogical
 # ---------------------------------------------------------------------------
 def generate_ccei_algorithm():
-    fig, ax = plt.subplots(figsize=(7, 7.5), facecolor=PALETTE["bg"])
-    plt.subplots_adjust(top=0.85, bottom=0.1, left=0.12, right=0.95)
-    
-    TOTAL_FRAMES = 105
+    """CCEI educational GIF — slow, well-spaced, no text overlap."""
+    fig, ax = plt.subplots(figsize=(8, 9), facecolor=PALETTE["bg"])
+    plt.subplots_adjust(top=0.78, bottom=0.16, left=0.10, right=0.95)
+
+    TOTAL_FRAMES = 130
+    INTERVAL = 400  # ms — slow cadence
+
+    # --- data: 2 goods, 2 observations with a GARP violation ---
     prices = np.array([[1.0, 2.0], [2.0, 1.0]])
-    quants = np.array([[2.0, 3.0], [3.0, 2.0]])
-    expends = np.sum(prices * quants, axis=1)
-    
+    quants = np.array([[3.0, 2.5], [2.5, 3.0]])
+    expends = np.sum(prices * quants, axis=1)  # [8.0, 8.0]
+    CCEI_STAR = expends[0] / (prices[0] @ quants[1])  # critical e
+    colors_obs = ["#5b8def", "#8e44ad"]
+    labels_obs = ["Bundle A", "Bundle B"]
+
+    # --- fixed title (never changes, never overlaps) ---
+    fig.text(
+        0.04, 0.96,
+        "CCEI  (Critical Cost Efficiency Index)",
+        fontsize=15, fontweight="bold", color=PALETTE["accent"],
+        family="monospace",
+    )
+
+    # --- persistent text objects for phase / description / score ---
+    phase_txt = fig.text(0.04, 0.90, "", fontsize=13, fontweight="bold", color="#333")
+    desc_txt = fig.text(0.04, 0.845, "", fontsize=11, style="italic", color="#555",
+                        linespacing=1.5)
+    score_txt = fig.text(0.50, 0.06, "", fontsize=16, fontweight="bold",
+                         ha="center", va="center", color=PALETTE["accent"])
+    meter_txt = fig.text(0.50, 0.025, "", fontsize=10, ha="center", va="center",
+                         color="#666", family="monospace")
+
+    def _draw_budget(ax, idx, e, alpha_line=1.0, alpha_fill=0.08, lw=3):
+        """Draw a single budget line + shaded affordable region."""
+        p = prices[idx]
+        E = expends[idx] * e
+        x_int = E / p[0]
+        y_int = E / p[1]
+        ax.plot([0, x_int], [y_int, 0], color=colors_obs[idx], lw=lw,
+                alpha=alpha_line, zorder=3)
+        ax.fill_between([0, x_int], [y_int, 0], alpha=alpha_fill,
+                        color=colors_obs[idx], zorder=1)
+
+    def _draw_dot(ax, idx):
+        """Draw a choice dot with label offset."""
+        x, y = quants[idx]
+        ax.scatter(x, y, color=colors_obs[idx], s=180, zorder=6,
+                   edgecolors="white", lw=2.5)
+        # offset label away from the other dot to avoid overlap
+        ox = 0.35 if idx == 0 else -0.85
+        oy = -0.45 if idx == 0 else 0.35
+        ax.text(x + ox, y + oy, labels_obs[idx], fontsize=11,
+                fontweight="bold", color=colors_obs[idx], zorder=7)
+
+    def _draw_pref_arrow(ax, src, dst, color, lw=2, alpha=1.0, label=None):
+        """Curved preference arrow between two bundles."""
+        xs, ys = quants[src]
+        xd, yd = quants[dst]
+        dx, dy = xd - xs, yd - ys
+        length = np.sqrt(dx**2 + dy**2)
+        shrink = 0.32
+        sx = xs + shrink * dx / length
+        sy = ys + shrink * dy / length
+        ex = xd - shrink * dx / length
+        ey = yd - shrink * dy / length
+        ax.annotate(
+            "", xy=(ex, ey), xytext=(sx, sy),
+            arrowprops=dict(
+                arrowstyle="-|>", color=color, lw=lw, alpha=alpha,
+                connectionstyle="arc3,rad=0.25", shrinkA=0, shrinkB=0,
+            ),
+            zorder=5,
+        )
+        if label:
+            mx, my = (sx + ex) / 2, (sy + ey) / 2
+            # offset perpendicular to arrow
+            perp_x, perp_y = -dy / length, dx / length
+            ax.text(
+                mx + perp_x * 0.55, my + perp_y * 0.55, label,
+                fontsize=9, ha="center", va="center", color=color,
+                fontweight="bold",
+                bbox=dict(boxstyle="round,pad=0.2", facecolor="white",
+                          edgecolor="none", alpha=0.85),
+                zorder=8,
+            )
+
+    def _draw_meter(e_val, is_done=False):
+        """Update bottom efficiency meter text."""
+        bar_len = 30
+        filled = int(round(e_val * bar_len))
+        bar = "\u2588" * filled + "\u2591" * (bar_len - filled)
+        meter_txt.set_text(f"e = {e_val:.3f}   [{bar}]")
+        if is_done:
+            score_txt.set_text(f"CCEI = {e_val:.3f}")
+        else:
+            score_txt.set_text("")
+
     def update(frame):
         ax.clear()
         ax.set_facecolor(PALETTE["bg"])
-        ax.set_title("CCEI (Afriat Efficiency) Concept", fontsize=16, fontweight="bold", pad=32, loc="left", color=PALETTE["accent"])
-        ax.set_xlim(-0.2, 8.5)
-        ax.set_ylim(-0.2, 8.5)
-        ax.set_xlabel("Good 1", fontsize=12)
-        ax.set_ylabel("Good 2", fontsize=12)
-        ax.grid(True, alpha=0.15, color=PALETTE["grid"])
-        
-        if frame <= 30:
-            e = 1.0
-            phase_text = "Phase 1: Detect GARP Violations"
-            desc = "Observations $x^1$ and $x^2$ are mutually affordable\nunder each other's budgets. (Direct Cycle!)"
-        elif frame <= 75:
-            e = 1.0 - (1.0 - 0.875) * ((frame - 30) / 45.0)
-            phase_text = "Phase 2: Shrink Budgets by Efficiency $e$"
-            desc = f"Reduce budget sets inward to see when intersections break.\nTesting $e$ = {e:.3f}"
+        ax.set_xlim(-0.3, 9.0)
+        ax.set_ylim(-0.3, 9.0)
+        ax.set_xlabel("Good 1", fontsize=12, labelpad=8)
+        ax.set_ylabel("Good 2", fontsize=12, labelpad=8)
+        ax.grid(True, alpha=0.12, color=PALETTE["grid"])
+        for spine in ax.spines.values():
+            spine.set_color(PALETTE["grid"])
+
+        # ============================================================
+        # Phase 1: Setup (frames 0-24) — draw budget lines + dots
+        # ============================================================
+        if frame <= 24:
+            phase_txt.set_text("Step 1:  Two Shopping Trips")
+            desc_txt.set_text(
+                "A consumer makes two purchases with different prices.\n"
+                "Each budget line shows what was affordable."
+            )
+            meter_txt.set_text("")
+            score_txt.set_text("")
+
+            # budget line 1 appears at frame 3
+            if frame >= 3:
+                prog1 = min((frame - 3) / 5, 1.0)
+                _draw_budget(ax, 0, 1.0, alpha_line=prog1)
+            # dot 1 appears at frame 8
+            if frame >= 8:
+                _draw_dot(ax, 0)
+            # budget line 2 appears at frame 14
+            if frame >= 14:
+                prog2 = min((frame - 14) / 5, 1.0)
+                _draw_budget(ax, 1, 1.0, alpha_line=prog2)
+            # dot 2 appears at frame 19
+            if frame >= 19:
+                _draw_dot(ax, 1)
+
+        # ============================================================
+        # Phase 2: Reveal preference cycle (frames 25-49)
+        # ============================================================
+        elif frame <= 49:
+            _draw_budget(ax, 0, 1.0)
+            _draw_budget(ax, 1, 1.0)
+            _draw_dot(ax, 0)
+            _draw_dot(ax, 1)
+            meter_txt.set_text("")
+            score_txt.set_text("")
+
+            if frame <= 36:
+                phase_txt.set_text("Step 2:  Reveal Preferences")
+                desc_txt.set_text(
+                    "Bundle B is inside Budget A's affordable region.\n"
+                    "So choosing A over B reveals:  A is preferred to B."
+                )
+                prog = min((frame - 25) / 4, 1.0)
+                _draw_pref_arrow(ax, 0, 1, PALETTE["node"], lw=2.5,
+                                 alpha=prog, label="A \u227b B")
+            else:
+                desc_txt.set_text(
+                    "Bundle A is inside Budget B's affordable region.\n"
+                    "So choosing B over A reveals:  B is preferred to A."
+                )
+                _draw_pref_arrow(ax, 0, 1, PALETTE["node"], lw=2.5,
+                                 label="A \u227b B")
+                prog = min((frame - 37) / 4, 1.0)
+                _draw_pref_arrow(ax, 1, 0, PALETTE["node"], lw=2.5,
+                                 alpha=prog, label="B \u227b A")
+                if frame >= 43:
+                    phase_txt.set_text("Step 2:  CONTRADICTION!")
+                    desc_txt.set_text(
+                        "A \u227b B  AND  B \u227b A  is a preference cycle.\n"
+                        "This violates GARP \u2014 choices are inconsistent."
+                    )
+                    _draw_pref_arrow(ax, 0, 1, PALETTE["highlight"], lw=3)
+                    _draw_pref_arrow(ax, 1, 0, PALETTE["highlight"], lw=3)
+                    # red X in center
+                    mx = (quants[0, 0] + quants[1, 0]) / 2
+                    my = (quants[0, 1] + quants[1, 1]) / 2
+                    ax.text(mx, my + 0.8, "\u2716 CYCLE", fontsize=14,
+                            fontweight="bold", color=PALETTE["highlight"],
+                            ha="center", va="center",
+                            bbox=dict(boxstyle="round,pad=0.3",
+                                      facecolor="white", edgecolor=PALETTE["highlight"],
+                                      lw=1.5, alpha=0.9),
+                            zorder=10)
+
+        # ============================================================
+        # Phase 3: Introduce shrinking idea (frames 50-64)
+        # ============================================================
+        elif frame <= 64:
+            phase_txt.set_text("Step 3:  The CCEI Idea")
+            desc_txt.set_text(
+                "What if we shrink each budget inward by a factor e?\n"
+                "At some point, the overlap disappears."
+            )
+            meter_txt.set_text("e = 1.000   (no shrinkage yet)")
+            score_txt.set_text("")
+
+            # draw original budgets as ghosts
+            _draw_budget(ax, 0, 1.0, alpha_line=0.25, alpha_fill=0.03, lw=1.5)
+            _draw_budget(ax, 1, 1.0, alpha_line=0.25, alpha_fill=0.03, lw=1.5)
+            # draw slightly shrunken budgets to preview
+            preview_e = 1.0 - 0.04 * min((frame - 50) / 14, 1.0)
+            _draw_budget(ax, 0, preview_e, alpha_line=0.8)
+            _draw_budget(ax, 1, preview_e, alpha_line=0.8)
+            _draw_dot(ax, 0)
+            _draw_dot(ax, 1)
+
+            # show inward arrows on budget lines
+            if frame >= 55:
+                for idx in range(2):
+                    p = prices[idx]
+                    E = expends[idx]
+                    mx = (E / p[0]) / 2
+                    my = (E / p[1]) / 2
+                    # arrow pointing inward
+                    dx, dy = -p[0], -p[1]
+                    length = np.sqrt(dx**2 + dy**2)
+                    ax.annotate(
+                        "", xy=(mx + 0.4 * dx / length, my + 0.4 * dy / length),
+                        xytext=(mx, my),
+                        arrowprops=dict(arrowstyle="-|>", color="#e67e22",
+                                        lw=2, alpha=0.7),
+                        zorder=5,
+                    )
+
+        # ============================================================
+        # Phase 4: Animate shrinking (frames 65-104)
+        # ============================================================
+        elif frame <= 104:
+            t = (frame - 65) / 39.0  # 0 → 1
+            e = 1.0 - t * (1.0 - CCEI_STAR)
+            phase_txt.set_text("Step 4:  Shrinking Budgets")
+            desc_txt.set_text(
+                f"Testing efficiency  e = {e:.3f}\n"
+                f"Budgets reduced to {e * 100:.1f}% of original."
+            )
+
+            # ghost originals
+            _draw_budget(ax, 0, 1.0, alpha_line=0.15, alpha_fill=0.02, lw=1)
+            _draw_budget(ax, 1, 1.0, alpha_line=0.15, alpha_fill=0.02, lw=1)
+            # current shrunken
+            _draw_budget(ax, 0, e)
+            _draw_budget(ax, 1, e)
+            _draw_dot(ax, 0)
+            _draw_dot(ax, 1)
+
+            # check if violation still exists
+            # violation exists when x_j is still inside budget_i * e
+            cost_0_of_1 = prices[0] @ quants[1]  # cost of bundle B at prices A
+            cost_1_of_0 = prices[1] @ quants[0]  # cost of bundle A at prices B
+            viol_0 = (e * expends[0]) >= cost_0_of_1 - 1e-9
+            viol_1 = (e * expends[1]) >= cost_1_of_0 - 1e-9
+            has_cycle = viol_0 and viol_1
+
+            if has_cycle:
+                _draw_pref_arrow(ax, 0, 1, PALETTE["highlight"], lw=2.5,
+                                 alpha=0.6)
+                _draw_pref_arrow(ax, 1, 0, PALETTE["highlight"], lw=2.5,
+                                 alpha=0.6)
+                ax.text(7.5, 8.0, "\u2716 Cycle", fontsize=12,
+                        fontweight="bold", color=PALETTE["highlight"],
+                        ha="center", va="center", zorder=10)
+            else:
+                ax.text(7.5, 8.0, "\u2714 No Cycle", fontsize=12,
+                        fontweight="bold", color=PALETTE["accent"],
+                        ha="center", va="center", zorder=10)
+
+            _draw_meter(e)
+
+        # ============================================================
+        # Phase 5: Critical threshold (frames 105-119)
+        # ============================================================
+        elif frame <= 119:
+            e = CCEI_STAR
+            phase_txt.set_text("Step 5:  Cycle Broken!")
+            desc_txt.set_text(
+                f"At e = {e:.3f}, Bundle B falls outside Budget A's region.\n"
+                f"The preference cycle disappears. Choices are now rational."
+            )
+
+            _draw_budget(ax, 0, 1.0, alpha_line=0.15, alpha_fill=0.02, lw=1)
+            _draw_budget(ax, 1, 1.0, alpha_line=0.15, alpha_fill=0.02, lw=1)
+            _draw_budget(ax, 0, e)
+            _draw_budget(ax, 1, e)
+            _draw_dot(ax, 0)
+            _draw_dot(ax, 1)
+
+            ax.text(7.5, 8.0, "\u2714 No Cycle", fontsize=12,
+                    fontweight="bold", color=PALETTE["accent"],
+                    ha="center", va="center", zorder=10)
+
+            _draw_meter(e, is_done=False)
+
+            # highlight the gap where B is now outside
+            if frame >= 110:
+                alpha_note = min((frame - 110) / 5, 1.0)
+                ax.text(
+                    4.5, 1.0,
+                    "B is now outside\nthe shrunken\nbudget of A",
+                    fontsize=10, ha="center", va="center",
+                    color=PALETTE["accent"], alpha=alpha_note,
+                    fontweight="bold",
+                    bbox=dict(boxstyle="round,pad=0.4", facecolor="white",
+                              edgecolor=PALETTE["accent"], lw=1.5,
+                              alpha=alpha_note * 0.9),
+                    zorder=10,
+                )
+
+        # ============================================================
+        # Phase 6: Score reveal (frames 120-129)
+        # ============================================================
         else:
-            e = 0.875
-            phase_text = "Phase 3: Critical Efficiency Threshold"
-            desc = f"At $e$ = 0.875, choices strictly separate.\nCCEI = 0.875 (Budgets shrunk by min 12.5%)."
-            
-        ax.text(0.00, 1.09, phase_text, transform=ax.transAxes, fontsize=12, fontweight="bold", color="#333333")
-        ax.text(0.00, 1.02, desc, transform=ax.transAxes, fontsize=11, style="italic")
-        
-        colors = ["#5b8def", "#8e44ad"]
-        for i in range(2):
-            p = prices[i]
-            E = expends[i] * e
-            x_int = E / p[0]
-            y_int = E / p[1]
-            ax.plot([0, x_int], [y_int, 0], color=colors[i], lw=2.5, alpha=0.6)
-            ax.fill_between([0, x_int], [y_int, 0], alpha=0.1, color=colors[i])
-            ax.scatter(quants[i, 0], quants[i, 1], color=colors[i], s=140, zorder=5, edgecolors="white", lw=2)
-            ax.annotate(f"$x^{i+1}$", (quants[i, 0] + 0.2, quants[i, 1] + 0.2), fontsize=12, fontweight="bold", color=colors[i])
-            
-        if frame > 15:
-            alpha_arrow = 1.0 if e > 0.876 else 0.2
-            color_arrow = PALETTE["highlight"] if e > 0.876 else PALETTE["edge"]
-            
-            if 7 <= 8 * e + 0.001:
-                dx, dy = quants[0,0] - quants[1,0], quants[0,1] - quants[1,1]
-                ax.annotate("", xy=(quants[0,0] - dx*0.2, quants[0,1] - dy*0.2), xytext=(quants[1,0] + dx*0.2, quants[1,1] + dy*0.2), arrowprops=dict(arrowstyle="-|>", color=color_arrow, lw=2, alpha=alpha_arrow))
-            if 7 <= 8 * e + 0.001:
-                dx, dy = quants[1,0] - quants[0,0], quants[1,1] - quants[0,1]
-                ax.annotate("", xy=(quants[1,0] - dx*0.2, quants[1,1] - dy*0.2), xytext=(quants[0,0] + dx*0.2, quants[0,1] + dy*0.2), arrowprops=dict(arrowstyle="-|>", ls="--", color=color_arrow, lw=2, alpha=alpha_arrow))
-                
-        if frame > 80:
-            alpha_box = min((frame - 80) / 10, 1.0)
-            ax.text(4.25, 7.5, "Cycles Terminated\n$e_{min} = 0.875$", fontsize=14, fontweight="bold", ha="center", va="center", color=PALETTE["secondary"], alpha=alpha_box, bbox=dict(boxstyle="round,pad=0.5", facecolor=PALETTE["bg"], edgecolor=PALETTE["secondary"], alpha=alpha_box, lw=2))
-                    
+            e = CCEI_STAR
+            phase_txt.set_text("Result")
+            waste = (1.0 - e) * 100
+            desc_txt.set_text(
+                f"Only {waste:.1f}% budget waste needed to rationalize choices.\n"
+                f"Higher CCEI = closer to perfectly rational."
+            )
+
+            _draw_budget(ax, 0, 1.0, alpha_line=0.15, alpha_fill=0.02, lw=1)
+            _draw_budget(ax, 1, 1.0, alpha_line=0.15, alpha_fill=0.02, lw=1)
+            _draw_budget(ax, 0, e)
+            _draw_budget(ax, 1, e)
+            _draw_dot(ax, 0)
+            _draw_dot(ax, 1)
+
+            _draw_meter(e, is_done=True)
+
     print("  Generating ccei_algorithm.gif...")
-    anim = FuncAnimation(fig, update, frames=TOTAL_FRAMES, interval=200)
+    anim = FuncAnimation(fig, update, frames=TOTAL_FRAMES, interval=INTERVAL)
     anim.save(OUTPUT_DIR / "ccei_algorithm.gif", writer="pillow", dpi=DPI)
     plt.close(fig)
 
@@ -738,85 +1006,314 @@ def generate_ccei_algorithm():
 # GIF: HM (Houtman-Maks Index) Pedagogical
 # ---------------------------------------------------------------------------
 def generate_hm_algorithm():
-    fig, ax = plt.subplots(figsize=(7, 7.5), facecolor=PALETTE["bg"])
-    plt.subplots_adjust(top=0.85, bottom=0.1, left=0.12, right=0.95)
-    
-    TOTAL_FRAMES = 110
-    nodes = {1: (0, 0), 2: (2, 2.5), 3: (3, -0.5), 4: (-2, 2.5), 5: (-3, -0.5)}
-    edges = [(1,2), (2,3), (3,1), (1,4), (4,5), (5,1)]
-    
+    """HM educational GIF — slow, well-spaced, no text overlap."""
+    fig, ax = plt.subplots(figsize=(8, 9), facecolor=PALETTE["bg"])
+    plt.subplots_adjust(top=0.78, bottom=0.14, left=0.08, right=0.95)
+
+    TOTAL_FRAMES = 140
+    INTERVAL = 400  # ms — slow cadence
+
+    # --- graph data: 5 nodes, 2 cycles sharing hub node 1 ---
+    node_pos = {
+        1: (0.0, 1.8),      # hub — center-ish
+        2: (2.8, 3.5),      # top-right
+        3: (2.8, 0.1),      # bottom-right
+        4: (-2.8, 3.5),     # top-left
+        5: (-2.8, 0.1),     # bottom-left
+    }
+    node_labels = {1: "Trip 1", 2: "Trip 2", 3: "Trip 3", 4: "Trip 4", 5: "Trip 5"}
+    # cycle A: 1→2→3→1   cycle B: 1→4→5→1
+    all_edges = [(1, 2), (2, 3), (3, 1), (1, 4), (4, 5), (5, 1)]
+    cycle_a = {(1, 2), (2, 3), (3, 1)}
+    cycle_b = {(1, 4), (4, 5), (5, 1)}
+    NODE_R = 0.42
+
+    # --- fixed title ---
+    fig.text(
+        0.04, 0.96,
+        "Houtman-Maks  (HM)  Index",
+        fontsize=15, fontweight="bold", color=PALETTE["accent"],
+        family="monospace",
+    )
+    phase_txt = fig.text(0.04, 0.90, "", fontsize=13, fontweight="bold", color="#333")
+    desc_txt = fig.text(0.04, 0.845, "", fontsize=11, style="italic", color="#555",
+                        linespacing=1.5)
+    score_txt = fig.text(0.50, 0.055, "", fontsize=16, fontweight="bold",
+                         ha="center", va="center", color=PALETTE["accent"])
+    counter_txt = fig.text(0.50, 0.02, "", fontsize=10, ha="center", va="center",
+                           color="#666", family="monospace")
+
+    def _draw_node(ax, nid, color, alpha=1.0, show_label=True):
+        x, y = node_pos[nid]
+        circle = plt.Circle((x, y), NODE_R, color=color, alpha=alpha, zorder=10)
+        ax.add_patch(circle)
+        ax.text(x, y, str(nid), fontsize=15, fontweight="bold", color="white",
+                ha="center", va="center", zorder=11, alpha=alpha)
+        if show_label:
+            ax.text(x, y - NODE_R - 0.35, node_labels[nid], fontsize=9,
+                    ha="center", va="top", color="#555", alpha=alpha, zorder=11)
+
+    def _draw_edge(ax, u, v, color, lw=2.0, alpha=1.0):
+        x1, y1 = node_pos[u]
+        x2, y2 = node_pos[v]
+        dx, dy = x2 - x1, y2 - y1
+        length = np.sqrt(dx**2 + dy**2)
+        if length < 0.01:
+            return
+        shrink = NODE_R + 0.08
+        sx = x1 + shrink * dx / length
+        sy = y1 + shrink * dy / length
+        ex = x2 - shrink * dx / length
+        ey = y2 - shrink * dy / length
+        ax.annotate(
+            "", xy=(ex, ey), xytext=(sx, sy),
+            arrowprops=dict(
+                arrowstyle="-|>", color=color, lw=lw, alpha=alpha,
+                connectionstyle="arc3,rad=0.18", shrinkA=0, shrinkB=0,
+            ),
+            zorder=5,
+        )
+
+    def _draw_glow(ax, nid, color, alpha=0.3):
+        """Draw a glowing ring around a node."""
+        x, y = node_pos[nid]
+        glow = plt.Circle((x, y), NODE_R + 0.15, color=color, alpha=alpha,
+                           fill=False, lw=4, zorder=9)
+        ax.add_patch(glow)
+
+    def _setup_axes(ax):
+        ax.set_facecolor(PALETTE["bg"])
+        ax.set_xlim(-4.5, 4.5)
+        ax.set_ylim(-1.2, 4.8)
+        ax.axis("off")
+
     def update(frame):
         ax.clear()
-        ax.set_facecolor(PALETTE["bg"])
-        ax.set_title("Houtman-Maks (HM) Index", fontsize=16, fontweight="bold", pad=32, loc="left", color=PALETTE["accent"])
-        ax.set_xlim(-4, 4)
-        ax.set_ylim(-2.5, 4.0)
-        ax.axis("off")
-        
-        if frame < 25:
-            phase_text = "Phase 1: Reveal Preference Cycles"
-            desc = "Find all choice sequences. We see two severe cycles."
-            active_nodes = [1, 2, 3, 4, 5]
-            highlight_cycles = frame > 10
-        elif frame < 55:
-            phase_text = "Phase 2: Try Removing Regular Nodes"
-            desc = "If we discard Node 3, the Right Cycle breaks.\nBut the Left Cycle remains! Graph is not a DAG yet."
-            active_nodes = [1, 2, 4, 5] if frame > 30 and frame < 50 else [1, 2, 3, 4, 5]
-            highlight_cycles = True
-        elif frame < 85:
-            phase_text = "Phase 3: Feedback Vertex Strategy"
-            desc = "Discarding Node 1 (Key Hub) breaks ALL cycles!\nThe remaining graph is perfectly rational (DAG)."
-            active_nodes = [2, 3, 4, 5] if frame > 60 else [1, 2, 3, 4, 5]
-            highlight_cycles = frame <= 60
+        _setup_axes(ax)
+
+        # ============================================================
+        # Phase 1: Meet the trips (frames 0-24)
+        # ============================================================
+        if frame <= 24:
+            phase_txt.set_text("Step 1:  Five Shopping Trips")
+            desc_txt.set_text(
+                "A consumer makes 5 purchases over time.\n"
+                "Each trip is a node in the preference graph."
+            )
+            score_txt.set_text("")
+            counter_txt.set_text("")
+
+            # nodes appear one at a time: 1 at f=2, 2 at f=6, 3 at f=10, 4 at f=14, 5 at f=18
+            for i, nid in enumerate([1, 2, 3, 4, 5]):
+                appear = 2 + i * 5
+                if frame >= appear:
+                    alpha = min((frame - appear) / 3, 1.0)
+                    _draw_node(ax, nid, PALETTE["node"], alpha=alpha)
+
+        # ============================================================
+        # Phase 2: Build preference edges (frames 25-54)
+        # ============================================================
+        elif frame <= 54:
+            phase_txt.set_text("Step 2:  Build Preference Graph")
+            desc_txt.set_text(
+                "Each arrow means \"this bundle was affordable but not chosen.\"\n"
+                "The chosen bundle is revealed preferred."
+            )
+            score_txt.set_text("")
+            counter_txt.set_text("")
+
+            # all nodes visible
+            for nid in node_pos:
+                _draw_node(ax, nid, PALETTE["node"])
+
+            # edges appear one at a time: 5 frames per edge
+            for i, (u, v) in enumerate(all_edges):
+                appear = 25 + i * 5
+                if frame >= appear:
+                    alpha = min((frame - appear) / 3, 1.0)
+                    _draw_edge(ax, u, v, PALETTE["edge"], lw=2.0, alpha=alpha)
+
+        # ============================================================
+        # Phase 3: Spot the cycles (frames 55-79)
+        # ============================================================
+        elif frame <= 79:
+            score_txt.set_text("")
+
+            # all nodes + edges present
+            for nid in node_pos:
+                _draw_node(ax, nid, PALETTE["node"])
+
+            if frame <= 66:
+                phase_txt.set_text("Step 3:  Spot the Cycles")
+                desc_txt.set_text(
+                    "Cycle A:  Trip 1 \u2192 Trip 2 \u2192 Trip 3 \u2192 Trip 1\n"
+                    "A preference loop \u2014 this violates rationality!"
+                )
+                counter_txt.set_text("Cycles found: 1")
+                # draw all edges, highlight cycle A
+                for u, v in all_edges:
+                    if (u, v) in cycle_a:
+                        pulse = 0.6 + 0.4 * abs(np.sin(frame * 0.3))
+                        _draw_edge(ax, u, v, PALETTE["highlight"], lw=3.5,
+                                   alpha=pulse)
+                    else:
+                        _draw_edge(ax, u, v, PALETTE["edge"], lw=1.5, alpha=0.4)
+                # glow cycle A nodes
+                for nid in [1, 2, 3]:
+                    _draw_glow(ax, nid, PALETTE["highlight"], alpha=0.25)
+            else:
+                phase_txt.set_text("Step 3:  Two Cycles Found")
+                desc_txt.set_text(
+                    "Cycle B:  Trip 1 \u2192 Trip 4 \u2192 Trip 5 \u2192 Trip 1\n"
+                    "Both cycles share Trip 1 as the common hub."
+                )
+                counter_txt.set_text("Cycles found: 2")
+                # highlight both cycles
+                for u, v in all_edges:
+                    if (u, v) in cycle_a or (u, v) in cycle_b:
+                        pulse = 0.6 + 0.4 * abs(np.sin(frame * 0.3))
+                        _draw_edge(ax, u, v, PALETTE["highlight"], lw=3.5,
+                                   alpha=pulse)
+                    else:
+                        _draw_edge(ax, u, v, PALETTE["edge"], lw=1.5, alpha=0.4)
+                for nid in [1, 2, 3, 4, 5]:
+                    _draw_glow(ax, nid, PALETTE["highlight"], alpha=0.2)
+
+        # ============================================================
+        # Phase 4: Try removing node 3 (frames 80-99)
+        # ============================================================
+        elif frame <= 99:
+            score_txt.set_text("")
+
+            if frame <= 89:
+                phase_txt.set_text("Step 4:  Try Removing Trip 3")
+                desc_txt.set_text(
+                    "Drop Trip 3. Cycle A breaks!  \u2714\n"
+                    "But Cycle B still exists...  \u2716"
+                )
+                counter_txt.set_text("Removed: Trip 3  |  Cycles remaining: 1")
+
+                active = {1, 2, 4, 5}
+                for nid in node_pos:
+                    if nid in active:
+                        _draw_node(ax, nid, PALETTE["node"])
+                    else:
+                        _draw_node(ax, nid, PALETTE["grid"], alpha=0.2)
+
+                for u, v in all_edges:
+                    if u not in active or v not in active:
+                        continue
+                    if (u, v) in cycle_b:
+                        pulse = 0.6 + 0.4 * abs(np.sin(frame * 0.3))
+                        _draw_edge(ax, u, v, PALETTE["highlight"], lw=3, alpha=pulse)
+                    else:
+                        _draw_edge(ax, u, v, PALETTE["edge"], lw=1.5, alpha=0.5)
+
+                # show checkmark for cycle A, X for cycle B
+                ax.text(3.5, 2.0, "Cycle A\n\u2714 Broken", fontsize=10,
+                        ha="center", color=PALETTE["accent"], fontweight="bold")
+                ax.text(-3.5, 2.0, "Cycle B\n\u2716 Still there", fontsize=10,
+                        ha="center", color=PALETTE["highlight"], fontweight="bold")
+
+            else:
+                # restore node 3, show all again
+                phase_txt.set_text("Step 4:  That Didn't Work")
+                desc_txt.set_text(
+                    "Removing Trip 3 only breaks one cycle.\n"
+                    "We need a smarter strategy."
+                )
+                counter_txt.set_text("Trip 3 restored  |  Looking for the hub...")
+
+                for nid in node_pos:
+                    _draw_node(ax, nid, PALETTE["node"])
+                for u, v in all_edges:
+                    _draw_edge(ax, u, v, PALETTE["highlight"], lw=2, alpha=0.5)
+
+                # highlight node 1 as special
+                _draw_glow(ax, 1, "#e67e22", alpha=0.5)
+
+        # ============================================================
+        # Phase 5: Remove the hub — node 1 (frames 100-124)
+        # ============================================================
+        elif frame <= 124:
+            if frame <= 107:
+                phase_txt.set_text("Step 5:  Trip 1 Is the Hub")
+                desc_txt.set_text(
+                    "Trip 1 participates in BOTH cycles.\n"
+                    "It has the highest degree. Remove it!"
+                )
+                counter_txt.set_text("Hub node identified: Trip 1 (degree = 4)")
+
+                for nid in node_pos:
+                    _draw_node(ax, nid, PALETTE["node"])
+                for u, v in all_edges:
+                    _draw_edge(ax, u, v, PALETTE["edge"], lw=1.5, alpha=0.5)
+                _draw_glow(ax, 1, "#e67e22", alpha=0.6)
+
+                # degree annotation
+                x1, y1 = node_pos[1]
+                ax.text(x1 + 0.9, y1 + 0.5, "4 edges\n(highest!)", fontsize=9,
+                        color="#e67e22", fontweight="bold",
+                        bbox=dict(boxstyle="round,pad=0.3", facecolor="white",
+                                  edgecolor="#e67e22", lw=1.2, alpha=0.85))
+
+            else:
+                phase_txt.set_text("Step 5:  All Cycles Broken!")
+                desc_txt.set_text(
+                    "Without Trip 1, no cycles remain.\n"
+                    "The remaining trips form a clean, rational graph."
+                )
+                counter_txt.set_text("Removed: Trip 1  |  Cycles remaining: 0")
+
+                fade = max(0.15, 1.0 - (frame - 108) / 6)
+                active = {2, 3, 4, 5}
+                for nid in node_pos:
+                    if nid in active:
+                        _draw_node(ax, nid, PALETTE["accent"])
+                    else:
+                        _draw_node(ax, nid, PALETTE["grid"], alpha=min(fade, 0.2),
+                                   show_label=False)
+
+                for u, v in all_edges:
+                    if u not in active or v not in active:
+                        continue
+                    _draw_edge(ax, u, v, PALETTE["accent"], lw=2, alpha=0.6)
+
+                # show both cycles broken
+                ax.text(3.5, 2.0, "Cycle A  \u2714", fontsize=11, ha="center",
+                        color=PALETTE["accent"], fontweight="bold")
+                ax.text(-3.5, 2.0, "Cycle B  \u2714", fontsize=11, ha="center",
+                        color=PALETTE["accent"], fontweight="bold")
+
+        # ============================================================
+        # Phase 6: Score reveal (frames 125-139)
+        # ============================================================
         else:
-            phase_text = "Conclusion: Compute Score"
-            desc = "HM Index = Max Consistent Subset / Total Size\nScore = 4 Valid Nodes / 5 Total Nodes = 0.80"
-            active_nodes = [2, 3, 4, 5]
-            highlight_cycles = False
-            
-        ax.text(0.00, 1.09, phase_text, transform=ax.transAxes, fontsize=12, fontweight="bold", color="#333333")
-        ax.text(0.00, 1.02, desc, transform=ax.transAxes, fontsize=11, style="italic")
-        
-        for u, v in edges:
-            if u not in active_nodes or v not in active_nodes: continue
-            x1, y1 = nodes[u]
-            x2, y2 = nodes[v]
-            dx, dy = x2 - x1, y2 - y1
-            length = np.sqrt(dx**2 + dy**2)
-            sx, sy = x1 + 0.3 * dx/length, y1 + 0.3 * dy/length
-            ex, ey = x2 - 0.3 * dx/length, y2 - 0.3 * dy/length
-            
-            if highlight_cycles:
-                if frame > 30 and frame < 50 and (u==3 or v==3): continue
-                color = PALETTE["highlight"]
-                lw = 2.5
-            elif not highlight_cycles and frame > 60:
-                color = PALETTE["secondary"]
-                lw = 2.0
-            else:
-                color = PALETTE["edge"]
-                lw = 1.5
-            ax.annotate("", xy=(ex, ey), xytext=(sx, sy), arrowprops=dict(arrowstyle="-|>", color=color, lw=lw, shrinkA=0, shrinkB=0))
-        
-        for n, (x, y) in nodes.items():
-            if n in active_nodes:
-                color = PALETTE["accent"]
-                if n == 1 and frame < 60:
-                    color = "#e67e22"
-                if frame > 60 and n in active_nodes:
-                    color = PALETTE["secondary"]
-                ax.add_patch(plt.Circle((x, y), 0.35, color=color, zorder=10))
-                ax.text(x, y, f"{n}", fontsize=14, fontweight="bold", color="white", ha="center", va="center", zorder=11)
-            else:
-                ax.add_patch(plt.Circle((x, y), 0.35, color=PALETTE["grid"], alpha=0.2, zorder=10))
-                ax.text(x, y, f"{n}", fontsize=14, fontweight="bold", color="black", alpha=0.3, ha="center", va="center", zorder=11)
-                
-        if frame > 85:
-            alpha_box = min((frame - 85) / 10, 1.0)
-            ax.text(0, -2.5, "HM Index = 0.80\n(4 consistent / 5 total)", fontsize=14, fontweight="bold", ha="center", va="center", color=PALETTE["secondary"], alpha=alpha_box, bbox=dict(boxstyle="round,pad=0.5", facecolor=PALETTE["bg"], edgecolor=PALETTE["secondary"], alpha=alpha_box, lw=2))
+            phase_txt.set_text("Result")
+            desc_txt.set_text(
+                "4 out of 5 trips are perfectly rational.\n"
+                "Only 1 outlier needed to be removed."
+            )
+
+            active = {2, 3, 4, 5}
+            for nid in node_pos:
+                if nid in active:
+                    _draw_node(ax, nid, PALETTE["accent"])
+                else:
+                    _draw_node(ax, nid, PALETTE["grid"], alpha=0.15,
+                               show_label=False)
+            for u, v in all_edges:
+                if u not in active or v not in active:
+                    continue
+                _draw_edge(ax, u, v, PALETTE["accent"], lw=2, alpha=0.6)
+
+            alpha_score = min((frame - 125) / 5, 1.0)
+            score_txt.set_text("HM Score = 4 / 5 = 0.80")
+            score_txt.set_alpha(alpha_score)
+            counter_txt.set_text("80% of observations are perfectly consistent")
 
     print("  Generating hm_algorithm.gif...")
-    anim = FuncAnimation(fig, update, frames=TOTAL_FRAMES, interval=300)
+    anim = FuncAnimation(fig, update, frames=TOTAL_FRAMES, interval=INTERVAL)
     anim.save(OUTPUT_DIR / "hm_algorithm.gif", writer="pillow", dpi=DPI)
     plt.close(fig)
 
