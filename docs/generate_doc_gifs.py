@@ -70,7 +70,7 @@ def generate_budget_hero():
         for idx, (ax, sc) in enumerate(zip(axes, scenarios)):
             ax.clear()
             ax.set_facecolor(PALETTE["bg"])
-            ax.set_title(sc["title"], fontsize=13, fontweight="bold", pad=8, loc="left", color=sc["accent"])
+            ax.set_title(sc["title"], fontsize=14, fontweight="bold", pad=10, loc="left", color=sc["accent"])
 
             prices, quants = sc["prices"], sc["quants"]
             expenditures = np.sum(prices * quants, axis=1)
@@ -79,12 +79,8 @@ def generate_budget_hero():
 
             ax.set_xlim(-0.2, 8.5)
             ax.set_ylim(-0.2, 8.5)
-            if idx == 2:
-                ax.set_xlabel("Good 1", fontsize=11)
-            ax.set_ylabel("Good 2", fontsize=11)
+            ax.tick_params(labelsize=10)
             ax.grid(True, alpha=0.15, color=PALETTE["grid"])
-            ax.text(0.00, -0.10, sc["desc"], transform=ax.transAxes, fontsize=9,
-                    style="italic", color=PALETTE["secondary"], va="top")
 
             budget_prefs = []
             for i in range(n_total):
@@ -165,9 +161,7 @@ def generate_menu_hero():
         for idx, (ax, sc) in enumerate(zip(axes, scenarios)):
             ax.clear()
             ax.set_facecolor(PALETTE["bg"])
-            ax.set_title(sc["title"], fontsize=13, fontweight="bold", pad=8, loc="left", color=sc["accent"])
-            ax.text(0.00, -0.10, sc["desc"], transform=ax.transAxes, fontsize=9,
-                    style="italic", color=PALETTE["secondary"], va="top")
+            ax.set_title(sc["title"], fontsize=14, fontweight="bold", pad=10, loc="left", color=sc["accent"])
             
             menus = sc["menus"]
             n_total = len(menus)
@@ -194,7 +188,7 @@ def generate_menu_hero():
                 
                 ax.plot([min(x_positions)-0.5, max(x_positions)+0.5], [y_base-0.45, y_base-0.45], 
                         color=PALETTE["secondary"], lw=1.5, alpha=0.4)
-                ax.text(-2.5, y_base, f"Menu {m_idx+1}:", fontsize=11, va="center", color=PALETTE["secondary"])
+                ax.text(-2.5, y_base, f"Menu {m_idx+1}:", fontsize=12, va="center", color=PALETTE["secondary"])
 
                 for i_idx, item in enumerate(sorted_items):
                     x = x_positions[i_idx]
@@ -229,7 +223,7 @@ def generate_menu_hero():
                 else:
                     box_text = "SARP Violated"
                 
-                ax.text(1.8, -len(menus)*1.3 + 0.3, box_text, fontsize=11, fontweight="bold", ha="center",
+                ax.text(-2.5, 0.2, box_text, fontsize=12, fontweight="bold", ha="left",
                         color=sc["accent"], alpha=alpha,
                         bbox=dict(boxstyle="round,pad=0.3", facecolor="white", edgecolor=sc["accent"], alpha=alpha))
 
