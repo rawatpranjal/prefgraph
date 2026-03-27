@@ -24,7 +24,7 @@ You have data on what people chose. PyRevealed tests whether those choices are r
      </div>
      <div class="feature-card">
        <h3>Algorithms</h3>
-       <p>Graph closure, cycle detection, linear programming, and combinatorial search — all implemented in Rust. Covers 60% of the methods surveyed in Chambers &amp; Echenique (2016).</p>
+       <p>Graph closure, cycle detection, linear programming, and combinatorial search — all implemented in Rust.</p>
      </div>
      <div class="feature-card">
        <h3>Post-Estimation</h3>
