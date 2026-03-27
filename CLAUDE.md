@@ -14,6 +14,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **References only in the References tab.** Never add a `References` section or `.. seealso::` directive to any page — citations belong only in `docs/references.rst`.
 - **README is user-forward.** Paste-and-run example first (using `load_demo`), then Scores, "Which API?", Choice Categories, Performance. Architecture details live in RTD only.
 - **CHANGELOG.md** lives at repo root. Update it when making user-visible changes.
+- **Never describe the dual naming convention as "tech vs economics".** The two API layers are Engine (batch, Rust) and Functions (per-user deep dives). Legacy aliases exist but are not a selling point.
 
 ## Build & Test Commands
 
@@ -493,6 +494,6 @@ See `docs/implementation_status.md` for detailed gap analysis.
 ### Key Differentiators
 
 1. **ML-Native Design**: sklearn-compatible API, feature extraction for pipelines
-2. **Dual API**: Tech-friendly names (`compute_integrity_score`) + economics terms (`compute_aei`)
+2. **Two API Layers**: Engine (batch, Rust/Rayon) for throughput + Functions (per-user) for deep dives
 3. **Production-Ready**: Type hints, dataclass results, comprehensive tests
 4. **Unified Framework**: Budget, menu, stochastic, and production analysis in one package
