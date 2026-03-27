@@ -524,113 +524,204 @@ def generate_floyd_warshall():
 # GIF 3: Tarjan's SCC (O(T^2))
 # ---------------------------------------------------------------------------
 def generate_scc_tarjan():
-    """Tarjan's SCC forming components and detecting strict cycle violation."""
+    """SCC-based GARP check — slow, well-spaced, repo terminology."""
+    fig, ax = plt.subplots(figsize=(8, 9), facecolor=PALETTE["bg"])
+    plt.subplots_adjust(top=0.78, bottom=0.14, left=0.08, right=0.95)
+
+    TOTAL_FRAMES = 120
+    INTERVAL = 400
     n = 6
-    labels = ["$x^1$", "$x^2$", "$x^3$", "$x^4$", "$x^5$", "$x^6$"]
-    # Group [0, 1, 2] is an SCC, [3, 4] is another, 5 is a sink
+    labels = ["$x_1$", "$x_2$", "$x_3$", "$x_4$", "$x_5$", "$x_6$"]
     pos = np.array([
-        [-1.0, 1.2], [1.0, 1.2], [0.0, -0.5],  # SCC 1
-        [-1.5, -1.8], [1.5, -1.8],             # SCC 2
-        [0.0, -2.5]                            # Sink
+        [-1.2, 1.8], [1.2, 1.8], [0.0, 0.0],
+        [-1.8, -2.0], [1.8, -2.0], [0.0, -3.2],
     ])
+    NODE_R = 0.28
+    r0_edges = [(0,1),(1,2),(2,0),(2,3),(2,4),(3,4),(4,3),(3,5),(4,5)]
+    p0_edges = {(2, 0)}
+    scc_a = {0, 1, 2}
+    scc_b = {3, 4}
 
-    weak_edges = [(0, 1), (1, 2), (2, 0), (2, 3), (2, 4), (3, 4), (4, 3), (3, 5), (4, 5)]
-    # Violation: (2, 0) is actually a strict edge P_0 inside SCC 1
-    strict_edges = [(2, 0)]
-    scc_1 = [0, 1, 2]
+    fig.text(0.04, 0.96, "Tarjan's SCC  (GARP in O(T\u00b2))",
+             fontsize=15, fontweight="bold", color=PALETTE["rust"],
+             family="monospace")
+    phase_txt = fig.text(0.04, 0.90, "", fontsize=13, fontweight="bold", color="#333")
+    desc_txt = fig.text(0.04, 0.845, "", fontsize=11, style="italic", color="#555",
+                        linespacing=1.5)
+    status_txt = fig.text(0.50, 0.055, "", fontsize=14, fontweight="bold",
+                          ha="center", va="center", color=PALETTE["rust"])
+    counter_txt = fig.text(0.50, 0.02, "", fontsize=10, ha="center", va="center",
+                           color="#666", family="monospace")
 
-    fig, ax = plt.subplots(figsize=(5.5, 6.5), facecolor=PALETTE["bg"])
+    def _arrow(ax, i, j, color, lw=2.0, style="-", alpha=1.0):
+        dx, dy = pos[j][0]-pos[i][0], pos[j][1]-pos[i][1]
+        ln = np.sqrt(dx**2+dy**2)
+        if ln < 0.01: return
+        sh = NODE_R+0.08
+        ax.annotate("", xy=(pos[j][0]-sh*dx/ln, pos[j][1]-sh*dy/ln),
+                     xytext=(pos[i][0]+sh*dx/ln, pos[i][1]+sh*dy/ln),
+                     arrowprops=dict(arrowstyle="-|>", color=color, lw=lw,
+                                     ls=style, shrinkA=0, shrinkB=0,
+                                     alpha=alpha), zorder=5)
 
-    def draw_edge(ax, i, j, color, lw=2.0, style="-"):
-        dx, dy = pos[j][0] - pos[i][0], pos[j][1] - pos[i][1]
-        length = np.sqrt(dx**2 + dy**2)
-        shrink = 0.32
-        sx, sy = pos[i][0] + shrink * dx / length, pos[i][1] + shrink * dy / length
-        ex, ey = pos[j][0] - shrink * dx / length, pos[j][1] - shrink * dy / length
-        ax.annotate("", xy=(ex, ey), xytext=(sx, sy),
-            arrowprops=dict(arrowstyle="-|>", color=color, lw=lw, ls=style, shrinkA=0, shrinkB=0))
+    def _node(ax, i, color=None, alpha=1.0):
+        c = color or PALETTE["node"]
+        ax.add_patch(plt.Circle(pos[i], NODE_R, color=c, alpha=alpha, zorder=10))
+        ax.text(pos[i][0], pos[i][1], labels[i], ha="center", va="center",
+                fontsize=12, color="white", fontweight="bold", zorder=11, alpha=alpha)
+
+    def _scc_bubble(ax, nodes, color, label=None):
+        xs = [pos[i][0] for i in nodes]
+        ys = [pos[i][1] for i in nodes]
+        cx, cy = np.mean(xs), np.mean(ys)
+        r = max(max(abs(x-cx) for x in xs), max(abs(y-cy) for y in ys)) + 0.7
+        ax.add_patch(plt.Circle((cx, cy), r, fill=True, color=color,
+                                alpha=0.12, zorder=1))
+        if label:
+            ax.text(cx, cy+r+0.25, label, ha="center", fontsize=9,
+                    fontweight="bold", color=color, zorder=2)
 
     def update(frame):
         ax.clear()
         ax.set_facecolor(PALETTE["bg"])
-        ax.set_xlim(-2.8, 2.8)
-        ax.set_ylim(-4.2, 2.5)
-        ax.set_aspect("equal")
-        ax.axis("off")
+        ax.set_xlim(-3.5, 3.5); ax.set_ylim(-4.2, 3.2)
+        ax.set_aspect("equal"); ax.axis("off")
 
-        scc_active = False
-        violation_active = False
+        # Phase 1: Build R_0 and P_0 (0-29)
+        if frame <= 29:
+            phase_txt.set_text("Step 1:  Build $R_0$ and $P_0$ from Expenditure Data")
+            desc_txt.set_text(
+                "$R_0$: $i \\; R_0 \\; j$  when $E_{ii} \\geq E_{ij}$"
+                "  (weak preference).\n"
+                "$P_0$: $i \\; P_0 \\; j$  when $E_{ii} > E_{ij}$"
+                "  (strict preference).")
+            status_txt.set_text("")
+            for idx, (u, v) in enumerate(r0_edges):
+                appear = 2 + idx * 3
+                if frame >= appear:
+                    a = min((frame-appear)/2, 1.0)
+                    is_s = (u, v) in p0_edges
+                    _arrow(ax, u, v,
+                           PALETTE["highlight"] if is_s else PALETTE["edge"],
+                           lw=2.5 if is_s else 1.5, alpha=a)
+            for i in range(n): _node(ax, i)
+            nv = sum(1 for idx in range(len(r0_edges)) if frame >= 2+idx*3)
+            counter_txt.set_text(
+                f"$|R_0|$: {nv}  |  $|P_0|$: {1 if nv >= 3 else 0}  "
+                "(red = strict $P_0$)")
 
-        if frame < 8:
-            visible = int((frame / 8) * len(weak_edges))
-            for idx in range(visible):
-                draw_edge(ax, weak_edges[idx][0], weak_edges[idx][1], PALETTE["edge"], lw=1.5)
-            subtitle = "Phase 1: Direct Preference Graph ($R_0$)"
-            desc = "Cycles just imply mutual indifference (not violations)!"
-        elif frame < 18:
-            for u, v in weak_edges:
-                draw_edge(ax, u, v, PALETTE["edge"], lw=1.5)
-            subtitle = "Phase 2: Group Indifferences (O(T²))"
-            desc = "Tarjan's bundles all cycles into SCC components."
-            scc_active = True
-        elif frame < 26:
-            for u, v in weak_edges:
-                if (u, v) == strict_edges[0]:
-                    draw_edge(ax, u, v, PALETTE["highlight"], lw=3.0)
+        # Phase 2: SCC decomposition (30-59)
+        elif frame <= 59:
+            phase_txt.set_text("Step 2:  Tarjan's SCC Decomposition  O($T^2$)")
+            status_txt.set_text("")
+            if frame <= 42:
+                desc_txt.set_text(
+                    "Group nodes into Strongly Connected Components.\n"
+                    "Nodes that can reach each other via $R_0$ form an SCC.")
+                counter_txt.set_text(
+                    "SCC A = {$x_1$,$x_2$,$x_3$}  |  "
+                    "SCC B = {$x_4$,$x_5$}  |  {$x_6$} singleton")
+            else:
+                desc_txt.set_text(
+                    "Within an SCC, all nodes are mutually reachable.\n"
+                    "Cross-SCC edges form a DAG.  No closure needed!")
+                counter_txt.set_text("3 components found in O($T^2$)")
+            _scc_bubble(ax, [0,1,2], PALETTE["rust"], "SCC A")
+            if frame >= 36:
+                _scc_bubble(ax, [3,4], PALETTE["accent"], "SCC B")
+            for u, v in r0_edges:
+                is_s = (u, v) in p0_edges
+                if u in scc_a and v in scc_a:
+                    c = PALETTE["highlight"] if is_s else PALETTE["rust"]
+                elif u in scc_b and v in scc_b:
+                    c = PALETTE["accent"]
                 else:
-                    color = PALETTE["rust"] if u in scc_1 and v in scc_1 else PALETTE["edge"]
-                    draw_edge(ax, u, v, color, lw=1.5)
-            subtitle = "Phase 3: Screen SCCs for Strict Arcs ($P_0$)"
-            desc = "If any arc inside the indifferent group is Strict, it's exploited!"
-            scc_active = True
-            violation_active = True
+                    c = PALETTE["secondary"]
+                _arrow(ax, u, v, c, lw=2.0 if is_s else 1.5)
+            for i in range(n):
+                if i in scc_a: _node(ax, i, PALETTE["rust"])
+                elif i in scc_b: _node(ax, i, PALETTE["accent"])
+                else: _node(ax, i, PALETTE["secondary"])
+
+        # Phase 3: Screen SCCs for P_0 (60-89)
+        elif frame <= 89:
+            phase_txt.set_text("Step 3:  Screen Each SCC for Strict Arc  $P_0$")
+            status_txt.set_text("")
+            _scc_bubble(ax, [0,1,2], PALETTE["rust"], "SCC A")
+            _scc_bubble(ax, [3,4], PALETTE["accent"], "SCC B")
+            if frame <= 72:
+                desc_txt.set_text(
+                    "GARP Theorem:  violation $\\Leftrightarrow$ some SCC contains a $P_0$ arc.\n"
+                    "Scanning SCC A edges for strict preferences...")
+                counter_txt.set_text("Checking SCC A for strict arcs...")
+                for u, v in r0_edges:
+                    if u in scc_a and v in scc_a:
+                        is_s = (u, v) in p0_edges
+                        if is_s:
+                            pulse = 0.5+0.5*abs(np.sin(frame*0.4))
+                            _arrow(ax, u, v, PALETTE["highlight"], lw=3.5,
+                                   alpha=pulse)
+                        else:
+                            _arrow(ax, u, v, PALETTE["rust"], lw=1.5)
+                    else:
+                        _arrow(ax, u, v, PALETTE["secondary"], lw=1.0, alpha=0.4)
+            else:
+                desc_txt.set_text(
+                    "Found!  $x_3 \\; P_0 \\; x_1$  is a strict arc"
+                    " inside SCC A.\n"
+                    "$E_{3,3} > E_{3,1}$:  $x_1$ strictly cheaper, yet in same SCC.")
+                counter_txt.set_text(
+                    "\u2716 GARP VIOLATED  |  "
+                    "$P_0$ arc ($x_3 \\to x_1$) inside SCC A")
+                for u, v in r0_edges:
+                    if (u, v) in p0_edges:
+                        pulse = 0.5+0.5*abs(np.sin(frame*0.4))
+                        _arrow(ax, u, v, PALETTE["highlight"], lw=4.0, alpha=pulse)
+                    elif u in scc_a and v in scc_a:
+                        _arrow(ax, u, v, PALETTE["rust"], lw=1.5)
+                    else:
+                        _arrow(ax, u, v, PALETTE["secondary"], lw=1.0, alpha=0.3)
+                mx = (pos[2][0]+pos[0][0])/2
+                my = (pos[2][1]+pos[0][1])/2+0.5
+                ax.text(mx, my, "\u2716", color=PALETTE["highlight"],
+                        fontsize=40, ha="center", va="center", zorder=0, alpha=0.7)
+            for i in range(n):
+                if i in scc_a: _node(ax, i, PALETTE["rust"])
+                elif i in scc_b: _node(ax, i, PALETTE["accent"])
+                else: _node(ax, i, PALETTE["secondary"])
+
+        # Phase 4: Result (90-119)
         else:
-            for u, v in weak_edges:
-                if (u, v) == strict_edges[0]:
-                    draw_edge(ax, u, v, PALETTE["highlight"], lw=3.0)
+            phase_txt.set_text("Result:  GARP Violation Detected in O($T^2$)")
+            desc_txt.set_text(
+                "No transitive closure needed!  SCC + $P_0$ scan suffices.\n"
+                "Talla Nobibon et al. (2015): O($T^2$) vs O($T^3$) FW.")
+            _scc_bubble(ax, [0,1,2], PALETTE["rust"], "SCC A  \u2716")
+            _scc_bubble(ax, [3,4], PALETTE["accent"], "SCC B  \u2714")
+            for u, v in r0_edges:
+                if (u, v) in p0_edges:
+                    _arrow(ax, u, v, PALETTE["highlight"], lw=3.5)
+                elif u in scc_a and v in scc_a:
+                    _arrow(ax, u, v, PALETTE["rust"], lw=1.5, alpha=0.6)
+                elif u in scc_b and v in scc_b:
+                    _arrow(ax, u, v, PALETTE["accent"], lw=1.5, alpha=0.6)
                 else:
-                    color = PALETTE["rust"] if u in scc_1 and v in scc_1 else PALETTE["secondary"]
-                    draw_edge(ax, u, v, color, lw=1.5)
-            subtitle = "GARP Violation Flagged"
-            desc = "Bypassed O(T³) transitive closure entirely (Theorem 1)."
-            scc_active = True
-            violation_active = True
-            
-            # draw large cross over the strict edge
-            ax.text(pos[2][0]-0.6, pos[2][1] + 1.2, "✘", color=PALETTE["highlight"], fontsize=50, ha="center", va="center", alpha=0.9, zorder=0)
+                    _arrow(ax, u, v, PALETTE["secondary"], lw=1.0, alpha=0.3)
+            for i in range(n):
+                if i in scc_a: _node(ax, i, PALETTE["rust"])
+                elif i in scc_b: _node(ax, i, PALETTE["accent"])
+                else: _node(ax, i, PALETTE["secondary"])
+            a = min((frame-90)/5, 1.0)
+            status_txt.set_text("GARP violated:  $P_0$ arc inside SCC A")
+            status_txt.set_alpha(a)
+            counter_txt.set_text(
+                "O(T\u00b2) SCC check  vs  O(T\u00b3) Floyd-Warshall  "
+                "\u2014  1000\u00d7 faster at T=10,000")
 
-        if scc_active:
-            # Highlight SCC1 bubble
-            circle_scc = plt.Circle((0, 0.4), 1.6, fill=True, color=PALETTE["rust"], alpha=0.15, zorder=1)
-            ax.add_patch(circle_scc)
-            if frame > 12:
-                # Highlight SCC2
-                circle_scc2 = plt.Circle((0, -1.8), 2.2, fill=True, color=PALETTE["accent"], alpha=0.1, zorder=1)
-                ax.add_patch(circle_scc2)
-            
-            if scc_active and not violation_active:
-                ax.text(2.0, 1.2, "SCC: Mutual\nIndifference\n$x^1 \sim x^2 \sim x^3$", color=PALETTE["rust"], fontsize=10, fontweight="bold", alpha=min((frame-8)/3, 1.0))
-
-        # draw nodes
-        for i in range(n):
-            node_color = PALETTE["node"]
-            if scc_active:
-                if i in scc_1: node_color = PALETTE["rust"]
-                elif i in [3,4]: node_color = PALETTE["accent"]
-            
-            circle = plt.Circle(pos[i], 0.25, color=node_color, zorder=10)
-            ax.add_patch(circle)
-            ax.text(pos[i][0], pos[i][1], labels[i], ha="center", va="center", fontsize=11,
-                    color=PALETTE["node_text"], fontweight="bold", zorder=11)
-
-        ax.set_title("2. Modern Engine: Tarjan's SCC", fontsize=13, fontweight="bold", color="#333", pad=26)
-        ax.text(0, -3.4, subtitle, ha="center", fontsize=11, fontweight="bold", color=PALETTE["highlight"] if "Flag" in subtitle else PALETTE["edge"])
-        ax.text(0, -3.8, desc, ha="center", fontsize=10, style="italic", color=PALETTE["secondary"])
-
-    anim = FuncAnimation(fig, update, frames=34, interval=750)
+    print("  Generating scc_tarjan.gif...")
+    anim = FuncAnimation(fig, update, frames=TOTAL_FRAMES, interval=INTERVAL)
     anim.save(OUTPUT_DIR / "scc_tarjan.gif", writer="pillow", dpi=DPI)
     plt.close(fig)
-    print("  scc_tarjan.gif updated with pedagogical flow")
 
 
 
