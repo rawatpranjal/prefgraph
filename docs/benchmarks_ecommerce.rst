@@ -1,11 +1,17 @@
 E-commerce Benchmarks
 =====================
 
-Seven public datasets, 167K users, LightGBM with 5-fold stratified CV.
-**RP features add 0--0.7% AUC over strong RFM baselines.** The lift is
-real but modest — most predictive power comes from standard spending
-and engagement features. All targets use top-tercile thresholds for
-consistency across budget and menu datasets.
+Seven public datasets, 167K users, 42 RP features, LightGBM with 5-fold
+stratified CV. Results split by data type:
+
+- **Menu datasets**: RP features are **competitive with baselines**. Taobao
+  RP-only AUC (0.925) beats the engagement baseline (0.913). Graph features
+  (``menu_transitivity``, ``menu_pref_density``) and choice entropy carry
+  real signal that engagement stats miss.
+- **Budget datasets**: RP adds ~0% marginal lift over strong RFM baselines.
+  Spending features already capture the signal; CCEI/MPI are correlated.
+
+All targets use top-tercile thresholds for consistency.
 
 Results
 -------
@@ -24,31 +30,31 @@ Results
    * - Dunnhumby
      - 2,222
      - High Spender
-     - 0.958
      - 0.960
-     - +0.2%
+     - 0.960
+     - -0.0%
      - 0.931
    * - Dunnhumby
      - 2,222
      - Churn
-     - 0.748
-     - 0.725
-     - -3.1%
-     - 0.188
+     - 0.752
+     - 0.740
+     - -1.5%
+     - 0.160
    * - Open E-Commerce
      - 4,694
      - High Spender
      - 0.950
      - 0.951
-     - +0.2%
+     - +0.0%
      - 0.914
    * - Open E-Commerce
      - 4,694
      - Churn
-     - 0.841
-     - 0.847
-     - **+0.7%**
-     - 0.283
+     - 0.846
+     - 0.846
+     - -0.0%
+     - 0.297
    * - H&M
      - 46,757
      - High Spender
@@ -61,20 +67,20 @@ Results
      - Churn
      - 0.778
      - 0.778
-     - +0.0%
+     - -0.1%
      - 0.293
    * - Instacart
      - 50,000
      - Spend Drop
-     - 0.665
      - 0.666
-     - +0.2%
+     - 0.665
+     - -0.0%
      - 0.197
    * - Instacart
      - 50,000
      - High Value
-     - 0.967
-     - 0.967
+     - 0.966
+     - 0.966
      - +0.0%
      - 0.941
    * - REES46
@@ -82,24 +88,63 @@ Results
      - High Engagement
      - 0.996
      - 0.996
-     - -0.0%
-     - 0.968
+     - +0.0%
+     - 0.966
    * - Taobao
      - 4,239
      - High Engagement
      - 0.913
-     - 0.913
-     - +0.0%
-     - 0.137
+     - **0.915**
+     - **+0.2%**
+     - 0.136
    * - Tenrec
      - 50,000
      - High Engagement
      - 0.993
      - 0.993
-     - -0.0%
+     - +0.0%
      - 0.983
 
-*Baseline = LightGBM on RFM + spending features. +RP = same model with RP features added. Lift = (Combined - Baseline) / Baseline x 100.*
+*Baseline = LightGBM on 13 RFM features. +RP = same model with 42 RP features added (Engine scores + graph structure + utility recovery + choice entropy). Lift = (Combined - Baseline) / Baseline x 100.*
+
+RP-Only Performance
+~~~~~~~~~~~~~~~~~~~
+
+RP features alone (no baseline) show where preference structure carries
+independent signal:
+
+.. list-table::
+   :header-rows: 1
+   :widths: 18 15 12 12
+
+   * - Dataset
+     - Target
+     - RP-only
+     - Baseline
+   * - Taobao
+     - High Engagement
+     - **0.925**
+     - 0.913
+   * - Tenrec
+     - High Engagement
+     - **0.993**
+     - 0.993
+   * - REES46
+     - High Engagement
+     - 0.990
+     - 0.996
+   * - H&M
+     - High Spender
+     - 0.715
+     - 0.763
+   * - Open E-Commerce
+     - Churn
+     - 0.769
+     - 0.846
+
+On Taobao, RP-only **outperforms** the engagement baseline. Preference
+graph transitivity and choice entropy capture patterns that session
+counts and menu sizes miss.
 
 Timing
 ------
@@ -259,29 +304,75 @@ Across all classification tasks (LightGBM feature importance, combined model):
      - Baseline
      - Spending trend (increasing/decreasing)
    * - 3
-     - spend_cv
+     - n_sessions
      - Baseline
-     - Spending variability (coefficient of variation)
+     - Number of menu presentations (menu datasets)
    * - 4
      - n_obs
      - Baseline
      - Number of observations (frequency)
    * - 5
-     - herfindahl
+     - mean_basket_size
      - Baseline
-     - Category concentration
+     - Average items per observation
    * - 6
-     - scc_ratio
-     - **RP**
-     - Fraction of observations in largest violation cycle
+     - max_choice_freq
+     - Baseline
+     - Most-chosen item frequency
    * - 7
-     - hm_ratio
+     - util_gini
      - **RP**
-     - Houtman-Maks consistency fraction
+     - Gini inequality of recovered Afriat utility values
    * - 8
-     - mpi
+     - spend_cv
+     - Baseline
+     - Spending variability (coefficient of variation)
+   * - 9
+     - items_per_session
+     - Baseline
+     - Item diversity per session
+   * - 10
+     - choice_entropy_norm
      - **RP**
-     - Money Pump Index (exploitability)
+     - Normalized Shannon entropy of choice distribution
+
+Menu-dataset top features (Taobao + Tenrec):
+
+.. list-table::
+   :header-rows: 1
+   :widths: 5 30 10 55
+
+   * - #
+     - Feature
+     - Type
+     - Interpretation
+   * - 1
+     - std_menu_size
+     - Baseline
+     - Variability of menu sizes
+   * - 2
+     - menu_transitivity
+     - **RP**
+     - Preference graph transitivity ratio
+   * - 3
+     - n_sessions
+     - Baseline
+     - Number of sessions
+   * - 4
+     - menu_pref_density
+     - **RP**
+     - Revealed preference graph edge density
+   * - 5
+     - choice_entropy_norm
+     - **RP**
+     - Normalized choice entropy
+   * - 8
+     - menu_util_range
+     - **RP**
+     - Ordinal utility spread (max - min recovered rank)
+
+Four of the top 8 menu features are RP-derived — preference graph
+structure and choice entropy carry signal that engagement stats miss.
 
 Reproduce
 ---------
@@ -306,8 +397,11 @@ Appendix: Pipeline
      -> Temporal split: first 70% -> features, last 30% -> targets
      -> Feature extraction:
           Baseline (13): RFM, category concentration, temporal trends
-          RP (11): CCEI, MPI, HM ratio, VEI, GARP, HARP, SCC ratio
-     -> LightGBM (num_leaves=15, n_estimators=100, reg_alpha=0.1)
+          RP Engine (14): CCEI, MPI, HM, VEI, GARP, HARP, SCC, n_scc, harp_severity
+          RP Extended (28): VEI distribution, utility recovery (Gini, CV),
+              preference graph (density, transitivity, cycles), MPI cycle costs,
+              choice reversals, choice entropy, congruence, ordinal utility
+     -> LightGBM (num_leaves=15, lr=0.03, reg_alpha=1.0, reg_lambda=5.0)
      -> 5-fold stratified CV
      -> Metrics: AUC-ROC, AUC-PR, Log Loss, F1
 
