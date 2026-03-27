@@ -172,3 +172,96 @@ Reproduce
    python case_studies/benchmarks/runner.py --datasets all
 
 Datasets download automatically via ``kaggle`` CLI. See ``case_studies/benchmarks/README.md``.
+
+----
+
+Appendix: Full Pipeline
+-----------------------
+
+**1. Data Ingestion**
+
+Each dataset is loaded via a dedicated loader (``pyrevealed.datasets``) that
+returns either a ``BehaviorPanel`` (budget data: prices × quantities per
+user per time period) or a ``dict[str, MenuChoiceLog]`` (menu data: item
+sets + chosen item per session per user). Loaders handle downloading,
+filtering, category mapping, and temporal aggregation.
+
+.. code-block:: text
+
+   Raw CSV → Loader → BehaviorPanel / MenuChoiceLog per user
+
+**2. Temporal Split (No Leakage)**
+
+For each user, observations are split by time: first 70% → feature
+extraction, last 30% → target computation. Features never see future data.
+
+.. code-block:: text
+
+   User observations: [obs_1, obs_2, ..., obs_T]
+                       |← 70% features →|← 30% targets →|
+
+**3. Feature Extraction**
+
+Two feature sets per user:
+
+*Baseline features* (13 features, no RP library needed):
+
+- **RFM**: n_obs, total_spend, mean_spend, std_spend, max_spend, min_spend
+- **Category**: herfindahl, top_category_share, n_active_categories
+- **Temporal**: spend_slope, spend_cv, mean_abs_spend_change
+- **Volume**: mean_basket_size
+
+*RP features* (11 features, via ``Engine.analyze_arrays()`` batch API):
+
+- **Consistency**: is_garp, is_harp
+- **Efficiency**: ccei, mpi, vei_mean, vei_min
+- **Noise**: hm_ratio (Houtman-Maks fraction), violation_density, n_violations
+- **Structure**: max_scc, scc_ratio
+
+For menu datasets, RP features come from ``Engine.analyze_menus()``:
+is_sarp, is_warp, hm_ratio, sarp_violation_density, warp_violation_density,
+scc_ratio.
+
+**4. Target Construction**
+
+From the held-out 30% of each user's observations:
+
+- **High Spender**: Top tercile of test-period total spend (binary)
+- **Churn**: Mean spend dropped >50% from train to test (binary)
+- **Spend Change**: Difference in mean spend (regression)
+- **High Engagement** (menu): Above-median sessions in test (binary)
+
+**5. Model Training**
+
+LightGBM with regularization to prevent overfitting:
+
+.. code-block:: python
+
+   {
+       "num_leaves": 15,
+       "learning_rate": 0.05,
+       "n_estimators": 100,
+       "min_child_samples": 20,
+       "reg_alpha": 0.1,
+       "reg_lambda": 1.0,
+   }
+
+Three models per target: (a) Baseline only, (b) RP only, (c) Baseline + RP.
+
+**6. Evaluation**
+
+- **Out-of-sample**: 5-fold stratified CV (splits users, not time)
+- **In-sample**: Train on all, predict on all (overfitting diagnostic)
+- **Metrics**: AUC-ROC, AUC-PR (average precision), Log Loss, F1, R², RMSE
+- **Seed**: 42 for reproducibility
+
+**7. Output**
+
+.. code-block:: text
+
+   case_studies/benchmarks/output/
+   ├── results.json          # Full metrics per dataset × target
+   ├── summary_table.csv     # One-row-per-task summary
+   └── figures/
+       ├── auc_comparison.png
+       └── feature_importance.png
