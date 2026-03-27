@@ -682,7 +682,9 @@ def generate_ccei_algorithm():
     expends = np.sum(prices * quants, axis=1)  # [8.0, 8.0]
     CCEI_STAR = expends[0] / (prices[0] @ quants[1])  # critical e
     colors_obs = ["#5b8def", "#8e44ad"]
-    labels_obs = ["Bundle A", "Bundle B"]
+    labels_obs = ["$x_1$", "$x_2$"]
+    # expenditure matrix E[i,j] = p_i · x_j
+    E_matrix = prices @ quants.T  # 2×2
 
     # --- fixed title (never changes, never overlaps) ---
     fig.text(
@@ -712,7 +714,7 @@ def generate_ccei_algorithm():
         ax.fill_between([0, x_int], [y_int, 0], alpha=alpha_fill,
                         color=colors_obs[idx], zorder=1)
 
-    def _draw_dot(ax, idx):
+    def _draw_dot(ax, idx, show_data=False):
         """Draw a choice dot with label offset."""
         x, y = quants[idx]
         ax.scatter(x, y, color=colors_obs[idx], s=180, zorder=6,
@@ -720,8 +722,24 @@ def generate_ccei_algorithm():
         # offset label away from the other dot to avoid overlap
         ox = 0.35 if idx == 0 else -0.85
         oy = -0.45 if idx == 0 else 0.35
-        ax.text(x + ox, y + oy, labels_obs[idx], fontsize=11,
+        ax.text(x + ox, y + oy, labels_obs[idx], fontsize=13,
                 fontweight="bold", color=colors_obs[idx], zorder=7)
+        if show_data:
+            # show price and quantity vectors near the dot
+            p = prices[idx]
+            q = quants[idx]
+            data_ox = 1.2 if idx == 0 else -2.8
+            data_oy = -0.9 if idx == 0 else 0.9
+            ax.text(
+                x + data_ox, y + data_oy,
+                f"$p_{idx+1}$=({p[0]:.0f},{p[1]:.0f})  "
+                f"$x_{idx+1}$=({q[0]:.0f},{q[1]:.1f})\n"
+                f"$E_{{{idx+1},{idx+1}}}$ = $p_{idx+1} \\cdot x_{idx+1}$ = {expends[idx]:.0f}",
+                fontsize=8, color=colors_obs[idx], family="monospace",
+                bbox=dict(boxstyle="round,pad=0.3", facecolor="white",
+                          edgecolor=colors_obs[idx], alpha=0.8, lw=0.8),
+                zorder=8, va="center",
+            )
 
     def _draw_pref_arrow(ax, src, dst, color, lw=2, alpha=1.0, label=None):
         """Curved preference arrow between two bundles."""
@@ -781,10 +799,10 @@ def generate_ccei_algorithm():
         # Phase 1: Setup (frames 0-24) — draw budget lines + dots
         # ============================================================
         if frame <= 24:
-            phase_txt.set_text("Step 1:  Two Shopping Trips")
+            phase_txt.set_text("Step 1:  Two Observations  (T = 2 goods)")
             desc_txt.set_text(
-                "A consumer makes two purchases with different prices.\n"
-                "Each budget line shows what was affordable."
+                "Prices $p_t$ and quantities $x_t$ for T=2 observations.\n"
+                "Budget line at $t$:  $p_t \\cdot x = E_{tt}$  (own expenditure)."
             )
             meter_txt.set_text("")
             score_txt.set_text("")
@@ -793,16 +811,16 @@ def generate_ccei_algorithm():
             if frame >= 3:
                 prog1 = min((frame - 3) / 5, 1.0)
                 _draw_budget(ax, 0, 1.0, alpha_line=prog1)
-            # dot 1 appears at frame 8
+            # dot 1 with data appears at frame 8
             if frame >= 8:
-                _draw_dot(ax, 0)
+                _draw_dot(ax, 0, show_data=(frame >= 12))
             # budget line 2 appears at frame 14
             if frame >= 14:
                 prog2 = min((frame - 14) / 5, 1.0)
                 _draw_budget(ax, 1, 1.0, alpha_line=prog2)
-            # dot 2 appears at frame 19
+            # dot 2 with data appears at frame 19
             if frame >= 19:
-                _draw_dot(ax, 1)
+                _draw_dot(ax, 1, show_data=(frame >= 22))
 
         # ============================================================
         # Phase 2: Reveal preference cycle (frames 25-49)
@@ -815,37 +833,43 @@ def generate_ccei_algorithm():
             meter_txt.set_text("")
             score_txt.set_text("")
 
+            e12 = E_matrix[0, 1]  # p1·x2
+            e21 = E_matrix[1, 0]  # p2·x1
+
             if frame <= 36:
-                phase_txt.set_text("Step 2:  Reveal Preferences")
+                phase_txt.set_text("Step 2:  Revealed Preference  $R_0$")
                 desc_txt.set_text(
-                    "Bundle B is inside Budget A's affordable region.\n"
-                    "So choosing A over B reveals:  A is preferred to B."
+                    f"$E_{{1,1}}$ = {expends[0]:.0f}  $\\geq$  $E_{{1,2}}$ = $p_1 \\cdot x_2$ = {e12:.0f}."
+                    f"  $x_2$ was affordable!\n"
+                    f"$x_1$ chosen over $x_2$  $\\Rightarrow$   $x_1 \\; R_0 \\; x_2$  (revealed preferred)."
                 )
                 prog = min((frame - 25) / 4, 1.0)
                 _draw_pref_arrow(ax, 0, 1, PALETTE["node"], lw=2.5,
-                                 alpha=prog, label="A \u227b B")
+                                 alpha=prog, label="$x_1 R_0 x_2$")
             else:
                 desc_txt.set_text(
-                    "Bundle A is inside Budget B's affordable region.\n"
-                    "So choosing B over A reveals:  B is preferred to A."
+                    f"$E_{{2,2}}$ = {expends[1]:.0f}  $\\geq$  $E_{{2,1}}$ = $p_2 \\cdot x_1$ = {e21:.0f}."
+                    f"  $x_1$ was affordable!\n"
+                    f"$x_2$ chosen over $x_1$  $\\Rightarrow$   $x_2 \\; R_0 \\; x_1$."
                 )
                 _draw_pref_arrow(ax, 0, 1, PALETTE["node"], lw=2.5,
-                                 label="A \u227b B")
+                                 label="$x_1 R_0 x_2$")
                 prog = min((frame - 37) / 4, 1.0)
                 _draw_pref_arrow(ax, 1, 0, PALETTE["node"], lw=2.5,
-                                 alpha=prog, label="B \u227b A")
+                                 alpha=prog, label="$x_2 R_0 x_1$")
                 if frame >= 43:
-                    phase_txt.set_text("Step 2:  CONTRADICTION!")
+                    phase_txt.set_text("Step 2:  GARP Violation!")
                     desc_txt.set_text(
-                        "A \u227b B  AND  B \u227b A  is a preference cycle.\n"
-                        "This violates GARP \u2014 choices are inconsistent."
+                        "$x_1 \\; R_0 \\; x_2$  AND  $x_2 \\; R_0 \\; x_1$"
+                        "  forms a 2-cycle.\n"
+                        "GARP requires no such cycles.  This data is inconsistent."
                     )
                     _draw_pref_arrow(ax, 0, 1, PALETTE["highlight"], lw=3)
                     _draw_pref_arrow(ax, 1, 0, PALETTE["highlight"], lw=3)
                     # red X in center
                     mx = (quants[0, 0] + quants[1, 0]) / 2
                     my = (quants[0, 1] + quants[1, 1]) / 2
-                    ax.text(mx, my + 0.8, "\u2716 CYCLE", fontsize=14,
+                    ax.text(mx, my + 0.8, "\u2716 GARP Violated", fontsize=13,
                             fontweight="bold", color=PALETTE["highlight"],
                             ha="center", va="center",
                             bbox=dict(boxstyle="round,pad=0.3",
@@ -857,12 +881,13 @@ def generate_ccei_algorithm():
         # Phase 3: Introduce shrinking idea (frames 50-64)
         # ============================================================
         elif frame <= 64:
-            phase_txt.set_text("Step 3:  The CCEI Idea")
+            phase_txt.set_text("Step 3:  Deflate Budgets by  $e$")
             desc_txt.set_text(
-                "What if we shrink each budget inward by a factor e?\n"
-                "At some point, the overlap disappears."
+                "Replace $E_{tt}$ with $e \\cdot E_{tt}$.  "
+                "Shrink each budget inward.\n"
+                "CCEI = sup$\\{e : \\text{deflated data satisfies GARP}\\}$."
             )
-            meter_txt.set_text("e = 1.000   (no shrinkage yet)")
+            meter_txt.set_text("e = 1.000   (no deflation yet)")
             score_txt.set_text("")
 
             # draw original budgets as ghosts
@@ -899,10 +924,20 @@ def generate_ccei_algorithm():
         elif frame <= 104:
             t = (frame - 65) / 39.0  # 0 → 1
             e = 1.0 - t * (1.0 - CCEI_STAR)
-            phase_txt.set_text("Step 4:  Shrinking Budgets")
+            # check violation at current e
+            cost_0_of_1 = prices[0] @ quants[1]
+            cost_1_of_0 = prices[1] @ quants[0]
+            viol_0 = (e * expends[0]) >= cost_0_of_1 - 1e-9
+            viol_1 = (e * expends[1]) >= cost_1_of_0 - 1e-9
+            has_cycle = viol_0 and viol_1
+            comp = ">=" if viol_0 else "<"
+            status = "persists" if has_cycle else "broken"
+            phase_txt.set_text("Step 4:  Binary Search over  $e$")
             desc_txt.set_text(
-                f"Testing efficiency  e = {e:.3f}\n"
-                f"Budgets reduced to {e * 100:.1f}% of original."
+                f"Testing  $e$ = {e:.3f}.   "
+                "Check GARP on deflated data.\n"
+                f"$e \\cdot E_{{1,1}}$ = {e * expends[0]:.1f}  {comp}  "
+                f"$E_{{1,2}}$ = {cost_0_of_1:.0f}?   Cycle {status}."
             )
 
             # ghost originals
@@ -914,24 +949,16 @@ def generate_ccei_algorithm():
             _draw_dot(ax, 0)
             _draw_dot(ax, 1)
 
-            # check if violation still exists
-            # violation exists when x_j is still inside budget_i * e
-            cost_0_of_1 = prices[0] @ quants[1]  # cost of bundle B at prices A
-            cost_1_of_0 = prices[1] @ quants[0]  # cost of bundle A at prices B
-            viol_0 = (e * expends[0]) >= cost_0_of_1 - 1e-9
-            viol_1 = (e * expends[1]) >= cost_1_of_0 - 1e-9
-            has_cycle = viol_0 and viol_1
-
             if has_cycle:
                 _draw_pref_arrow(ax, 0, 1, PALETTE["highlight"], lw=2.5,
                                  alpha=0.6)
                 _draw_pref_arrow(ax, 1, 0, PALETTE["highlight"], lw=2.5,
                                  alpha=0.6)
-                ax.text(7.5, 8.0, "\u2716 Cycle", fontsize=12,
+                ax.text(7.5, 8.0, "\u2716 GARP fails", fontsize=12,
                         fontweight="bold", color=PALETTE["highlight"],
                         ha="center", va="center", zorder=10)
             else:
-                ax.text(7.5, 8.0, "\u2714 No Cycle", fontsize=12,
+                ax.text(7.5, 8.0, "\u2714 GARP holds", fontsize=12,
                         fontweight="bold", color=PALETTE["accent"],
                         ha="center", va="center", zorder=10)
 
@@ -942,10 +969,11 @@ def generate_ccei_algorithm():
         # ============================================================
         elif frame <= 119:
             e = CCEI_STAR
-            phase_txt.set_text("Step 5:  Cycle Broken!")
+            phase_txt.set_text("Step 5:  GARP Satisfied at  $e^*$")
             desc_txt.set_text(
-                f"At e = {e:.3f}, Bundle B falls outside Budget A's region.\n"
-                f"The preference cycle disappears. Choices are now rational."
+                f"At $e^*$ = {e:.3f}:  $e \\cdot E_{{1,1}}$ < $E_{{1,2}}$.  "
+                f"$x_2$ no longer affordable.\n"
+                f"The $R_0$ cycle breaks.  Deflated data is GARP-consistent."
             )
 
             _draw_budget(ax, 0, 1.0, alpha_line=0.15, alpha_fill=0.02, lw=1)
@@ -955,7 +983,7 @@ def generate_ccei_algorithm():
             _draw_dot(ax, 0)
             _draw_dot(ax, 1)
 
-            ax.text(7.5, 8.0, "\u2714 No Cycle", fontsize=12,
+            ax.text(7.5, 8.0, "\u2714 GARP holds", fontsize=12,
                     fontweight="bold", color=PALETTE["accent"],
                     ha="center", va="center", zorder=10)
 
@@ -966,7 +994,7 @@ def generate_ccei_algorithm():
                 alpha_note = min((frame - 110) / 5, 1.0)
                 ax.text(
                     4.5, 1.0,
-                    "B is now outside\nthe shrunken\nbudget of A",
+                    "$x_2$ now outside\ndeflated budget\n$e \\cdot E_{1,1}$",
                     fontsize=10, ha="center", va="center",
                     color=PALETTE["accent"], alpha=alpha_note,
                     fontweight="bold",
@@ -981,11 +1009,12 @@ def generate_ccei_algorithm():
         # ============================================================
         else:
             e = CCEI_STAR
-            phase_txt.set_text("Result")
+            phase_txt.set_text("Result:  CCEI  =  sup$\\{e : \\text{GARP holds}\\}$")
             waste = (1.0 - e) * 100
             desc_txt.set_text(
-                f"Only {waste:.1f}% budget waste needed to rationalize choices.\n"
-                f"Higher CCEI = closer to perfectly rational."
+                f"Critical ratio  $E_{{1,2}} / E_{{1,1}}$ = {E_matrix[0,1]/expends[0]:.3f}.  "
+                f"Budget waste = {waste:.1f}%.\n"
+                f"CCEI = 1.0 means perfectly rational (GARP satisfied)."
             )
 
             _draw_budget(ax, 0, 1.0, alpha_line=0.15, alpha_fill=0.02, lw=1)
@@ -1021,7 +1050,7 @@ def generate_hm_algorithm():
         4: (-2.8, 3.5),     # top-left
         5: (-2.8, 0.1),     # bottom-left
     }
-    node_labels = {1: "Trip 1", 2: "Trip 2", 3: "Trip 3", 4: "Trip 4", 5: "Trip 5"}
+    node_labels = {1: "$t$=1", 2: "$t$=2", 3: "$t$=3", 4: "$t$=4", 5: "$t$=5"}
     # cycle A: 1→2→3→1   cycle B: 1→4→5→1
     all_edges = [(1, 2), (2, 3), (3, 1), (1, 4), (4, 5), (5, 1)]
     cycle_a = {(1, 2), (2, 3), (3, 1)}
@@ -1095,10 +1124,10 @@ def generate_hm_algorithm():
         # Phase 1: Meet the trips (frames 0-24)
         # ============================================================
         if frame <= 24:
-            phase_txt.set_text("Step 1:  Five Shopping Trips")
+            phase_txt.set_text("Step 1:  Five Observations  ($T$ = 5)")
             desc_txt.set_text(
-                "A consumer makes 5 purchases over time.\n"
-                "Each trip is a node in the preference graph."
+                "A BehaviorLog with 5 observations ($p_t$, $x_t$).\n"
+                "Each observation is a node in the $R_0$ preference graph."
             )
             score_txt.set_text("")
             counter_txt.set_text("")
@@ -1114,10 +1143,10 @@ def generate_hm_algorithm():
         # Phase 2: Build preference edges (frames 25-54)
         # ============================================================
         elif frame <= 54:
-            phase_txt.set_text("Step 2:  Build Preference Graph")
+            phase_txt.set_text("Step 2:  Build $R_0$ Graph")
             desc_txt.set_text(
-                "Each arrow means \"this bundle was affordable but not chosen.\"\n"
-                "The chosen bundle is revealed preferred."
+                "Edge $i \\to j$ when $E_{ii} \\geq E_{ij}$  ($x_j$ was affordable at $t$=$i$).\n"
+                "$x_i$ chosen over $x_j$  $\\Rightarrow$  $x_i \\; R_0 \\; x_j$  (revealed preferred)."
             )
             score_txt.set_text("")
             counter_txt.set_text("")
@@ -1144,12 +1173,12 @@ def generate_hm_algorithm():
                 _draw_node(ax, nid, PALETTE["node"])
 
             if frame <= 66:
-                phase_txt.set_text("Step 3:  Spot the Cycles")
+                phase_txt.set_text("Step 3:  Find SCCs  (Strongly Connected Components)")
                 desc_txt.set_text(
-                    "Cycle A:  Trip 1 \u2192 Trip 2 \u2192 Trip 3 \u2192 Trip 1\n"
-                    "A preference loop \u2014 this violates rationality!"
+                    "SCC {1,2,3}:  $1 \\to 2 \\to 3 \\to 1$.  A cycle in $R_0$.\n"
+                    "Cycles in the preference graph $\\Rightarrow$ GARP violations."
                 )
-                counter_txt.set_text("Cycles found: 1")
+                counter_txt.set_text("SCCs with cycles: 1")
                 # draw all edges, highlight cycle A
                 for u, v in all_edges:
                     if (u, v) in cycle_a:
@@ -1162,12 +1191,12 @@ def generate_hm_algorithm():
                 for nid in [1, 2, 3]:
                     _draw_glow(ax, nid, PALETTE["highlight"], alpha=0.25)
             else:
-                phase_txt.set_text("Step 3:  Two Cycles Found")
+                phase_txt.set_text("Step 3:  Two SCCs with Cycles")
                 desc_txt.set_text(
-                    "Cycle B:  Trip 1 \u2192 Trip 4 \u2192 Trip 5 \u2192 Trip 1\n"
-                    "Both cycles share Trip 1 as the common hub."
+                    "SCC {1,4,5}:  $1 \\to 4 \\to 5 \\to 1$.  Second cycle.\n"
+                    "Obs 1 is in both SCCs $\\Rightarrow$ high degree in $R_0$."
                 )
-                counter_txt.set_text("Cycles found: 2")
+                counter_txt.set_text("SCCs with cycles: 2  |  Obs 1 in both")
                 # highlight both cycles
                 for u, v in all_edges:
                     if (u, v) in cycle_a or (u, v) in cycle_b:
@@ -1186,12 +1215,12 @@ def generate_hm_algorithm():
             score_txt.set_text("")
 
             if frame <= 89:
-                phase_txt.set_text("Step 4:  Try Removing Trip 3")
+                phase_txt.set_text("Step 4:  Greedy FVS \u2014 Try Removing Obs 3")
                 desc_txt.set_text(
-                    "Drop Trip 3. Cycle A breaks!  \u2714\n"
-                    "But Cycle B still exists...  \u2716"
+                    "Drop obs 3 from the Feedback Vertex Set.  SCC {1,2,3} breaks  \u2714\n"
+                    "But SCC {1,4,5} still has a cycle...  \u2716"
                 )
-                counter_txt.set_text("Removed: Trip 3  |  Cycles remaining: 1")
+                counter_txt.set_text("FVS = {3}  |  Remaining cycles: 1")
 
                 active = {1, 2, 4, 5}
                 for nid in node_pos:
@@ -1210,19 +1239,19 @@ def generate_hm_algorithm():
                         _draw_edge(ax, u, v, PALETTE["edge"], lw=1.5, alpha=0.5)
 
                 # show checkmark for cycle A, X for cycle B
-                ax.text(3.5, 2.0, "Cycle A\n\u2714 Broken", fontsize=10,
+                ax.text(3.5, 2.0, "SCC {1,2,3}\n\u2714 Broken", fontsize=10,
                         ha="center", color=PALETTE["accent"], fontweight="bold")
-                ax.text(-3.5, 2.0, "Cycle B\n\u2716 Still there", fontsize=10,
+                ax.text(-3.5, 2.0, "SCC {1,4,5}\n\u2716 Cycle", fontsize=10,
                         ha="center", color=PALETTE["highlight"], fontweight="bold")
 
             else:
                 # restore node 3, show all again
-                phase_txt.set_text("Step 4:  That Didn't Work")
+                phase_txt.set_text("Step 4:  Greedy FVS \u2014 Pick Highest Degree")
                 desc_txt.set_text(
-                    "Removing Trip 3 only breaks one cycle.\n"
-                    "We need a smarter strategy."
+                    "Removing obs 3 only breaks one SCC.\n"
+                    "Greedy heuristic: remove the node with highest degree."
                 )
-                counter_txt.set_text("Trip 3 restored  |  Looking for the hub...")
+                counter_txt.set_text("Obs 1: degree=4 (highest)  |  Re-evaluating...")
 
                 for nid in node_pos:
                     _draw_node(ax, nid, PALETTE["node"])
@@ -1237,12 +1266,12 @@ def generate_hm_algorithm():
         # ============================================================
         elif frame <= 124:
             if frame <= 107:
-                phase_txt.set_text("Step 5:  Trip 1 Is the Hub")
+                phase_txt.set_text("Step 5:  FVS = {Obs 1}  (Highest Degree)")
                 desc_txt.set_text(
-                    "Trip 1 participates in BOTH cycles.\n"
-                    "It has the highest degree. Remove it!"
+                    "Obs 1 participates in both SCCs (degree=4 in $R_0$).\n"
+                    "Add obs 1 to the Feedback Vertex Set and remove it."
                 )
-                counter_txt.set_text("Hub node identified: Trip 1 (degree = 4)")
+                counter_txt.set_text("FVS = {1}  |  Removing from R\u2080 graph...")
 
                 for nid in node_pos:
                     _draw_node(ax, nid, PALETTE["node"])
@@ -1252,18 +1281,18 @@ def generate_hm_algorithm():
 
                 # degree annotation
                 x1, y1 = node_pos[1]
-                ax.text(x1 + 0.9, y1 + 0.5, "4 edges\n(highest!)", fontsize=9,
+                ax.text(x1 + 0.9, y1 + 0.5, "deg=4\n(max)", fontsize=9,
                         color="#e67e22", fontweight="bold",
                         bbox=dict(boxstyle="round,pad=0.3", facecolor="white",
                                   edgecolor="#e67e22", lw=1.2, alpha=0.85))
 
             else:
-                phase_txt.set_text("Step 5:  All Cycles Broken!")
+                phase_txt.set_text("Step 5:  $R_0$ Graph Is Now a DAG")
                 desc_txt.set_text(
-                    "Without Trip 1, no cycles remain.\n"
-                    "The remaining trips form a clean, rational graph."
+                    "Without obs 1, all SCCs are trivial (size 1).\n"
+                    "Remaining observations are GARP-consistent."
                 )
-                counter_txt.set_text("Removed: Trip 1  |  Cycles remaining: 0")
+                counter_txt.set_text("FVS = {1}  |  |FVS| = 1  |  All SCCs trivial")
 
                 fade = max(0.15, 1.0 - (frame - 108) / 6)
                 active = {2, 3, 4, 5}
@@ -1280,19 +1309,19 @@ def generate_hm_algorithm():
                     _draw_edge(ax, u, v, PALETTE["accent"], lw=2, alpha=0.6)
 
                 # show both cycles broken
-                ax.text(3.5, 2.0, "Cycle A  \u2714", fontsize=11, ha="center",
+                ax.text(3.5, 2.0, "SCC {2,3}\ntrivial \u2714", fontsize=10, ha="center",
                         color=PALETTE["accent"], fontweight="bold")
-                ax.text(-3.5, 2.0, "Cycle B  \u2714", fontsize=11, ha="center",
+                ax.text(-3.5, 2.0, "SCC {4,5}\ntrivial \u2714", fontsize=10, ha="center",
                         color=PALETTE["accent"], fontweight="bold")
 
         # ============================================================
         # Phase 6: Score reveal (frames 125-139)
         # ============================================================
         else:
-            phase_txt.set_text("Result")
+            phase_txt.set_text("Result:  HM  =  (T \u2212 |FVS|) / T")
             desc_txt.set_text(
-                "4 out of 5 trips are perfectly rational.\n"
-                "Only 1 outlier needed to be removed."
+                "Max GARP-consistent subset: 4 of 5 observations.\n"
+                "Greedy FVS found |FVS|=1.  Score = (5\u22121)/5 = 0.80."
             )
 
             active = {2, 3, 4, 5}
@@ -1308,9 +1337,9 @@ def generate_hm_algorithm():
                 _draw_edge(ax, u, v, PALETTE["accent"], lw=2, alpha=0.6)
 
             alpha_score = min((frame - 125) / 5, 1.0)
-            score_txt.set_text("HM Score = 4 / 5 = 0.80")
+            score_txt.set_text("HM = (T \u2212 |FVS|) / T = 4/5 = 0.80")
             score_txt.set_alpha(alpha_score)
-            counter_txt.set_text("80% of observations are perfectly consistent")
+            counter_txt.set_text("80% of observations satisfy GARP")
 
     print("  Generating hm_algorithm.gif...")
     anim = FuncAnimation(fig, update, frames=TOTAL_FRAMES, interval=INTERVAL)
