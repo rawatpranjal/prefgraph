@@ -7,26 +7,6 @@ limited attention, random utility, and risk preferences.
 
 **3 data subtypes:**
 
-
-.. image:: ../_static/menu_deterministic.png
-   :width: 31%
-.. image:: ../_static/menu_stochastic.png
-   :width: 31%
-.. image:: ../_static/menu_risk.png
-   :width: 31%
-
-
-
-
-.. image:: ../_static/menu_deterministic.png
-   :width: 31%
-.. image:: ../_static/menu_stochastic.png
-   :width: 31%
-.. image:: ../_static/menu_risk.png
-   :width: 31%
-
-
-
 .. list-table::
    :header-rows: 1
    :widths: 22 28 50
