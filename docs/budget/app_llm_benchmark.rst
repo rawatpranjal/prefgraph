@@ -144,6 +144,62 @@ menus each. gpt-4o-mini, temp=0.
    * - Procurement
      - 8
 
+v2 Stage 2: Stochastic (temp=0.7, K=20)
+-----------------------------------------
+
+Same vignettes and menus as Stage 1, but at temp=0.7 with 20 repetitions
+per (vignette, menu, prompt). Tests whether stochastic variation changes
+the consistency picture.
+
+.. list-table:: Stochastic variation by prompt (% of menus with mixed responses)
+   :header-rows: 1
+   :widths: 22 13 13 13 13 13
+
+   * -
+     - Min
+     - DecTree
+     - Conserv
+     - Aggress
+     - CoT
+   * - Support
+     - 13
+     - 24
+     - 0
+     - 8
+     - 12
+   * - Alert
+     - --
+     - --
+     - --
+     - --
+     - --
+   * - Content
+     - --
+     - --
+     - --
+     - --
+     - --
+   * - Jobs
+     - --
+     - --
+     - --
+     - --
+     - --
+   * - Procurement
+     - --
+     - --
+     - --
+     - --
+     - --
+
+*-- = data collection in progress. Updated as scenarios complete.*
+
+Early finding (support_ticket, n=6,745): **88% of menus produce identical
+choices across 20 reps at temp=0.7.** gpt-4o-mini is overwhelmingly
+deterministic. Decision-tree prompts are 2--3x more stochastic (24% mixed)
+than conservative (0%). Mean choice entropy: 0.064 (near zero). Stochastic
+IIA violation rate: 1.1% (vs 4% deterministic).
+
 Findings
 --------
 
