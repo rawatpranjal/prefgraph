@@ -53,8 +53,8 @@ def generate_budget_hero():
     ]
 
     TOTAL_FRAMES = 85
-    fig, axes = plt.subplots(3, 1, figsize=(7, 11.5), facecolor=PALETTE["bg"])
-    plt.subplots_adjust(hspace=0.65, top=0.92, bottom=0.06, left=0.1, right=0.95)
+    fig, axes = plt.subplots(3, 1, figsize=(7, 12.5), facecolor=PALETTE["bg"])
+    plt.subplots_adjust(hspace=1.0, top=0.96, bottom=0.05, left=0.1, right=0.95)
 
     def _draw_arrow(ax, x0, y0, x1, y1, color, lw=1.5):
         dx, dy = x1 - x0, y1 - y0
@@ -668,6 +668,163 @@ def generate_attention_decay():
 # ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
+
+# ---------------------------------------------------------------------------
+# GIF: CCEI (Afriat Efficiency Index) Pedagogical
+# ---------------------------------------------------------------------------
+def generate_ccei_algorithm():
+    fig, ax = plt.subplots(figsize=(7, 7.5), facecolor=PALETTE["bg"])
+    plt.subplots_adjust(top=0.85, bottom=0.1, left=0.12, right=0.95)
+    
+    TOTAL_FRAMES = 105
+    prices = np.array([[1.0, 2.0], [2.0, 1.0]])
+    quants = np.array([[2.0, 3.0], [3.0, 2.0]])
+    expends = np.sum(prices * quants, axis=1)
+    
+    def update(frame):
+        ax.clear()
+        ax.set_facecolor(PALETTE["bg"])
+        ax.set_title("CCEI (Afriat Efficiency) Concept", fontsize=16, fontweight="bold", pad=32, loc="left", color=PALETTE["accent"])
+        ax.set_xlim(-0.2, 8.5)
+        ax.set_ylim(-0.2, 8.5)
+        ax.set_xlabel("Good 1", fontsize=12)
+        ax.set_ylabel("Good 2", fontsize=12)
+        ax.grid(True, alpha=0.15, color=PALETTE["grid"])
+        
+        if frame <= 30:
+            e = 1.0
+            phase_text = "Phase 1: Detect GARP Violations"
+            desc = "Observations $x^1$ and $x^2$ are mutually affordable\nunder each other's budgets. (Direct Cycle!)"
+        elif frame <= 75:
+            e = 1.0 - (1.0 - 0.875) * ((frame - 30) / 45.0)
+            phase_text = "Phase 2: Shrink Budgets by Efficiency $e$"
+            desc = f"Reduce budget sets inward to see when intersections break.\nTesting $e$ = {e:.3f}"
+        else:
+            e = 0.875
+            phase_text = "Phase 3: Critical Efficiency Threshold"
+            desc = f"At $e$ = 0.875, choices strictly separate.\nCCEI = 0.875 (Budgets shrunk by min 12.5%)."
+            
+        ax.text(0.00, 1.09, phase_text, transform=ax.transAxes, fontsize=12, fontweight="bold", color=PALETTE["text"])
+        ax.text(0.00, 1.02, desc, transform=ax.transAxes, fontsize=11, style="italic")
+        
+        colors = ["#5b8def", "#8e44ad"]
+        for i in range(2):
+            p = prices[i]
+            E = expends[i] * e
+            x_int = E / p[0]
+            y_int = E / p[1]
+            ax.plot([0, x_int], [y_int, 0], color=colors[i], lw=2.5, alpha=0.6)
+            ax.fill_between([0, x_int], [y_int, 0], alpha=0.1, color=colors[i])
+            ax.scatter(quants[i, 0], quants[i, 1], color=colors[i], s=140, zorder=5, edgecolors="white", lw=2)
+            ax.annotate(f"$x^{i+1}$", (quants[i, 0] + 0.2, quants[i, 1] + 0.2), fontsize=12, fontweight="bold", color=colors[i])
+            
+        if frame > 15:
+            alpha_arrow = 1.0 if e > 0.876 else 0.2
+            color_arrow = PALETTE["highlight"] if e > 0.876 else PALETTE["edge"]
+            
+            if 7 <= 8 * e + 0.001:
+                dx, dy = quants[0,0] - quants[1,0], quants[0,1] - quants[1,1]
+                ax.annotate("", xy=(quants[0,0] - dx*0.2, quants[0,1] - dy*0.2), xytext=(quants[1,0] + dx*0.2, quants[1,1] + dy*0.2), arrowprops=dict(arrowstyle="-|>", color=color_arrow, lw=2, alpha=alpha_arrow))
+            if 7 <= 8 * e + 0.001:
+                dx, dy = quants[1,0] - quants[0,0], quants[1,1] - quants[0,1]
+                ax.annotate("", xy=(quants[1,0] - dx*0.2, quants[1,1] - dy*0.2), xytext=(quants[0,0] + dx*0.2, quants[0,1] + dy*0.2), arrowprops=dict(arrowstyle="-|>", ls="--", color=color_arrow, lw=2, alpha=alpha_arrow))
+                
+        if frame > 80:
+            alpha_box = min((frame - 80) / 10, 1.0)
+            ax.text(4.25, 7.5, "Cycles Terminated\n$e_{min} = 0.875$", fontsize=14, fontweight="bold", ha="center", va="center", color=PALETTE["secondary"], alpha=alpha_box, bbox=dict(boxstyle="round,pad=0.5", facecolor=PALETTE["bg"], edgecolor=PALETTE["secondary"], alpha=alpha_box, lw=2))
+                    
+    print("  Generating ccei_algorithm.gif...")
+    anim = FuncAnimation(fig, update, frames=TOTAL_FRAMES, interval=200)
+    anim.save(OUTPUT_DIR / "ccei_algorithm.gif", writer="pillow", dpi=DPI)
+    plt.close(fig)
+
+# ---------------------------------------------------------------------------
+# GIF: HM (Houtman-Maks Index) Pedagogical
+# ---------------------------------------------------------------------------
+def generate_hm_algorithm():
+    fig, ax = plt.subplots(figsize=(7, 7.5), facecolor=PALETTE["bg"])
+    plt.subplots_adjust(top=0.85, bottom=0.1, left=0.12, right=0.95)
+    
+    TOTAL_FRAMES = 110
+    nodes = {1: (0, 0), 2: (2, 2.5), 3: (3, -0.5), 4: (-2, 2.5), 5: (-3, -0.5)}
+    edges = [(1,2), (2,3), (3,1), (1,4), (4,5), (5,1)]
+    
+    def update(frame):
+        ax.clear()
+        ax.set_facecolor(PALETTE["bg"])
+        ax.set_title("Houtman-Maks (HM) Index", fontsize=16, fontweight="bold", pad=32, loc="left", color=PALETTE["accent"])
+        ax.set_xlim(-4, 4)
+        ax.set_ylim(-2.5, 4.0)
+        ax.axis("off")
+        
+        if frame < 25:
+            phase_text = "Phase 1: Reveal Preference Cycles"
+            desc = "Find all choice sequences. We see two severe cycles."
+            active_nodes = [1, 2, 3, 4, 5]
+            highlight_cycles = frame > 10
+        elif frame < 55:
+            phase_text = "Phase 2: Try Removing Regular Nodes"
+            desc = "If we discard Node 3, the Right Cycle breaks.\nBut the Left Cycle remains! Graph is not a DAG yet."
+            active_nodes = [1, 2, 4, 5] if frame > 30 and frame < 50 else [1, 2, 3, 4, 5]
+            highlight_cycles = True
+        elif frame < 85:
+            phase_text = "Phase 3: Feedback Vertex Strategy"
+            desc = "Discarding Node 1 (Key Hub) breaks ALL cycles!\nThe remaining graph is perfectly rational (DAG)."
+            active_nodes = [2, 3, 4, 5] if frame > 60 else [1, 2, 3, 4, 5]
+            highlight_cycles = frame <= 60
+        else:
+            phase_text = "Conclusion: Compute Score"
+            desc = "HM Index = Max Consistent Subset / Total Size\nScore = 4 Valid Nodes / 5 Total Nodes = 0.80"
+            active_nodes = [2, 3, 4, 5]
+            highlight_cycles = False
+            
+        ax.text(0.00, 1.09, phase_text, transform=ax.transAxes, fontsize=12, fontweight="bold", color=PALETTE["text"])
+        ax.text(0.00, 1.02, desc, transform=ax.transAxes, fontsize=11, style="italic")
+        
+        for u, v in edges:
+            if u not in active_nodes or v not in active_nodes: continue
+            x1, y1 = nodes[u]
+            x2, y2 = nodes[v]
+            dx, dy = x2 - x1, y2 - y1
+            length = np.sqrt(dx**2 + dy**2)
+            sx, sy = x1 + 0.3 * dx/length, y1 + 0.3 * dy/length
+            ex, ey = x2 - 0.3 * dx/length, y2 - 0.3 * dy/length
+            
+            if highlight_cycles:
+                if frame > 30 and frame < 50 and (u==3 or v==3): continue
+                color = PALETTE["highlight"]
+                lw = 2.5
+            elif not highlight_cycles and frame > 60:
+                color = PALETTE["secondary"]
+                lw = 2.0
+            else:
+                color = PALETTE["edge"]
+                lw = 1.5
+            ax.annotate("", xy=(ex, ey), xytext=(sx, sy), arrowprops=dict(arrowstyle="-|>", color=color, lw=lw, shrinkA=0, shrinkB=0))
+        
+        for n, (x, y) in nodes.items():
+            if n in active_nodes:
+                color = PALETTE["accent"]
+                if n == 1 and frame < 60:
+                    color = "#e67e22"
+                if frame > 60 and n in active_nodes:
+                    color = PALETTE["secondary"]
+                ax.add_patch(plt.Circle((x, y), 0.35, color=color, zorder=10))
+                ax.text(x, y, f"{n}", fontsize=14, fontweight="bold", color="white", ha="center", va="center", zorder=11)
+            else:
+                ax.add_patch(plt.Circle((x, y), 0.35, color=PALETTE["grid"], alpha=0.2, zorder=10))
+                ax.text(x, y, f"{n}", fontsize=14, fontweight="bold", color="black", alpha=0.3, ha="center", va="center", zorder=11)
+                
+        if frame > 85:
+            alpha_box = min((frame - 85) / 10, 1.0)
+            ax.text(0, -2.5, "HM Index = 0.80\n(4 consistent / 5 total)", fontsize=14, fontweight="bold", ha="center", va="center", color=PALETTE["secondary"], alpha=alpha_box, bbox=dict(boxstyle="round,pad=0.5", facecolor=PALETTE["bg"], edgecolor=PALETTE["secondary"], alpha=alpha_box, lw=2))
+
+    print("  Generating hm_algorithm.gif...")
+    anim = FuncAnimation(fig, update, frames=TOTAL_FRAMES, interval=300)
+    anim.save(OUTPUT_DIR / "hm_algorithm.gif", writer="pillow", dpi=DPI)
+    plt.close(fig)
+
+
 def main():
     OUTPUT_DIR.mkdir(exist_ok=True)
     print("Generating documentation GIFs...")
