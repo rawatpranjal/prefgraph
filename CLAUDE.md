@@ -8,7 +8,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Documentation Rules
 
-- **RTD nav tab names must be single words.** Current order: Quickstart, Budgets, Menus, Algorithms, Performance, Applications, Methods, API, References. Methods/API/References are intentionally pushed right so they overflow into "More" on narrow viewports. Applications wraps Production + Intertemporal.
+- **RTD nav tab names must be single words.** Current order: Quickstart, Budgets, Menus, Applications, Algorithms, Performance, Methods, API, References. Methods/API/References are intentionally pushed right so they overflow into "More" on narrow viewports. Applications wraps Production + Intertemporal.
+- **RTD sidebars:** Left sidebar (`sidebar-nav-bs` + `page-toc`) on ALL pages including front page — set via `html_sidebars = {"**": ["sidebar-nav-bs", "page-toc"]}`. No right sidebar anywhere — `secondary_sidebar_items: []`.
 - **README is user-forward.** Paste-and-run example first (using `load_demo`), then Scores, "Which API?", Choice Categories, Performance. Architecture details live in RTD only.
 - **CHANGELOG.md** lives at repo root. Update it when making user-visible changes.
 
