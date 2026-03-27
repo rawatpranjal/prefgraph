@@ -512,29 +512,3 @@ Limitations
 - Session-level analysis assumes within-session independence; fatigue or
   position bias may create spurious violations.
 
-References
-----------
-
-- Kallus, N. & Udell, M. (2016). "Revealed Preference at Scale: Learning
-  Personalized Preferences from Assortment Choices." *Proceedings of the
-  17th ACM Conference on Economics and Computation* (EC '16), 821--837.
-  `doi:10.1145/2940716.2940752 <https://doi.org/10.1145/2940716.2940752>`_
-
-- Cazzola, A. & Daly, M. (2024). "Rank-Preference Consistency as the
-  Appropriate Metric for Recommender Systems." arXiv:2404.17097.
-
-- Richter, M. K. (1966). "Revealed Preference Theory." *Econometrica*,
-  34(3), 635--645.
-  `doi:10.2307/1909773 <https://doi.org/10.2307/1909773>`_
-
-- Houtman, M. & Maks, J. (1985). "Determining All Maximal Data Subsets
-  Consistent with Revealed Preference." *Kwantitatieve Methoden*, 19, 89--104.
-
-- RetailRocket E-Commerce Dataset. Kaggle, CC-BY-NC-SA 4.0.
-  `kaggle.com/datasets/retailrocket/ecommerce-dataset <https://www.kaggle.com/datasets/retailrocket/ecommerce-dataset>`_
-
-.. seealso::
-
-   :doc:`tutorial_menu_choice` for the full menu-choice tutorial.
-   :doc:`theory_abstract` for the mathematical foundations of SARP.
-   :doc:`/budget/app_grocery` for budget-based GARP analysis (the continuous-choice analog).
