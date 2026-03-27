@@ -219,41 +219,67 @@ IIA violations (menu-dependence):
 *IIA = Independence of Irrelevant Alternatives. A violation means adding a
 third option to a pairwise menu changed which of two options is preferred.*
 
-Suggestive Takeaways
-~~~~~~~~~~~~~~~~~~~~
+Standout Empirical Findings
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-These results are from synthetic vignettes and a single model family.
-They are illustrative, not definitive. But they suggest patterns that
-would be invisible without revealed preference tools:
+*Synthetic vignettes, single model family. Illustrative, not definitive.*
 
-- **LLMs exhibit decoy effects.** Adding a third option to a menu changes
-  which of two actions the LLM prefers — 15 times in job screening alone.
-  This is the Independence of Irrelevant Alternatives (IIA) violation that
-  behavioral economists study in human choice. No standard LLM benchmark
-  measures this. ``validate_menu_sarp()`` catches it automatically.
+**Decoy effects:**
 
-- **"Clear" inputs aren't.** Content moderation vignettes designed to be
-  unambiguous still produce menu-dependent decisions 40% of the time. The
-  LLM's severity judgment shifts when you change which alternative actions
-  are shown. A deployment team would never discover this with accuracy
-  testing alone.
+- **Job screening has 15 IIA violations** — the strongest decoy effects
+  of any scenario. Showing a third candidate changes which of two
+  candidates the LLM prefers. This is the hiring discrimination vector
+  nobody is testing for.
+- Content review has 9 IIA violations. Alert triage has 2. The more
+  subjective the task, the stronger the menu composition effect.
 
-- **Some prompt strategies create more decision boundaries to trip over.**
-  Decision-tree prompts score 60% SARP-consistent on job screening (vs 80%
-  for simpler prompts). The explicit rules create edge cases where menu
-  composition determines which rule fires. ``compute_menu_efficiency()``
-  identifies exactly which action pairs participate in the resulting cycles.
+**Consistency varies where you don't expect it:**
 
-- **Scenario difficulty varies in non-obvious ways.** Alert triage (92%) is
-  easier than support routing (88%) which is easier than job screening (74%).
-  This ranking doesn't follow from the scenarios' apparent complexity — it
-  follows from the preference graph structure, which only SARP reveals.
+- **Content moderation "clear" vignettes only 60% SARP-consistent** —
+  the lowest pass rate of any tier in any scenario. Even posts designed
+  to be unambiguous produce menu-dependent severity judgments. Moderation
+  has no safe inputs.
+- **Alert triage is 92% consistent** — the easiest scenario. Infrastructure
+  severity has the clearest natural ordering. SARP pass rate correlates
+  with how "ordinal" the action space is.
 
-- **The experimental design itself matters.** v1 (different input per trial)
-  showed 0% SARP pass rate; v2 (same input, varied menus) showed 60--100%.
-  The difference is entirely methodological. Revealed preference theory
-  provides the framework to design the right test — pooled vs per-vignette
-  SARP are different questions with different answers.
+**Prompt effects are scenario-dependent:**
+
+- **Decision-tree prompts score 60% on job screening** — the worst
+  prompt-scenario combination. Explicit if/then rules *create*
+  inconsistency by introducing more decision boundaries. Simpler
+  prompts (aggressive, CoT) score 80%.
+- **Conservative prompts hurt procurement and content review** (70% each)
+  but are the *best* prompt for support routing (100%). There is no
+  universal "most consistent" prompt strategy.
+- **Conservative prompts flip 6/10 pairwise preferences** vs aggressive
+  in support routing (v1 data). The largest prompt effect by far — yet
+  both produce identical SARP failure rates in pooled testing. Only
+  per-vignette testing reveals the difference.
+
+**Model comparison (v1):**
+
+- **gpt-4o-mini and o4-mini are indistinguishable on consistency.**
+  Reasoning tokens don't buy coherence. Both models produce the same
+  preference graph structure across all 50 group-level tests.
+
+**Methodological:**
+
+- **50% of vignettes produce identical choices across all 5 prompts**
+  (v1 data). Prompt engineering only matters on the borderline ~47%.
+- **v1 (pooled) = 0% pass; v2 (per-vignette) = 60--100% pass.** The
+  difference is entirely design — same model, same prompts. Revealed
+  preference theory provides the framework to ask the right question.
+
+What PyRevealed Uniquely Reveals
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+- ``validate_menu_sarp()``: per-input consistency score — does the LLM
+  have a stable action ranking for *this specific* input?
+- ``compute_menu_efficiency()``: which action pairs participate in
+  preference cycles? Directly actionable for guardrail design.
+- IIA detection (pairwise vs triple menus): does adding a third option
+  flip the preference between two others? Unmeasured in standard evals.
 
 What This Means for Practitioners
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
