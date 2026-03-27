@@ -71,7 +71,7 @@ all = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/rawatpranjal/PyRevealed"
+Homepage = "https://pyrevealed.readthedocs.io"
 Documentation = "https://pyrevealed.readthedocs.io"
 Repository = "https://github.com/rawatpranjal/PyRevealed"
 
@@ -85,7 +85,7 @@ features = ["pyo3/extension-module"]
 testpaths = ["tests"]
 addopts = "-v --cov=pyrevealed --cov-report=term-missing"
 # Exclude source directory from test collection (functions like test_warp_la are not tests)
-norecursedirs = ["src", "build", "dist", ".git", "papers", "dunnhumby"]
+norecursedirs = ["src", "build", "dist", ".git", "references", "case_studies", "tests/simulations"]
 # Only collect test functions that are in test files (not source API functions)
 python_files = ["test_*.py", "*_test.py"]
 python_classes = ["Test*"]
