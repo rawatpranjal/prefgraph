@@ -1,7 +1,7 @@
 Axiomatic Consistency Tests
 ==========================
 
-This section delineates the formal definitions and axiomatic properties of revealed preference consistency, including GARP, WARP, SARP, and their associated variants.
+Every choice adds edges to a directed **preference graph**. The axioms below define what "acyclic" means for this graph — GARP (allowing indifference), SARP (strict), and WARP (pairwise only).
 
 GARP (Generalized Axiom of Revealed Preference)
 -----------------------------------------------

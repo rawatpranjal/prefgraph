@@ -3,7 +3,7 @@ Budgets
 
 **Input:** ``BehaviorLog`` — prices × quantities (continuous budget sets)
 
-Budget-based revealed preference analysis evaluates whether an agent's
+Every purchase at observed prices adds directed edges to the agent's **preference graph**. Budget analysis checks whether this graph is acyclic (GARP), scores how close it is (CCEI, MPI), and recovers utility. The agent's
 observed price-quantity pairs are consistent with utility maximization.
 The classical setting of Samuelson (1938), Afriat (1967), and Varian (1982).
 

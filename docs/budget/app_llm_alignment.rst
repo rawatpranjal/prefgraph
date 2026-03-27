@@ -37,7 +37,7 @@ a shortlist) --- and vary the **system prompt** rather than the model.
 **What you'll learn:**
 
 - How to design a controlled SARP experiment for LLM agents
-- Why system prompts can create revealed preference violations
+- Why system prompts can introduce cycles into the preference graph
 - How to measure prompt-induced inconsistency with Houtman-Maks
 - A practical pipeline for auditing prompts before deployment
 

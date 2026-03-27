@@ -1,7 +1,7 @@
 Benchmarks
 ==========
 
-Empirical evaluation of revealed preference features on real-world
+Empirical evaluation of preference-graph features (cycle counts, acyclicity scores) on real-world
 prediction tasks across e-commerce and LLM domains.
 
 E-commerce
