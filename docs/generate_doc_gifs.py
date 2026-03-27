@@ -250,16 +250,21 @@ def generate_floyd_warshall():
         adj[i, j] = True
 
     states = [adj.copy()]
+    focus_nodes = [] # specifically (i, k, j) being tested
+    
     for k in range(n):
+        step_focus = []
         for i in range(n):
             for j in range(n):
-                if adj[i, k] and adj[k, j]:
+                if adj[i, k] and adj[k, j] and not adj[i, j]:
                     adj[i, j] = True
+                    step_focus.append((i, k, j))
         states.append(adj.copy())
+        focus_nodes.append(step_focus)
 
-    fig, ax = plt.subplots(figsize=(5, 5.5), facecolor=PALETTE["bg"])
+    fig, ax = plt.subplots(figsize=(5.5, 6.5), facecolor=PALETTE["bg"])
 
-    def draw_arrow(ax, start, end, color, lw=1.5, style="-"):
+    def draw_arrow(ax, start, end, color, lw=1.5, style="-", alpha=1.0):
         dx, dy = end[0] - start[0], end[1] - start[1]
         length = np.sqrt(dx**2 + dy**2)
         if length < 0.01: return
@@ -268,46 +273,72 @@ def generate_floyd_warshall():
         ex, ey = end[0] - shrink * dx / length, end[1] - shrink * dy / length
         ax.annotate(
             "", xy=(ex, ey), xytext=(sx, sy),
-            arrowprops=dict(arrowstyle="-|>", color=color, lw=lw, linestyle=style, shrinkA=0, shrinkB=0),
+            arrowprops=dict(arrowstyle="-|>", color=color, lw=lw, linestyle=style, shrinkA=0, shrinkB=0, alpha=alpha),
         )
 
     def update(frame):
         ax.clear()
         ax.set_facecolor(PALETTE["bg"])
         ax.set_xlim(-2.8, 2.8)
-        ax.set_ylim(-3.0, 2.5)
+        ax.set_ylim(-3.8, 2.8)
         ax.set_aspect("equal")
         ax.axis("off")
 
-        idx = min(frame, len(states) - 1)
         k_label = ""
         desc = ""
         
-        if frame < 5:
+        if frame < 6:
             current = states[0]
-            k_label = "Initial State: Direct Preferences ($R_0$)"
+            k_label = "Phase 1: Direct Preferences ($R_0$)"
             desc = "Building basic connections between choices"
-        elif frame < 5 + n*3:
-            k = (frame - 5) // 3
-            step_frame = (frame - 5) % 3
-            current = states[k + 1]
-            k_label = f"Iteration k = {k + 1}"
-            desc = f"Testing paths through node $x^{k+1}$"
+            active_triads = []
+        elif frame < 6 + n*4:
+            k = (frame - 6) // 4
+            step_frame = (frame - 6) % 4
+            current = states[k] if step_frame < 2 else states[k+1]
+            active_triads = focus_nodes[k] if step_frame in [1, 2] else []
+            
+            k_label = f"Phase 2: Triplet Search (via $x^{k+1}$) — O(T³)"
+            if step_frame == 0: desc = f"Scanning paths through $x^{k+1}$..."
+            elif step_frame == 1: desc = f"Found path! $x_i \to x^{k+1} \to x_j$"
+            elif step_frame == 2: desc = "Adding indirect preference bridge."
+            else: desc = "Complete."
         else:
             current = states[-1]
             k_label = "Complete Transitive Closure ($R^*$)"
-            desc = "All indirect preferences inferred (O(T³))"
+            desc = "All indirect preferences inferred (Costly: O(T³))"
+            active_triads = []
 
         direct_set = set(direct)
+        
+        active_edges_highlight = []
+        inferred_new = []
+        for triad in active_triads:
+            i, k_node, j = triad
+            active_edges_highlight.append((i, k_node))
+            active_edges_highlight.append((k_node, j))
+            inferred_new.append((i, j))
 
         # draw edges
         for i in range(n):
             for j in range(n):
                 if i != j and current[i, j]:
                     is_direct = (i, j) in direct_set
-                    color = PALETTE["edge"] if is_direct else PALETTE["python"]
-                    lw = 2.0 if is_direct else 1.5
-                    style = "-" if is_direct else "--"
+                    is_highlighted = (i, j) in active_edges_highlight
+                    is_new = (i, j) in inferred_new
+                    
+                    if is_new:
+                        color = PALETTE["highlight"]
+                        lw = 2.5
+                        style = "--"
+                    elif is_highlighted:
+                        color = PALETTE["python"]
+                        lw = 3.0
+                        style = "-" if is_direct else "--"
+                    else:
+                        color = PALETTE["edge"] if is_direct else PALETTE["secondary"]
+                        lw = 2.0 if is_direct else 1.5
+                        style = "-" if is_direct else "--"
                     draw_arrow(ax, pos[i], pos[j], color, lw, style)
 
         # draw nodes
@@ -317,15 +348,15 @@ def generate_floyd_warshall():
             ax.text(pos[i][0], pos[i][1], labels[i], ha="center", va="center", fontsize=11,
                     color=PALETTE["node_text"], fontweight="bold", zorder=11)
 
-        ax.set_title("1. Floyd-Warshall Algorithm", fontsize=13, fontweight="bold", color="#333", pad=15)
-        ax.text(0, -2.5, k_label, ha="center", fontsize=11, fontweight="bold", color=PALETTE["python"] if "Iteration" in k_label else PALETTE["edge"])
-        ax.text(0, -2.8, desc, ha="center", fontsize=10, style="italic", color=PALETTE["secondary"])
+        ax.set_title("1. Traditional: Floyd-Warshall", fontsize=13, fontweight="bold", color="#333", pad=20)
+        ax.text(0, -2.8, k_label, ha="center", fontsize=11, fontweight="bold", color=PALETTE["python"] if "Search" in k_label else PALETTE["edge"])
+        ax.text(0, -3.2, desc, ha="center", fontsize=10, style="italic", color=PALETTE["secondary"])
 
-    total_frames = 5 + n*3 + 10
-    anim = FuncAnimation(fig, update, frames=total_frames, interval=400)
+    total_frames = 6 + n*4 + 10
+    anim = FuncAnimation(fig, update, frames=total_frames, interval=500)
     anim.save(OUTPUT_DIR / "floyd_warshall.gif", writer="pillow", dpi=DPI)
     plt.close(fig)
-    print("  floyd_warshall.gif")
+    print("  floyd_warshall.gif updated with pedagogical flow")
 
 
 # ---------------------------------------------------------------------------
@@ -347,7 +378,7 @@ def generate_scc_tarjan():
     strict_edges = [(2, 0)]
     scc_1 = [0, 1, 2]
 
-    fig, ax = plt.subplots(figsize=(5, 5.5), facecolor=PALETTE["bg"])
+    fig, ax = plt.subplots(figsize=(5.5, 6.5), facecolor=PALETTE["bg"])
 
     def draw_edge(ax, i, j, color, lw=2.0, style="-"):
         dx, dy = pos[j][0] - pos[i][0], pos[j][1] - pos[i][1]
@@ -362,33 +393,36 @@ def generate_scc_tarjan():
         ax.clear()
         ax.set_facecolor(PALETTE["bg"])
         ax.set_xlim(-2.8, 2.8)
-        ax.set_ylim(-3.5, 2.2)
+        ax.set_ylim(-4.2, 2.5)
         ax.set_aspect("equal")
         ax.axis("off")
 
-        if frame < 6:
-            visible = int((frame / 6) * len(weak_edges))
+        scc_active = False
+        violation_active = False
+
+        if frame < 8:
+            visible = int((frame / 8) * len(weak_edges))
             for idx in range(visible):
                 draw_edge(ax, weak_edges[idx][0], weak_edges[idx][1], PALETTE["edge"], lw=1.5)
-            subtitle = "Phase 1: Build Direct Preference Graph ($R_0$)"
-            desc = "Gathering initial weak preferences"
-            scc_active = False
-        elif frame < 14:
+            subtitle = "Phase 1: Direct Preference Graph ($R_0$)"
+            desc = "Cycles just imply mutual indifference (not violations)!"
+        elif frame < 18:
             for u, v in weak_edges:
                 draw_edge(ax, u, v, PALETTE["edge"], lw=1.5)
-            subtitle = "Phase 2: Tarjan's Algorithm (Find SCCs)"
-            desc = "Group nodes with cyclical paths (O(T²))"
+            subtitle = "Phase 2: Group Indifferences (O(T²))"
+            desc = "Tarjan's bundles all cycles into SCC components."
             scc_active = True
-        elif frame < 20:
+        elif frame < 26:
             for u, v in weak_edges:
                 if (u, v) == strict_edges[0]:
                     draw_edge(ax, u, v, PALETTE["highlight"], lw=3.0)
                 else:
                     color = PALETTE["rust"] if u in scc_1 and v in scc_1 else PALETTE["edge"]
                     draw_edge(ax, u, v, color, lw=1.5)
-            subtitle = "Phase 3: Verify Strict Arcs inside SCC"
-            desc = "Checking $P_0$ inside components"
+            subtitle = "Phase 3: Screen SCCs for Strict Arcs ($P_0$)"
+            desc = "If any arc inside the indifferent group is Strict, it's exploited!"
             scc_active = True
+            violation_active = True
         else:
             for u, v in weak_edges:
                 if (u, v) == strict_edges[0]:
@@ -396,21 +430,25 @@ def generate_scc_tarjan():
                 else:
                     color = PALETTE["rust"] if u in scc_1 and v in scc_1 else PALETTE["secondary"]
                     draw_edge(ax, u, v, color, lw=1.5)
-            subtitle = "GARP Violation Found!"
-            desc = "SCC contains a strict preference (Theorem 1)"
+            subtitle = "GARP Violation Flagged"
+            desc = "Bypassed O(T³) transitive closure entirely (Theorem 1)."
             scc_active = True
+            violation_active = True
             
-            # draw large X
-            ax.text(pos[2][0]-0.8, pos[2][1] + 1.6, "✘", color=PALETTE["highlight"], fontsize=60, ha="center", va="center", alpha=0.9, zorder=0)
+            # draw large cross over the strict edge
+            ax.text(pos[2][0]-0.6, pos[2][1] + 1.2, "✘", color=PALETTE["highlight"], fontsize=50, ha="center", va="center", alpha=0.9, zorder=0)
 
         if scc_active:
             # Highlight SCC1 bubble
             circle_scc = plt.Circle((0, 0.4), 1.6, fill=True, color=PALETTE["rust"], alpha=0.15, zorder=1)
             ax.add_patch(circle_scc)
-            if frame > 10:
+            if frame > 12:
                 # Highlight SCC2
                 circle_scc2 = plt.Circle((0, -1.8), 2.2, fill=True, color=PALETTE["accent"], alpha=0.1, zorder=1)
                 ax.add_patch(circle_scc2)
+            
+            if scc_active and not violation_active:
+                ax.text(2.0, 1.2, "SCC: Mutual\nIndifference\n$x^1 \sim x^2 \sim x^3$", color=PALETTE["rust"], fontsize=10, fontweight="bold", alpha=min((frame-8)/3, 1.0))
 
         # draw nodes
         for i in range(n):
@@ -424,14 +462,16 @@ def generate_scc_tarjan():
             ax.text(pos[i][0], pos[i][1], labels[i], ha="center", va="center", fontsize=11,
                     color=PALETTE["node_text"], fontweight="bold", zorder=11)
 
-        ax.set_title("2. Tarjan's SCC Algorithm", fontsize=13, fontweight="bold", color="#333", pad=15)
-        ax.text(0, -3.0, subtitle, ha="center", fontsize=11, fontweight="bold", color=PALETTE["highlight"] if "Violation" in subtitle else PALETTE["edge"])
-        ax.text(0, -3.3, desc, ha="center", fontsize=10, style="italic", color=PALETTE["secondary"])
+        ax.set_title("2. Modern Engine: Tarjan's SCC", fontsize=13, fontweight="bold", color="#333", pad=20)
+        ax.text(0, -3.4, subtitle, ha="center", fontsize=11, fontweight="bold", color=PALETTE["highlight"] if "Flag" in subtitle else PALETTE["edge"])
+        ax.text(0, -3.8, desc, ha="center", fontsize=10, style="italic", color=PALETTE["secondary"])
 
-    anim = FuncAnimation(fig, update, frames=28, interval=400)
+    anim = FuncAnimation(fig, update, frames=34, interval=450)
     anim.save(OUTPUT_DIR / "scc_tarjan.gif", writer="pillow", dpi=DPI)
     plt.close(fig)
-    print("  scc_tarjan.gif")
+    print("  scc_tarjan.gif updated with pedagogical flow")
+
+
 
 def generate_power_analysis():
     """Random CCEI histogram building up, then observed score drops in."""
