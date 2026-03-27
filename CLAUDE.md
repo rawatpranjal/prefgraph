@@ -265,26 +265,63 @@ Advanced Analysis (algorithms/)
 
 ### API Pattern
 
-Engine batch API (primary for multi-user):
-```python
-from pyrevealed import Engine, EngineResult, MenuResult, results_to_dataframe, load_demo
-users = load_demo()                                          # synthetic demo data, zero setup
-results = Engine(metrics=["garp","ccei","mpi"]).analyze_arrays(users)
-df = results_to_dataframe(results)                           # pandas DataFrame
+```
+┌───────────────────────────────────────────────────────────────────────┐
+│ API Layers                                                           │
+│                                                                      │
+│  Tier 1: Engine (batch)        Tier 2: Functions (per-user)          │
+│  ┌───────────────────────┐    ┌──────────────────────────────────┐   │
+│  │ Engine.analyze_arrays  │    │ validate_consistency (GARP)      │   │
+│  │ Engine.analyze_menus   │    │ compute_integrity_score (CCEI)   │   │
+│  │ results_to_dataframe   │    │ compute_confusion_metric (MPI)   │   │
+│  │ load_demo              │    │ validate_menu_sarp, fit_latent…  │   │
+│  └───────────────────────┘    └──────────────────────────────────┘   │
+│  → EngineResult/MenuResult     → GARPResult, AEIResult, …           │
+│    .to_dict(), .summary()        .to_dict(), .score()               │
+│                                                                      │
+│  Legacy aliases: check_garp → validate_consistency,                  │
+│  compute_aei → compute_integrity_score, ConsumerSession → BehaviorLog│
+└───────────────────────────────────────────────────────────────────────┘
 ```
 
-`EngineResult`/`MenuResult` have `to_dict()`, `summary()`, and compact `__repr__`.
+### Applications
 
-Per-user function API (deep analysis):
-```python
-from pyrevealed import BehaviorLog, validate_consistency, compute_integrity_score, compute_confusion_metric
-from pyrevealed import MenuChoiceLog, validate_menu_sarp, compute_menu_efficiency, fit_menu_preferences
+```
+┌───────────────────────────────────────────────────────────────────────┐
+│ Real-World Applications (docs/budget/, docs/menu/)                   │
+│                                                                      │
+│  Budget                          Menu                                │
+│  ┌─────────────────────────┐    ┌──────────────────────────────┐    │
+│  │ Grocery Scanner          │    │ Recommendation Clicks         │    │
+│  │  Dunnhumby 2,222 HH     │    │  RetailRocket 1.4M visitors  │    │
+│  │  GARP/CCEI/MPI scoring  │    │  SARP/WARP consistency       │    │
+│  ├─────────────────────────┤    │  Churn detection via HM      │    │
+│  │ LLM Prompt Consistency   │    └──────────────────────────────┘    │
+│  │  GPT decision-making    │                                         │
+│  │  SARP on 5 prompts      │    All use Engine batch API.            │
+│  └─────────────────────────┘    Real data, real outputs, no sims.    │
+└───────────────────────────────────────────────────────────────────────┘
 ```
 
-Old economics names still work as aliases:
-```python
-from pyrevealed import ConsumerSession, check_garp, compute_aei, compute_mpi
-from pyrevealed import check_abstract_sarp, check_congruence, recover_ordinal_utility
+### Algorithms
+
+```
+┌───────────────────────────────────────────────────────────────────────┐
+│ Algorithm Families (algorithms/)                                     │
+│                                                                      │
+│  Graph Theory            LP / Optimization        Combinatorial      │
+│  ┌───────────────────┐  ┌───────────────────┐  ┌─────────────────┐  │
+│  │ Floyd-Warshall     │  │ Afriat LP (HiGHS) │  │ Greedy FVS (HM) │  │
+│  │  → GARP, HARP,    │  │  → Utility, VEI,  │  │ Greedy FAS      │  │
+│  │    SARP, Prod GARP │  │    Welfare (CV/EV)│  │  → Swaps Index  │  │
+│  │ Tarjan SCC         │  │ RUM LP            │  │ Binary Search   │  │
+│  │  → cycle detection │  │  → stochastic     │  │  → CCEI (AEI)   │  │
+│  │ Karp's cycle       │  │ Bellman-Ford      │  │ Bound propagate │  │
+│  │  → MPI             │  │  → quasilinear    │  │  → intertemporal│  │
+│  └───────────────────┘  └───────────────────┘  └─────────────────┘  │
+│                                                                      │
+│  All run in Rust (rpt-core) via Rayon. Python fallback: GARP+CCEI+MPI│
+└───────────────────────────────────────────────────────────────────────┘
 ```
 
 ### Test Fixtures
