@@ -19,8 +19,8 @@ You have data on what people chose. PyRevealed tests whether those choices are r
        <p>Optimized Rust backend utilizing graph-theoretic algorithms and HiGHS linear programming, parallelized via Rayon for high-throughput processing.</p>
      </div>
      <div class="feature-card">
-       <h3>Dual API</h3>
-       <p>Every method has two names — pick whichever reads naturally in your code: <code>compute_integrity_score()</code> (tech) or <code>compute_aei()</code> (economics).</p>
+       <h3>Two API Layers</h3>
+       <p><strong>Engine</strong> for batch scoring — Rust/Rayon parallelism, thousands of users per second. <strong>Functions</strong> for single-user deep dives — detailed results, utility recovery, welfare bounds.</p>
        <p>Results are dataclasses with <code>.to_dict()</code> and <code>.summary()</code>, ready for pandas or sklearn pipelines.</p>
      </div>
      <div class="feature-card">
