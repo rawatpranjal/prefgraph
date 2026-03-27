@@ -4,7 +4,8 @@ E-commerce Benchmarks
 Six public datasets, 162K users, LightGBM with 5-fold stratified CV.
 **RP features add 0--0.7% AUC over strong RFM baselines.** The lift is
 real but modest — most predictive power comes from standard spending
-and engagement features.
+and engagement features. All targets use top-tercile thresholds for
+consistency across budget and menu datasets.
 
 Results
 -------
@@ -24,16 +25,16 @@ Results
      - 2,222
      - High Spender
      - 0.958
-     - 0.959
-     - +0.1%
-     - 0.929
+     - 0.960
+     - +0.2%
+     - 0.931
    * - Dunnhumby
      - 2,222
      - Churn
      - 0.748
-     - 0.730
-     - -2.4%
-     - 0.183
+     - 0.725
+     - -3.1%
+     - 0.188
    * - Open E-Commerce
      - 4,694
      - High Spender
@@ -79,10 +80,10 @@ Results
    * - REES46
      - 8,832
      - High Engagement
-     - 0.942
-     - 0.941
-     - -0.1%
-     - 0.922
+     - 0.996
+     - 0.996
+     - -0.0%
+     - 0.968
    * - Taobao
      - 4,239
      - High Engagement
@@ -91,7 +92,7 @@ Results
      - +0.0%
      - 0.137
 
-*Baseline = LightGBM on RFM + spending features. +RP = same model with RP features added. Lift = (Combined - Baseline) / Baseline x 100. Runtime: 20 min on M1 Mac.*
+*Baseline = LightGBM on RFM + spending features. +RP = same model with RP features added. Lift = (Combined - Baseline) / Baseline x 100. Runtime: 19 min on M1 Mac.*
 
 Price Assumptions
 -----------------
@@ -206,7 +207,7 @@ Appendix: Pipeline
 **Three models per target**: (a) Baseline only, (b) RP only, (c) Baseline + RP.
 
 **Targets**: High Spender (top tercile spend), Churn (>50% spend drop),
-Spend Change (regression), High Engagement (above-median sessions).
+Spend Change (regression), High Engagement (top tercile sessions).
 
 **Output**: ``case_studies/benchmarks/output/results.json`` (full metrics),
 ``summary_table.csv``, ``figures/``.
