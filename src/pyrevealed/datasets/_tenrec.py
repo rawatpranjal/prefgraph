@@ -7,7 +7,8 @@ in a window form the menu, items liked/followed are the choice.
 Data must be downloaded from Tencent (CC BY-NC 4.0 license):
   https://static.qblv.qq.com/qblv/h5/algo-frontend/tenrec_dataset.html
 
-Place QB-video.csv in ~/.pyrevealed/data/tenrec/
+Place QK-video.csv (preferred, 15GB) or QB-video.csv (77MB) in
+~/.pyrevealed/data/tenrec/
 
 Source: Yuan et al. (2022) "Tenrec: A Large-scale Multipurpose Benchmark
 Dataset for Recommender Systems" NeurIPS Datasets and Benchmarks.
@@ -26,10 +27,14 @@ from pyrevealed.core.session import MenuChoiceLog
 
 MIN_MENU_SIZE = 2
 MAX_MENU_SIZE = 50
-CHUNK_SIZE = 10_000_000
+CHUNK_SIZE = 5_000_000
 
 
-def _find_data_dir(data_dir: str | Path | None) -> Path:
+def _find_data_dir(data_dir: str | Path | None) -> tuple[Path, str]:
+    """Find Tenrec data directory and best available CSV file.
+
+    Prefers QK-video.csv (large, 5M users) over QB-video.csv (small, 34K users).
+    """
     candidates = []
     if data_dir is not None:
         candidates.append(Path(data_dir))
@@ -44,15 +49,18 @@ def _find_data_dir(data_dir: str | Path | None) -> Path:
     ])
 
     for d in candidates:
-        if d.is_dir() and (d / "QB-video.csv").exists():
-            return d
+        if d.is_dir():
+            if (d / "QK-video.csv").exists():
+                return d, "QK-video.csv"
+            if (d / "QB-video.csv").exists():
+                return d, "QB-video.csv"
 
     searched = "\n  ".join(str(c) for c in candidates)
     raise FileNotFoundError(
         f"Tenrec data not found. Searched:\n  {searched}\n\n"
         "Download from Tencent (requires license agreement):\n"
         "  https://static.qblv.qq.com/qblv/h5/algo-frontend/tenrec_dataset.html\n\n"
-        "Place QB-video.csv in ~/.pyrevealed/data/tenrec/"
+        "Place QK-video.csv or QB-video.csv in ~/.pyrevealed/data/tenrec/"
     )
 
 
@@ -62,7 +70,7 @@ def load_tenrec(
     max_users: int | None = 50_000,
     feedback: str = "like",
 ) -> dict[str, MenuChoiceLog]:
-    """Load Tenrec QB-video data as menu-choice observations.
+    """Load Tenrec video data as menu-choice observations.
 
     Rows are in temporal order. We group consecutive clicks by user into
     windows of activity, then treat any positive feedback (like/follow/share)
@@ -71,7 +79,7 @@ def load_tenrec(
     Menu = items clicked in window. Choice = item with positive feedback.
 
     Args:
-        data_dir: Path to directory containing QB-video.csv.
+        data_dir: Path to directory containing QK-video.csv or QB-video.csv.
         min_sessions: Minimum menu-choice observations per user.
         max_users: Cap on users returned (None = all).
         feedback: Which column to use as the "purchase" signal.
@@ -80,18 +88,17 @@ def load_tenrec(
     Returns:
         Dict mapping user_id (str) -> MenuChoiceLog.
     """
-    data_path = _find_data_dir(data_dir)
-    csv_path = data_path / "QB-video.csv"
+    data_path, csv_name = _find_data_dir(data_dir)
+    csv_path = data_path / csv_name
 
-    print(f"  Loading Tenrec QB-video from {csv_path} (chunked)...")
+    print(f"  Loading Tenrec {csv_name} from {csv_path} (chunked)...")
 
     if feedback not in ("like", "follow", "share"):
         raise ValueError(f"feedback must be 'like', 'follow', or 'share', got '{feedback}'")
 
-    # Accumulate per-user sessions across chunks
-    # user_id -> list of (set of clicked items, chosen item or None)
+    # Accumulate per-user click and feedback sequences (vectorized)
     user_clicks: dict[int, list[int]] = {}
-    user_feedback: dict[int, list[int]] = {}
+    user_feedback: dict[int, set[int]] = {}
     n_rows = 0
 
     for chunk in pd.read_csv(
@@ -101,15 +108,26 @@ def load_tenrec(
         chunksize=CHUNK_SIZE,
     ):
         n_rows += len(chunk)
-        # Keep only rows where user clicked the item
+        # Vectorized: filter clicked rows
         clicked = chunk[chunk["click"] == 1]
+        if clicked.empty:
+            continue
 
-        for _, row in clicked.iterrows():
-            uid = int(row["user_id"])
-            iid = int(row["item_id"])
-            user_clicks.setdefault(uid, []).append(iid)
-            if row[feedback] == 1:
-                user_feedback.setdefault(uid, []).append(iid)
+        # Vectorized: split into feedback vs non-feedback
+        has_fb = clicked[clicked[feedback] == 1]
+
+        # Batch append clicks by user
+        for uid, group in clicked.groupby("user_id"):
+            uid_int = int(uid)
+            user_clicks.setdefault(uid_int, []).extend(group["item_id"].tolist())
+
+        # Batch record feedback items
+        for uid, group in has_fb.groupby("user_id"):
+            uid_int = int(uid)
+            user_feedback.setdefault(uid_int, set()).update(group["item_id"].tolist())
+
+        if n_rows % 20_000_000 == 0:
+            print(f"    ...{n_rows:,} rows processed")
 
     print(f"  Total rows: {n_rows:,}")
     print(f"  Users with clicks: {len(user_clicks):,}")
@@ -122,10 +140,8 @@ def load_tenrec(
     user_logs: dict[str, MenuChoiceLog] = {}
     n_qualified = 0
 
-    feedback_items = user_feedback
-
     for uid, clicks in user_clicks.items():
-        fb_set = set(feedback_items.get(uid, []))
+        fb_set = user_feedback.get(uid)
         if not fb_set:
             continue
 

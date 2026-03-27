@@ -1,7 +1,7 @@
 E-commerce Benchmarks
 =====================
 
-Six public datasets, 117K users, LightGBM with 5-fold stratified CV.
+Seven public datasets, 167K users, LightGBM with 5-fold stratified CV.
 **RP features add 0--0.7% AUC over strong RFM baselines.** The lift is
 real but modest — most predictive power comes from standard spending
 and engagement features. All targets use top-tercile thresholds for
@@ -91,13 +91,20 @@ Results
      - 0.913
      - +0.0%
      - 0.137
+   * - Tenrec
+     - 50,000
+     - High Engagement
+     - 0.993
+     - 0.993
+     - -0.0%
+     - 0.983
 
 *Baseline = LightGBM on RFM + spending features. +RP = same model with RP features added. Lift = (Combined - Baseline) / Baseline x 100.*
 
 Timing
 ------
 
-Total wall time: **19 min** on M1 Mac (data on external USB drive via symlink).
+Total wall time: **29 min** on M1 Mac (data on external USB drive via symlink).
 
 .. list-table::
    :header-rows: 1
@@ -106,7 +113,7 @@ Total wall time: **19 min** on M1 Mac (data on external USB drive via symlink).
    * - Dataset
      - N
      - Data + Features
-     - Model (14 tasks)
+     - Model
    * - Dunnhumby
      - 2,222
      - 6s
@@ -131,6 +138,10 @@ Total wall time: **19 min** on M1 Mac (data on external USB drive via symlink).
      - 4,239
      - 94s
      - 4s
+   * - Tenrec
+     - 50,000
+     - 541s
+     - 6s
 
 REES46 and Taobao dominate wall time due to raw CSV parsing (110M and 100M
 events). Pre-processing to Parquet eliminates this bottleneck entirely.
@@ -221,6 +232,10 @@ Price Assumptions
      - N/A
      - Menu
      - Daily view -> purchase sessions (100M events)
+   * - Tenrec
+     - N/A
+     - Menu
+     - Click -> like sessions (493M events, NeurIPS 2022)
 
 Top Features
 ------------
