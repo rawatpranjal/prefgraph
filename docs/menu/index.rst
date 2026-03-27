@@ -62,10 +62,3 @@ Tutorials
    tutorial_context_effects
    tutorial_ranking
 
-Applications
-------------
-
-.. toctree::
-   :maxdepth: 1
-
-   app_recsys

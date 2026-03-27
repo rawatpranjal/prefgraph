@@ -48,15 +48,6 @@ Tutorials
    tutorial_ecommerce
    tutorial_uber_eats
 
-Applications
-------------
-
-.. toctree::
-   :maxdepth: 1
-
-   app_grocery
-   app_llm_alignment
-
 Examples
 --------
 
