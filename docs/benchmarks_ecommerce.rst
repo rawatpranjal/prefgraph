@@ -1,21 +1,17 @@
 E-commerce Benchmarks
 =====================
 
-We test whether revealed preference features (CCEI, MPI, Houtman-Maks, VEI)
-improve ML models on standard e-commerce prediction tasks. Six public
-datasets, 113K users, LightGBM with 5-fold stratified CV. **Result: RP
-features add 0--2% AUC over strong RFM baselines, with the clearest signal
-on churn prediction (+0.7% Open E-Commerce, +1.8% Online Retail II).**
-The lift is real but modest — most predictive power comes from standard
-spending features. RP scores provide marginally independent signal about
-behavioral consistency that spending statistics alone do not capture.
+Six public datasets, 162K users, LightGBM with 5-fold stratified CV.
+**RP features add 0--0.7% AUC over strong RFM baselines.** The lift is
+real but modest — most predictive power comes from standard spending
+and engagement features.
 
 Results
 -------
 
 .. list-table::
    :header-rows: 1
-   :widths: 18 7 15 12 12 8 10
+   :widths: 18 8 15 10 10 8 8
 
    * - Dataset
      - N
@@ -37,56 +33,21 @@ Results
      - 0.748
      - 0.730
      - -2.4%
-     - 0.254
+     - 0.183
    * - Open E-Commerce
      - 4,694
      - High Spender
      - 0.950
      - 0.951
      - +0.2%
-     - 0.907
+     - 0.914
    * - Open E-Commerce
      - 4,694
      - Churn
      - 0.841
      - 0.847
-     - +0.7%
-     - 0.362
-   * - Instacart
-     - 50,000
-     - Spend Drop
-     - 0.665
-     - 0.666
-     - +0.2%
-     - 0.210
-   * - Instacart
-     - 50,000
-     - High Value
-     - 0.967
-     - 0.967
-     - +0.0%
-     - 0.932
-   * - REES46
-     - 8,832
-     - High Engagement
-     - 0.942
-     - 0.941
-     - -0.1%
-     - 0.855
-   * - Online Retail II
-     - 443
-     - Churn
-     - 0.641
-     - 0.652
-     - +1.8%
-     - 0.320
-   * - H&M
-     - 46,757
-     - Churn
-     - 0.778
-     - 0.778
-     - +0.0%
-     - 0.293
+     - **+0.7%**
+     - 0.283
    * - H&M
      - 46,757
      - High Spender
@@ -94,44 +55,79 @@ Results
      - 0.762
      - -0.1%
      - 0.667
+   * - H&M
+     - 46,757
+     - Churn
+     - 0.778
+     - 0.778
+     - +0.0%
+     - 0.293
+   * - Instacart
+     - 50,000
+     - Spend Drop
+     - 0.665
+     - 0.666
+     - +0.2%
+     - 0.197
+   * - Instacart
+     - 50,000
+     - High Value
+     - 0.967
+     - 0.967
+     - +0.0%
+     - 0.941
+   * - REES46
+     - 8,832
+     - High Engagement
+     - 0.942
+     - 0.941
+     - -0.1%
+     - 0.922
+   * - Taobao
+     - 4,239
+     - High Engagement
+     - 0.913
+     - 0.913
+     - +0.0%
+     - 0.137
 
-*"Baseline" = LightGBM on RFM + spending features. "+RP" = same model with RP features added. Lift = (Combined − Baseline) / Baseline × 100.*
+*Baseline = LightGBM on RFM + spending features. +RP = same model with RP features added. Lift = (Combined - Baseline) / Baseline x 100. Runtime: 20 min on M1 Mac.*
 
 Price Assumptions
 -----------------
 
 .. list-table::
    :header-rows: 1
-   :widths: 20 20 15 45
+   :widths: 18 20 12 50
 
    * - Dataset
      - Price Source
      - RP Type
      - Caveat
    * - Dunnhumby
-     - Median price oracle
+     - Median oracle
      - Budget
-     - Shared prices across households (Dean & Martin 2016 standard)
+     - Shared prices across households (Dean & Martin 2016)
    * - Open E-Commerce
      - Median per category/month
      - Budget
      - Forward-filled for missing periods
-   * - Online Retail II
-     - Actual transaction prices
-     - Budget
-     - Cleanest budget-based RP signal
-   * - Instacart
-     - Uniform ($1/unit)
-     - Budget
-     - **Quantity-only consistency** — CCEI/MPI do not test price-quantity tradeoffs
-   * - REES46
-     - N/A
-     - Menu
-     - Click → purchase sessions; no price assumptions
    * - H&M
      - Actual transaction prices
      - Budget
-     - Normalized prices from competition data
+     - Normalized prices from Kaggle competition
+   * - Instacart
+     - Uniform ($1/unit)
+     - Budget
+     - **Quantity-only consistency** — no price-quantity tradeoffs
+   * - REES46
+     - N/A
+     - Menu
+     - Click -> purchase sessions
+   * - Taobao
+     - N/A
+     - Menu
+     - Daily view -> purchase sessions (100M events)
 
 Top Features
 ------------
@@ -159,25 +155,25 @@ Across all classification tasks (LightGBM feature importance, combined model):
      - Baseline
      - Spending variability (coefficient of variation)
    * - 4
+     - n_obs
+     - Baseline
+     - Number of observations (frequency)
+   * - 5
      - herfindahl
      - Baseline
-     - Category concentration (higher = fewer categories)
-   * - 5
+     - Category concentration
+   * - 6
      - scc_ratio
      - **RP**
      - Fraction of observations in largest violation cycle
-   * - 6
+   * - 7
      - hm_ratio
      - **RP**
      - Houtman-Maks consistency fraction
-   * - 7
+   * - 8
      - mpi
      - **RP**
      - Money Pump Index (exploitability)
-   * - 8
-     - ccei
-     - **RP**
-     - Critical Cost Efficiency Index
 
 Reproduce
 ---------
@@ -187,97 +183,30 @@ Reproduce
    pip install pyrevealed lightgbm scikit-learn
    python case_studies/benchmarks/runner.py --datasets all
 
-Datasets download automatically via ``kaggle`` CLI. See ``case_studies/benchmarks/README.md``.
+Datasets require ``kaggle`` CLI. See ``case_studies/benchmarks/`` for details.
 
 ----
 
-Appendix: Full Pipeline
------------------------
-
-**1. Data Ingestion**
-
-Each dataset is loaded via a dedicated loader (``pyrevealed.datasets``) that
-returns either a ``BehaviorPanel`` (budget data: prices × quantities per
-user per time period) or a ``dict[str, MenuChoiceLog]`` (menu data: item
-sets + chosen item per session per user). Loaders handle downloading,
-filtering, category mapping, and temporal aggregation.
+Appendix: Pipeline
+------------------
 
 .. code-block:: text
 
-   Raw CSV → Loader → BehaviorPanel / MenuChoiceLog per user
+   Raw CSV
+     -> Loader (pyrevealed.datasets)
+     -> BehaviorPanel / MenuChoiceLog per user
+     -> Temporal split: first 70% -> features, last 30% -> targets
+     -> Feature extraction:
+          Baseline (14): RFM, category concentration, temporal trends
+          RP (11): CCEI, MPI, HM ratio, VEI, GARP, HARP, SCC ratio
+     -> LightGBM (num_leaves=15, n_estimators=100, reg_alpha=0.1)
+     -> 5-fold stratified CV
+     -> Metrics: AUC-ROC, AUC-PR, Log Loss, F1
 
-**2. Temporal Split (No Leakage)**
+**Three models per target**: (a) Baseline only, (b) RP only, (c) Baseline + RP.
 
-For each user, observations are split by time: first 70% → feature
-extraction, last 30% → target computation. Features never see future data.
+**Targets**: High Spender (top tercile spend), Churn (>50% spend drop),
+Spend Change (regression), High Engagement (above-median sessions).
 
-.. code-block:: text
-
-   User observations: [obs_1, obs_2, ..., obs_T]
-                       |← 70% features →|← 30% targets →|
-
-**3. Feature Extraction**
-
-Two feature sets per user:
-
-*Baseline features* (13 features, no RP library needed):
-
-- **RFM**: n_obs, total_spend, mean_spend, std_spend, max_spend, min_spend
-- **Category**: herfindahl, top_category_share, n_active_categories
-- **Temporal**: spend_slope, spend_cv, mean_abs_spend_change
-- **Volume**: mean_basket_size
-
-*RP features* (11 features, via ``Engine.analyze_arrays()`` batch API):
-
-- **Consistency**: is_garp, is_harp
-- **Efficiency**: ccei, mpi, vei_mean, vei_min
-- **Noise**: hm_ratio (Houtman-Maks fraction), violation_density, n_violations
-- **Structure**: max_scc, scc_ratio
-
-For menu datasets, RP features come from ``Engine.analyze_menus()``:
-is_sarp, is_warp, hm_ratio, sarp_violation_density, warp_violation_density,
-scc_ratio.
-
-**4. Target Construction**
-
-From the held-out 30% of each user's observations:
-
-- **High Spender**: Top tercile of test-period total spend (binary)
-- **Churn**: Mean spend dropped >50% from train to test (binary)
-- **Spend Change**: Difference in mean spend (regression)
-- **High Engagement** (menu): Above-median sessions in test (binary)
-
-**5. Model Training**
-
-LightGBM with regularization to prevent overfitting:
-
-.. code-block:: python
-
-   {
-       "num_leaves": 15,
-       "learning_rate": 0.05,
-       "n_estimators": 100,
-       "min_child_samples": 20,
-       "reg_alpha": 0.1,
-       "reg_lambda": 1.0,
-   }
-
-Three models per target: (a) Baseline only, (b) RP only, (c) Baseline + RP.
-
-**6. Evaluation**
-
-- **Out-of-sample**: 5-fold stratified CV (splits users, not time)
-- **In-sample**: Train on all, predict on all (overfitting diagnostic)
-- **Metrics**: AUC-ROC, AUC-PR (average precision), Log Loss, F1, R², RMSE
-- **Seed**: 42 for reproducibility
-
-**7. Output**
-
-.. code-block:: text
-
-   case_studies/benchmarks/output/
-   ├── results.json          # Full metrics per dataset × target
-   ├── summary_table.csv     # One-row-per-task summary
-   └── figures/
-       ├── auc_comparison.png
-       └── feature_importance.png
+**Output**: ``case_studies/benchmarks/output/results.json`` (full metrics),
+``summary_table.csv``, ``figures/``.
