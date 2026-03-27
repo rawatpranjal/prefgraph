@@ -48,11 +48,16 @@ html_theme_options = {
     "show_toc_level": 2,
     "navigation_with_keys": True,
     "show_prev_next": False,
-    "secondary_sidebar_items": [],  # Remove right sidebar globally
+    "secondary_sidebar_items": {
+        "**": [],             # no right sidebar by default
+        "references": ["page-toc"],   # References: section nav on right
+        "quickstart": ["page-toc"],   # Quickstart: section nav on right
+    },
 }
 
-# Algorithms and Performance: add in-page section nav to left sidebar
+# No left sidebar anywhere by default; Algorithms and Performance get section nav on left
 html_sidebars = {
+    "**": [],
     "algorithms": ["sidebar-nav-bs", "page-toc"],
     "performance": ["sidebar-nav-bs", "page-toc"],
 }
