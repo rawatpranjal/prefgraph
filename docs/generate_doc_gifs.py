@@ -338,7 +338,7 @@ def generate_floyd_warshall():
     plt.subplots_adjust(top=0.78, bottom=0.14, left=0.08, right=0.95)
 
     TOTAL_FRAMES = 120
-    INTERVAL = 400
+    INTERVAL = 800
     n = 5
     labels = [f"$x_{i+1}$" for i in range(n)]
     angles = np.linspace(0, 2 * np.pi, n, endpoint=False) - np.pi / 2
@@ -529,7 +529,7 @@ def generate_scc_tarjan():
     plt.subplots_adjust(top=0.78, bottom=0.14, left=0.08, right=0.95)
 
     TOTAL_FRAMES = 120
-    INTERVAL = 400
+    INTERVAL = 800
     n = 6
     labels = ["$x_1$", "$x_2$", "$x_3$", "$x_4$", "$x_5$", "$x_6$"]
     pos = np.array([
@@ -930,7 +930,7 @@ def generate_ccei_algorithm():
     plt.subplots_adjust(top=0.78, bottom=0.16, left=0.10, right=0.95)
 
     TOTAL_FRAMES = 130
-    INTERVAL = 400  # ms — slow cadence
+    INTERVAL = 800  # ms — slow cadence
 
     # --- data: 2 goods, 2 observations with a GARP violation ---
     prices = np.array([[1.0, 2.0], [2.0, 1.0]])
@@ -1296,7 +1296,7 @@ def generate_hm_algorithm():
     plt.subplots_adjust(top=0.78, bottom=0.14, left=0.08, right=0.95)
 
     TOTAL_FRAMES = 140
-    INTERVAL = 400  # ms — slow cadence
+    INTERVAL = 800  # ms — slow cadence
 
     # --- graph data: 5 nodes, 2 cycles sharing hub node 1 ---
     node_pos = {
