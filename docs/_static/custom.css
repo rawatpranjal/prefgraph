@@ -5,6 +5,23 @@
     line-height: 1.7;
 }
 
+/* --- Even vertical spacing: images, figures, table wrappers --- */
+.bd-content img {
+    display: block;
+    margin: 1.5em auto;
+}
+
+.bd-content .figure,
+.bd-content figure {
+    margin: 1.5em 0;
+}
+
+.bd-content .pst-scrollable-table-container,
+.bd-content table.docutils {
+    margin-top: 1.5em;
+    margin-bottom: 1.5em;
+}
+
 /* Math blocks - just spacing */
 div.math {
     margin: 24px 0;
