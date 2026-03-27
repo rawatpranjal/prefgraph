@@ -26,9 +26,12 @@ PyRevealed is a high-performance computational library designed for the axiomati
 
    pip install pyrevealed
 
-.. image:: _static/landing_hero.gif
-   :width: 100%
-   :alt: PyRevealed analyzes budget and menu choices to reveal preferences and score consistency
+.. raw:: html
+
+   <div style="display: flex; gap: 20px; justify-content: space-between; flex-wrap: wrap;">
+     <img src="_static/budget_hero.gif" style="width: 48%; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);" alt="Budget Choices">
+     <img src="_static/menu_hero.gif" style="width: 48%; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);" alt="Menu Choices">
+   </div>
 
 Analytical Overview
 -------------------
