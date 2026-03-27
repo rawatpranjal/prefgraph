@@ -1,7 +1,7 @@
 PyRevealed
 ==========
 
-You have data on what people chose. PyRevealed tests whether those choices are rational — whether any coherent preference ordering explains them. Each user gets a score from 0 (incoherent) to 1 (perfectly consistent). Rust engine, Python API.
+You have data on what people chose. PyRevealed tests whether those choices are rational — whether any coherent preference ordering explains them. Each user gets a score from 0 (incoherent) to 1 (perfectly consistent).
 
 .. raw:: html
 
