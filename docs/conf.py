@@ -18,7 +18,7 @@ autodoc_mock_imports = ["pyrevealed._rust_core", "numba"]
 project = "PyRevealed"
 copyright = "2024, PyRevealed Contributors"
 author = "PyRevealed Contributors"
-release = "0.5.1"
+release = "0.5.2"
 
 # -- General configuration ---------------------------------------------------
 

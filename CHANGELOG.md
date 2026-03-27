@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.5.2] - 2026-03-26
+
+### Changed
+- Front page hero GIFs redesigned as single-panel narrative animations with breathing gaps
+- Front page text rewritten in plain English with GIF captions and citations
+
 ## [0.5.1] - 2026-03-26
 
 ### Fixed
