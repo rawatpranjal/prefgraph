@@ -10,6 +10,9 @@ sys.path.insert(0, os.path.abspath("../src"))
 # Suppress deprecation warnings from contrib module shims during autodoc
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 
+# Mock the compiled Rust extension so autodoc works without Rust toolchain (RTD)
+autodoc_mock_imports = ["pyrevealed._rust_core"]
+
 # -- Project information -----------------------------------------------------
 
 project = "PyRevealed"
@@ -45,7 +48,6 @@ html_theme_options = {
     "show_toc_level": 2,
     "navigation_with_keys": True,
     "show_prev_next": False,
-    "secondary_sidebar_items": [],
 }
 
 # -- Extension configuration -------------------------------------------------
