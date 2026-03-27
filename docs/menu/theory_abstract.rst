@@ -111,7 +111,7 @@ Ordinal Preference Recovery
 
 **Reference Implementation:** ``fit_menu_preferences(log)``
 
-If the agent's behavior satisfies SARP, the underlying ordinal preference ranking can be recovered via a topological sort of the revealed preference graph.
+If the agent's behavior satisfies SARP, the underlying ordinal preference ranking can be recovered via a topological sort of the item graph.
 
 **Methodology:**
 

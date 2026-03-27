@@ -77,10 +77,10 @@ Returns a pandas DataFrame with one row per user. Customize with `metrics=["garp
 | Use case | Score thousands of users | Deep-dive one user |
 | Speed | 10,000+ users/sec (Rust) | Single-user |
 | Returns | `EngineResult` (flat scores) | `GARPResult`, `AEIResult`, etc. (matrices, cycles, graphs) |
-| Metrics | 7 (garp, ccei, mpi, harp, hm, utility, vei) | 30+ algorithms |
+| Metrics | 7 (garp, ccei, mpi, harp, hm, utility, vei) + network | 30+ algorithms |
 | Input | `list[(prices, quantities)]` | `BehaviorLog` |
 
-**Engine** for batch scoring. **Function API** when you need violation details, preference graphs, or advanced tests:
+**Engine** for batch scoring. **Function API** when you need violation details, observation/item graphs, or advanced tests:
 
 ```python
 from prefgraph import BehaviorLog, validate_consistency, compute_integrity_score

@@ -545,7 +545,7 @@ pub fn analyze_menu_batch<'py>(
     Ok(py_results)
 }
 
-/// Build a preference graph from budget data and return it as numpy arrays.
+/// Build an observation graph from budget data and return it as numpy arrays.
 ///
 /// Tier 2 entry point: Python modules can consume the Rust-computed graph.
 #[pyfunction]
