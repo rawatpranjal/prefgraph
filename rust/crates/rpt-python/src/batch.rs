@@ -15,6 +15,36 @@ use rpt_core::vei::{compute_vei as run_vei, compute_vei_exact as run_vei_exact};
 
 use crate::convert::extract_user_data;
 
+/// Linear interpolation percentile (matches numpy default method='linear').
+fn percentile(sorted: &[f64], p: f64) -> f64 {
+    let n = sorted.len();
+    if n == 0 { return 0.0; }
+    if n == 1 { return sorted[0]; }
+    let idx = p * (n - 1) as f64;
+    let lo = idx.floor() as usize;
+    let hi = (lo + 1).min(n - 1);
+    let frac = idx - lo as f64;
+    sorted[lo] * (1.0 - frac) + sorted[hi] * frac
+}
+
+/// Compute (std, q25, q75) from a VEI efficiency vector.
+fn compute_vei_stats(efficiencies: &[f64]) -> (f64, f64, f64) {
+    let n = efficiencies.len();
+    if n == 0 {
+        return (0.0, 1.0, 1.0);
+    }
+    let mean = efficiencies.iter().sum::<f64>() / n as f64;
+    let variance = efficiencies.iter().map(|&e| (e - mean).powi(2)).sum::<f64>() / n as f64;
+    let std = variance.sqrt();
+
+    let mut sorted = efficiencies.to_vec();
+    sorted.sort_by(|a, b| a.partial_cmp(b).unwrap());
+    let q25 = percentile(&sorted, 0.25);
+    let q75 = percentile(&sorted, 0.75);
+
+    (std, q25, q75)
+}
+
 /// Metric flags controlling which analyses to run.
 #[derive(Clone, Copy)]
 struct MetricFlags {
@@ -43,6 +73,16 @@ struct UserOut {
     vei_exact_min: f64,
     max_scc: u32,
     time_us: u64,
+    // Extended fields: expose intermediate values
+    vei_std: f64,
+    vei_q25: f64,
+    vei_q75: f64,
+    vei_exact_std: f64,
+    vei_exact_q25: f64,
+    vei_exact_q75: f64,
+    n_scc: u32,
+    harp_severity: f64,
+    scc_mean_size: f64,
 }
 
 /// Process a batch of users in parallel using Rayon. Shared by both
@@ -79,10 +119,11 @@ fn process_users_parallel(
                     0.0
                 };
 
-                let is_harp = if flags.harp {
-                    harp_check(graph, tolerance).is_consistent
+                let (is_harp, harp_severity) = if flags.harp {
+                    let harp = harp_check(graph, tolerance);
+                    (harp.is_consistent, harp.max_cycle_product)
                 } else {
-                    false
+                    (false, 1.0)
                 };
 
                 let (hm_c, hm_t) = if flags.hm {
@@ -97,18 +138,20 @@ fn process_users_parallel(
                     false
                 };
 
-                let (vei_mean, vei_min) = if flags.vei {
+                let (vei_mean, vei_min, vei_std, vei_q25, vei_q75) = if flags.vei {
                     let vei = run_vei(graph);
-                    (vei.mean_efficiency, vei.min_efficiency)
+                    let (std, q25, q75) = compute_vei_stats(&vei.efficiency_vector);
+                    (vei.mean_efficiency, vei.min_efficiency, std, q25, q75)
                 } else {
-                    (1.0, 1.0)
+                    (1.0, 1.0, 0.0, 1.0, 1.0)
                 };
 
-                let (vei_exact_mean, vei_exact_min) = if flags.vei_exact {
+                let (vei_exact_mean, vei_exact_min, vei_exact_std, vei_exact_q25, vei_exact_q75) = if flags.vei_exact {
                     let vei = run_vei_exact(graph);
-                    (vei.mean_efficiency, vei.min_efficiency)
+                    let (std, q25, q75) = compute_vei_stats(&vei.efficiency_vector);
+                    (vei.mean_efficiency, vei.min_efficiency, std, q25, q75)
                 } else {
-                    (1.0, 1.0)
+                    (1.0, 1.0, 0.0, 1.0, 1.0)
                 };
 
                 let ccei = if flags.ccei && !garp.is_consistent {
@@ -117,6 +160,13 @@ fn process_users_parallel(
                     1.0
                 } else {
                     -1.0
+                };
+
+                let n_scc = garp.n_components;
+                let scc_mean_size = if garp.n_components > 0 {
+                    t as f64 / garp.n_components as f64
+                } else {
+                    t as f64
                 };
 
                 let time_us = start.elapsed().as_micros() as u64;
@@ -136,6 +186,15 @@ fn process_users_parallel(
                     vei_exact_min,
                     max_scc: garp.max_scc_size,
                     time_us,
+                    vei_std,
+                    vei_q25,
+                    vei_q75,
+                    vei_exact_std,
+                    vei_exact_q25,
+                    vei_exact_q75,
+                    n_scc,
+                    harp_severity,
+                    scc_mean_size,
                 }
             },
         )
@@ -162,6 +221,15 @@ fn results_to_pydicts<'py>(py: Python<'py>, results: Vec<UserOut>) -> Vec<Bound<
             dict.set_item("vei_exact_min", r.vei_exact_min).unwrap();
             dict.set_item("max_scc", r.max_scc).unwrap();
             dict.set_item("compute_time_us", r.time_us).unwrap();
+            dict.set_item("vei_std", r.vei_std).unwrap();
+            dict.set_item("vei_q25", r.vei_q25).unwrap();
+            dict.set_item("vei_q75", r.vei_q75).unwrap();
+            dict.set_item("vei_exact_std", r.vei_exact_std).unwrap();
+            dict.set_item("vei_exact_q25", r.vei_exact_q25).unwrap();
+            dict.set_item("vei_exact_q75", r.vei_exact_q75).unwrap();
+            dict.set_item("n_scc", r.n_scc).unwrap();
+            dict.set_item("harp_severity", r.harp_severity).unwrap();
+            dict.set_item("scc_mean_size", r.scc_mean_size).unwrap();
             dict
         })
         .collect()
@@ -239,6 +307,7 @@ pub fn analyze_menu_batch<'py>(
         hm_consistent: u32,
         hm_total: u32,
         max_scc: u32,
+        n_scc: u32,
         time_us: u64,
     }
 
@@ -278,6 +347,7 @@ pub fn analyze_menu_batch<'py>(
                     hm_consistent: hm_c as u32,
                     hm_total: hm_t as u32,
                     max_scc: sarp.max_scc_size,
+                    n_scc: sarp.n_components,
                     time_us,
                 }
             },
@@ -296,6 +366,7 @@ pub fn analyze_menu_batch<'py>(
             dict.set_item("hm_consistent", r.hm_consistent).unwrap();
             dict.set_item("hm_total", r.hm_total).unwrap();
             dict.set_item("max_scc", r.max_scc).unwrap();
+            dict.set_item("n_scc", r.n_scc).unwrap();
             dict.set_item("compute_time_us", r.time_us).unwrap();
             dict
         })

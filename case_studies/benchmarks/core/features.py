@@ -120,6 +120,8 @@ def extract_budget_rp(
     n_obs = np.array([u[0].shape[0] for u in users])
     df["violation_density"] = df["n_violations"] / np.maximum(n_obs * (n_obs - 1), 1)
     df["scc_ratio"] = df["max_scc"] / np.maximum(n_obs, 1)
+    df["vei_iqr"] = df["vei_q75"] - df["vei_q25"]
+    df["scc_fragmentation"] = df["n_scc"] / np.maximum(n_obs, 1)
 
     # Drop raw counts, keep ratios
     df = df.drop(columns=["hm_consistent", "hm_total", "compute_time_us"], errors="ignore")

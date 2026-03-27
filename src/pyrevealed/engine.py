@@ -68,6 +68,15 @@ class EngineResult:
     vei_exact_min: float = 1.0
     max_scc: int = 0
     compute_time_us: int = 0
+    vei_std: float = 0.0
+    vei_q25: float = 1.0
+    vei_q75: float = 1.0
+    vei_exact_std: float = 0.0
+    vei_exact_q25: float = 1.0
+    vei_exact_q75: float = 1.0
+    n_scc: int = 0
+    harp_severity: float = 1.0
+    scc_mean_size: float = 0.0
 
     def to_dict(self) -> dict[str, Any]:
         """Return dictionary representation for serialization."""
@@ -89,9 +98,11 @@ class EngineResult:
         if self.utility_success:
             lines.append("  Utility: recovered")
         if self.vei_mean < 1.0:
-            lines.append(f"  VEI:   mean={self.vei_mean:.4f}  min={self.vei_min:.4f}")
+            lines.append(f"  VEI:   mean={self.vei_mean:.4f}  min={self.vei_min:.4f}  std={self.vei_std:.4f}  IQR=[{self.vei_q25:.4f}, {self.vei_q75:.4f}]")
+        if not self.is_harp and self.harp_severity > 1.0:
+            lines.append(f"  HARP:  violated (severity={self.harp_severity:.4f})")
         if self.max_scc > 1:
-            lines.append(f"  SCC:   {self.max_scc} (entangled violations)")
+            lines.append(f"  SCC:   {self.n_scc} components, max={self.max_scc}, mean={self.scc_mean_size:.1f}")
         lines.append(f"  Time:  {self.compute_time_us}us")
         return "\n".join(lines)
 
@@ -137,6 +148,7 @@ class MenuResult:
     hm_consistent: int = 0
     hm_total: int = 0
     max_scc: int = 0
+    n_scc: int = 0
     compute_time_us: int = 0
 
     def to_dict(self) -> dict[str, Any]:
@@ -158,7 +170,7 @@ class MenuResult:
             frac = self.hm_consistent / self.hm_total
             lines.append(f"  HM:    {self.hm_consistent}/{self.hm_total} ({frac:.0%} consistent)")
         if self.max_scc > 1:
-            lines.append(f"  SCC:   {self.max_scc}")
+            lines.append(f"  SCC:   {self.n_scc} components, max={self.max_scc}")
         lines.append(f"  Time:  {self.compute_time_us}us")
         return "\n".join(lines)
 
@@ -416,6 +428,15 @@ class Engine:
                 vei_exact_min=r.get("vei_exact_min", 1.0),
                 max_scc=r["max_scc"],
                 compute_time_us=r["compute_time_us"],
+                vei_std=r.get("vei_std", 0.0),
+                vei_q25=r.get("vei_q25", 1.0),
+                vei_q75=r.get("vei_q75", 1.0),
+                vei_exact_std=r.get("vei_exact_std", 0.0),
+                vei_exact_q25=r.get("vei_exact_q25", 1.0),
+                vei_exact_q75=r.get("vei_exact_q75", 1.0),
+                n_scc=r.get("n_scc", 0),
+                harp_severity=r.get("harp_severity", 1.0),
+                scc_mean_size=r.get("scc_mean_size", 0.0),
             )
             for r in raw_results
         ]
@@ -504,6 +525,7 @@ class Engine:
                         hm_consistent=r["hm_consistent"],
                         hm_total=r["hm_total"],
                         max_scc=r["max_scc"],
+                        n_scc=r.get("n_scc", 0),
                         compute_time_us=r["compute_time_us"],
                     )
                     for r in raw
@@ -666,6 +688,15 @@ class Engine:
                 vei_exact_min=r.get("vei_exact_min", 1.0),
                 max_scc=r["max_scc"],
                 compute_time_us=r["compute_time_us"],
+                vei_std=r.get("vei_std", 0.0),
+                vei_q25=r.get("vei_q25", 1.0),
+                vei_q75=r.get("vei_q75", 1.0),
+                vei_exact_std=r.get("vei_exact_std", 0.0),
+                vei_exact_q25=r.get("vei_exact_q25", 1.0),
+                vei_exact_q75=r.get("vei_exact_q75", 1.0),
+                n_scc=r.get("n_scc", 0),
+                harp_severity=r.get("harp_severity", 1.0),
+                scc_mean_size=r.get("scc_mean_size", 0.0),
             )
             for _, r in raw_results
         ]
