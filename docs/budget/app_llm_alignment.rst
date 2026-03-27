@@ -4,10 +4,18 @@ LLM Prompt Consistency
 A controlled experiment testing whether different system prompts cause
 LLMs to make inconsistent choices when selecting from package menus.
 
+.. raw:: html
+
+   <div style="margin: 1.5em 0;"></div>
+
 .. image:: ../_static/app_llm_hero.jpg
    :width: 70%
    :align: center
-   :alt: AI language model
+   :alt: Claude Code AI making decisions in terminal
+
+.. raw:: html
+
+   <div style="margin: 1.5em 0;"></div>
 
 Introduction
 ------------
