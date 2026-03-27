@@ -1,7 +1,7 @@
 PyRevealed
 ==========
 
-PyRevealed is a high-performance computational library designed for the axiomatic analysis of choice behavior. It provides a robust framework for quantifying the consistency of observed decisions with the hypothesis of utility maximization, supporting both budget-constrained and menu-based choice environments.
+You have data on what people chose. PyRevealed tests whether those choices are rational — whether any coherent preference ordering explains them. Each user gets a score from 0 (incoherent) to 1 (perfectly consistent). Rust engine, Python API.
 
 .. raw:: html
 
@@ -39,7 +39,7 @@ PyRevealed is a high-performance computational library designed for the axiomati
 Why Revealed Preference?
 ------------------------
 
-Unlike traditional econometric models that assume specific functional forms for utility, revealed preference analysis is **non-parametric**. It evaluates the internal consistency of data without imposing structural assumptions on preferences, making it an ideal tool for auditing the behavior of both human agents and algorithmic decision-making systems.
+Most approaches assume a model of preferences first, then fit parameters. Revealed preference works backwards: take raw choices and ask "could any rational model have produced these?" No assumptions about what people want — just a consistency check on what they did. Afriat (1967), Varian (1982).
 
 .. raw:: html
 
@@ -48,36 +48,32 @@ Unlike traditional econometric models that assume specific functional forms for 
 .. raw:: html
 
    <div style="display: flex; gap: 20px; justify-content: space-between; flex-wrap: wrap;">
-     <img src="_static/budget_hero.gif" style="width: 48%; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);" alt="Budget Choices">
-     <img src="_static/menu_hero.gif" style="width: 48%; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);" alt="Menu Choices">
+     <div style="width: 48%;">
+       <img src="_static/budget_hero.gif" style="width: 100%; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);" alt="Budget Choices">
+       <p class="gif-caption"><strong>Budget choices.</strong> A shopper buys goods at given prices. Budget lines show what was affordable. When chosen bundles sit inside each other's budget lines, that's a contradiction — CCEI measures how much you'd need to shrink budgets to fix it. Afriat (1967).</p>
+     </div>
+     <div style="width: 48%;">
+       <img src="_static/menu_hero.gif" style="width: 100%; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);" alt="Menu Choices">
+       <p class="gif-caption"><strong>Menu choices.</strong> A user picks one option from a set. Picking Laptop over Tablet in one menu, then Tablet over Laptop in another, is a contradiction — HM counts how many choices to throw out to fix it. Houtman &amp; Maks (1985).</p>
+     </div>
    </div>
 
-Integrated Analytical Pipelines
---------------------------------
-
-PyRevealed implements two primary workflows tailored to the structure of the observed data:
+Two Workflows
+-------------
 
 .. code-block:: text
 
-   Budget-Constrained Choice (e.g., Grocery)   Discrete Menu-Based Choice (e.g., RecSys)
-   ─────────────────────────────────────────   ─────────────────────────────────────────
-        BehaviorLog(prices, quantities)             MenuChoiceLog(menus, choices)
-                    │                                           │
-                    ▼                                           ▼
-       validate_consistency() [GARP]               validate_menu_sarp() [SARP]
-                    │                                           │
-                    ▼                                           ▼
-      compute_integrity_score() [CCEI]            compute_menu_efficiency() [HM]
-                    │                                           │
-                    ▼                                           ▼
-          Segmentation / Diagnostics                  Segmentation / Diagnostics
-          ─ CCEI histogram by segment                 ─ HM score distribution
-          ─ MPI: money-pump exploitability            ─ SARP violation counts
-          ─ HARP: homothetic rationality              ─ Churn signal (sliding HM)
-          ─ Utility recovery (Afriat LP)              ─ Ordinal preference ranking
+   Budget Data (prices + quantities)          Menu Data (sets + picks)
+   ───────────────────────────────            ──────────────────────────
+   1. Load → BehaviorLog                     1. Load → MenuChoiceLog
+   2. Rational? → validate_consistency()     2. Rational? → validate_menu_sarp()
+   3. How much? → compute_integrity_score()  3. How much? → compute_menu_efficiency()
+   4. Segment users by score                 4. Segment users by score
 
-Performance Benchmarks
-----------------------
+Performance
+-----------
+
+Benchmarked on synthetic data, T=15 observations, 10 goods, M1 Mac:
 
 .. list-table::
    :header-rows: 1
@@ -104,11 +100,11 @@ Performance Benchmarks
      - 50 μs
      - O(N³)
 
-Empirical benchmarks: CCEI ≈ 0.88 in lab experiments (Choi et al., 2014); HM ≈ 0.70–0.85 in recommendation click data. Memory stays flat regardless of dataset size via bounded streaming chunks.
+Empirical benchmarks: CCEI ≈ 0.88 in lab experiments (Choi et al., 2014); HM ≈ 0.70–0.85 in recommendation click data.
 
 ----
 
-PyRevealed's methodology is grounded in the formal frameworks established in `Chambers & Echenique (2016) <https://www.amazon.com/Revealed-Preference-Econometric-Society-Monographs/dp/1107087805>`_. See :doc:`theory_landscape` for a complete map of all methods organized by data type and output type.
+Based on Chambers & Echenique (2016) `Revealed Preference Theory <https://www.amazon.com/Revealed-Preference-Econometric-Society-Monographs/dp/1107087805>`_. See :doc:`theory_landscape` for the full method map.
 
 .. toctree::
    :maxdepth: 2

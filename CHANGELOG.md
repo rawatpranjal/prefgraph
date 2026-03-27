@@ -8,6 +8,14 @@
 - Linux CI: pin to Python 3.10-3.12 (PyO3 0.22 max), install libclang for HiGHS bindgen
 - Escaped pipe characters in RST list-tables causing Sphinx build errors
 
+### Changed
+- Front page hero GIFs redesigned: single-panel narrative animations (14s each) replacing 3-panel 34s versions
+- Budget GIF walks through violation detection → CCEI measurement with concrete axis labels (Apples/Oranges)
+- Menu GIF uses concrete items (Laptop/Tablet/Phone) instead of abstract A/B/C letters
+- Front page text rewritten in plain English; removed jargon from intro and "Why RP?" sections
+- Added GIF captions explaining what each animation shows, with citations
+- Simplified pipeline diagram to plain English with function names
+
 ### Added
 - `load_demo()` synthetic dataset — 100 consumers, zero setup, deterministic
 - `EngineResult.summary()` and `MenuResult.summary()` methods

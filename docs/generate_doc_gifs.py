@@ -26,206 +26,306 @@ PALETTE = {
 
 # ---------------------------------------------------------------------------
 # GIF 1A: Landing Page — Budget Choice
+# Single-panel, 14-second story: detect violation → measure with CCEI
 # ---------------------------------------------------------------------------
 def generate_budget_hero():
-    scenarios = [
-        {
-            "title": "1. Consistent Choices (CCEI = 1.0)",
-            "desc": "Perfectly rational behavior. No cycles, clean preferences.",
-            "prices": np.array([[1.0, 1.0], [1.0, 2.0], [2.0, 1.0]]),
-            "quants": np.array([[4.0, 4.0], [5.0, 1.0], [1.0, 5.0]]),
-            "accent": PALETTE["accent"]
-        },
-        {
-            "title": "2. Mild Inconsistency (CCEI = 0.88)",
-            "desc": "Minor intersection: $x^1$ chosen over $x^2$ & vice-versa.",
-            "prices": np.array([[1.0, 2.0], [2.0, 1.0]]),
-            "quants": np.array([[2.0, 3.0], [3.0, 2.0]]),
-            "accent": "#e67e22"
-        },
-        {
-            "title": "3. Highly Inconsistent (CCEI = 0.54)",
-            "desc": "Severe preference cycles inside budgets. Very irrational.",
-            "prices": np.array([[1.0, 2.0], [2.0, 1.0], [1.5, 1.5], [1.2, 1.2]]),
-            "quants": np.array([[2.0, 2.5], [2.5, 2.0], [2.0, 2.0], [4.0, 4.0]]),
-            "accent": PALETTE["highlight"]
-        }
-    ]
+    # Two shopping trips with a contradiction
+    prices = np.array([[1.0, 2.0], [2.0, 1.0]])
+    quants = np.array([[2.0, 3.0], [3.0, 2.0]])
+    expenditures = np.sum(prices * quants, axis=1)  # [8, 8]
+    colors = ["#5b8def", "#8e44ad"]
+    CCEI_FINAL = 0.875
+    TOTAL_FRAMES = 40
 
-    TOTAL_FRAMES = 85
-    fig, axes = plt.subplots(3, 1, figsize=(7, 12.5), facecolor=PALETTE["bg"])
-    plt.subplots_adjust(hspace=1.0, top=0.96, bottom=0.05, left=0.1, right=0.95)
+    fig, ax = plt.subplots(1, 1, figsize=(7, 5), facecolor=PALETTE["bg"])
+    plt.subplots_adjust(top=0.88, bottom=0.12, left=0.10, right=0.95)
 
     def _draw_arrow(ax, x0, y0, x1, y1, color, lw=1.5):
         dx, dy = x1 - x0, y1 - y0
         length = np.sqrt(dx**2 + dy**2)
-        if length < 0.01: return
+        if length < 0.01:
+            return
         shrink = 0.35
         sx, sy = x0 + shrink * dx / length, y0 + shrink * dy / length
         ex, ey = x1 - shrink * dx / length, y1 - shrink * dy / length
         ax.annotate("", xy=(ex, ey), xytext=(sx, sy),
                     arrowprops=dict(arrowstyle="-|>", color=color, lw=lw, shrinkA=0, shrinkB=0))
 
+    def _draw_budget_lines(ax, e=1.0, ghost=False):
+        """Draw budget lines at efficiency level e."""
+        for t in range(2):
+            p0, p1 = prices[t]
+            budget = expenditures[t] * e
+            x_int, y_int = budget / p0, budget / p1
+            alpha = 0.15 if ghost else 0.5
+            lw = 1.0 if ghost else 2.5
+            ls = "--" if ghost else "-"
+            ax.plot([0, x_int], [y_int, 0], color=colors[t], lw=lw, alpha=alpha, ls=ls)
+            if not ghost:
+                ax.fill_between([0, x_int], [y_int, 0], alpha=0.06, color=colors[t])
+
     def update(frame):
-        for idx, (ax, sc) in enumerate(zip(axes, scenarios)):
-            ax.clear()
-            ax.set_facecolor(PALETTE["bg"])
-            ax.set_title(sc["title"], fontsize=14, fontweight="bold", pad=10, loc="left", color=sc["accent"])
+        ax.clear()
+        ax.set_facecolor(PALETTE["bg"])
+        ax.set_xlim(-0.3, 9.0)
+        ax.set_ylim(-0.3, 5.5)
+        ax.set_xlabel("Apples (qty)", fontsize=11)
+        ax.set_ylabel("Oranges (qty)", fontsize=11)
+        ax.tick_params(labelsize=9)
+        ax.grid(True, alpha=0.15, color=PALETTE["grid"])
 
-            prices, quants = sc["prices"], sc["quants"]
-            expenditures = np.sum(prices * quants, axis=1)
-            n_total = len(prices)
-            obs_colors = ["#5b8def", "#8e44ad", "#27ae60", "#e74c3c"]
+        # Phase logic
+        if frame < 5:
+            # Act 1a: Show both trips
+            phase = "show"
+        elif frame < 10:
+            # Act 1b: Highlight x1 inside budget 2
+            phase = "arrow1"
+        elif frame < 15:
+            # Act 1c: Highlight x2 inside budget 1
+            phase = "arrow2"
+        elif frame < 20:
+            # Act 1d: Contradiction
+            phase = "contradiction"
+        elif frame < 32:
+            # Act 2: Shrink budgets
+            phase = "shrink"
+        else:
+            # Act 3: Final score
+            phase = "final"
 
-            ax.set_xlim(-0.2, 8.5)
-            ax.set_ylim(-0.2, 8.5)
-            ax.tick_params(labelsize=10)
-            ax.grid(True, alpha=0.15, color=PALETTE["grid"])
+        # Compute current efficiency level
+        if phase == "shrink":
+            progress = (frame - 20) / 11.0
+            e = 1.0 - progress * (1.0 - CCEI_FINAL)
+        elif phase == "final":
+            e = CCEI_FINAL
+        else:
+            e = 1.0
 
-            budget_prefs = []
-            for i in range(n_total):
-                for j in range(n_total):
-                    if i != j and prices[i] @ quants[i] >= (prices[i] @ quants[j]) - 1e-5:
-                        budget_prefs.append((i, j))
+        # Title
+        if phase in ("show", "arrow1", "arrow2"):
+            ax.set_title("Is this shopper rational?", fontsize=14,
+                         fontweight="bold", pad=10, color=PALETTE["edge"])
+        elif phase == "contradiction":
+            ax.set_title("Contradiction found", fontsize=14,
+                         fontweight="bold", pad=10, color=PALETTE["highlight"])
+        elif phase == "shrink":
+            ax.set_title(f"Shrink budgets until contradiction disappears   e = {e:.2f}",
+                         fontsize=13, fontweight="bold", pad=10, color="#e67e22")
+        else:
+            ax.set_title(f"CCEI = {CCEI_FINAL:.3f} — Afriat (1967)",
+                         fontsize=14, fontweight="bold", pad=10, color=PALETTE["accent"])
 
-            n_obs = min((frame // 8) + 1, n_total) if frame < 35 else n_total
+        # Draw ghost lines if shrinking
+        if phase in ("shrink", "final"):
+            _draw_budget_lines(ax, e=1.0, ghost=True)
 
-            for t in range(n_obs):
-                p0, p1 = prices[t]
-                budget = expenditures[t]
-                if p0 > 0 and p1 > 0:
-                    ax.plot([0, budget/p0], [budget/p1, 0], color=obs_colors[t], lw=2.5, alpha=0.5)
-                    ax.fill_between([0, budget/p0], [budget/p1, 0], alpha=0.06, color=obs_colors[t])
-                ax.scatter(quants[t, 0], quants[t, 1], color=obs_colors[t], s=120, zorder=5, edgecolors="white", lw=2)
-                ax.annotate(f"$x^{t+1}$", (quants[t, 0] + 0.2, quants[t, 1] + 0.2), 
-                            fontsize=11, fontweight="bold", color=obs_colors[t])
+        # Draw budget lines at current efficiency
+        _draw_budget_lines(ax, e=e)
 
-            if frame >= 35:
-                n_arrows = min((frame - 35) // 3 + 1, len(budget_prefs)) if frame < 65 else len(budget_prefs)
-                for i_arr in range(n_arrows):
-                    i, j = budget_prefs[i_arr]
-                    _draw_arrow(ax, quants[i, 0], quants[i, 1],
-                                quants[j, 0], quants[j, 1],
-                                color=PALETTE["edge"] if "Consistent" in sc["title"] else PALETTE["highlight"], lw=2.0)
+        # Draw bundles (always)
+        for t in range(2):
+            ax.scatter(quants[t, 0], quants[t, 1], color=colors[t], s=140,
+                       zorder=5, edgecolors="white", lw=2)
+            label = f"Trip {t+1}"
+            ax.annotate(label, (quants[t, 0] + 0.25, quants[t, 1] + 0.2),
+                        fontsize=10, fontweight="bold", color=colors[t])
 
-            if frame >= 65:
-                alpha = min((frame - 65) / 5, 1.0)
-                if "Consistent" in sc["title"]:
-                    box_text = "Consistent"
-                elif "Mild" in sc["title"]:
-                    box_text = "2-Cycle Violation"
-                else:
-                    box_text = "Severe Violations"
-                ax.text(6.5, 7.0, box_text, fontsize=12, fontweight="bold", ha="center",
-                        color=sc["accent"], alpha=alpha,
-                        bbox=dict(boxstyle="round,pad=0.3", facecolor="white", edgecolor=sc["accent"], alpha=alpha))
+        # Preference arrows
+        arrow_color = PALETTE["edge"]
+        if phase in ("arrow1", "arrow2", "contradiction"):
+            if phase == "contradiction":
+                arrow_color = PALETTE["highlight"]
+            # Arrow: Trip 1 could afford Trip 2's bundle
+            _draw_arrow(ax, quants[0, 0], quants[0, 1],
+                        quants[1, 0], quants[1, 1], color=arrow_color, lw=2.0)
+            if phase in ("arrow2", "contradiction"):
+                # Arrow: Trip 2 could afford Trip 1's bundle
+                _draw_arrow(ax, quants[1, 0], quants[1, 1],
+                            quants[0, 0], quants[0, 1], color=arrow_color, lw=2.0)
+
+        # Phase-specific annotations
+        if phase == "arrow1":
+            ax.text(4.5, 4.8, "Trip 1 bundle was affordable\nat Trip 2 prices",
+                    fontsize=10, color=colors[0], ha="center",
+                    bbox=dict(boxstyle="round,pad=0.3", facecolor="white",
+                              edgecolor=colors[0], alpha=0.9))
+        elif phase == "arrow2":
+            ax.text(4.5, 4.8, "Trip 2 bundle was also affordable\nat Trip 1 prices",
+                    fontsize=10, color=colors[1], ha="center",
+                    bbox=dict(boxstyle="round,pad=0.3", facecolor="white",
+                              edgecolor=colors[1], alpha=0.9))
+        elif phase == "contradiction":
+            ax.text(4.5, 4.8, "Each bundle was affordable when\nthe other was picked — a cycle",
+                    fontsize=10, color=PALETTE["highlight"], ha="center",
+                    bbox=dict(boxstyle="round,pad=0.3", facecolor="white",
+                              edgecolor=PALETTE["highlight"], alpha=0.9))
+        elif phase == "final":
+            ax.text(6.5, 4.5, "88% rational",
+                    fontsize=13, fontweight="bold", color=PALETTE["accent"], ha="center",
+                    bbox=dict(boxstyle="round,pad=0.4", facecolor="white",
+                              edgecolor=PALETTE["accent"], alpha=0.95))
 
     print("  Generating budget_hero.gif...")
-    anim = FuncAnimation(fig, update, frames=TOTAL_FRAMES, interval=400)
+    anim = FuncAnimation(fig, update, frames=TOTAL_FRAMES, interval=350)
     anim.save(OUTPUT_DIR / "budget_hero.gif", writer="pillow", dpi=DPI)
     plt.close(fig)
 
 # ---------------------------------------------------------------------------
 # GIF 1B: Landing Page — Menu Choice
+# Single-panel, 14-second story: spot contradiction → count consistent → HM score
 # ---------------------------------------------------------------------------
 def generate_menu_hero():
-    scenarios = [
-        {
-            "title": "1. Consistent Choices (HM = 1.00)",
-            "desc": "Satisfies SARP. 'A' is robustly preferred to B and C across contexts.",
-            "menus": [({"A", "B", "C"}, "A"), ({"B", "C"}, "B"), ({"A", "C"}, "A")],
-            "accent": PALETTE["accent"]
-        },
-        {
-            "title": "2. Mild Inconsistency (HM = 0.66)",
-            "desc": "Adding 'C' changes preference from A to B. Direct WARP violation.",
-            "menus": [({"A", "B"}, "A"), ({"A", "B", "C"}, "B"), ({"B", "C"}, "C")],
-            "accent": "#e67e22"
-        },
-        {
-            "title": "3. Highly Inconsistent (HM = 0.50)",
-            "desc": "Severe intransitive cycles: A ≻ B ≻ C ≻ D ≻ A.",
-            "menus": [({"A", "B"}, "A"), ({"B", "C"}, "B"), ({"C", "D"}, "C"), ({"A", "D"}, "D")],
-            "accent": PALETTE["highlight"]
-        }
+    # Four menu observations with one contradiction (menus 1 vs 2)
+    menus = [
+        (["Laptop", "Tablet", "Phone"], "Laptop"),
+        (["Laptop", "Tablet"], "Tablet"),
+        (["Tablet", "Phone"], "Tablet"),
+        (["Laptop", "Phone"], "Laptop"),
     ]
-    
-    TOTAL_FRAMES = 85
-    fig, axes = plt.subplots(3, 1, figsize=(7, 12.5), facecolor=PALETTE["bg"])
-    plt.subplots_adjust(hspace=1.0, top=0.96, bottom=0.05, left=0.1, right=0.95)
+    item_colors = {
+        "Laptop": "#5b8def",
+        "Tablet": "#e67e22",
+        "Phone": "#27ae60",
+    }
+    TOTAL_FRAMES = 36
 
-    all_items = ["A", "B", "C", "D"]
-    item_colors = {"A": "#5b8def", "B": "#e67e22", "C": "#27ae60", "D": "#8e44ad"}
+    fig, ax = plt.subplots(1, 1, figsize=(7, 5), facecolor=PALETTE["bg"])
+    plt.subplots_adjust(top=0.88, bottom=0.08, left=0.05, right=0.95)
+
+    def _draw_item_box(ax, x, y, text, chosen=False, color="#5b8def"):
+        """Draw a labeled rectangle for a menu item."""
+        w, h = 1.1, 0.4
+        alpha = 1.0 if chosen else 0.25
+        ec = color if chosen else PALETTE["secondary"]
+        lw = 2.0 if chosen else 1.0
+        rect = plt.Rectangle((x - w/2, y - h/2), w, h, facecolor=color,
+                              alpha=alpha, edgecolor=ec, lw=lw, zorder=5,
+                              clip_on=False)
+        ax.add_patch(rect)
+        text_color = "white" if chosen else PALETTE["secondary"]
+        fw = "bold" if chosen else "normal"
+        ax.text(x, y, text, ha="center", va="center", fontsize=10,
+                fontweight=fw, color=text_color, zorder=6, clip_on=False)
 
     def update(frame):
-        for idx, (ax, sc) in enumerate(zip(axes, scenarios)):
-            ax.clear()
-            ax.set_facecolor(PALETTE["bg"])
-            ax.set_title(sc["title"], fontsize=14, fontweight="bold", pad=10, loc="left", color=sc["accent"])
-            
-            menus = sc["menus"]
-            n_total = len(menus)
-            
-            ax.set_xlim(-3, 3)
-            ax.set_ylim(-len(menus)*1.3 - 0.5, 0.5)
-            ax.set_aspect("equal")
-            ax.axis("off")
+        ax.clear()
+        ax.set_facecolor(PALETTE["bg"])
+        ax.set_xlim(-2.2, 7.5)
+        ax.set_ylim(-4.2, 1.2)
+        ax.axis("off")
 
-            menu_prefs = []
-            for m_set, chosen in menus:
-                for item in m_set:
-                    if item != chosen:
-                        menu_prefs.append((chosen, item))
-            
-            n_obs = min((frame // 8) + 1, n_total) if frame < 35 else n_total
+        # Phase logic
+        if frame < 5:
+            phase = "row1"
+            n_rows = 1
+        elif frame < 10:
+            phase = "row2"
+            n_rows = 2
+        elif frame < 16:
+            phase = "contradiction"
+            n_rows = 2
+        elif frame < 20:
+            phase = "row3"
+            n_rows = 3
+        elif frame < 24:
+            phase = "row4"
+            n_rows = 4
+        elif frame < 30:
+            phase = "summary"
+            n_rows = 4
+        else:
+            phase = "score"
+            n_rows = 4
 
-            for m_idx in range(n_obs):
-                menu_set, chosen = menus[m_idx]
-                y_base = -1.2 * m_idx - 0.8
-                sorted_items = sorted(list(menu_set))
-                n_items = len(sorted_items)
-                x_positions = np.linspace(-1.0 * (n_items-1)/2, 1.0 * (n_items-1)/2, n_items) if n_items > 1 else [0]
-                
-                ax.plot([min(x_positions)-0.5, max(x_positions)+0.5], [y_base-0.45, y_base-0.45], 
-                        color=PALETTE["secondary"], lw=1.5, alpha=0.4)
-                ax.text(-2.5, y_base, f"Menu {m_idx+1}:", fontsize=12, va="center", color=PALETTE["secondary"])
+        # Title
+        if phase in ("row1",):
+            ax.set_title("Is this user's clicking rational?", fontsize=14,
+                         fontweight="bold", pad=10, color=PALETTE["edge"])
+        elif phase == "row2":
+            ax.set_title("Is this user's clicking rational?", fontsize=14,
+                         fontweight="bold", pad=10, color=PALETTE["edge"])
+        elif phase == "contradiction":
+            ax.set_title("Contradiction found", fontsize=14,
+                         fontweight="bold", pad=10, color=PALETTE["highlight"])
+        elif phase in ("row3", "row4"):
+            ax.set_title("Check remaining menus...", fontsize=14,
+                         fontweight="bold", pad=10, color=PALETTE["edge"])
+        elif phase == "summary":
+            ax.set_title("3 of 4 choices are consistent", fontsize=14,
+                         fontweight="bold", pad=10, color="#e67e22")
+        else:
+            ax.set_title("HM = 0.75 — Houtman & Maks (1985)", fontsize=14,
+                         fontweight="bold", pad=10, color=PALETTE["accent"])
 
-                for i_idx, item in enumerate(sorted_items):
-                    x = x_positions[i_idx]
-                    is_chosen = (item == chosen)
-                    radius = 0.28
-                    color = item_colors[item]
-                    alpha = 1.0 if is_chosen else 0.3
-                    lw = 2.5 if is_chosen else 1.0
-                    circle = plt.Circle((x, y_base), radius, facecolor=color, alpha=alpha, 
-                                        edgecolor="white" if is_chosen else PALETTE["secondary"], lw=lw, zorder=10)
-                    ax.add_patch(circle)
-                    ax.text(x, y_base, item, ha="center", va="center", fontsize=13,
-                            fontweight="bold" if is_chosen else "normal",
-                            color="white" if is_chosen else PALETTE["edge"], zorder=11)
+        # Draw menu rows
+        for m_idx in range(n_rows):
+            items, chosen = menus[m_idx]
+            y_base = -m_idx * 0.9
+            x_start = 1.2
 
-            if frame >= 35:
-                n_pairs = min((frame - 35) // 3 + 1, len(menu_prefs)) if frame < 65 else len(menu_prefs)
-                if n_pairs > 0:
-                    y_text_start = -0.5
-                    ax.text(1.8, y_text_start, "Inferred:", fontsize=11, fontweight="bold", color=PALETTE["secondary"])
-                    for p_idx in range(n_pairs):
-                        ch, unch = menu_prefs[p_idx]
-                        ax.text(1.8, y_text_start - 0.4 - 0.35*p_idx, f"{ch} $\succ$ {unch}", 
-                                fontsize=12, color=PALETTE["edge"])
+            # Row label (with status indicator in summary/score phase)
+            if phase in ("summary", "score"):
+                is_bad = (m_idx == 0 or m_idx == 1)
+                indicator = "\u2717 " if is_bad else "\u2713 "
+                label_color = PALETTE["highlight"] if is_bad else PALETTE["accent"]
+                ax.text(-0.8, y_base, f"{indicator}Menu {m_idx+1}:", fontsize=11,
+                        va="center", ha="right", color=label_color, fontweight="bold")
+            else:
+                ax.text(-0.8, y_base, f"Menu {m_idx+1}:", fontsize=11,
+                        va="center", ha="right", color=PALETTE["secondary"])
 
-            if frame >= 65:
-                alpha = min((frame - 65) / 5, 1.0)
-                if "Consistent" in sc["title"]:
-                    box_text = "SARP Consistent"
-                elif "Mild" in sc["title"]:
-                    box_text = "WARP Violated"
-                else:
-                    box_text = "SARP Violated"
-                
-                ax.text(-2.5, 0.2, box_text, fontsize=12, fontweight="bold", ha="left",
-                        color=sc["accent"], alpha=alpha,
-                        bbox=dict(boxstyle="round,pad=0.3", facecolor="white", edgecolor=sc["accent"], alpha=alpha))
+            # Highlight contradiction rows
+            if phase == "contradiction" and m_idx in (0, 1):
+                rect = plt.Rectangle((-1.4, y_base - 0.28), 8.2, 0.56,
+                                     facecolor=PALETTE["highlight"], alpha=0.06,
+                                     edgecolor="none", zorder=1, clip_on=False)
+                ax.add_patch(rect)
+
+            # Draw item boxes
+            for i_idx, item in enumerate(items):
+                x = x_start + i_idx * 1.4
+                is_chosen = (item == chosen)
+                _draw_item_box(ax, x, y_base, item, chosen=is_chosen,
+                               color=item_colors[item])
+
+            # "Picked:" label
+            ax.text(x_start + len(items) * 1.4 + 0.2, y_base,
+                    f"\u2192 {chosen}", fontsize=10, va="center",
+                    color=item_colors[chosen], fontweight="bold")
+
+        # Phase-specific annotations
+        if phase == "row2":
+            ax.text(3.0, -2.4,
+                    "Wait \u2014 Laptop was available\nand they didn't pick it?",
+                    fontsize=10, color="#e67e22",
+                    bbox=dict(boxstyle="round,pad=0.3", facecolor="white",
+                              edgecolor="#e67e22", alpha=0.9))
+        elif phase == "contradiction":
+            ax.text(3.0, -2.4,
+                    "Menu 1: Laptop > Tablet\n"
+                    "Menu 2: Tablet > Laptop\n"
+                    "Both can't be true \u2014 a cycle",
+                    fontsize=10, color=PALETTE["highlight"],
+                    bbox=dict(boxstyle="round,pad=0.3", facecolor="white",
+                              edgecolor=PALETTE["highlight"], alpha=0.9))
+        elif phase == "row3":
+            ax.text(5.5, -2.7, "This one's fine",
+                    fontsize=10, color=PALETTE["accent"],
+                    bbox=dict(boxstyle="round,pad=0.3", facecolor="white",
+                              edgecolor=PALETTE["accent"], alpha=0.9))
+        elif phase == "row4":
+            ax.text(5.5, -3.5, "Consistent with Menu 1",
+                    fontsize=10, color=PALETTE["accent"],
+                    bbox=dict(boxstyle="round,pad=0.3", facecolor="white",
+                              edgecolor=PALETTE["accent"], alpha=0.9))
+        elif phase == "score":
+            ax.text(3.0, -3.8, "75% rational",
+                    fontsize=13, fontweight="bold", color=PALETTE["accent"],
+                    ha="center",
+                    bbox=dict(boxstyle="round,pad=0.4", facecolor="white",
+                              edgecolor=PALETTE["accent"], alpha=0.95))
 
     print("  Generating menu_hero.gif...")
     anim = FuncAnimation(fig, update, frames=TOTAL_FRAMES, interval=400)
@@ -233,21 +333,28 @@ def generate_menu_hero():
     plt.close(fig)
 
 def generate_floyd_warshall():
-    """Preference graph filling in through transitive closure."""
-    n = 5
-    labels = [f"$x^{i+1}$" for i in range(n)]
-    angles = np.linspace(0, 2 * np.pi, n, endpoint=False) - np.pi / 2
-    pos = np.column_stack([np.cos(angles), np.sin(angles)]) * 1.8
+    """Floyd-Warshall educational GIF — slow, well-spaced, repo terminology."""
+    fig, ax = plt.subplots(figsize=(8, 9), facecolor=PALETTE["bg"])
+    plt.subplots_adjust(top=0.78, bottom=0.14, left=0.08, right=0.95)
 
-    # Direct edges: 0->1, 1->2, 2->3, 3->4, 0->3
+    TOTAL_FRAMES = 120
+    INTERVAL = 400
+    n = 5
+    labels = [f"$x_{i+1}$" for i in range(n)]
+    angles = np.linspace(0, 2 * np.pi, n, endpoint=False) - np.pi / 2
+    pos = np.column_stack([np.cos(angles), np.sin(angles)]) * 2.0
+    NODE_R = 0.28
+
+    # Direct R_0 edges
     direct = [(0, 1), (1, 2), (2, 3), (3, 4), (0, 3)]
+    direct_set = set(direct)
+
+    # Precompute all FW states
     adj = np.zeros((n, n), dtype=bool)
     for i, j in direct:
         adj[i, j] = True
-
     states = [adj.copy()]
-    focus_nodes = [] # specifically (i, k, j) being tested
-    
+    focus_nodes = []
     for k in range(n):
         step_focus = []
         for i in range(n):
@@ -258,101 +365,159 @@ def generate_floyd_warshall():
         states.append(adj.copy())
         focus_nodes.append(step_focus)
 
-    fig, ax = plt.subplots(figsize=(5.5, 6.5), facecolor=PALETTE["bg"])
+    fig.text(0.04, 0.96, "Floyd-Warshall  Transitive Closure",
+             fontsize=15, fontweight="bold", color=PALETTE["python"],
+             family="monospace")
+    phase_txt = fig.text(0.04, 0.90, "", fontsize=13, fontweight="bold", color="#333")
+    desc_txt = fig.text(0.04, 0.845, "", fontsize=11, style="italic", color="#555",
+                        linespacing=1.5)
+    status_txt = fig.text(0.50, 0.055, "", fontsize=14, fontweight="bold",
+                          ha="center", va="center", color=PALETTE["python"])
+    counter_txt = fig.text(0.50, 0.02, "", fontsize=10, ha="center", va="center",
+                           color="#666", family="monospace")
 
-    def draw_arrow(ax, start, end, color, lw=1.5, style="-", alpha=1.0):
-        dx, dy = end[0] - start[0], end[1] - start[1]
-        length = np.sqrt(dx**2 + dy**2)
-        if length < 0.01: return
-        shrink = 0.3
-        sx, sy = start[0] + shrink * dx / length, start[1] + shrink * dy / length
-        ex, ey = end[0] - shrink * dx / length, end[1] - shrink * dy / length
-        ax.annotate(
-            "", xy=(ex, ey), xytext=(sx, sy),
-            arrowprops=dict(arrowstyle="-|>", color=color, lw=lw, linestyle=style, shrinkA=0, shrinkB=0, alpha=alpha),
-        )
+    def _arrow(ax, s, e, color, lw=1.5, style="-", alpha=1.0):
+        dx, dy = e[0] - s[0], e[1] - s[1]
+        ln = np.sqrt(dx**2 + dy**2)
+        if ln < 0.01: return
+        sh = NODE_R + 0.08
+        ax.annotate("", xy=(e[0] - sh*dx/ln, e[1] - sh*dy/ln),
+                     xytext=(s[0] + sh*dx/ln, s[1] + sh*dy/ln),
+                     arrowprops=dict(arrowstyle="-|>", color=color, lw=lw,
+                                     linestyle=style, shrinkA=0, shrinkB=0,
+                                     alpha=alpha), zorder=5)
+
+    def _node(ax, i, color=None, alpha=1.0):
+        c = color or PALETTE["node"]
+        ax.add_patch(plt.Circle(pos[i], NODE_R, color=c, alpha=alpha, zorder=10))
+        ax.text(pos[i][0], pos[i][1], labels[i], ha="center", va="center",
+                fontsize=12, color="white", fontweight="bold", zorder=11, alpha=alpha)
 
     def update(frame):
         ax.clear()
         ax.set_facecolor(PALETTE["bg"])
-        ax.set_xlim(-2.8, 2.8)
-        ax.set_ylim(-3.8, 2.8)
-        ax.set_aspect("equal")
-        ax.axis("off")
+        ax.set_xlim(-3.2, 3.2); ax.set_ylim(-3.0, 3.0)
+        ax.set_aspect("equal"); ax.axis("off")
 
-        k_label = ""
-        desc = ""
-        
-        if frame < 6:
-            current = states[0]
-            k_label = "Phase 1: Direct Preferences ($R_0$)"
-            desc = "Building basic connections between choices"
-            active_triads = []
-        elif frame < 6 + n*4:
-            k = (frame - 6) // 4
-            step_frame = (frame - 6) % 4
-            current = states[k] if step_frame < 2 else states[k+1]
-            active_triads = focus_nodes[k] if step_frame in [1, 2] else []
-            
-            k_label = f"Phase 2: Triplet Search (via $x^{k+1}$) — O(T³)"
-            if step_frame == 0: desc = f"Scanning paths through $x^{k+1}$..."
-            elif step_frame == 1: desc = f"Found path! $x_i \to x^{k+1} \to x_j$"
-            elif step_frame == 2: desc = "Adding indirect preference bridge."
-            else: desc = "Complete."
+        # Phase 1: Build R_0 (0-29)
+        if frame <= 29:
+            phase_txt.set_text("Step 1:  Build Direct Preference Graph  $R_0$")
+            desc_txt.set_text(
+                "From expenditure data:  $i \\; R_0 \\; j$  when  "
+                "$E_{ii} \\geq E_{ij}$.\n"
+                "Each edge = one revealed preference from observed prices.")
+            status_txt.set_text("")
+            for idx, (i, j) in enumerate(direct):
+                appear = 3 + idx * 5
+                if frame >= appear:
+                    _arrow(ax, pos[i], pos[j], PALETTE["edge"], lw=2.0,
+                           alpha=min((frame - appear) / 3, 1.0))
+            for i in range(n): _node(ax, i)
+            nv = sum(1 for idx in range(len(direct)) if frame >= 3 + idx * 5)
+            counter_txt.set_text(f"$|R_0|$ edges: {nv} / {len(direct)}")
+
+        # Phase 2: FW iterations (30-89), 12 frames per pivot
+        elif frame <= 89:
+            k = min((frame - 30) // 12, n - 1)
+            sub = (frame - 30) % 12
+
+            if sub <= 3:
+                current = states[k]; active_triads = []
+                phase_txt.set_text(
+                    f"Step 2:  Pivot through  $x_{k+1}$   (k={k+1}/{n})")
+                desc_txt.set_text(
+                    f"For all pairs ($i$,$j$):  if $i \\; R \\; x_{k+1}$"
+                    f"  and  $x_{k+1} \\; R \\; j$,  add  $i \\; R^* \\; j$.\n"
+                    f"Scanning {n}\u00d7{n} pairs...")
+            elif sub <= 7:
+                current = states[k]; active_triads = focus_nodes[k]
+                nn = len(focus_nodes[k])
+                phase_txt.set_text(
+                    f"Step 2:  Pivot through  $x_{k+1}$   (k={k+1}/{n})")
+                if nn > 0:
+                    desc_txt.set_text(
+                        f"Found {nn} new transitive edge"
+                        f"{'s' if nn != 1 else ''}!  "
+                        "Adding to $R^*$.\n"
+                        f"$i \\to x_{k+1} \\to j$  $\\Rightarrow$  "
+                        "$i \\; R^* \\; j$  (dashed red).")
+                else:
+                    desc_txt.set_text(
+                        f"No new edges through $x_{k+1}$.\n"
+                        "Moving to next pivot.")
+            else:
+                current = states[k + 1]; active_triads = []
+                te = int(current.sum())
+                phase_txt.set_text(
+                    f"Step 2:  Pivot through  $x_{k+1}$   (k={k+1}/{n})")
+                desc_txt.set_text(
+                    f"Pivot $x_{k+1}$ done.  $|R^*|$ = {te} edges.\n"
+                    f"Total cost: O($T^3$) = O({n}\u00b3) = {n**3} ops.")
+
+            hi_edges, new_edges = set(), set()
+            for triad in active_triads:
+                it, kn, jt = triad
+                hi_edges.add((it, kn)); hi_edges.add((kn, jt))
+                new_edges.add((it, jt))
+
+            for i in range(n):
+                for j in range(n):
+                    if i == j: continue
+                    if current[i, j]:
+                        isd = (i, j) in direct_set
+                        if (i, j) in new_edges:
+                            _arrow(ax, pos[i], pos[j], PALETTE["highlight"],
+                                   lw=2.5, style="--")
+                        elif (i, j) in hi_edges:
+                            _arrow(ax, pos[i], pos[j], PALETTE["python"],
+                                   lw=3.0, style="-" if isd else "--")
+                        else:
+                            _arrow(ax, pos[i], pos[j],
+                                   PALETTE["edge"] if isd else PALETTE["secondary"],
+                                   lw=2.0 if isd else 1.5,
+                                   style="-" if isd else "--")
+                    if (sub > 3 and (i, j) in new_edges
+                            and states[k + 1][i, j]):
+                        _arrow(ax, pos[i], pos[j], PALETTE["highlight"],
+                               lw=2.5, style="--")
+
+            for i in range(n):
+                _node(ax, i, PALETTE["python"] if i == k else None)
+            tn = int(current.sum()) + len(new_edges)
+            counter_txt.set_text(
+                f"Pivot: k={k+1}/{n}  |  $|R^*|$: {tn}  |  O(T\u00b3)")
+            status_txt.set_text("")
+
+        # Phase 3: Complete (90-119)
         else:
-            current = states[-1]
-            k_label = "Complete Transitive Closure ($R^*$)"
-            desc = "All indirect preferences inferred (Costly: O(T³))"
-            active_triads = []
+            current = states[-1]; te = int(current.sum())
+            phase_txt.set_text("Result:  Transitive Closure  $R^*$  Complete")
+            desc_txt.set_text(
+                f"All indirect preferences inferred.  "
+                f"$|R^*|$ = {te} edges.\n"
+                "Cost: O($T^3$).  "
+                "For T=10,000 this is 10\u00b9\u00b2 operations.")
+            for i in range(n):
+                for j in range(n):
+                    if i != j and current[i, j]:
+                        isd = (i, j) in direct_set
+                        _arrow(ax, pos[i], pos[j],
+                               PALETTE["edge"] if isd else PALETTE["secondary"],
+                               lw=2.0 if isd else 1.2,
+                               style="-" if isd else "--", alpha=0.7)
+            for i in range(n): _node(ax, i)
+            a = min((frame - 90) / 5, 1.0)
+            status_txt.set_text(
+                f"$R^*$ = {te} edges  (from {len(direct)} direct)")
+            status_txt.set_alpha(a)
+            counter_txt.set_text(
+                "Now check: any $i R^* j$ with $j P_0 i$?  "
+                "\u2192 GARP violation")
 
-        direct_set = set(direct)
-        
-        active_edges_highlight = []
-        inferred_new = []
-        for triad in active_triads:
-            i, k_node, j = triad
-            active_edges_highlight.append((i, k_node))
-            active_edges_highlight.append((k_node, j))
-            inferred_new.append((i, j))
-
-        # draw edges
-        for i in range(n):
-            for j in range(n):
-                if i != j and current[i, j]:
-                    is_direct = (i, j) in direct_set
-                    is_highlighted = (i, j) in active_edges_highlight
-                    is_new = (i, j) in inferred_new
-                    
-                    if is_new:
-                        color = PALETTE["highlight"]
-                        lw = 2.5
-                        style = "--"
-                    elif is_highlighted:
-                        color = PALETTE["python"]
-                        lw = 3.0
-                        style = "-" if is_direct else "--"
-                    else:
-                        color = PALETTE["edge"] if is_direct else PALETTE["secondary"]
-                        lw = 2.0 if is_direct else 1.5
-                        style = "-" if is_direct else "--"
-                    draw_arrow(ax, pos[i], pos[j], color, lw, style)
-
-        # draw nodes
-        for i in range(n):
-            circle = plt.Circle(pos[i], 0.25, color=PALETTE["node"], zorder=10)
-            ax.add_patch(circle)
-            ax.text(pos[i][0], pos[i][1], labels[i], ha="center", va="center", fontsize=11,
-                    color=PALETTE["node_text"], fontweight="bold", zorder=11)
-
-        ax.set_title("1. Traditional: Floyd-Warshall", fontsize=13, fontweight="bold", color="#333", pad=26)
-        ax.text(0, -2.8, k_label, ha="center", fontsize=11, fontweight="bold", color=PALETTE["python"] if "Search" in k_label else PALETTE["edge"])
-        ax.text(0, -3.2, desc, ha="center", fontsize=10, style="italic", color=PALETTE["secondary"])
-
-    total_frames = 6 + n*4 + 10
-    anim = FuncAnimation(fig, update, frames=total_frames, interval=750)
+    print("  Generating floyd_warshall.gif...")
+    anim = FuncAnimation(fig, update, frames=TOTAL_FRAMES, interval=INTERVAL)
     anim.save(OUTPUT_DIR / "floyd_warshall.gif", writer="pillow", dpi=DPI)
     plt.close(fig)
-    print("  floyd_warshall.gif updated with pedagogical flow")
 
 
 # ---------------------------------------------------------------------------
