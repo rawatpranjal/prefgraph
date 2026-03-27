@@ -15,7 +15,7 @@ warnings.filterwarnings("ignore", category=DeprecationWarning)
 project = "PyRevealed"
 copyright = "2024, PyRevealed Contributors"
 author = "PyRevealed Contributors"
-release = "0.4.2"
+release = "0.5.1"
 
 # -- General configuration ---------------------------------------------------
 
