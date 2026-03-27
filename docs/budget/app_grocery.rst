@@ -310,6 +310,19 @@ Key statistics:
 - Mean CCEI = 0.839, meaning the average household wastes ~16% of budget
 - The distribution is left-skewed: most households are moderately rational
 
+.. raw:: html
+
+   <div style="margin: 1.5em 0;"></div>
+
+.. image:: ../images/app_grocery_panel.png
+   :width: 100%
+   :align: center
+   :alt: Grocery analysis — CCEI distribution, efficiency vs exploitability, rolling-window trajectories, recovered utility
+
+.. raw:: html
+
+   <div style="margin: 1.5em 0;"></div>
+
 Beyond Consistency Scores
 -------------------------
 

@@ -305,6 +305,19 @@ Segmentation by HM efficiency:
      - ~30%
      - Invest in curation and defaults
 
+.. raw:: html
+
+   <div style="margin: 1.5em 0;"></div>
+
+.. image:: ../images/app_recsys_panel.png
+   :width: 100%
+   :align: center
+   :alt: Recommender analysis — HM distribution, drift detection, sliding-window trajectories, lifecycle classification
+
+.. raw:: html
+
+   <div style="margin: 1.5em 0;"></div>
+
 Beyond SARP: What Else Can You Measure?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
