@@ -4,7 +4,7 @@ build-backend = "maturin"
 
 [project]
 name = "pyrevealed"
-version = "0.5.1"
+version = "0.5.2"
 description = "Revealed preference analysis at scale — rationality scores, efficiency indices, and utility recovery. Rust engine, Python interface."
 readme = "README.md"
 license = {text = "MIT"}
@@ -80,6 +80,7 @@ python-source = "src"
 module-name = "pyrevealed._rust_core"
 manifest-path = "rust/crates/rpt-python/Cargo.toml"
 features = ["pyo3/extension-module"]
+include = ["LICENSE"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
