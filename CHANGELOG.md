@@ -7,7 +7,6 @@
 
 ### Added
 - Python 3.13 wheels for all platforms
-- Linux aarch64 (ARM64) wheels
 - Rust build now optional for source installs — pure-Python fallback activates automatically via setuptools-rust
 
 ## [0.5.2] - 2026-03-26
