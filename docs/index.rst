@@ -107,9 +107,9 @@ PyRevealed's methodology is grounded in the formal frameworks established in `Ch
    quickstart
    budget/index
    menu/index
+   applications
    algorithms
    performance
-   applications
    theory_landscape
    api
    references
