@@ -114,7 +114,7 @@ Based on Chambers & Echenique (2016) `Revealed Preference Theory <https://www.am
    quickstart
    budget/index
    menu/index
-   applications
+   benchmarks
    algorithms
    performance
    theory_landscape
