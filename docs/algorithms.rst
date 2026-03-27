@@ -14,7 +14,7 @@ behind each implementation decision. Focus: budget-based and menu-based methods.
 Complexity Landscape
 --------------------
 
-The definitive complexity classification for revealed preference testing is due to
+The definitive complexity classification for preference-graph acyclicity testing is due to
 Smeulders, Cherchye, De Rock & Spieksma (2014, *ACM TEAC* 2(1)), which established the
 computational hardness of various goodness-of-fit measures. A comprehensive survey of
 the algorithmic landscape is provided by Smeulders, Crama & Spieksma (2019, *EJOR* 272(3)).

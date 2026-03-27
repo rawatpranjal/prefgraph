@@ -46,7 +46,7 @@ better evaluation metric for recommender systems than RMSE or MAE.
 Formal Setup
 ------------
 
-Menu choice and revealed preference
+Menu choice and the preference graph
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 A user faces :math:`T` sessions. In session :math:`t`, they see menu

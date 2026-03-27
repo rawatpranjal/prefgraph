@@ -2,7 +2,7 @@ Grocery Scanner Data
 ====================
 
 Score household shopping behavior for economic rationality using
-revealed preference theory on loyalty-card scanner data.
+preference-graph analysis on loyalty-card scanner data.
 
 .. raw:: html
 
@@ -23,7 +23,7 @@ Introduction
 Every week, millions of households make grocery purchases across product
 categories at posted prices. A natural question: are these choices consistent
 with *any* utility function? If a household buys more beef when it's expensive
-and less when it's cheap, that's a revealed preference violation --- no
+and less when it's cheap, the preference graph contains a cycle --- no
 well-behaved utility function can explain it.
 
 Dean & Martin (2016) applied GARP to 977 households' grocery scanner data
@@ -34,7 +34,7 @@ money an arbitrageur could extract from inconsistent shoppers.
 
 **What you'll learn:**
 
-- How to map grocery transactions into revealed preference data
+- How to build preference graphs from grocery transactions
 - The formal GARP test and three goodness-of-fit scores (CCEI, MPI, HM)
 - Exploratory analysis of real scanner data (Dunnhumby, 2,222 households)
 - How to segment customers by rationality and interpret the scores
