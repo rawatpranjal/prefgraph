@@ -53,7 +53,11 @@ Multi-user scoring MUST use `Engine.analyze_arrays()` (budget) or `Engine.analyz
 No Python for-loops calling per-user algorithm functions (`validate_consistency`, `validate_menu_sarp`,
 `compute_integrity_score`, `compute_menu_efficiency`, etc.) over collections of users.
 
-The Engine handles parallelism via Rust/Rayon. Use `log.to_engine_tuple()` for conversion.
+The Engine handles parallelism via Rust/Rayon. Use `log.to_engine_tuple()` or `panel.to_engine_tuples()` for conversion.
+
+Engine validates inputs in Python before Rust: metric names in `__init__`, array shapes/types in
+`analyze_arrays()`, menu structure in `analyze_menus()`. Invalid input raises `ValueError`/`TypeError`/
+`DimensionError` with hints, never raw Rust `PyArray` errors.
 
 Acceptable single-user patterns:
 - Rolling-window temporal analysis (per-user window slicing)
@@ -261,7 +265,17 @@ Advanced Analysis (algorithms/)
 
 ### API Pattern
 
-Primary API uses tech-friendly names:
+Engine batch API (primary for multi-user):
+```python
+from pyrevealed import Engine, EngineResult, MenuResult, results_to_dataframe, load_demo
+users = load_demo()                                          # synthetic demo data, zero setup
+results = Engine(metrics=["garp","ccei","mpi"]).analyze_arrays(users)
+df = results_to_dataframe(results)                           # pandas DataFrame
+```
+
+`EngineResult`/`MenuResult` have `to_dict()`, `summary()`, and compact `__repr__`.
+
+Per-user function API (deep analysis):
 ```python
 from pyrevealed import BehaviorLog, validate_consistency, compute_integrity_score, compute_confusion_metric
 from pyrevealed import MenuChoiceLog, validate_menu_sarp, compute_menu_efficiency, fit_menu_preferences
@@ -280,6 +294,9 @@ Test data in `tests/conftest.py`:
 - `simple_violation_session` - 2 observations, WARP violation
 - `three_cycle_violation_session` - 3-cycle GARP violation
 - `large_random_session` - 100 obs × 10 goods for performance
+
+Synthetic demo: `load_demo(n_users=100)` returns Engine-ready `list[tuple[ndarray, ndarray]]`.
+40% rational, 40% noisy, 20% irrational. Deterministic (seed=42). No downloads.
 
 ## Version Alignment
 
