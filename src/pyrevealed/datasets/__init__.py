@@ -19,6 +19,8 @@ from pyrevealed.datasets._dunnhumby import load_dunnhumby
 from pyrevealed.datasets._open_ecommerce import load_open_ecommerce
 from pyrevealed.datasets._uci_retail import load_uci_retail
 from pyrevealed.datasets._retailrocket import load_retailrocket
+from pyrevealed.datasets._instacart import load_instacart
+from pyrevealed.datasets._yoochoose import load_yoochoose
 
 
 def list_datasets() -> list[dict[str, str]]:
@@ -63,6 +65,20 @@ def list_datasets() -> list[dict[str, str]]:
             "goods": "50 product categories",
             "observations": "~8 months per customer",
         },
+        {
+            "name": "instacart",
+            "description": "Grocery orders from 200K+ users across 21 departments",
+            "source": "Kaggle (instacart/market-basket-analysis)",
+            "goods": "21 departments (uniform prices)",
+            "observations": "~15-100 orders per user",
+        },
+        {
+            "name": "yoochoose",
+            "description": "E-commerce click sessions from RecSys 2015 challenge",
+            "source": "RecSys 2015 Challenge",
+            "goods": "Menu-based (items clicked per session)",
+            "observations": "~5-50 sessions per user",
+        },
     ]
 
 
@@ -72,5 +88,7 @@ __all__ = [
     "load_open_ecommerce",
     "load_uci_retail",
     "load_retailrocket",
+    "load_instacart",
+    "load_yoochoose",
     "list_datasets",
 ]
