@@ -20,7 +20,10 @@ You have data on what people chose. PyRevealed tests whether those choices are r
      </div>
      <div class="feature-card">
        <h3>Dual API</h3>
-       <p>Every method has two names — pick whichever reads naturally in your code. Results are dataclasses with <code>.to_dict()</code> and <code>.summary()</code>, ready for pandas or sklearn pipelines.</p>
+       <p>Every method has two names — pick whichever reads naturally in your code:</p>
+       <pre style="font-size:0.82em;margin:6px 0 4px 0;background:#f3f6fb;padding:8px 10px;border-radius:6px;line-height:1.6;">compute_integrity_score(log)  # tech
+compute_aei(log)              # economics</pre>
+       <p style="margin:4px 0 0 0;">Results are dataclasses with <code>.to_dict()</code> and <code>.summary()</code>, ready for pandas or sklearn pipelines.</p>
      </div>
      <div class="feature-card">
        <h3>Algorithms</h3>
