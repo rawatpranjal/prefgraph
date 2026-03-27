@@ -14,28 +14,16 @@ PrefGraph scores *how much* (0 = incoherent, 1 = perfectly rational).
 
    <div class="feature-grid">
      <div class="feature-card">
-       <h3>Build Preference Graphs</h3>
-       <p>From budget data (prices × quantities) or menu data (choice sets × picks), build the revealed preference graph. Each choice adds a directed edge.</p>
+       <h3>Build &amp; Test</h3>
+       <p>Budget data (prices × quantities) or menu data (sets × picks) → directed preference graph. Test GARP, SARP, WARP for cycles via Floyd-Warshall and Tarjan SCC.</p>
      </div>
      <div class="feature-card">
-       <h3>Detect Cycles</h3>
-       <p>Test GARP, SARP, WARP — does the preference graph have cycles? If yes, no coherent ranking exists. Floyd-Warshall transitive closure + Tarjan SCC decomposition.</p>
+       <h3>Score &amp; Recover</h3>
+       <p>CCEI, MPI, Houtman-Maks, VEI — each user gets a 0-to-1 rationality score. Then recover utility functions, welfare bounds, or detect IIA violations.</p>
      </div>
      <div class="feature-card">
-       <h3>Score Consistency</h3>
-       <p>CCEI (0–1), Money Pump Index, Houtman-Maks, Varian Efficiency — all measure how close the preference graph is to acyclic. Each user gets a rationality score.</p>
-     </div>
-     <div class="feature-card">
-       <h3>Two API Layers</h3>
-       <p><strong>Engine</strong> — batch scoring via Rust/Rayon (49K users/sec). <strong>Functions</strong> — single-user deep dives with full preference graph output.</p>
-     </div>
-     <div class="feature-card">
-       <h3>Graph Algorithms in Rust</h3>
-       <p>Floyd-Warshall, Tarjan SCC, Karp's max-mean cycle, HiGHS LP — all in Rust with Rayon parallelism. Python fallback available.</p>
-     </div>
-     <div class="feature-card">
-       <h3>Post-Estimation</h3>
-       <p>From the preference graph: recover utility functions, compute welfare bounds, test separability, detect IIA violations (decoy effects).</p>
+       <h3>Scale</h3>
+       <p>Rust backend (Rayon parallel, HiGHS LP). 49K users/sec on GARP. <strong>Engine</strong> for batch, <strong>Functions</strong> for deep dives. Python fallback available.</p>
      </div>
    </div>
 
