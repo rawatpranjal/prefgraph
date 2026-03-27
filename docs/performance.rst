@@ -5,21 +5,33 @@ PyRevealed utilizes a high-performance Rust compute engine (``rpt-core``) design
 
 .. raw:: html
 
-   <div style="margin-top: 1.5em;"></div>
+   <div style="margin: 1.5em 0;"></div>
 
 .. image:: _static/engine_throughput.gif
    :width: 70%
    :align: center
    :alt: Rust vs Python engine throughput comparison
 
+.. raw:: html
+
+   <div style="margin: 1.5em 0;"></div>
+
 Scalability and Throughput
 --------------------------
 
 The engine exhibits linear scalability with respect to the number of agents. The workload is highly parallelizable, and memory consumption remains bounded through the use of streaming data chunks.
 
+.. raw:: html
+
+   <div style="margin: 1.5em 0;"></div>
+
 .. image:: _static/perf_throughput.png
    :width: 100%
    :alt: Throughput characteristics across agent cohorts
+
+.. raw:: html
+
+   <div style="margin: 1.5em 0;"></div>
 
 .. list-table:: Throughput by Metric Configuration (T=20-100, K=5)
    :header-rows: 1
@@ -38,32 +50,64 @@ The engine exhibits linear scalability with respect to the number of agents. The
      - ~2,000
      - 500 μs
 
+.. raw:: html
+
+   <div style="margin: 1.5em 0;"></div>
+
 Computational Complexity by Metric
 ----------------------------------
 
 The computational cost varies significantly across metrics. Axiomatic tests (e.g., GARP) and the Money Pump Index (MPI) are computationally efficient as they rely primarily on graph-theoretic traversals. The CCEI is more intensive, requiring an iterative binary search over approximately 15 GARP evaluations.
 
+.. raw:: html
+
+   <div style="margin: 1.5em 0;"></div>
+
 .. image:: _static/perf_per_user.png
    :width: 100%
    :alt: Per-agent computational cost by metric and observation count (T)
 
+.. raw:: html
+
+   <div style="margin: 1.5em 0;"></div>
+
 PyRevealed implements the O(T²) SCC-based algorithm (Talla Nobibon et al., 2015) for GARP verification, avoiding the O(T³) overhead of Floyd-Warshall. CCEI computation thus achieves O(T² log T) complexity. Metrics such as MPI, HARP, and VEI necessitate O(T³) transitive closure operations. Technical details are available in the :doc:`algorithms` section.
+
+.. raw:: html
+
+   <div style="margin: 1.5em 0;"></div>
 
 Memory Management and Streaming
 -------------------------------
 
 The engine is designed to maintain a flat memory profile regardless of the total population size. Data are processed in discrete chunks (default size: 50,000 agents), with memory allocated for a given chunk being released upon completion of its analysis.
 
+.. raw:: html
+
+   <div style="margin: 1.5em 0;"></div>
+
 .. image:: _static/perf_memory.png
    :width: 100%
    :alt: Memory consumption under streaming conditions
 
+.. raw:: html
+
+   <div style="margin: 1.5em 0;"></div>
+
 Peak memory usage is a function of the chunk size rather than the total number of agents. At the default chunk size, peak memory consumption typically remains between 100–200 MB, enabling the analysis of datasets exceeding 10 million agents on commodity hardware.
+
+.. raw:: html
+
+   <div style="margin: 1.5em 0;"></div>
 
 Large-Scale Benchmarks
 ----------------------
 
 **Budget-Constrained Analysis** (GARP, CCEI, MPI, HARP; T=20-100, K=5):
+
+.. raw:: html
+
+   <div style="margin: 1.5em 0;"></div>
 
 .. list-table::
    :header-rows: 1
@@ -86,7 +130,15 @@ Large-Scale Benchmarks
      - 67.1s
      - ~11 min
 
+.. raw:: html
+
+   <div style="margin: 1.5em 0;"></div>
+
 **Discrete Menu-Based Analysis** (SARP, WARP, Houtman-Maks; 50 items, 20-100 sessions):
+
+.. raw:: html
+
+   <div style="margin: 1.5em 0;"></div>
 
 .. list-table::
    :header-rows: 1
@@ -101,8 +153,16 @@ Large-Scale Benchmarks
      - 5.2s
      - **85.6s**
 
+.. raw:: html
+
+   <div style="margin: 1.5em 0;"></div>
+
 Complexity Summary
 ------------------
+
+.. raw:: html
+
+   <div style="margin: 1.5em 0;"></div>
 
 .. list-table::
    :header-rows: 1
@@ -119,7 +179,7 @@ Complexity Summary
      - Iterative binary search over T² potential efficiency ratios.
    * - **MPI**
      - O(T³)
-     - Karp’s maximum-mean-weight cycle algorithm.
+     - Karp's maximum-mean-weight cycle algorithm.
    * - **HARP**
      - O(T³)
      - Max-product path calculation via modified Floyd-Warshall.
@@ -132,6 +192,10 @@ Complexity Summary
    * - **VEI**
      - O(T²)
      - Observation-specific efficiency via constrained optimization.
+
+.. raw:: html
+
+   <div style="margin: 1.5em 0;"></div>
 
 Hardware Configuration
 ----------------------
