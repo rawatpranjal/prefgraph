@@ -13,6 +13,10 @@ The classical setting of Samuelson (1938), Afriat (1967), and Varian (1982).
    - **Recover**: Utility, demand, welfare (CV/EV), Slutsky matrix, expenditure function
    - **Structure**: Separability partitions, quasilinear, additive, spatial
 
+.. rubric:: Two entry points, one data type
+
+There is only one input class (``BehaviorLog`` — prices × quantities), but two ways to call it. ``Engine.analyze_arrays()`` or ``Engine.analyze_parquet()`` runs GARP, CCEI, MPI, HM, HARP, and VEI across thousands of users in one Rust-backed batch call. The per-user **Functions API** (``validate_consistency``, ``compute_integrity_score``, ``compute_confusion_metric``, ``recover_utility``, etc.) covers the full method set including advanced recovery and structure tests (welfare CV/EV, Slutsky matrix, separability, spatial) that are not yet in the batch engine. Use the Engine for throughput; use Functions for deep dives on individual users.
+
 .. code-block:: python
 
    from prefgraph import BehaviorLog, validate_consistency, compute_integrity_score
