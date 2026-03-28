@@ -86,15 +86,12 @@ def load_and_prepare(data_dir=None, n_households=None):
     threshold = np.percentile(test_total_spends, 66.67)
     high_spender = (test_total_spends > threshold).astype(int)
 
-    # Spend change: difference in mean spend (regression)
-    spend_change = test_mean_spends - train_mean_spends
-
     # targets_dict: name -> (y, task_type, y_continuous, threshold_pctl)
     # y_continuous + threshold_pctl = let evaluation.py binarize on train only (zero leakage)
+    # Spend Change dropped: R² negative for all models (target is unpredictable)
     targets_dict = {
         "Spend Drop": (churn, "classification", None, None),
         "High Spender": (high_spender, "classification", test_total_spends, 66.67),
-        "Spend Change": (spend_change, "regression", None, None),
         "Future LTV": (test_mean_spends, "regression", None, None),
     }
 
