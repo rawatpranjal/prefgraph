@@ -46,6 +46,10 @@ limited attention, random utility, and risk preferences.
    - **Recover**: Ordinal utility, consideration sets, attention probabilities, Luce/RUM, risk profile
    - **Structure**: Attention bounds, RAM parameters
 
+.. rubric:: One question, three data formats
+
+All three subtypes test the same core question — does a consistent preference ordering explain the observed choices? The **Deterministic** subtype feeds directly into ``Engine.analyze_menus()`` for batch Rust processing: pass a list of ``(menus, choices, n_items)`` tuples and get back WARP/SARP/HM scores for every user in one call. **Stochastic** and **Risk** data use the per-user Functions API instead (``validate_menu_sarp``, ``fit_luce_model``, ``compute_risk_profile``, etc.) because their inputs — choice frequency tables and lottery matrices — do not map to the simple tuple format the batch engine expects. The axioms and scores are identical across paths; only the entry point differs.
+
 .. code-block:: python
 
    from prefgraph import MenuChoiceLog, validate_menu_sarp, compute_menu_efficiency
