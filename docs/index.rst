@@ -1,7 +1,7 @@
 Preference Graphs
 ==================
 
-**PrefGraph** translates raw user choices into directed preference networks to detect inconsistencies and measure behavioral coherence at scale. Without assuming prior models or making parametric guesses, it tests whether choices follow a stable ranking-making it possible to score the rationality of millions of users or evaluate LLM decision-making instantly.
+**PrefGraph** translates raw user choices into directed preference networks to detect inconsistencies and measure behavioral coherence at scale.
 
 .. raw:: html
 
@@ -27,9 +27,9 @@ Preference Graphs
 Why Preference Graphs?
 -----------------------
 
-Most behavioral analysis assumes a utility model first and tries to fit parameters to it. Preference graphs work in the exact opposite direction: they start with raw choices, build the revealed preference graph, and ask, "Is it acyclic?" By testing whether observed actions follow a logically valid ranking, PrefGraph evaluates choice quality directly from the data, without making assumptions about underlying tastes or functional forms. 
+Most behavioral analysis assumes a utility model first and tries to fit parameters to it. Preference graphs work in the exact opposite direction: they start with raw choices, build the revealed preference graph, and ask, "Is it acyclic?"
 
-In a preference graph, a cycle (A > B > C > A) represents a logical contradiction where no coherent ranking can explain the choices. While inconsistency isn't inherently bad-it can simply reflect changing tastes, exploration, or random noise-we often need to know when decisions are inconsistent. Using fast algorithms like Tarjan's SCC, PrefGraph detects these cycles to quantify consistency.
+In a preference graph, a cycle (A > B > C > A) represents a logical contradiction. Using fast algorithms like Tarjan's SCC, PrefGraph detects these cycles to quantify consistency and evaluate choice quality directly from the data.
 
 .. raw:: html
 
@@ -218,35 +218,35 @@ Full results: :doc:`benchmarks_ecommerce`.
      - 0.996
      - +0.0%
      - 0.990
-   * - Taobao Buy Window
+   * - Taobao
      - 29,519
      - Pref Drift (AP)
      - 0.940
      - 0.938
      - -0.2%
      - -
-   * - Taobao Buy Window
+   * - Taobao
      - 29,519
      - High Entropy (AP)
      - 0.789
      - **0.790**
      - **+0.1%**
      - -
-   * - Taobao Buy Window
+   * - Taobao
      - 29,519
      - High Active Time (AUC)
      - 0.777
      - 0.778
      - +0.1%
      - -
-   * - Taobao Buy Window
+   * - Taobao
      - 29,519
      - High Click Volume (AUC)
      - 0.818
      - 0.818
      - +0.0%
      - -
-   * - Taobao Buy Window
+   * - Taobao
      - 29,519
      - Fast Conversion (AUC)
      - 0.561
@@ -259,30 +259,8 @@ Overall, incorporating preference graph features provides a modest but consisten
 Performance
 -----------
 
-PrefGraph achieves throughput up to two orders of magnitude faster than naive Python implementations. By combining PyArrow for memory-efficient Parquet data loading with a Rust core powered by Rayon (parallelism) and algorithm optimizations like Tarjan's SCC, PrefGraph easily scales to datasets with millions of users.
+PrefGraph achieves throughputs up to 49k+ users/sec using a Rayon/Rust backend. See the :doc:`Performance <performance>` page for detailed scaling metrics.
 
-Benchmarked on synthetic data, T=15 observations, 10 goods, M1 Mac:
-
-.. list-table::
-   :header-rows: 1
-   :widths: 40 30 30
-
-   * - Configuration
-     - Throughput
-     - Latency (per agent)
-   * - **GARP only**
-     - ~49,000 agents/sec
-     - 20 μs
-   * - **GARP + CCEI**
-     - ~2,400 agents/sec
-     - 420 μs
-   * - **Full suite** (GARP, CCEI, MPI, HARP)
-     - ~2,000 agents/sec
-     - 500 μs
-   * - **Menu** (SARP + WARP + HM)
-     - ~19,000 agents/sec
-     - 50 μs
- 
 ..
    Archived: homepage book blurb moved to docs/archive/homepage_extras.rst
 
