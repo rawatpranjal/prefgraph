@@ -99,10 +99,7 @@ effects (jobs), scenario‑dependent prompt effects (decision‑tree 100% on
 procurement but weak on jobs), and severity anchoring even on “clear” content
 inputs.
 
-*Definitions: SARP pass (deterministic) = percent of vignette–prompt pairs
-with an acyclic preference graph at temperature 0 using MenuChoiceLog. IIA counts
-deterministic preference flips when a third option is added. RUM pass rate aggregates
-frequencies over K samples at temp 0.7 using StochasticChoiceLog and tests Random Utility Model consistency.*
+*How we measure this: We test absolute logical consistency at Temperature 0 using a strict SARP check (did the model ever contradict its own unprompted ranking?). Then, we raise the temperature to 0.7, run 20 repeated trials, and use Random Utility Models (RUM) to mathematically verify if the model's probabilistic hallucinations still follow a coherent underlying distribution of choices. This isolates true preference reversals from standard token sampling noise.*
 
 Predictive Benchmarks (E-commerce)
 -----------------------------------
