@@ -10,8 +10,8 @@ RFM — spending history already carries the signal. Instacart shows heavy habit
 structure (83.8% SARP violations) but near‑zero lift, consistent with
 reordering.
 
-This page summarizes seven public datasets with 42 revealed-preference
-features evaluated on standard user holdout and cross validation splits.
+Six public datasets, 117K users, 42 RP features. CatBoost with default
+hyperparameters. 80/20 user holdout with bootstrap CIs.
 
 .. _eco-setup:
 

@@ -122,7 +122,7 @@ The Rust engine (`rpt-core`) handles graph algorithms and LP solving via Rayon t
 
 **[Full docs](https://prefgraph.readthedocs.io/)** — examples, theory, API reference, application case studies.
 
-**[7-dataset benchmark](https://prefgraph.readthedocs.io/en/latest/benchmarks_ecommerce.html)** — 167K users, 15 tasks. RP features add 0–0.7% AUC over RFM baselines.
+**[E-commerce benchmarks](https://prefgraph.readthedocs.io/en/latest/benchmarks_ecommerce.html)** — 6 datasets, 117K users, 12 targets. RP features add 0–2% lift over RFM baselines; on Taobao, RP-only (0.925) beats the engagement baseline (0.913).
 
 **[15 dataset loaders](https://prefgraph.readthedocs.io/en/latest/api.html#dataset-loaders)** — Dunnhumby, Instacart, H&M, Taobao, and 11 more real-world datasets.
 
