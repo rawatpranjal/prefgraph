@@ -12,7 +12,6 @@ LLMs to make inconsistent choices when selecting from package menus.
    :alt: LLM prompt consistency - HM efficiency, choice heatmap, preference graph, temperature comparison
 
 
-
 Introduction
 ------------
 
@@ -270,4 +269,3 @@ Limitations
   Parse failures (malformed responses) are excluded from analysis.
 - 100 trials per prompt may be insufficient for rare menu combinations.
   Increase trials for production-grade audits.
-:orphan:
