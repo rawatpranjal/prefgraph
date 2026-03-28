@@ -1,7 +1,7 @@
 """Benchmark configuration constants."""
 
 SEED = 42
-N_FOLDS = 5
+TEST_FRACTION = 0.2  # 80/20 user split for evaluation
 TRAIN_FRACTION = 0.7  # First 70% of observations for features, last 30% for targets
 MIN_OBS_BUDGET = 10  # Minimum observations per user for budget datasets
 MIN_OBS_MENU = 5  # Minimum sessions per user for menu datasets

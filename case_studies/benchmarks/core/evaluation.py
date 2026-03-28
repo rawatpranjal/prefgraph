@@ -31,7 +31,7 @@ import pandas as pd
 from case_studies.benchmarks.config import (
     CATBOOST_CLASSIFIER_PARAMS,
     CATBOOST_REGRESSOR_PARAMS,
-    N_FOLDS,
+    TEST_FRACTION,
     SEED,
 )
 
@@ -102,16 +102,18 @@ def run_three_way(
     target: str,
     task_type: Literal["classification", "regression"] = "classification",
 ) -> BenchmarkResult:
-    """Run three-way model comparison with cross-validation.
+    """Run three-way model comparison — pure out-of-time evaluation.
+
+    Features (X) come from each user's PAST observations.
+    Targets (y) come from each user's FUTURE observations.
+    The temporal split IS the evaluation — no user holdout needed.
 
     Three models: (a) RP only, (b) Baseline only, (c) RP + Baseline.
-    Uses CatBoost for ordered boosting with native NaN handling.
     """
     import time as _time
     _t0 = _time.time()
 
     from catboost import CatBoostClassifier, CatBoostRegressor
-    from sklearn.model_selection import StratifiedKFold, KFold
     from sklearn.metrics import (
         roc_auc_score,
         average_precision_score,
@@ -134,13 +136,6 @@ def run_three_way(
     X_base = X_base.loc[common_idx]
 
     # Handle NaN/inf
-    n_nan_rp = int(X_rp.isna().sum().sum() + np.isinf(X_rp.values).sum())
-    n_nan_base = int(X_base.isna().sum().sum() + np.isinf(X_base.values).sum())
-    if n_nan_rp > 0 or n_nan_base > 0:
-        warnings.warn(
-            f"Imputed {n_nan_rp} NaN/Inf values in RP features, "
-            f"{n_nan_base} in baseline features"
-        )
     X_rp = X_rp.fillna(X_rp.median()).replace([np.inf, -np.inf], 0)
     X_base = X_base.fillna(X_base.median()).replace([np.inf, -np.inf], 0)
 
@@ -160,57 +155,45 @@ def run_three_way(
 
     n_users = len(y)
     pos_rate = float(np.mean(y)) if task_type == "classification" else 0.0
+    params = (CATBOOST_CLASSIFIER_PARAMS if task_type == "classification"
+              else CATBOOST_REGRESSOR_PARAMS).copy()
 
-    if task_type == "classification":
-        kf = StratifiedKFold(n_splits=N_FOLDS, shuffle=True, random_state=SEED)
-        splits = list(kf.split(np.zeros(n_users), y))
-        params = CATBOOST_CLASSIFIER_PARAMS.copy()
-    else:
-        kf = KFold(n_splits=N_FOLDS, shuffle=True, random_state=SEED)
-        splits = list(kf.split(np.zeros(n_users)))
-        params = CATBOOST_REGRESSOR_PARAMS.copy()
+    # Pure out-of-time: train on ALL users' past, predict ALL users' future.
+    # The temporal split in each bench file IS the train/test boundary.
+    metrics = {}
+    for name, X_arr in feature_sets.items():
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            if task_type == "classification":
+                model = CatBoostClassifier(**params)
+                model.fit(X_arr, y)
+                y_prob = model.predict_proba(X_arr)[:, 1]
+                y_pred = model.predict(X_arr)
 
-    # --- Out-of-sample: K-fold CV ---
-    fold_metrics = {
-        name: {"auc": [], "ap": [], "logloss": [], "f1": [], "rmse": [], "r2": []}
-        for name in feature_sets
-    }
+                try:
+                    auc = roc_auc_score(y, y_prob)
+                except ValueError:
+                    auc = 0.5
+                try:
+                    ap = average_precision_score(y, y_prob)
+                except ValueError:
+                    ap = 0.0
+                try:
+                    ll = log_loss(y, y_prob)
+                except ValueError:
+                    ll = 1.0
+                f1 = f1_score(y, y_pred, zero_division=0)
+                metrics[name] = {"auc": auc, "ap": ap, "logloss": ll, "f1": f1}
+            else:
+                model = CatBoostRegressor(**params)
+                model.fit(X_arr, y)
+                y_pred = model.predict(X_arr)
+                metrics[name] = {
+                    "rmse": float(np.sqrt(mean_squared_error(y, y_pred))),
+                    "r2": float(r2_score(y, y_pred)),
+                }
 
-    for fold_idx, (train_idx, test_idx) in enumerate(splits):
-        y_train, y_test = y[train_idx], y[test_idx]
-
-        for name, X_arr in feature_sets.items():
-            X_train, X_test = X_arr[train_idx], X_arr[test_idx]
-
-            with warnings.catch_warnings():
-                warnings.simplefilter("ignore")
-                if task_type == "classification":
-                    model = CatBoostClassifier(**params)
-                    model.fit(X_train, y_train)
-                    y_prob = model.predict_proba(X_test)[:, 1]
-                    y_pred = model.predict(X_test)
-
-                    try:
-                        fold_metrics[name]["auc"].append(roc_auc_score(y_test, y_prob))
-                    except ValueError:
-                        fold_metrics[name]["auc"].append(0.5)
-                    try:
-                        fold_metrics[name]["ap"].append(average_precision_score(y_test, y_prob))
-                    except ValueError:
-                        fold_metrics[name]["ap"].append(0.0)
-                    try:
-                        fold_metrics[name]["logloss"].append(log_loss(y_test, y_prob))
-                    except ValueError:
-                        fold_metrics[name]["logloss"].append(1.0)
-                    fold_metrics[name]["f1"].append(f1_score(y_test, y_pred, zero_division=0))
-                else:
-                    model = CatBoostRegressor(**params)
-                    model.fit(X_train, y_train)
-                    y_pred = model.predict(X_test)
-                    fold_metrics[name]["rmse"].append(np.sqrt(mean_squared_error(y_test, y_pred)))
-                    fold_metrics[name]["r2"].append(r2_score(y_test, y_pred))
-
-    # --- Feature importance ---
+    # Feature importance
     top_features = None
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
@@ -226,7 +209,7 @@ def run_three_way(
         )
         top_features = feat_imp[:15]
 
-    # --- Assemble ---
+    # Assemble
     result = BenchmarkResult(
         dataset=dataset, target=target, task_type=task_type,
         n_users=n_users, n_rp_features=X_rp.shape[1],
@@ -235,30 +218,27 @@ def run_three_way(
     )
 
     if task_type == "classification":
-        result.auc_rp = float(np.mean(fold_metrics["rp"]["auc"]))
-        result.auc_base = float(np.mean(fold_metrics["base"]["auc"]))
-        result.auc_combined = float(np.mean(fold_metrics["combined"]["auc"]))
-        result.auc_rp_std = float(np.std(fold_metrics["rp"]["auc"]))
-        result.auc_base_std = float(np.std(fold_metrics["base"]["auc"]))
-        result.auc_combined_std = float(np.std(fold_metrics["combined"]["auc"]))
-        result.ap_rp = float(np.mean(fold_metrics["rp"]["ap"]))
-        result.ap_base = float(np.mean(fold_metrics["base"]["ap"]))
-        result.ap_combined = float(np.mean(fold_metrics["combined"]["ap"]))
-        result.logloss_rp = float(np.mean(fold_metrics["rp"]["logloss"]))
-        result.logloss_base = float(np.mean(fold_metrics["base"]["logloss"]))
-        result.logloss_combined = float(np.mean(fold_metrics["combined"]["logloss"]))
-        result.f1_rp = float(np.mean(fold_metrics["rp"]["f1"]))
-        result.f1_base = float(np.mean(fold_metrics["base"]["f1"]))
-        result.f1_combined = float(np.mean(fold_metrics["combined"]["f1"]))
+        result.auc_rp = metrics["rp"]["auc"]
+        result.auc_base = metrics["base"]["auc"]
+        result.auc_combined = metrics["combined"]["auc"]
+        result.ap_rp = metrics["rp"]["ap"]
+        result.ap_base = metrics["base"]["ap"]
+        result.ap_combined = metrics["combined"]["ap"]
+        result.logloss_rp = metrics["rp"]["logloss"]
+        result.logloss_base = metrics["base"]["logloss"]
+        result.logloss_combined = metrics["combined"]["logloss"]
+        result.f1_rp = metrics["rp"]["f1"]
+        result.f1_base = metrics["base"]["f1"]
+        result.f1_combined = metrics["combined"]["f1"]
         result.auc_lift = result.auc_combined - result.auc_base
         result.auc_lift_pct = compute_lift_pct(result.auc_combined, result.auc_base)
     else:
-        result.rmse_rp = float(np.mean(fold_metrics["rp"]["rmse"]))
-        result.rmse_base = float(np.mean(fold_metrics["base"]["rmse"]))
-        result.rmse_combined = float(np.mean(fold_metrics["combined"]["rmse"]))
-        result.r2_rp = float(np.mean(fold_metrics["rp"]["r2"]))
-        result.r2_base = float(np.mean(fold_metrics["base"]["r2"]))
-        result.r2_combined = float(np.mean(fold_metrics["combined"]["r2"]))
+        result.rmse_rp = metrics["rp"]["rmse"]
+        result.rmse_base = metrics["base"]["rmse"]
+        result.rmse_combined = metrics["combined"]["rmse"]
+        result.r2_rp = metrics["rp"]["r2"]
+        result.r2_base = metrics["base"]["r2"]
+        result.r2_combined = metrics["combined"]["r2"]
 
     result.wall_time_s = _time.time() - _t0
     return result
