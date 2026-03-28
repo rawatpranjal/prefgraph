@@ -5,6 +5,17 @@ Do LLMs have stable action rankings, or does the ranking change when
 different alternatives are shown? We build preference graphs from LLM
 decisions and check for cycles.
 
+**TL;DR.** GPT-4o-mini makes structurally consistent decisions most of the
+time --- 74--92% of vignettes pass SARP at temp=0, and majority-vote
+over 20 stochastic reps barely changes the picture (96--98% agreement).
+But the inconsistency that *does* exist is not random: it clusters on
+adjacent-severity action pairs, follows predictable compromise and
+anchoring patterns borrowed from human behavioral economics (Simonson
+1989), and survives temperature averaging. Job screening is the worst
+offender (74% pass, 15 IIA violations); alert triage is the cleanest
+(92%, 2 violations). No single prompt is universally best ---
+decision-tree hits 100% on procurement but 60% on jobs.
+
 .. code-block:: text
 
    ┌────────────┐    ┌────────────┐    ┌────────────┐    ┌────────────┐
@@ -263,6 +274,115 @@ Stochastic Results (temp=0.7, K=20)
      - 5
      - 12
 
+.. list-table:: SARP pass rate by tier (majority-vote)
+   :header-rows: 1
+   :widths: 18 16 16 16 16 16
+
+   * -
+     - Clear
+     - Binary
+     - Ambig.
+     - Advers.
+     - Mean
+   * - Support
+     - 93
+     - 100
+     - 80
+     - 80
+     - 90
+   * - Alert
+     - 87
+     - 100
+     - 90
+     - 80
+     - 90
+   * - Content
+     - 47
+     - 87
+     - 80
+     - 100
+     - 76
+   * - Jobs
+     - 87
+     - 73
+     - 80
+     - 70
+     - 78
+   * - Procurement
+     - 87
+     - 67
+     - 100
+     - 100\*
+     - 83
+
+*\*Procurement adversarial based on 1 observed vignette.*
+
+Patterns
+--------
+
+IIA violations are not evenly distributed. Decision-tree is the IIA
+hotspot on job screening (6 of 14 stochastic violations), while it
+scores 100% SARP on procurement. Conservative leads on content
+moderation (4 of 12). The same prompt can be the most and least
+consistent depending on the decision domain.
+
+.. list-table:: IIA violations by prompt (stochastic, top entries)
+   :header-rows: 1
+   :widths: 22 22 16
+
+   * - Scenario
+     - Prompt
+     - IIA count
+   * - Jobs
+     - decision_tree
+     - 6
+   * - Content
+     - conservative
+     - 4
+   * - Content
+     - decision_tree
+     - 3
+   * - Content
+     - aggressive
+     - 2
+   * - Jobs
+     - minimal
+     - 2
+   * - Procurement
+     - minimal
+     - 2
+   * - Procurement
+     - conservative
+     - 2
+
+**Compromise effect (job screening).** Across 11 of 14 job-screen
+IIA violations, the mechanism is the same: adding an extreme option
+pushes the choice toward the middle. In vignette v04 under
+chain-of-thought, the model prefers *phone_screen* over
+*hold_for_review* pairwise. But present {auto_reject, hold,
+phone_screen} and *hold* wins --- adding the worst option makes hold
+look like the safe middle ground. The reverse also occurs: adding
+*fast_track* pushes the choice from *auto_reject* to
+*technical_interview*. This is the classic compromise effect from
+behavioral economics (Simonson 1989), now confirmed in LLM outputs.
+
+**Severity anchor (content moderation).** In vignette v01 under
+decision-tree, the model prefers *remove_and_strike* over
+*suspend_and_legal* pairwise. But present {approve, remove, suspend}
+and *suspend* wins --- adding "approve" (the lenient end) anchors
+judgment toward severity. The reverse also holds: adding "suspend"
+(extreme) makes "remove" look moderate and preferable to "approve."
+The LLM anchors to the extremes of whatever menu is shown.
+
+**Parse failures as a policy floor.** In content-review v01, 5 of 15
+menus return PARSE_FAIL --- all menus containing *only* mild options
+(approve, content_warning, hide_from_feed). The model refuses to pick
+any mild action for graphic content, outputting an off-menu severe
+action instead. This is not noise: it reveals a hard policy constraint
+the LLM will not violate even when no on-menu action satisfies it.
+SARP counts this as a violation; it is better understood as a revealed
+constraint.
+
 Findings
 --------
 
@@ -352,9 +472,6 @@ Metrics
    * - SARP pass rate
      - 0--100%
      - % of vignettes with acyclic preference graph
-   * - HM efficiency
-     - 0--1
-     - Fraction of items in largest acyclic subgraph
    * - IIA violations
      - 0--n
      - Adding a third option flips a pairwise preference
@@ -367,3 +484,6 @@ Limitations
 
 No ground truth (consistency ≠ accuracy). Synthetic vignettes. Single
 model family. Procurement stochastic based on 82% of expected data.
+Stochastic analysis uses majority-vote aggregation over K=20 reps, not
+a formal RUM LP test. For stochastic rationality testing (regularity,
+Block-Marschak) see :doc:`../menu/theory_stochastic`.
