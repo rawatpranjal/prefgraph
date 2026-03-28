@@ -79,19 +79,33 @@ Results
      - +0.012
      - 0.246
    * - Open E-Commerce
-     - 4,694
+     - 4,668
      - High Spender
-     - 0.950
-     - 0.951
-     - +0.0%
-     - —
+     - 0.940
+     - 0.942
+     - +0.2%
+     - 0.932
    * - Open E-Commerce
-     - 4,694
-     - Churn
-     - 0.846
-     - 0.846
-     - -0.0%
-     - 0.769
+     - 4,668
+     - Spend Drop
+     - 0.784
+     - 0.798
+     - +1.8%
+     - 0.684
+   * - Open E-Commerce
+     - 4,668
+     - Spend Change (R²)
+     - 0.144
+     - 0.091
+     - -0.053
+     - -0.032
+   * - Open E-Commerce
+     - 4,668
+     - Future LTV (R²)
+     - 0.633
+     - 0.622
+     - -0.011
+     - 0.387
    * - H&M
      - 46,757
      - High Spender
@@ -359,11 +373,12 @@ exposure (coupons, store variation) is not captured. RP outputs should be
 interpreted as reduced-form consistency descriptors of conditional sub-basket
 allocation, not structural preference parameters.
 
-**Open E-Commerce.** 4,694 users, category-level quantities. Budget-based RP.
+**Open E-Commerce.** 4,668 users, category-level quantities. Budget-based RP.
 Median price per category per month, forward-filled for missing periods. Shared
-oracle across users. Within-category product switching is invisible. This dataset
-is retained as a sensitivity analysis only; in our runs, RP adds ~0% over strong
-RFM baselines, so it is not part of the main benchmark conclusions.
+oracle across users. Within-category product switching is invisible. While RP 
+features underperform the RFM baseline on regression tasks (LTV, Spend Change), 
+they provide a healthy boost (+1.8% lift) for predicting "Spend Drop", suggesting 
+that shifting category allocations might be an early signal of churn before volume drops.
 
 Polars fast-path (this repo):
 - Users analyzed: 4,744 (goods=50, median T=34 months)
