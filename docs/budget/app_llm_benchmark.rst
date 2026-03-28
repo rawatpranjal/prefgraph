@@ -1,5 +1,5 @@
-LLM Consistency
-===============
+LLM Consistency Benchmark
+=========================
 
 Do LLMs have stable action rankings, or does the ranking change when
 different alternatives are shown? We build preference graphs from LLM
@@ -142,6 +142,10 @@ Each cell = % of 10 vignettes where the preference graph is acyclic.
      - 90
      - 84
 
+This table compares prompts within each scenario. Higher values mean the
+model maintains a single implied ranking across the 15 menus for that
+vignette and prompt. Use it to pick a default prompt per scenario.
+
 .. list-table:: SARP pass rate by vignette difficulty
    :header-rows: 1
    :widths: 18 16 16 16 16 16
@@ -183,6 +187,10 @@ Each cell = % of 10 vignettes where the preference graph is acyclic.
      - 80
      - 84
 
+This table holds the prompt mix fixed and varies the vignette difficulty.
+It shows which scenarios degrade when cases are clear versus ambiguous
+or adversarial. Content is notably fragile on clear cases.
+
 .. list-table:: IIA violations
    :header-rows: 1
    :widths: 20 15 15 20
@@ -216,6 +224,11 @@ Each cell = % of 10 vignettes where the preference graph is acyclic.
 Stochastic = majority-vote from K=20 reps. Agreement = % of menus
 where temp=0 and temp=0.7 majority match. Procurement stochastic
 based on 82% of expected data (41/50 vignette-prompt combos).*
+
+Read this table as a stress test for menu dependence. Higher IIA counts
+mean more flips when a third option is added. High agreement means the
+stochastic sample reinforces the deterministic choice rather than
+contradicting it.
 
 Stochastic Results (temp=0.7, K=20)
 ------------------------------------
@@ -267,6 +280,10 @@ Stochastic Results (temp=0.7, K=20)
      - 75
      - 83
 
+These rates come from majority vote at temperature 0.7. They measure how
+often sampling preserves an acyclic preference order for a vignette and
+prompt. Compare to deterministic rates to see which prompts are robust.
+
 .. list-table:: % of menus with mixed responses
    :header-rows: 1
    :widths: 18 13 13 13 13 13 13
@@ -314,6 +331,10 @@ Stochastic Results (temp=0.7, K=20)
      - 5
      - 12
 
+Percent mixed captures instability within the K repetitions for the same
+menu. High values point to prompts and scenarios where the model splits
+between two nearby options rather than committing to one.
+
 .. list-table:: SARP pass rate by tier (majority-vote)
    :header-rows: 1
    :widths: 18 16 16 16 16 16
@@ -356,6 +377,11 @@ Stochastic Results (temp=0.7, K=20)
      - 83
 
 *\*Procurement adversarial based on 1 observed vignette.*
+
+This tier view under stochastic sampling shows how clarity interacts with
+menu effects. The contrast for content is informative. Clear cases pass
+less often than ambiguous or adversarial ones because severity anchors
+become more influential in clear settings.
 
 Patterns
 --------
