@@ -5,14 +5,18 @@ Do LLMs have stable action rankings, or does the ranking change when
 different alternatives are shown? We build preference graphs from LLM
 decisions and check for cycles.
 
-**TL;DR.** GPT-4o-mini operates with stable logical rankings for most tasks but struggles with context-dependent framing. Between 74% to 92% of scenarios pass the Strong Axiom of Revealed Preference (SARP) at temperature 0.
-
-**Insights from the data:**
-
-* **Alert Triage (92% pass rate):** Decisions are highly stable. If the model routes an alert to "Escalate", showing or hiding intermediate routing options rarely causes it to contradict its core logic.
-* **Job Screening (74% pass rate):** The weakest category. We observe frequent violations of the Independence of Irrelevant Alternatives (IIA). For example, the LLM might prefer "Interview" over "Reject" for a candidate natively, but introducing "Waitlist" as a third option inexplicably flips its choice to "Reject".
-
-We test logical consistency natively—we don't take mathematically flawed "majority votes" on stochastic outputs. Probabilistic choice (temperature > 0) is instead evaluated strictly through Random Utility Models (RUM) further down.
+**TL;DR.** GPT-4o-mini operates with stable logical rankings for most tasks but
+struggles with context-dependent framing. Between 74% to 92% of scenarios pass
+the Strong Axiom of Revealed Preference (SARP) at temperature 0. Decisions are
+highly stable in domains like **Alert Triage** (92% pass rate), where showing
+or hiding intermediate routing options rarely causes it to contradict its core
+logic. In contrast, **Job Screening** is the weakest category (74% pass rate)
+with frequent violations of Independence of Irrelevant Alternatives (IIA)—for
+example, the LLM might prefer "Interview" over "Reject" natively, but
+introducing "Waitlist" as a third option inexplicably flips its choice to
+"Reject". We test this logical consistency natively, evaluating probabilistic
+choice (temperature > 0) strictly through Random Utility Models (RUM) rather
+than mathematically flawed "majority votes".
 
 .. _llm-setup:
 
