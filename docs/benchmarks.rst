@@ -18,4 +18,4 @@ LLMs
 .. toctree::
    :maxdepth: 1
 
-   budget/app_llm_alignment
+   budget/app_llm_benchmark
