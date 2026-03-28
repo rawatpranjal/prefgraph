@@ -274,6 +274,5 @@ PrefGraph achieves throughputs up to 49k+ users/sec using a Rayon/Rust backend. 
    benchmarks
    algorithms
    performance
-   theory_landscape
    api
    references
