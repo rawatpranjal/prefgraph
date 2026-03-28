@@ -73,55 +73,25 @@ We find that LLMs are mostly consistent: they usually pick the same thing even i
 
 .. list-table::
    :header-rows: 1
-   :widths: 14 14 14 14 14 16 16 14
+   :widths: 30 30 30
 
    * - Scenario
-     - SARP pass (%) — deterministic
-     - SARP pass (%) — stochastic
-     - IIA violations — deterministic
-     - IIA violations — stochastic
-     - Menus with mixed responses (%)
-     - Deterministic–stochastic agreement (%)
-     - RUM pass rate (%)
+     - Deterministic SARP (%)
+     - Stochastic RUM (%)
    * - Support
      - 88
-     - 90
-     - 3
-     - 3
-     - 11
-     - 95.8
      - 54
    * - Alert
      - 92
-     - 90
-     - 2
-     - 3
-     - 8
-     - 96.6
      - 74
    * - Content
      - 82
-     - 76
-     - 9
-     - 12
-     - 12
-     - 95.5
      - 60
    * - Jobs
      - 74
-     - 78
-     - 15
-     - 14
-     - 8
-     - 97.6
      - 62
    * - Procurement
      - 84
-     - 83
-     - 8
-     - 6
-     - 12
-     - 97.7
      - 61
 
 Preference graphs reveal what accuracy benchmarks miss: decoy/compromise
