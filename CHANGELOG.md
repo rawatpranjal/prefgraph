@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.5.5] - 2026-03-28
+
+### Fixed
+- **Houtman-Maks ILP rewritten** — replaced Afriat Big-M formulation (broken: M too small, λ bounds infeasible) with Demuynck & Rehbeck (2023) Corollary 2. Uses fixed parameters α, δ, ε with clean data-derived bounds. Exact on all tested counterexamples.
+- **Engine now uses exact ILP** for T ≤ 200 (`houtman_maks_exact`), greedy FVS for T > 200. Previously always used greedy, which over-removed observations.
+- **HARP severity dropped** — `max_cycle_product` always returns 1.0. HARP is a binary test per Varian (1983) and Chambers & Echenique (2016, Thm 4.2); no severity metric is defined in the literature. Previous implementations (FW diagonal, 2-cycle patch) were approximations of a non-existent quantity.
+- **Python HM ILP** — same Big-M fix as Rust (lambda bounds, M computation)
+
 ## [0.5.4] - 2026-03-27
 
 ### Fixed
