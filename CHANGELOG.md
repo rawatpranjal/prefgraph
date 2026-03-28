@@ -4,6 +4,7 @@
 
 ### Changed
 - Removed stock illustrations from LLM consistency docs: dropped robot graphic from `budget/app_llm_benchmark` and `benchmarks` cards; removed unused `_static/app_llm_stock.svg`. Also removed decorative hero image from `budget/app_llm_alignment` to keep the page focused on real outputs.
+- Replaced Benchmarks hub card image with real results thumbnail (`_static/app_llm_benchmark_summary.png`).
 
 ## [0.5.13] - 2026-03-28
 
