@@ -6,17 +6,22 @@ Detect IIA violations by comparing pairwise vs triple menus.
 
 Usage:
     python -m applications.llm_benchmark.v2.analyze --all
+    python -m applications.llm_benchmark.v2.analyze --all --stage 2
 """
 
 from __future__ import annotations
 
 import argparse
 import json
-from collections import defaultdict
+from collections import Counter, defaultdict
 from pathlib import Path
 
 from prefgraph import MenuChoiceLog
-from prefgraph.algorithms.abstract_choice import validate_menu_sarp, compute_menu_efficiency
+from prefgraph.algorithms.abstract_choice import (
+    validate_menu_sarp,
+    validate_menu_warp,
+    compute_menu_efficiency,
+)
 
 from ..config import ALL_SCENARIOS
 
