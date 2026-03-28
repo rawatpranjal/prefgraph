@@ -210,6 +210,43 @@ produce identical choices across 20 repetitions.** gpt-4o-mini is overwhelmingly
 deterministic. The 8-18% that vary concentrate on the same action pairs
 that produce item graph cycles in the deterministic condition.
 
+V1 Experiment (10,000 decisions)
+---------------------------------
+
+An initial experiment (v1) queried gpt-4o-mini and o4-mini across the same 5
+scenarios and 5 prompts, collecting 10,000 total decisions (200 trials per
+scenario × prompt × model group).
+
+**Design:** Each trial used a *different* input vignette. SARP was tested
+across 200 pooled trials per group.
+
+**Results:**
+
+- All 50 groups (5 scenarios × 5 prompts × 2 models) failed SARP.
+- Item-level HM efficiency = 0.60 across all groups (3 of 5 items form the
+  largest consistent subset).
+- Observation-level HM efficiency ≈ 0.95 (95% of individual decisions are
+  locally rationalizable).
+- Permutation test p = 1.0 everywhere: violations are far fewer than random
+  choice, indicating structured preferences that fall short of full transitivity.
+- Both models were statistically indistinguishable on consistency.
+- No prompt strategy achieved a SARP pass in any group.
+
+**Confound:** Because the input vignette changed across trials, a reversal
+(choosing A over B on vignette-1, then B over A on vignette-2) may reflect
+correct context-dependent classification rather than genuine intransitivity.
+V1 conflates two sources of variation: input change and menu change.
+
+**What v1 established despite the confound:**
+
+1. LLMs exhibit structured preferences (far better than random) but not
+   perfect transitivity, even at temperature 0.
+2. Prompt strategy has no detectable effect on consistency at the pooled level.
+3. The two models are indistinguishable on rationality scores.
+
+V2 corrected the design by fixing the vignette and varying only the menu,
+enabling the per-vignette results reported above.
+
 Reproduce
 ---------
 
@@ -219,7 +256,11 @@ Reproduce
    export OPENAI_API_KEY=your_key
    cd examples
 
-   # v2 deterministic (3,750 calls, ~$2)
+   # v1 pooled (10,000 calls, ~$5) — different vignette per trial
+   python -m applications.llm_benchmark.run_benchmark --all
+   python -m applications.llm_benchmark.analyze --all
+
+   # v2 deterministic (3,750 calls, ~$2) — fixed vignette, varied menu
    python -m applications.llm_benchmark.v2.generate_vignettes --all
    python -m applications.llm_benchmark.v2.run_benchmark --all --stage 1
    python -m applications.llm_benchmark.v2.analyze --all
