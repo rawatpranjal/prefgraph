@@ -1,8 +1,8 @@
 E-commerce Benchmarks
 =====================
 
-*Last updated: 2026-03-28. Instacart V2 (aisle-level menu) replaces old
-budget construction. H&M results with per-customer realized prices (v0.5.8).*
+*Last updated: 2026-03-28. Instacart now uses aisle-level menu construction.
+H&M results with per-customer realized prices (v0.5.8).*
 
 Eight public datasets, 217K users, 42 RP features. CatBoost (H&M) or LightGBM
 (others) with 80/20 user holdout + bootstrap CI. Results split by data type:
@@ -13,7 +13,7 @@ Eight public datasets, 217K users, 42 RP features. CatBoost (H&M) or LightGBM
   real signal that engagement stats miss.
 - **Budget datasets**: RP adds ~0% marginal lift over strong RFM baselines.
   Spending features already capture the signal; CCEI/MPI are correlated.
-- **Instacart V2**: Aisle-level menu construction with trailing-3 menus.
+- **Instacart**: Aisle-level menu construction with trailing-3 menus.
   RP features show real structure (83.8% SARP violations) but add near-zero
   lift over baseline — consistent with habit-heavy grocery reordering.
 
@@ -82,14 +82,14 @@ Results
      - 0.295
      - +0.005
      - —
-   * - Instacart V2
+   * - Instacart
      - 50,000
      - Low Loyalty
      - 0.968
      - 0.969
      - +0.0%
      - —
-   * - Instacart V2
+   * - Instacart
      - 50,000
      - High Novelty
      - 0.765
@@ -146,7 +146,7 @@ independent signal:
      - High Engagement
      - 0.990
      - 0.996
-   * - Instacart V2
+   * - Instacart
      - High Novelty
      - 0.762
      - 0.765
@@ -188,7 +188,7 @@ Total wall time: **29 min** on M1 Mac (data on external USB drive via symlink).
      - 46,757
      - 1857s
      - 141s
-   * - Instacart V2
+   * - Instacart
      - 50,000
      - 120s
      - 30s
@@ -282,7 +282,7 @@ Price Assumptions
      - Per-customer realized prices
      - Budget
      - Customer avg paid price if purchased; period-group median imputation otherwise
-   * - Instacart V2
+   * - Instacart
      - N/A
      - Menu
      - Aisle-level single-reorder + trailing-3 familiar menus
@@ -446,7 +446,7 @@ Here is what each loader does and what it cannot do.
   Within-category substitution is invisible (e.g., "Dairy" includes milk,
   yogurt, and cheese at different prices). RP violations may reflect
   within-category product switching, not true preference inconsistency.
-- **Instacart V2 menu construction**: No prices — treated as menu-choice, not
+- **Instacart menu construction**: No prices — treated as menu-choice, not
   budget. Observation = user × order × aisle with exactly one reordered SKU.
   Menu = trailing-3 order products in same aisle. Filters: menu size ≥ 2,
   (user, aisle) pairs with ≥ 3 valid events. 4.5M events, 120K users, 715K
@@ -459,9 +459,9 @@ Here is what each loader does and what it cannot do.
   of a ~$100--150 weekly grocery budget. The RP analysis is valid within
   these categories but doesn't cover the full basket.
 
-**Menu datasets** (Instacart V2, REES46, Taobao, Tenrec):
+**Menu datasets** (Instacart, REES46, Taobao, Tenrec):
 
-- **Instacart V2 menus**: Constructed from trailing-3 order history per aisle,
+- **Instacart menus**: Constructed from trailing-3 order history per aisle,
   not from the platform's recommendation set. Menu = products the user
   previously bought in that aisle (familiarity set). Choice = sole reordered
   SKU. This is habit-heavy data: 58.6% of repeated user-aisle pairs never

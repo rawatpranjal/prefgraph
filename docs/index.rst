@@ -133,7 +133,7 @@ Full results: :doc:`benchmarks_ecommerce`.
      - High Spender
      - 0.763
      - 0.762
-   * - Instacart V2
+   * - Instacart
      - 50,000
      - High Novelty
      - 0.765
