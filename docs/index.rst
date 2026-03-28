@@ -158,6 +158,54 @@ Full results: :doc:`benchmarks_ecommerce`.
 
 Budget datasets: RP adds ~0% over strong RFM baselines. Menu datasets: RP features competitive — Taobao RP-only (0.925) beats baseline (0.913).
 
+LLM Consistency Benchmark
+--------------------------
+
+Do LLMs have stable action rankings? We build preference graphs from
+gpt-4o-mini decisions across 5 enterprise scenarios (support triage,
+alert routing, content moderation, job screening, procurement) and test
+for cycles. Full results: :doc:`budget/app_llm_benchmark`.
+
+.. list-table::
+   :header-rows: 1
+   :widths: 18 16 16 16 16
+
+   * -
+     - SARP pass
+     - IIA violations
+     - % stochastic
+     - Det/Stoch agree
+   * - Support
+     - 88%
+     - 3
+     - 11%
+     - 98%
+   * - Alert
+     - 92%
+     - 2
+     - 8%
+     - 98%
+   * - Content
+     - 82%
+     - 9
+     - 12%
+     - 97%
+   * - Jobs
+     - 74%
+     - 15
+     - --
+     - --
+   * - Procurement
+     - 84%
+     - 8
+     - --
+     - --
+
+Preference graphs reveal what accuracy benchmarks miss: decoy effects
+(15 IIA violations in job screening), scenario-dependent prompt effects
+(decision-tree 60% on jobs vs 100% on alert), and menu-dependent
+severity judgments even on "clear" content moderation inputs (60% pass).
+
 Reading List (2020+)
 --------------------
 
