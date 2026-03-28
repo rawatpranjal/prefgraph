@@ -191,13 +191,13 @@ for cycles. Full results: :doc:`budget/app_llm_benchmark`.
    * - Jobs
      - 74%
      - 15
-     - --
-     - --
+     - 8%
+     - 98%
    * - Procurement
      - 84%
      - 8
-     - --
-     - --
+     - 12%
+     - 98%
 
 Preference graphs reveal what accuracy benchmarks miss: decoy effects
 (15 IIA violations in job screening), scenario-dependent prompt effects
