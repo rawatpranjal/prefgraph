@@ -136,6 +136,8 @@ def load_and_prepare(data_dir=None, max_users: int = 50_000):
     train_logs: dict[str, MenuChoiceLog] = {}
     user_ids: list[str] = []
     raw_engagement: list[int] = []
+    raw_concentration: list[float] = []
+    raw_novelty: list[float] = []
 
     for uid, log in user_logs.items():
         T = len(log.choices)
@@ -150,7 +152,23 @@ def load_and_prepare(data_dir=None, max_users: int = 50_000):
         user_ids.append(uid)
         raw_engagement.append(len(test_log.choices))
 
+        # Choice Concentration: modal item frequency in test window
+        # Low concentration = dispersed choices across many items
+        test_counts = Counter(test_log.choices)
+        raw_concentration.append(test_counts.most_common(1)[0][1] / len(test_log.choices))
+
+        # Novelty: fraction of unique test choices not seen in train
+        # Measures preference exploration vs habit
+        train_items = set(train_log.choices)
+        test_items = set(test_log.choices)
+        if len(test_items) > 0:
+            raw_novelty.append(len(test_items - train_items) / len(test_items))
+        else:
+            raw_novelty.append(0.0)
+
     engagement = np.array(raw_engagement)
+    concentration = np.array(raw_concentration)
+    novelty = np.array(raw_novelty)
 
     print(f"\n  Users after train/test split: {len(user_ids)}")
     if len(user_ids) < 30:
@@ -163,14 +181,30 @@ def load_and_prepare(data_dir=None, max_users: int = 50_000):
     print(f"  Extracting RP features via Engine...")
     X_rp = extract_menu_rp(train_logs)
 
-    # Target: High Engagement = top tercile of test-window session count
-    # Pass y_continuous so run_three_way recomputes threshold on train users only (no leakage)
-    threshold = np.percentile(engagement, 66.67)
-    high_eng = (engagement > threshold).astype(int)
-
+    # --- Targets ---
+    # 1. High Engagement: top tercile of test-window session count (standard cross-dataset target)
+    # 2. Low Loyalty: top tercile of choice dispersion (1 - concentration)
+    #    Whether user spreads test-window choices across many items vs habitual repeat
+    # 3. High Novelty: top tercile of novel item fraction in test window
+    #    Whether user tries items in test window that weren't chosen in train window
     targets_dict = {
-        "High Engagement": (high_eng, "classification", engagement, 66.67),
+        "High Engagement": (
+            (engagement > np.percentile(engagement, 66.67)).astype(int),
+            "classification", engagement, 66.67,
+        ),
+        "Low Loyalty": (
+            (concentration < np.percentile(concentration, 33.33)).astype(int),
+            "classification", 1.0 - concentration, 66.67,
+        ),
+        "High Novelty": (
+            (novelty > np.percentile(novelty, 66.67)).astype(int),
+            "classification", novelty, 66.67,
+        ),
     }
+
+    for tname, (y, _, _, _) in targets_dict.items():
+        print(f"  Target '{tname}': pos_rate={np.mean(y):.3f}")
+
     return X_rp, X_base, targets_dict, user_ids
 
 
