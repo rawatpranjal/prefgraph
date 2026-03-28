@@ -175,7 +175,7 @@ Observation Graph Network Features
 
 **Requires:** ``Engine(metrics=[..., "network"])``
 
-The **observation graph** :math:`G = (V, E)` has one node per shopping trip and a directed edge :math:`i \to j` whenever bundle :math:`j` was affordable at observation :math:`i`'s prices but not chosen (:math:`x^i \, R \, x^j`). These features summarize its topology and edge-weight distribution — capturing signals orthogonal to consistency scores. Empirically validated as uncorrelated (max :math:`|r| < 0.3`) with CCEI, MPI, and VEI across multiple datasets.
+The **observation graph** :math:`G = (V, E)` has one node per observation and a directed edge :math:`i \to j` whenever bundle :math:`j` was within the budget set at observation :math:`i` but was not selected (:math:`x^i \, R \, x^j`). The following features characterize the topology and edge-weight distribution of this graph. They are empirically uncorrelated (max :math:`|r| < 0.3`) with CCEI, MPI, and VEI across multiple datasets, indicating that they capture distinct aspects of choice behavior.
 
 **Graph Density** (``r_density``)
 
@@ -183,7 +183,7 @@ The **observation graph** :math:`G = (V, E)` has one node per shopping trip and 
 
    \rho = \frac{|\{(i,j) : x^i \, R \, x^j, \, i \neq j\}|}{T(T-1)}
 
-The fraction of observation pairs where one bundle is revealed preferred to the other. High density means budgets overlap heavily — many shopping trips are comparable. Low density means distinct price regimes with limited overlap. Closely related to Bronars power: sparse graphs provide weak tests of rationality.
+The proportion of observation pairs for which a revealed preference relation exists. Higher density indicates greater overlap among budget sets, providing more pairwise comparisons for preference inference. Lower density reflects distinct price or income regimes across observations. This quantity is closely related to Bronars power: sparse graphs yield tests with limited discriminatory ability.
 
 .. list-table::
    :header-rows: 1
@@ -192,34 +192,34 @@ The fraction of observation pairs where one bundle is revealed preferred to the 
    * - Value
      - Interpretation
    * - > 0.5
-     - Dense: most observation pairs are comparable. Rich data for preference inference.
+     - Most observation pairs are comparable; the data is informative for preference inference.
    * - [0.2, 0.5]
-     - Moderate overlap. Typical for monthly aggregated e-commerce data.
+     - Moderate budget overlap. Typical of monthly aggregated transaction data.
    * - < 0.2
-     - Sparse: few observations share budget overlap. Consistency tests have low power.
+     - Limited budget overlap. Consistency tests have low statistical power.
 
 **Out-Degree Dispersion** (``r_out_degree_std``)
 
-Standard deviation of :math:`\text{deg}^+(i) = |\{j : x^i \, R \, x^j\}|` across observations. Measures unevenness in how many alternatives each shopping trip dominates. High values indicate that some trips occurred during high-income or stable-price periods (dominating many alternatives) while others were constrained.
+Standard deviation of :math:`\text{deg}^+(i) = |\{j : x^i \, R \, x^j\}|` across observations. Quantifies heterogeneity in the number of alternatives each observation dominates. Elevated values indicate that certain observations were made under conditions (e.g., higher expenditure or stable prices) that rendered many alternative bundles affordable, while others occurred under more constrained conditions.
 
 **Degree Gini** (``degree_gini``)
 
-Gini coefficient of the total degree distribution :math:`\text{deg}(i) = \text{deg}^+(i) + \text{deg}^-(i)`. Measures concentration of preference information. High Gini means a few "hub" observations are disproportionately central — removing them would collapse the graph's structure.
+Gini coefficient of the total degree distribution :math:`\text{deg}(i) = \text{deg}^+(i) + \text{deg}^-(i)`. Quantifies the concentration of revealed preference information across observations. A high Gini coefficient indicates that a small number of observations account for a disproportionate share of the graph's connectivity.
 
 **Edge-Weight Distribution** (``ew_mean``, ``ew_std``, ``ew_skew``)
 
-Requires ``"harp"`` in metrics (edge weights come from HARP's log-ratio computation). For each edge :math:`(i,j)` in :math:`R`:
+Requires ``"harp"`` in metrics. For each edge :math:`(i,j)` in :math:`R`, the HARP log-ratio weight is:
 
 .. math::
 
    w_{ij} = \ln \frac{p^i \cdot x^i}{p^i \cdot x^j}
 
-This is the log of how much the consumer *actually* spent relative to what bundle :math:`j` would have cost. These weights decompose into substitution and income effects:
+This is the logarithm of actual expenditure at observation :math:`i` relative to the cost of bundle :math:`j` at observation :math:`i`'s prices. The distribution of these weights across all edges characterizes the agent's substitution and income effect patterns:
 
-- ``ew_mean``: Average substitution tendency. Negative values suggest choosing expensive bundles (brand loyalty, quality preference). Near-zero suggests price-elastic behavior.
-- ``ew_std``: **Behavioral volatility** — the most orthogonal feature found empirically. High values mean the consumer's price sensitivity varies drastically across trips. Low values mean a consistent "type" of shopper.
-- ``ew_skew``: Direction of outlier behavior. Positive skew = occasional extreme underspending (missed deals). Negative skew = occasional extreme overspending (splurges).
+- ``ew_mean``: Mean edge weight. Negative values indicate a tendency to select bundles that are more expensive than available alternatives, consistent with quality differentiation or brand attachment. Values near zero indicate price-responsive substitution.
+- ``ew_std``: Standard deviation of edge weights. Measures the heterogeneity of substitution patterns across observations. Empirically, this is the most orthogonal network feature relative to existing consistency scores. High values indicate variable price sensitivity; low values indicate uniform response to price changes.
+- ``ew_skew``: Skewness of the edge-weight distribution. Positive skewness indicates a concentration of moderate weights with occasional large positive values (available but unchosen low-cost alternatives). Negative skewness indicates occasional observations with unusually high relative expenditure.
 
 .. note::
 
-   Edge-weight features capture substitution vs income effect patterns — a fundamentally different signal dimension from consistency scores. A consumer can be perfectly GARP-consistent (CCEI = 1.0) but have wildly varying substitution patterns (high ``ew_std``), or vice versa.
+   Edge-weight features are statistically independent of consistency scores. An agent may satisfy GARP (CCEI = 1.0) while exhibiting substantial variation in substitution patterns (high ``ew_std``), or conversely, display low ``ew_std`` despite GARP violations.
