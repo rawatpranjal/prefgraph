@@ -526,3 +526,39 @@ model family. Procurement stochastic based on 82% of expected data.
 Stochastic analysis uses majority-vote aggregation over K=20 reps, not
 a formal RUM LP test. For stochastic rationality testing (regularity,
 Block-Marschak) see :doc:`../menu/theory_stochastic`.
+
+Worked Example
+~~~~~~~~~~~~~~
+
+One row from the benchmark, showing every concept in action:
+
+- **Scenario:** Procurement Approval
+- **Vignette:** *"A department has submitted a procurement request for
+  office supplies totaling $150, which is well within the approved budget
+  of $500 for the month. All items requested are standard supplies that
+  have been pre-approved in the procurement policy without the need for
+  further review."* (tier: clear)
+- **Prompt:** minimal --- *"Process procurement requests. Pick one action
+  from the list."*
+- **Actions:** auto-approve, tag, request quotes, escalate, deny
+- **Menu:** {auto-approve, tag} (one of 15 menus shown for this vignette)
+- **Choice:** auto-approve
+
+This vignette is "clear" --- reasonable people would agree on
+auto-approve. The model does too, consistently across all 15 menus
+(SARP pass). Now contrast with an adversarial vignette from job
+screening:
+
+- **Scenario:** Job Application Screen
+- **Vignette:** *"The candidate has 5 years of Python experience building
+  data pipelines at a mid-size fintech. No distributed systems work, but
+  led a Kafka migration that reduced processing latency by 40%. Bootcamp
+  grad, no CS degree."* (tier: binary)
+- **Prompt:** decision-tree --- explicit if/then rules for each action
+- **Menu 1:** {hold, phone-screen} --- model picks **phone-screen**
+- **Menu 2:** {auto-reject, hold, phone-screen} --- model picks **hold**
+
+Adding auto-reject (the worst option) flips the preference from
+phone-screen to hold. This is an IIA violation --- the compromise
+effect in action. The model gravitates toward the "middle" of
+whatever menu it sees.
