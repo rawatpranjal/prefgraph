@@ -1,6 +1,7 @@
 # CLAUDE.md
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+Pelase write clearly, what did you run what did yo find. no shorthand. 
 
 ## Workflow Rules
 
@@ -15,6 +16,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **README is user-forward.** Paste-and-run example first (using `load_demo`), then Scores, "Which API?", Choice Categories, Performance. Architecture details live in RTD only.
 - **CHANGELOG.md** lives at repo root. Update it when making user-visible changes.
 - **Never describe the dual naming convention as "tech vs economics".** The two API layers are Engine (batch, Rust) and Functions (per-user deep dives). Legacy aliases exist but are not a selling point.
+
+## Data Processing
+
+Use **Polars** (not pandas) for EDA and data transformation. Polars is faster, safer (immutable by default), and provides explicit APIs for common operations.
 
 ## Build & Test Commands
 
