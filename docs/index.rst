@@ -152,14 +152,14 @@ Full results: :doc:`benchmarks_ecommerce`.
      - 0.589
      - +0.012
      - 0.246
-   * - Open E-Commerce
+   * - Amazon
      - 4,694
      - High Spender
      - 0.950
      - 0.951
      - +0.0%
      - —
-   * - Open E-Commerce
+   * - Amazon
      - 4,694
      - Churn
      - 0.784

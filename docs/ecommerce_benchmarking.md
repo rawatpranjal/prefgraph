@@ -24,8 +24,8 @@ These datasets have prices and quantities. Each user-observation is a (price_vec
 - **Price filtering**: Unit prices clipped to $0.01–$50 range before computing weekly medians
 - **Missing price handling**: Forward-fill, then backward-fill across weeks
 
-#### Open E-Commerce (Amazon)
-- **Source**: Open E-Commerce 1.0 (crowdsourced Amazon purchase history)
+#### Amazon (Open E‑Commerce)
+- **Source**: Amazon (Open E‑Commerce) 1.0 (crowdsourced Amazon purchase history)
 - **Scale**: 4,694 qualifying users, ~20 months each
 - **Observation unit**: Monthly category-level purchases
 - **Goods**: 50 product categories (keyword-based mapping from Amazon category strings)
