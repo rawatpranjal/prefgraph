@@ -123,7 +123,11 @@ def load_and_prepare(data_dir=None, max_users=50000):
     # EDA
     _print_eda(train_tuples, user_ids)
 
-    # Dual baselines
+    # Dual baselines: core10 has the 10 features from the spec (spend stats +
+    # category concentration + trend). full17 adds recency, purchase gaps, and
+    # inter-purchase variability. Empirical finding (2026-03-28, 46K users):
+    # core10 and full17 produce nearly identical AUC/R2 — the 7 extra features
+    # don't carry marginal signal beyond the core 10. Both kept for validation.
     print(f"  Extracting baseline features (core 10)...")
     X_base_10 = extract_budget_baseline(train_tuples, user_ids, feature_set="core")
 
@@ -140,6 +144,11 @@ def load_and_prepare(data_dir=None, max_users=50000):
     high_spender = (test_total_spends > threshold_all).astype(int)
     spend_change = test_mean_spends - train_mean_spends
 
+    # Do NOT call the regression target "LTV" — users with no future window
+    # are excluded, so this is future-window spend among survivors, not true
+    # lifetime value for the full population. "Churn" was also dropped: the
+    # design excludes users who disappear, so "churn" is really "large spend
+    # decline among survivors", which is misleading as a headline target.
     targets_dict = {
         "High Spender": (high_spender, "classification", test_total_spends, 66.67),
         "Spend Change": (spend_change, "regression", None, None),

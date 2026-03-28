@@ -117,6 +117,9 @@ def load_hm(
     csv_path = data_path / "transactions_train.csv"
 
     # --- Pass 1: chunked scan to find top product groups and active users ---
+    # Two-pass design is necessary: 3.49 GB CSV cannot fit in memory.
+    # Pass 1 reads only customer_id + article_id (no prices) to identify
+    # the top-K product groups and most-active users before loading prices.
     group_counts: dict[str, int] = {}
     user_counts: dict[str, int] = {}
 
@@ -126,6 +129,9 @@ def load_hm(
         dtype={"customer_id": str, "article_id": str},
         chunksize=CHUNKSIZE,
     ):
+        # Product group = first 2 digits of article_id. This is the coarsest
+        # grouping available without the articles.csv metadata file. Produces
+        # ~20 groups with repeated support across months — essential for RP.
         chunk["product_group"] = chunk["article_id"].str[:2]
 
         for grp, cnt in chunk["product_group"].value_counts().items():
@@ -168,13 +174,21 @@ def load_hm(
     period_labels = [str(p) for p in periods_sorted]
 
     # --- Three-tier imputation oracle ---
-    # Most specific: period x group median across all customers
+    # RP tests require a FULL price vector every period (purchased + unpurchased
+    # groups). For purchased groups we use the customer's own realized price.
+    # For unpurchased groups we need an imputation. The fallback chain is:
+    #   1. period-group median (most specific — "what did others pay this month?")
+    #   2. group median (across all periods — "what does this group typically cost?")
+    #   3. global median (last resort — "what does anything cost?")
+    # The old loader used a single shared median oracle for ALL customers,
+    # which destroyed individual price variation. Per-customer prices let RP
+    # detect when a customer paid more/less than the market for a group.
     period_group_median = df.groupby(["period", "product_group"])["price"].median()
-    # Mid: group median across all periods
     group_median = df.groupby("product_group")["price"].median()
-    # Broadest: global median
     global_median = float(df["price"].median())
 
+    # Build (n_periods, n_groups) grid, filling from broadest to most specific
+    # so that more specific values overwrite broader ones.
     impute_grid = np.full((len(periods_sorted), len(top_groups)), global_median)
     for gi, grp in enumerate(top_groups):
         if grp in group_median.index:
@@ -184,12 +198,19 @@ def load_hm(
                 impute_grid[pi, gi] = period_group_median[(per, grp)]
 
     # --- Aggregate: quantity (count) + realized mean price per customer-period-group ---
+    # Quantity = number of article rows in the cell. The raw H&M data has duplicate
+    # (date, customer, article) rows which represent distinct purchased units, so
+    # row counts are valid quantities, not transaction counts.
+    # mean_price = customer's own average paid price for that group in that period.
     agg = df.groupby(["customer_id", "period", "product_group"]).agg(
         quantity=("price", "size"),
         mean_price=("price", "mean"),
     ).reset_index()
 
     # --- Build per-customer BehaviorLogs ---
+    # This loop is the bottleneck at scale: two pivot_table calls per user.
+    # At 50K users, takes ~10 min (vs ~2 min with the old shared-oracle approach).
+    # Vectorizing would require a 3D sparse tensor which pandas doesn't support.
     logs: dict[str, BehaviorLog] = {}
 
     for cid, cust_data in agg.groupby("customer_id"):
@@ -220,7 +241,10 @@ def load_hm(
 
         qty_matrix = qty_pivot.loc[active_periods].values.astype(np.float64)
 
-        # Per-customer prices: realized where purchased, imputed where not
+        # Per-customer prices: realized where purchased, imputed where not.
+        # price_raw has NaN exactly where qty == 0 (reindex produced NaN for
+        # groups the customer didn't buy). np.where swaps those NaNs for the
+        # imputation grid values while keeping realized prices intact.
         price_raw = price_pivot.loc[active_periods].values.astype(np.float64)
         impute_slice = impute_grid[active_indices]
         price_matrix = np.where(np.isnan(price_raw), impute_slice, price_raw)
