@@ -5,13 +5,6 @@ Do LLMs have stable action rankings, or does the ranking change when
 different alternatives are shown? We build preference graphs from LLM
 decisions and check for cycles.
 
-.. image:: ../_static/robot_stock.svg
-   :alt: Robot illustration
-   :align: center
-   :width: 320
-
-
-
 **TL;DR.** GPT-4o-mini usually keeps a stable ranking of actions.
 Between 74 to 92 percent of vignettes pass SARP at temperature 0, and
 majority vote over 20 stochastic repetitions changes little, with
