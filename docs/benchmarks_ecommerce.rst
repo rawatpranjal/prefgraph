@@ -374,7 +374,8 @@ Polars fast-path (this repo):
 
 Latest ML benchmark (Open E‑Commerce, ~5k users)
 - Users: 4,668 (after train/test split constraints)
-- Targets and results
+
+  - Targets and results
   - High Spender (classification)
     - AUC: RP=0.932, Base=0.940, Combined=0.942, Lift=+0.002
   - Spend Drop (classification)

@@ -57,7 +57,7 @@ Latency follows suit: GARP-only averages around ~20 microseconds per agent, the 
      - 500 μs
 
 Computational Complexity by Metric
----------------------------------
+----------------------------------
 
 Costs differ by metric. Graph-based axioms (GARP) and indices like MPI are efficient because they rely on graph traversals and cycle checks; CCEI adds an outer binary search, effectively running GARP multiple times. This is reflected in the per-user timing curves below.
 
