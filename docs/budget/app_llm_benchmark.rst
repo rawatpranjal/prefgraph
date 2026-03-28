@@ -2,8 +2,8 @@ LLM Consistency
 ===============
 
 Do LLMs have stable action rankings, or does the ranking change depending
-on which alternatives are shown? We build preference graphs from LLM
-decisions and check for cycles.
+on which alternatives are shown? We construct item graphs from LLM
+decisions and test for cycles.
 
 .. code-block:: text
 
@@ -187,28 +187,28 @@ are shown.
 
 *-- = stochastic data collection in progress.*
 
-Do Preference Graphs Add Value?
--------------------------------
+Do Item Graphs Add Value?
+--------------------------
 
-Yes. Three things no accuracy benchmark reveals:
+Yes. Three findings that accuracy benchmarks do not capture:
 
-1. **Decoy effects exist in LLMs.** Adding a third option changes the
-   ranking between two others — 15 times in job screening. The preference
-   graph catches this as a cycle. Accuracy testing cannot.
+1. **Decoy effects exist in LLMs.** Introducing a third alternative changes the
+   ranking between two others in 15 instances for job screening. The item
+   graph detects this as a cycle. Accuracy testing cannot.
 
 2. **Consistency varies by scenario.** Alert triage (92%) vs job screening
-   (74%). This ranking follows from preference graph structure (ordinal
-   actions = fewer cycles), not task complexity.
+   (74%). This ordering follows from item graph structure (ordinal
+   actions produce fewer cycles), not task complexity.
 
 3. **Prompt effects are scenario-dependent.** Decision-tree prompts are
-   the most consistent on alert triage (100%) and worst on job screening
-   (60%). Conservative is best on support (100%) but worst on content
+   the most consistent on alert triage (100%) and least consistent on job screening
+   (60%). Conservative is most consistent on support (100%) but least on content
    review (70%). Only per-vignette SARP testing reveals this.
 
-What the stochastic experiment adds: at temp=0.7, **88-92% of menus
-produce identical choices across 20 reps.** gpt-4o-mini is overwhelmingly
+The stochastic experiment further shows that at temp=0.7, **88-92% of menus
+produce identical choices across 20 repetitions.** gpt-4o-mini is overwhelmingly
 deterministic. The 8-18% that vary concentrate on the same action pairs
-that create preference graph cycles in the deterministic condition.
+that produce item graph cycles in the deterministic condition.
 
 Reproduce
 ---------
@@ -248,7 +248,7 @@ Pipeline detail
    4. BUILD GRAPH: Each choice adds directed edges from chosen item
       to all unchosen items in the menu. One graph per (vignette, prompt).
 
-   5. TEST: SARP on the preference graph (is it acyclic?).
+   5. TEST: SARP on the item graph (is it acyclic?).
       IIA: compare pairwise choice in {A,B} vs A-vs-B in {A,B,C}.
 
 Code
@@ -265,7 +265,7 @@ Code
    )
    result = validate_menu_sarp(log)
    # result.is_consistent → bool
-   # result.violations → list of cycles in preference graph
+   # result.violations → list of cycles in item graph
 
 Metrics
 ~~~~~~~
@@ -279,7 +279,7 @@ Metrics
      - Meaning
    * - SARP pass rate
      - 0--100%
-     - % of vignettes where preference graph is acyclic
+     - % of vignettes where item graph is acyclic
    * - HM efficiency
      - 0--1
      - Fraction of items in largest acyclic subgraph

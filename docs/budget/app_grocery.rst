@@ -23,8 +23,8 @@ Introduction
 Every week, millions of households make grocery purchases across product
 categories at posted prices. A natural question: are these choices consistent
 with *any* utility function? If a household buys more beef when it's expensive
-and less when it's cheap, the preference graph contains a cycle --- no
-well-behaved utility function can explain it.
+and less when it is inexpensive, the observation graph contains a cycle, and no
+well-behaved utility function can rationalize the observed behavior.
 
 Dean & Martin (2016) applied GARP to 977 households' grocery scanner data
 across 38 product categories, finding marked heterogeneity in rationality
@@ -34,7 +34,7 @@ money an arbitrageur could extract from inconsistent shoppers.
 
 **What you'll learn:**
 
-- How to build preference graphs from grocery transactions
+- How to construct observation graphs from grocery transactions
 - The formal GARP test and three goodness-of-fit scores (CCEI, MPI, HM)
 - Exploratory analysis of real scanner data (Dunnhumby, 2,222 households)
 - How to segment customers by rationality and interpret the scores

@@ -46,8 +46,8 @@ better evaluation metric for recommender systems than RMSE or MAE.
 Formal Setup
 ------------
 
-Menu choice and the preference graph
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Menu choice and the item graph
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 A user faces :math:`T` sessions. In session :math:`t`, they see menu
 :math:`S_t \subseteq \{1, \ldots, N\}` (a subset of :math:`N` items in
@@ -60,7 +60,7 @@ to every other item in the menu:
 
    c_t \succ a \quad \forall \, a \in S_t \setminus \{c_t\}
 
-This builds an **item preference graph** :math:`G = (V, E)` where vertices
+This builds an **item graph** :math:`G = (V, E)` where vertices
 are items and edges are revealed preferences:
 
 .. math::
@@ -71,7 +71,7 @@ SARP
 ~~~~
 
 The **Strong Axiom of Revealed Preference** (Richter, 1966) requires that
-the transitive closure :math:`G^*` of the preference graph is acyclic:
+the transitive closure :math:`G^*` of the item graph is acyclic:
 
 .. math::
 
@@ -93,7 +93,7 @@ of observations to discard to restore consistency:
 
 HM = 1.0 means perfectly consistent. HM = 0.5 means half the observations
 must be discarded. This is equivalent to finding the maximum acyclic
-subgraph of the item preference graph (NP-hard in general, solved by
+subgraph of the item graph (NP-hard in general, solved by
 greedy feedback vertex set heuristic).
 
 Data
@@ -188,7 +188,7 @@ used in GARP). This is a key difference from budget-based analysis:
 
    SARP-TEST(menus M[1..T], choices c[1..T]):
    ───────────────────────────────────────────
-   1. BUILD ITEM PREFERENCE GRAPH              O(T × |S|)
+   1. BUILD ITEM GRAPH                         O(T × |S|)
       Initialize N×N matrix G ← 0
       For each session t = 1, ..., T:
         For each item a ∈ Mₜ, a ≠ cₜ:
