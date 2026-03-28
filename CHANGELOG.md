@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.5.4] - 2026-03-27
+
+### Fixed
+- `validate_consistency` docstring referenced non-existent `is_valid` and `inconsistencies` fields — now correctly documents `is_consistent` and `violations`
+- Install command in quickstart and README changed from `pip install prefgraph` to `pip install "prefgraph[datasets]"` — beginners no longer hit missing pandas on first run
+- HM (Houtman-Maks) in Python fallback returned `hm_consistent=0, hm_total=0` — now computes real values
+- `EngineResult` docstring described `hm_consistent / hm_total` as "noise fraction" — corrected to "rationalizable fraction"
+
+### Added
+- `HoutmanMaksResult.efficiency` property — returns fraction of rationalizable observations (`1 - fraction`), matching the polarity of `compute_menu_efficiency().efficiency_index`
+- User_id note in quickstart — clarifies that `analyze()` output has `user_id` as DataFrame index
+
 ## [0.5.3] - 2026-03-27
 
 ### Added
