@@ -77,11 +77,6 @@ html_theme_options = {
     "navigation_with_keys": True,
     "show_prev_next": False,
     "secondary_sidebar_items": [],  # no right sidebar anywhere
-    "docsearch": {
-        "app_id": "0YK1FHOEB7",
-        "api_key": "36d3f7cdefb246dd13544e79d2712cbd",
-        "index_name": "prefgraph",  # Make sure this matches the index name exactly in Algolia
-    },
 }
 
 # All pages get left sidebar with nav tree + in-page section TOC
