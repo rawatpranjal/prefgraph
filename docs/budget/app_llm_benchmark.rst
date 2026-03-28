@@ -1,35 +1,31 @@
 LLM Consistency
 ===============
 
-Do LLMs have stable action rankings, or does the ranking change depending
-on which alternatives are shown? We construct item graphs from LLM
-decisions and test for cycles.
+Do LLMs have stable action rankings, or does the ranking change when
+different alternatives are shown? We build preference graphs from LLM
+decisions and check for cycles.
 
 .. code-block:: text
 
-   Pipeline:
    ┌────────────┐    ┌────────────┐    ┌────────────┐    ┌────────────┐
    │ Vignettes  │───▶│ Query LLM  │───▶│ Build pref │───▶│ Test SARP  │
    │ (10 per    │    │ (15 menus  │    │ graph per  │    │ + IIA per  │
    │ scenario)  │    │ per vig.)  │    │ vignette   │    │ vignette   │
    └────────────┘    └────────────┘    └────────────┘    └────────────┘
 
-   5 scenarios × 5 prompts × 10 vignettes × 15 menus = 3,750 decisions (v2 det.)
-   + 20 reps at temp=0.7 = 75,000 decisions (v2 stochastic)
-
 Setup
 -----
 
-5 enterprise LLM deployment scenarios, each with 5 actions and 5 system
-prompt strategies. gpt-4o-mini at temp=0 (deterministic) and temp=0.7
-(stochastic, K=20 reps).
+5 enterprise scenarios, 5 actions each, 5 system prompts. gpt-4o-mini.
+For each vignette: fix the input, present all C(5,2)=10 pairwise menus
++ 5 size-3 menus. Deterministic (temp=0) and stochastic (temp=0.7, K=20).
 
 .. list-table::
    :header-rows: 1
    :widths: 18 82
 
    * - Scenario
-     - 5 Actions
+     - Actions
    * - Support
      - auto-reply KB, bug ticket, billing, account mgr, escalate VP
    * - Alert
@@ -43,14 +39,12 @@ prompt strategies. gpt-4o-mini at temp=0 (deterministic) and temp=0.7
 
 Prompts: *minimal, decision-tree, conservative, aggressive, chain-of-thought.*
 
-Results
--------
+Deterministic Results (temp=0)
+------------------------------
 
-For each vignette, we fix the input and vary only the menu. Preference
-graph cycles are genuine — the LLM's ranking depends on which alternatives
-are shown.
+Each cell = % of 10 vignettes where the preference graph is acyclic.
 
-.. list-table:: SARP pass rate by scenario × prompt (% of 10 vignettes, deterministic)
+.. list-table:: SARP pass rate by prompt
    :header-rows: 1
    :widths: 18 13 13 13 13 13 13
 
@@ -97,7 +91,7 @@ are shown.
      - 90
      - 84
 
-.. list-table:: SARP pass rate by vignette difficulty tier
+.. list-table:: SARP pass rate by vignette difficulty
    :header-rows: 1
    :widths: 18 16 16 16 16 16
 
@@ -138,14 +132,14 @@ are shown.
      - 80
      - 84
 
-.. list-table:: IIA violations and deterministic/stochastic agreement
+.. list-table:: IIA violations
    :header-rows: 1
    :widths: 20 15 15 20
 
    * -
-     - Det. IIA
-     - Stoch. IIA
-     - Det/Stoch agree
+     - Deterministic
+     - Stochastic
+     - Agreement
    * - Support
      - 3
      - 3
@@ -167,11 +161,14 @@ are shown.
      - --
      - --
 
-*Det. IIA = cycles from temp=0 choices. Stoch. IIA = cycles from majority-vote
-of K=20 reps at temp=0.7. Agreement = % of menus where both conditions pick
-the same action. -- = in progress.*
+*IIA violation = adding a third option flips the pairwise preference.
+Stochastic = majority-vote from K=20 reps. Agreement = % of menus
+where temp=0 and temp=0.7 majority match. -- = in progress.*
 
-.. list-table:: Stochastic SARP pass rate (majority-vote from K=20, temp=0.7)
+Stochastic Results (temp=0.7, K=20)
+------------------------------------
+
+.. list-table:: SARP pass rate (majority-vote)
    :header-rows: 1
    :widths: 18 13 13 13 13 13 13
 
@@ -203,22 +200,8 @@ the same action. -- = in progress.*
      - 86
      - 75
      - 78
-   * - Jobs
-     - --
-     - --
-     - --
-     - --
-     - --
-     - --
-   * - Procurement
-     - --
-     - --
-     - --
-     - --
-     - --
-     - --
 
-.. list-table:: % of menus with mixed responses (temp=0.7, K=20)
+.. list-table:: % of menus with mixed responses
    :header-rows: 1
    :widths: 18 13 13 13 13 13 13
 
@@ -251,66 +234,19 @@ the same action. -- = in progress.*
      - 18
      - 12
 
-Do Item Graphs Add Value?
---------------------------
+Findings
+--------
 
-Yes. Three findings that accuracy benchmarks do not capture:
-
-1. **Decoy effects exist in LLMs.** Introducing a third alternative changes the
-   ranking between two others in 15 instances for job screening. The item
-   graph detects this as a cycle. Accuracy testing cannot.
-
-2. **Consistency varies by scenario.** Alert triage (92%) vs job screening
-   (74%). This ordering follows from item graph structure (ordinal
-   actions produce fewer cycles), not task complexity.
-
-3. **Prompt effects are scenario-dependent.** Decision-tree prompts are
-   the most consistent on alert triage (100%) and least consistent on job screening
-   (60%). Conservative is most consistent on support (100%) but least on content
-   review (70%). Only per-vignette SARP testing reveals this.
-
-**Stochastic confirms deterministic.** At temp=0.7 with K=20 reps,
-97-98% of menus produce the same majority-vote choice as temp=0.
-Stochastic SARP pass rates are similar to deterministic (support 92%
-vs 88%, content 78% vs 82%). The preference graph structure is robust
-to sampling noise — cycles are structural, not stochastic artifacts.
-
-V1 Experiment (10,000 decisions)
----------------------------------
-
-An initial experiment (v1) queried gpt-4o-mini and o4-mini across the same 5
-scenarios and 5 prompts, collecting 10,000 total decisions (200 trials per
-scenario × prompt × model group).
-
-**Design:** Each trial used a *different* input vignette. SARP was tested
-across 200 pooled trials per group.
-
-**Results:**
-
-- All 50 groups (5 scenarios × 5 prompts × 2 models) failed SARP.
-- Item-level HM efficiency = 0.60 across all groups (3 of 5 items form the
-  largest consistent subset).
-- Observation-level HM efficiency ≈ 0.95 (95% of individual decisions are
-  locally rationalizable).
-- Permutation test p = 1.0 everywhere: violations are far fewer than random
-  choice, indicating structured preferences that fall short of full transitivity.
-- Both models were statistically indistinguishable on consistency.
-- No prompt strategy achieved a SARP pass in any group.
-
-**Confound:** Because the input vignette changed across trials, a reversal
-(choosing A over B on vignette-1, then B over A on vignette-2) may reflect
-correct context-dependent classification rather than genuine intransitivity.
-V1 conflates two sources of variation: input change and menu change.
-
-**What v1 established despite the confound:**
-
-1. LLMs exhibit structured preferences (far better than random) but not
-   perfect transitivity, even at temperature 0.
-2. Prompt strategy has no detectable effect on consistency at the pooled level.
-3. The two models are indistinguishable on rationality scores.
-
-V2 corrected the design by fixing the vignette and varying only the menu,
-enabling the per-vignette results reported above.
+- Job screening has the most preference graph cycles (74% pass, 15 IIA
+  violations). Adding a third candidate changes which of two is preferred.
+- Content moderation "clear" vignettes pass only 60%. Even unambiguous
+  posts produce menu-dependent severity judgments.
+- Decision-tree prompts score 60% on jobs, 100% on alert. Conservative
+  scores 100% on support, 70% on content. No universal best prompt.
+- Alert triage is the most consistent scenario (92%). Actions have a
+  clear ordinal structure.
+- At temp=0.7, 88-92% of menus produce identical choices across 20 reps.
+  Deterministic and stochastic results agree 97-98%.
 
 Reproduce
 ---------
@@ -321,41 +257,33 @@ Reproduce
    export OPENAI_API_KEY=your_key
    cd examples
 
-   # v1 pooled (10,000 calls, ~$5) — different vignette per trial
-   python -m applications.llm_benchmark.run_benchmark --all
-   python -m applications.llm_benchmark.analyze --all
-
-   # v2 deterministic (3,750 calls, ~$2) — fixed vignette, varied menu
+   # Deterministic (3,750 calls)
    python -m applications.llm_benchmark.v2.generate_vignettes --all
    python -m applications.llm_benchmark.v2.run_benchmark --all --stage 1
    python -m applications.llm_benchmark.v2.analyze --all
 
-   # v2 stochastic (75,000 calls, ~$40)
+   # Stochastic (75,000 calls)
    python -m applications.llm_benchmark.v2.run_benchmark --all --stage 2 --k 20
 
 Appendix
 --------
 
-Pipeline detail
-~~~~~~~~~~~~~~~
+Pipeline
+~~~~~~~~
 
 .. code-block:: text
 
-   1. VIGNETTES: 10 per scenario, curated across 4 tiers
-      (clear, binary, ambiguous, adversarial). Generated by gpt-4o-mini.
+   1. VIGNETTES: 10 per scenario, 4 tiers (clear, binary, ambiguous,
+      adversarial). Generated by gpt-4o-mini.
 
-   2. MENUS: For each vignette, present ALL C(5,2)=10 pairwise menus
-      + 5 size-3 menus = 15 menus. Same vignette, different options shown.
+   2. MENUS: C(5,2)=10 pairwise + 5 size-3 = 15 menus per vignette.
+      Same input, different options shown.
 
-   3. QUERY: For each (vignette, menu, prompt), call gpt-4o-mini.
-      Deterministic: temp=0, 1 response.
-      Stochastic: temp=0.7, K=20 responses.
+   3. QUERY: gpt-4o-mini. temp=0 (1 response) or temp=0.7 (K=20).
 
-   4. BUILD GRAPH: Each choice adds directed edges from chosen item
-      to all unchosen items in the menu. One graph per (vignette, prompt).
+   4. GRAPH: Each choice adds edges: chosen → each unchosen item.
 
-   5. TEST: SARP on the item graph (is it acyclic?).
-      IIA: compare pairwise choice in {A,B} vs A-vs-B in {A,B,C}.
+   5. TEST: SARP (acyclic?). IIA (pairwise vs triple comparison).
 
 Code
 ~~~~
@@ -370,8 +298,7 @@ Code
        choices=[r["choice"] for r in records],
    )
    result = validate_menu_sarp(log)
-   # result.is_consistent → bool
-   # result.violations → list of cycles in item graph
+   # result.is_consistent, result.violations
 
 Metrics
 ~~~~~~~
@@ -385,14 +312,14 @@ Metrics
      - Meaning
    * - SARP pass rate
      - 0--100%
-     - % of vignettes where item graph is acyclic
+     - % of vignettes with acyclic preference graph
    * - HM efficiency
      - 0--1
      - Fraction of items in largest acyclic subgraph
    * - IIA violations
      - 0--n
-     - Third option flips a pairwise edge direction
-   * - % mixed (stoch.)
+     - Adding a third option flips a pairwise preference
+   * - % mixed
      - 0--100%
      - % of menus with different choices across K reps
 
@@ -400,4 +327,4 @@ Limitations
 ~~~~~~~~~~~
 
 No ground truth (consistency ≠ accuracy). Synthetic vignettes. Single
-model family. Stochastic data still collecting for 2 scenarios.
+model family. Stochastic data collecting for 2 scenarios.
