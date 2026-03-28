@@ -73,46 +73,70 @@ We find that LLMs are mostly consistent: they usually pick the same thing even i
 
 .. list-table::
    :header-rows: 1
-   :widths: 18 20 18 16 18
+   :widths: 14 14 14 14 14 16 16 14
 
    * - Scenario
-     - SARP pass (det/stoch)
-     - IIA (det/stoch)
-     - Mixed menus (%)
-     - Det↔Stoch agree (%)
+     - SARP pass (%) — deterministic
+     - SARP pass (%) — stochastic
+     - IIA violations — deterministic
+     - IIA violations — stochastic
+     - Menus with mixed responses (%)
+     - Deterministic–stochastic agreement (%)
+     - RUM pass rate (%)
    * - Support
-     - 88 / 90
-     - 3 / 3
+     - 88
+     - 90
+     - 3
+     - 3
      - 11
      - 95.8
+     - 54
    * - Alert
-     - 92 / 90
-     - 2 / 3
+     - 92
+     - 90
+     - 2
+     - 3
      - 8
      - 96.6
+     - 74
    * - Content
-     - 82 / 76
-     - 9 / 12
+     - 82
+     - 76
+     - 9
+     - 12
      - 12
      - 95.5
+     - 60
    * - Jobs
-     - 74 / 78
-     - 15 / 14
+     - 74
+     - 78
+     - 15
+     - 14
      - 8
      - 97.6
+     - 62
    * - Procurement
-     - 84 / 83
-     - 8 / 6
+     - 84
+     - 83
+     - 8
+     - 6
      - 12
      - 97.7
+     - 61
 
 Preference graphs reveal what accuracy benchmarks miss: decoy/compromise
 effects (jobs), scenario‑dependent prompt effects (decision‑tree 100% on
 procurement but weak on jobs), and severity anchoring even on “clear” content
 inputs.
 
-*Det = temp=0 deterministic; Stoch = majority‑vote at temp=0.7 with K=20.
-Mixed menus = percent of menus with non‑unanimous responses across K reps.*
+*Definitions: SARP pass (deterministic) = percent of vignette–prompt pairs
+with an acyclic preference graph at temperature 0. SARP pass (stochastic)
+uses majority vote over K=20 samples at temperature 0. IIA violations count
+pairwise preference flips when a third option is added. Menus with mixed
+responses = percent of menus where the K stochastic responses are not all the
+same. Deterministic–stochastic agreement = percent of menus where the
+deterministic choice matches the stochastic majority. RUM pass rate aggregates
+frequencies over K samples and tests Random Utility Model consistency.*
 
 E-commerce Benchmarks
 ---------------------
