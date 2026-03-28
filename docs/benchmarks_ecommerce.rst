@@ -22,8 +22,7 @@ Roadmap
 - :ref:`Setup <eco-setup>`: datasets, targets, models, and splits
 - :ref:`Datasets & assumptions <eco-assumptions>`: what each dataset measures
 - :ref:`How to read <eco-how-to-read>`: Baseline, +RP, RP‑only, Lift
-- :ref:`Results <eco-results>`: full table with RP‑only highlights
-- :ref:`RP‑only performance <eco-rp-only>`: where RP carries independent signal
+- :ref:`Results <eco-results>`: full table with RP‑only column
 - :ref:`Findings <eco-findings>`: practical takeaways
 - :ref:`Top features <eco-top-features>`: what matters across tasks
 - :ref:`Reproduce <eco-reproduce>` and :ref:`Appendix <eco-appendix>`: pipeline and code
@@ -212,47 +211,6 @@ Results
 added. RP-only = RP features without baseline. On Taobao, RP-only (0.925)
 outperforms the engagement baseline (0.913) — graph transitivity and choice
 entropy capture patterns that session counts miss.*
-
-.. _eco-rp-only:
-
-RP-only performance
--------------------
-
-RP features alone (no baseline) show where preference structure carries
-independent signal.
-
-.. list-table::
-   :header-rows: 1
-   :widths: 22 28 14 14
-
-   * - Dataset
-     - Target
-     - RP-only
-     - Baseline
-   * - Taobao
-     - High Engagement
-     - 0.925
-     - 0.913
-   * - REES46
-     - High Engagement
-     - 0.990
-     - 0.996
-   * - Instacart
-     - High Novelty
-     - 0.762
-     - 0.765
-   * - H&M
-     - High Spender
-     - 0.720
-     - 0.784
-   * - Open E-Commerce
-     - Churn
-     - 0.769
-     - 0.846
-
-On Taobao, RP‑only outperforms the engagement baseline. Preference graph
-transitivity and choice entropy capture patterns that session counts and menu
-sizes miss.
 
 .. _eco-findings:
 
