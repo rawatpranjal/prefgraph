@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+## [0.5.14] - 2026-03-28
+
+### Added
+- Docs: fixed hallucinated parameters in docs (e.g., `test_income_invariance`).
+- Docs: simplified LLM benchmark TL;DR and removed flawed stochastic majority-vote section.
+
 ### Changed
 - CI: restore docs build workflow with strict Sphinx (-W --keep-going) and upload HTML artifact on every push/PR. Cleaned Sphinx warnings (added orphans, fixed tables/underlines, removed stray directives) so CI stays green. RTD continues to publish via `.readthedocs.yaml`.
 - Docs: fleshed out REES46 dataset entry in `docs/benchmarks_ecommerce.rst` with full sentences and explicit raw-data → choice-set conversion steps (views-only menus ∪ purchased item, single-purchase sessions, 2–50 menu-size filter, ≥5 sessions/user, per-user item remapping, impression-bias note).

@@ -443,6 +443,14 @@ noise.
 Replication
 -----------
 
+All vignettes and LLM responses are bundled in the repository — no API key needed to reproduce the analysis:
+
+- `Vignettes (JSONL) <https://github.com/rawatpranjal/PrefGraph/tree/main/examples/applications/llm_benchmark/v2/data/vignettes>`_
+- `Responses (JSONL) <https://github.com/rawatpranjal/PrefGraph/tree/main/examples/applications/llm_benchmark/v2/data/responses>`_
+- `Results (JSON) <https://github.com/rawatpranjal/PrefGraph/tree/main/examples/applications/llm_benchmark/v2/data/results>`_
+
+To regenerate from scratch (requires OpenAI API key):
+
 .. code-block:: bash
 
    pip install prefgraph openai
