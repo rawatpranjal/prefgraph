@@ -13,7 +13,7 @@
 
 ### Added
 - Read the Docs config `.readthedocs.yaml` to ensure RTD builds consistently with pinned dependencies and without compiling the Rust extension.
-- GitHub Actions workflow `docs.yml` to build Sphinx docs on every push/PR to `main` (catches doc issues before RTD).
+- GitHub Actions workflow `docs.yml` was added to build Sphinx docs on push/PR, but has now been removed to prevent CI failures; RTD remains the source of truth for docs builds.
 
 ## [0.5.13] - 2026-03-28
 
