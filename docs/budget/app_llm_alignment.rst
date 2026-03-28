@@ -4,18 +4,7 @@ LLM Prompt Consistency
 A controlled experiment testing whether different system prompts cause
 LLMs to make inconsistent choices when selecting from package menus.
 
-.. raw:: html
 
-   <div style="margin: 1.5em 0;"></div>
-
-.. image:: ../_static/app_llm_hero.jpg
-   :width: 70%
-   :align: center
-   :alt: AI provider logos - OpenAI, Anthropic, Gemini, Meta, Mistral, Cohere
-
-.. raw:: html
-
-   <div style="margin: 1.5em 0;"></div>
 
 Introduction
 ------------
@@ -285,4 +274,3 @@ Limitations
   Parse failures (malformed responses) are excluded from analysis.
 - 100 trials per prompt may be insufficient for rare menu combinations.
   Increase trials for production-grade audits.
-
