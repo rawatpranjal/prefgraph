@@ -46,13 +46,9 @@ Prompts: *minimal, decision-tree, conservative, aggressive, chain-of-thought.*
 Results
 -------
 
-**v1 (pooled, 10K decisions):** Each trial uses a different input. SARP
-tested across 200 mixed inputs per group. 50/50 fail — but this reflects
-correct classification, not inconsistency. Design flaw.
-
-**v2 (per-vignette, 3.75K decisions):** Fix the input, vary only the menu.
-Now preference graph cycles are genuine — the LLM's ranking depends on
-which alternatives are shown.
+For each vignette, we fix the input and vary only the menu. Preference
+graph cycles are genuine — the LLM's ranking depends on which alternatives
+are shown.
 
 .. list-table:: SARP pass rate by scenario × prompt (% of 10 vignettes, deterministic)
    :header-rows: 1
