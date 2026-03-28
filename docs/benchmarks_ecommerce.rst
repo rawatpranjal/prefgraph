@@ -161,13 +161,6 @@ Results
      - 0.990
    * - Taobao
      - 29,519
-     - Pref Drift (AP)
-     - 0.940
-     - 0.938
-     - -0.2%
-     - -
-   * - Taobao
-     - 29,519
      - High Entropy (AP)
      - 0.789
      - **0.790**
