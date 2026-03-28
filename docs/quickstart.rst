@@ -39,7 +39,6 @@ Wide format means one row per observation with separate price and quantity colum
 
    # Example schema: user_id, t, p_milk, p_bread, q_milk, q_bread
    path = "my_budget_wide.parquet"
-   df = pl.read_parquet(path)
 
    engine = Engine(metrics=["garp", "ccei", "mpi", "hm"])  # batch, Rust-backed
    results_df = engine.analyze_parquet(
@@ -62,7 +61,6 @@ Long format means one row per (user, time, item) with columns for item id, price
 
    # Example schema: user_id, t, item, price, quantity
    path = "my_budget_long.parquet"
-   df = pl.read_parquet(path)
 
    engine = Engine(metrics=["garp", "ccei", "mpi", "hm"])  # batch, Rust-backed
    results_df = engine.analyze_parquet(
@@ -150,5 +148,5 @@ For clickstream data, build menus from what the user actually saw (e.g., viewed 
            user_batches.append((menus, choices, n_items))
 
    engine = Engine(metrics=["hm"])  # SARP/WARP/HM etc.
-   menu_df = engine.analyze_menus(user_batches)
-   print(menu_df[:3])
+   results = engine.analyze_menus(user_batches)  # list[MenuResult]
+   print(results[:3])
