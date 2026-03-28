@@ -28,8 +28,8 @@ def gen_deterministic():
     def update(f):
         ax.clear()
         ax.set_facecolor(PALETTE["bg"])
-        ax.set_xlim(-2.0, 2.0)
-        ax.set_ylim(-1.5, 1.5)
+        ax.set_xlim(-2.5, 2.5)
+        ax.set_ylim(-2.0, 2.0)
         ax.axis("off")
         ax.set_title("Deterministic\nMenuChoiceLog", fontsize=12, fontweight="bold", pad=10, color="#333")
         
@@ -42,7 +42,7 @@ def gen_deterministic():
                 draw_box(ax, 0, y, item, 2.0, 0.4, "white", PALETTE["secondary"])
     
     anim = FuncAnimation(fig, update, frames=frames, interval=250)
-    anim.save(out_dir / "deterministic.gif", writer="pillow", dpi=DPI)
+    anim.save(out_dir / "deterministic.gif", writer="pillow", dpi=DPI, savefig_kwargs={'transparent': True})
     plt.close(fig)
 
 # 2. Stochastic
@@ -53,8 +53,8 @@ def gen_stochastic():
     def update(f):
         ax.clear()
         ax.set_facecolor(PALETTE["bg"])
-        ax.set_xlim(-2.0, 2.0)
-        ax.set_ylim(-1.5, 1.5)
+        ax.set_xlim(-2.5, 2.5)
+        ax.set_ylim(-2.0, 2.0)
         ax.axis("off")
         ax.set_title("Stochastic\nStochasticChoiceLog", fontsize=12, fontweight="bold", pad=10, color="#333")
         
@@ -73,7 +73,7 @@ def gen_stochastic():
                 ax.add_patch(rect)
     
     anim = FuncAnimation(fig, update, frames=frames, interval=250)
-    anim.save(out_dir / "stochastic.gif", writer="pillow", dpi=DPI)
+    anim.save(out_dir / "stochastic.gif", writer="pillow", dpi=DPI, savefig_kwargs={'transparent': True})
     plt.close(fig)
 
 # 3. Risk
@@ -83,8 +83,8 @@ def gen_risk():
     def update(f):
         ax.clear()
         ax.set_facecolor(PALETTE["bg"])
-        ax.set_xlim(-2.0, 2.0)
-        ax.set_ylim(-1.5, 1.5)
+        ax.set_xlim(-2.5, 2.5)
+        ax.set_ylim(-2.0, 2.0)
         ax.axis("off")
         ax.set_title("Risk / Lotteries\nRiskChoiceLog", fontsize=12, fontweight="bold", pad=10, color="#333")
         
@@ -99,7 +99,7 @@ def gen_risk():
             ax.text(1.3, -0.6, "✓", color=PALETTE["highlight"], fontsize=16, va="center")
             
     anim = FuncAnimation(fig, update, frames=frames, interval=250)
-    anim.save(out_dir / "risk.gif", writer="pillow", dpi=DPI)
+    anim.save(out_dir / "risk.gif", writer="pillow", dpi=DPI, savefig_kwargs={'transparent': True})
     plt.close(fig)
 
 if __name__ == '__main__':
