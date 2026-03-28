@@ -233,6 +233,15 @@ class HoutmanMaksResult(ResultDisplayMixin, ResultPlotMixin):
         return len(self.removed_observations)
 
     @property
+    def efficiency(self) -> float:
+        """Fraction of observations that are rationalizable (1 - fraction).
+
+        Matches the polarity of ``compute_menu_efficiency().efficiency_index``:
+        1.0 = fully consistent, lower = more observations removed.
+        """
+        return 1.0 - self.fraction
+
+    @property
     def is_consistent(self) -> bool:
         """True if no observations need to be removed (data satisfies GARP)."""
         return self.fraction == 0.0
