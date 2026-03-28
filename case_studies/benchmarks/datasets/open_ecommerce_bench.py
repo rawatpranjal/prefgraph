@@ -81,7 +81,7 @@ def load_and_prepare(data_dir=None, n_users=None):
         "High Spender": (high_spender, "classification"),
         "Churn": (churn, "classification"),
         "Spend Change": (spend_change, "regression"),
-        "Future LTV": (test_total_spends, "regression"),
+        "Future LTV": (test_mean_spends, "regression"),
     }
 
     return X_rp, X_base, targets_dict, user_ids

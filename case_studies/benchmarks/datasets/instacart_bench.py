@@ -87,7 +87,7 @@ def load_and_prepare(data_dir=None, max_users=50000):
         "Spend Drop": (np.array(targets["spend_drop"]), "classification"),
         "High Value": (high_value, "classification"),
         "Basket Size": (np.array(targets["basket_size"]), "regression"),
-        "Future LTV": (test_qtys, "regression"),
+        "Future LTV": (np.array(targets["basket_size"]), "regression"),
     }
 
     return X_rp, X_base, targets_dict, user_ids
