@@ -1,3 +1,5 @@
+:orphan:
+
 Grocery Scanner Data
 ====================
 
@@ -686,4 +688,4 @@ Limitations
   irrational about electronics (Chen et al. 2025, arXiv:2505.05275).
 - With 10 product categories and 50+ observations, GARP has high power
   to detect violations even from slight preference noise.
-
+:orphan:

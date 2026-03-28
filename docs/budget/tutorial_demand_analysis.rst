@@ -1,3 +1,5 @@
+:orphan:
+
 Tutorial 4: Demand Analysis
 ============================
 
@@ -1433,3 +1435,4 @@ See Also
 - :doc:`tutorial_welfare` - Welfare analysis using demand functions
 - :doc:`/api` - Full API documentation
 - :doc:`/budget/theory_advanced` - Mathematical foundations (Chapters 6, 9)
+:orphan:

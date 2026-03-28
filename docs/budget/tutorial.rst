@@ -1,3 +1,5 @@
+:orphan:
+
 Tutorial 1: Budget-Based Analysis
 ==================================
 
@@ -1122,3 +1124,4 @@ See Also
 - :doc:`tutorial_ecommerce` - E-commerce application
 - :doc:`/api` - API documentation
 - :doc:`/budget/theory_consistency` - Mathematical foundations
+:orphan:

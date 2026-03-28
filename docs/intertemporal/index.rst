@@ -1,3 +1,5 @@
+:orphan:
+
 Intertemporal
 =============
 
@@ -23,3 +25,4 @@ Examples
    :maxdepth: 1
 
    examples
+:orphan:

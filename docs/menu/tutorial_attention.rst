@@ -1,3 +1,5 @@
+:orphan:
+
 Tutorial 7: Revealed Attention
 ===============================
 
@@ -1002,3 +1004,4 @@ See Also
 - :doc:`tutorial_stochastic` - Stochastic choice models (RUM, IIA)
 - :doc:`theory_attention` - Mathematical foundations of limited attention
 - :doc:`/references` - Academic papers on attention models
+:orphan:

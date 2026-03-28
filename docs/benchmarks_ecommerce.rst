@@ -16,9 +16,7 @@ combine a 13 feature baseline that covers RFM, concentration, and trends with
 42 revealed preference features, split into 14 RP Engine features and 28 RP
 Extended features. These include GARP, CCEI, MPI, HARP, HM, VEI, graph density
 and transitivity, utility recovery metrics such as Gini and CV, choice entropy,
-and ordinal utility. Models use CatBoost with default hyperparameters. The split uses an 80 to 20
-user holdout, five fold stratified cross validation, and bootstrap confidence
-intervals on lift.
+and ordinal utility. Models use CatBoost with default hyperparameters. The split uses a per-user temporal divide (first 70% features, last 30% targets) followed by an 80/20 user holdout and bootstrap confidence intervals on lift.
 
 The hardest part is reconstructing the choice set and the observed choices.
 For budgets, prices and quantities must reflect what the customer could have
@@ -191,7 +189,7 @@ Appendix: Datasets & Assumptions
 
 **REES46.** 8,832 users with server-defined shopping sessions (gold standard boundaries). Menu-based RP with one observation per session: the menu is the set of products the user viewed in that session, and the choice is the single purchased product in that session. Raw logs include `event_time`, `event_type` (view/cart/purchase), `product_id`, and `user_session`; the loader keeps only view and purchase events, groups by `user_session`, and retains sessions with exactly one purchase and at least one view. For each kept session it forms the menu as the union of viewed items and the purchased item (to guarantee the chosen item is in the menu even if the platform did not log an explicit pre-buy view), then filters to menu sizes 2–50 to exclude non-choices and degenerate sessions. Users must have ≥ 5 valid sessions; item IDs are remapped to 0..N−1 per user for compact graphs. This construction reflects “what the user actually saw” (impression bias: unseen catalog items are not in the menu). Median menu size is about five items. There are no prices, so results describe within-menu preference orderings only (WARP/SARP/Congruence et al.), not willingness-to-pay.
 
-**Taobao (Buy Window).** ~29.5k users built from UserBehavior.csv (user_id, item_id, category_id, behavior_type, timestamp). Keep only view and buy events. For each buy at time t, define a trailing 6-hour window [t−6h, t); the menu is the set of unique items viewed in that window (pre-buy only), and the choice is the bought item. Require that the bought item was viewed; keep menus of size 2–50. Aggregate each user's buy-anchored observations into a single MenuChoiceLog with per-user item remapping; require ≥5 valid observations. Assumptions: views approximate the considered set (impression bias: unseen alternatives are unobserved); 6-hour window is a pragmatic simultaneity proxy (shorter/longer windows yield similar patterns); post-purchase views are excluded; exposure is observational (not randomized). Train/test uses a per-user temporal split (70/30) with separate remappings to avoid leakage.
+**Taobao.** ~29.5k users built from UserBehavior.csv (user_id, item_id, category_id, behavior_type, timestamp). Keep only view and buy events. For each buy at time t, define a trailing 6-hour window [t−6h, t); the menu is the set of unique items viewed in that window (pre-buy only), and the choice is the bought item. Require that the bought item was viewed; keep menus of size 2–50. Aggregate each user's buy-anchored observations into a single MenuChoiceLog with per-user item remapping; require ≥5 valid observations. Assumptions: views approximate the considered set (impression bias: unseen alternatives are unobserved); 6-hour window is a pragmatic simultaneity proxy (shorter/longer windows yield similar patterns); post-purchase views are excluded; exposure is observational (not randomized). Train/test uses a per-user temporal split (70/30) with separate remappings to avoid leakage.
 
 **Taobao (Session-based).** 4,239 users, ~100M raw events. Menu-based RP with sessions defined by 30-minute inactivity gaps (84% of inter-event gaps < 30 minutes). For each session, build a menu from the items the user viewed or purchased within that session; median menu size ≈ 4 items. No prices - choices reveal within-session preference orderings only.
 
@@ -209,8 +207,6 @@ On budget datasets, RP adds roughly zero marginal lift over strong RFM
 baselines. Measures such as CCEI and MPI correlate with spending history,
 so they contribute little independent predictive power when the baseline
 already encodes that history.
-
-
 
 Looking at feature importance, baseline spend features dominate in most
 global models. RP features rise near the top on menu tasks. The menu
@@ -245,58 +241,6 @@ Reproduce
 
 Datasets require ``kaggle`` CLI. See ``case_studies/benchmarks/`` for details.
 
-----
-
-Amazon (Open E‑Commerce) variation diagnostics (Polars fast-path): in our runs with ~4.7k users (50 goods; median T≈34 months), almost all users exhibit ≥3 distinct price vectors, GARP passes around 2.9%, and CCEI spans p25≈0.300, p50≈0.424, p75≈0.567, p95≈0.855 (tooling: tools/open_ecommerce_polars_variation.py).
-
-Latest ML benchmark (Amazon, ~5k users)
-- Users: 4,668 (after train/test split constraints)
-
-  - Targets and results
-  - High Spender (classification)
-    - AUC: RP=0.932, Base=0.940, Combined=0.942, Lift=+0.002
-  - Spend Drop (classification)
-    - AUC: RP=0.684, Base=0.784, Combined=0.798, Lift=+0.014
-  - Spend Change (regression)
-    - R2: RP=-0.032, Base=0.144, Combined=0.091
-  - Future LTV (regression)
-    - R2: RP=0.387, Base=0.633, Combined=0.622
-
-- Read: Combined modestly improves “Spend Drop”; baseline dominates for LTV and
-  Spend Change; RP alone underperforms baseline on those.
-
-**H&M.** 46,757 customers, 31.8M transactions (2018‑09 to 2020‑09). Budget‑based
-RP. Each customer’s purchases in a month define one choice occasion. Articles map
-to 20 coarse product groups (first two digits of article_id). Quantity per group
-is the article‑row count - each CSV row is one purchased unit. Price per group is
-the customer’s own average paid price that month. Unpurchased groups are imputed
-via period‑group median → group median → global median, because RP tests require
-a full price vector to compare what a customer could have afforded across
-observations. This per‑customer price construction preserves individual variation,
-unlike the shared oracle used for Dunnhumby and Open E‑Commerce. Prices are
-normalized 0–1 (Kaggle): relative variation is real, absolute dollar levels are
-not. Filters: ≥ 6 active months, ≥ 10 total observations. Sales channel ignored.
-
-
-**REES46.** 8,832 users, click-to-purchase sessions. Menu-based RP.
-Server-defined session IDs (gold standard). Menus contain only items the user
-clicked; unviewed items are invisible. Median menu size ~5 items. No prices -
-choices reveal preference orderings only.
-
-**Taobao.** 100M raw events (pv, buy). Buy‑anchored menu reconstruction:
-for each buy at time ``t``, define a trailing window ``[t−6h, t)``;
-menu = unique items viewed (pv) in that window; choice = the bought item.
-Require the bought item was viewed; keep menus of size 2–50 only. Build per‑user
-logs from all such observations; retain users with ≥5 observations. Item IDs are
-remapped to a compact per‑user space. No prices - analysis is ordinal.
-
-Assumptions: views approximate the considered set (impression bias: unseen
-alternatives are unobserved); 6‑hour window is a pragmatic simultaneity proxy
-(shorter/longer windows yield similar patterns); post‑purchase views are excluded;
-exposure is observational (not randomized).
-
-**Taobao (Session‑based).** 4,239 users, ~100M raw events. Menu‑based RP with sessions defined by 30‑minute inactivity gaps (84% of inter‑event gaps < 30 minutes). For each session, build a menu from the items the user viewed or purchased within that session; median menu size ≈ 4 items. No prices - choices reveal within‑session preference orderings only.
-
 Appendix: Pipeline
 ------------------
 
@@ -313,13 +257,18 @@ Appendix: Pipeline
               graph network (density, transitivity, cycles), MPI cycle costs,
               choice reversals, choice entropy, congruence, ordinal utility
      -> CatBoost (random_seed=42, default hyperparameters)
-     -> 5-fold stratified CV
-     -> Metrics: AUC-ROC, AUC-PR, Log Loss, F1
+     -> 80/20 User Holdout (stratified for classification) with Bootstrap CI 
+     -> Metrics: AUC-ROC, AUC-PR, R², Lift %
 
-**Three models per target**: (a) Baseline only, (b) RP only, (c) Baseline + RP.
+**Three models per dataset/target pair**: (a) Baseline only, (b) RP only, (c) Baseline + RP.
 
-**Targets**: High Spender (top tercile spend), Future Spend (regression),
-Spend Change (regression), High Engagement (top tercile sessions).
+**Predicted Targets**:
+  - **High Spender (Classification)**: User ranks in the top tercile of total expenditure during the 30% target period.
+  - **Future Spend / LTV (Regression)**: Continuous prediction of exact dollars or units spent by the user in the target period.
+  - **Spend Change (Regression)**: Predicting the ratio or absolute difference in the user's spending from the feature period to the target period.
+  - **Spend Drop / Churn (Classification)**: The user drops their spending or engagement volume aggressively below a defined safety threshold.
+  - **High Engagement (Classification)**: User ranks in the top tercile of total user sessions or views during the target period. 
+  - **High Entropy / Pref Drift (Classification)**: The user's target-period choices show high diversity across products or significantly shift from their historical baseline.
 
 **Output**: ``case_studies/benchmarks/output/results.json`` (full metrics),
 ``summary_table.csv``, ``figures/``.

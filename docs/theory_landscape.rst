@@ -157,3 +157,13 @@ Abbreviations
 - **vNM**: von Neumann & Morgenstern (1944)
 
 See :doc:`/references` for full bibliography.
+
+Contents
+--------
+
+.. toctree::
+   :maxdepth: 1
+   :caption: Sections
+
+   production/index
+   intertemporal/index

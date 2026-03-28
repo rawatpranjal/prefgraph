@@ -235,12 +235,10 @@ Full results: :doc:`benchmarks_ecommerce`.
    * - Taobao Buy Window
      - 29,519
      - High Active Time (AUC)
-   - 0.777
+     - 0.777
      - 0.778
      - +0.1%
      - -
-
-.. rtd-rebuild: no-op comment to trigger RTD build
    * - Taobao Buy Window
      - 29,519
      - High Click Volume (AUC)
@@ -298,5 +296,6 @@ Benchmarked on synthetic data, T=15 observations, 10 goods, M1 Mac:
    benchmarks
    algorithms
    performance
+   theory_landscape
    api
    references
