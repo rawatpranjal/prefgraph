@@ -20,11 +20,9 @@ import pandas as pd
 from case_studies.benchmarks.config import SEED
 
 
-LGBM_PARAMS = {
-    "random_state": SEED,
-    "verbose": -1,
-    "colsample_bytree": 0.8,
-    "min_child_samples": 50,
+MODEL_PARAMS = {
+    "random_seed": SEED,
+    "verbose": 0,
 }
 
 
@@ -135,7 +133,7 @@ def run_three_way(
     import time as _time
     _t0 = _time.time()
 
-    import lightgbm as lgb
+    from catboost import CatBoostClassifier, CatBoostRegressor
     from sklearn.model_selection import train_test_split
     from sklearn.metrics import roc_auc_score, average_precision_score, r2_score
 
@@ -181,7 +179,7 @@ def run_three_way(
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
             if task_type == "classification":
-                model = lgb.LGBMClassifier(**LGBM_PARAMS)
+                model = CatBoostClassifier(**MODEL_PARAMS)
                 model.fit(X_tr, y_train)
                 y_prob = model.predict_proba(X_te)[:, 1]
                 try:
@@ -195,7 +193,7 @@ def run_three_way(
                 metrics[name] = {"auc": auc, "ap": ap}
                 test_preds[name] = y_prob
             else:
-                model = lgb.LGBMRegressor(**LGBM_PARAMS)
+                model = CatBoostRegressor(**MODEL_PARAMS)
                 model.fit(X_tr, y_train)
                 y_pred = model.predict(X_te)
                 metrics[name] = {"r2": float(r2_score(y_test, y_pred))}
