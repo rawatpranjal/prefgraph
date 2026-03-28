@@ -75,9 +75,9 @@ We find that LLMs are mostly consistent: they usually pick the same thing even i
    :header-rows: 1
    :widths: 30 30 30
 
-   * - Scenario
-     - Deterministic SARP (%)
-     - Stochastic RUM (%)
+   * - Operational Scenario
+     - Perfect Consistency (%)
+     - Probabilistic Consistency (%)
    * - Support
      - 88
      - 54

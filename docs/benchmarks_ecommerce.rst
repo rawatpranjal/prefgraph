@@ -11,10 +11,7 @@ Setup
 We evaluate two data types: budgets with prices and menus without prices. The
 targets include classification tasks such as High Spender, High Engagement, Low
 Loyalty, and High Novelty, as well as regression tasks for Future Spend and
-Spend Change. Targets use top tercile thresholds for consistency. Features
-combine a 13 feature baseline that covers RFM, concentration, and trends with
-42 revealed preference features, split into 14 RP Engine features and 28 RP
-Extended features. These include GARP, CCEI, MPI, HARP, HM, VEI, graph density
+Spend Change. Targets use top tercile thresholds for consistency. Features combine a 13-feature baseline (covering recency, frequency, monetary value, concentration, and trends) with 42 Revealed Preference (RP) features. These include GARP, CCEI, MPI, HARP, HM, VEI, graph density
 and transitivity, utility recovery metrics such as Gini and CV, choice entropy,
 and ordinal utility. Models use CatBoost with default hyperparameters. The split uses a per-user temporal divide (first 70% features, last 30% targets) followed by an 80/20 user holdout and bootstrap confidence intervals on lift.
 
@@ -43,7 +40,7 @@ and ordinal utility. Models use CatBoost with default hyperparameters. The split
         - 2 (7%)
         - Same two features, 82% NaN (buy-window sessions are sparse — few choices per user make the ordinal utility LP under-constrained)
 
-   The vast majority of RP features are fully populated: 50/59 on Dunnhumby, 25/27 on REES46 and Taobao. The null issue is narrow — it affects only utility-recovery and ordinal-utility features, which require a feasible LP solve. The remaining features (GARP, CCEI, MPI, HM, VEI, graph density, transitivity, entropy, etc.) are always non-null. All NaN values are imputed with the per-feature train-set median before model training; the handful of high-null features carry little signal after imputation.
+   The vast majority of RP features are fully populated: 50/59 on Dunnhumby, 25/27 on REES46 and Taobao. This issue is quite isolated; it primarily affects utility-recovery and ordinal features which mathematically require a minimum number of intersecting choices to solve smoothly. The remaining features (GARP, CCEI, MPI, HM, VEI, graph density, transitivity, entropy, etc.) are always non-null. All NaN values are imputed with the per-feature train-set median before model training; the handful of high-null features carry little signal after imputation.
 
 The hardest part is reconstructing the choice set and the observed choices.
 For budgets, prices and quantities must reflect what the customer could have
@@ -57,14 +54,12 @@ honestly, we have to make good assumptions and hope they are right.
 How to read the results
 -----------------------
 
-Baseline uses CatBoost on 13 RFM features. +RP adds 42 revealed
-preference features to that baseline, while RP only removes the baseline and
-uses only the RP features. Lift percent is defined as (Combined minus Baseline)
-divided by Baseline times 100. Classification tasks report AUC ROC, and some
-menu tasks also show AUC PR. Regression tasks report R squared. As a rule of
-thumb, RP adds signal when +RP is greater than Baseline and RP only is close to
-Baseline. When RP only is smaller than Baseline and +RP is about the same as
-Baseline, the baseline already captures the structure.
+- **Baseline**: A standard model built purely on basic spending history (recency, frequency, monetary value).
+- **+RP**: The baseline model supplemented with our 42 Revealed Preference features.
+- **Lift %**: The percentage improvement gained by adding Revealed Preference features.
+- **RP-only**: A model running strictly on Revealed Preference features, with all baseline history removed.
+
+As a rule of thumb, Revealed Preference provides genuine new signal if **+RP** noticeably outperforms the **Baseline**, and if **RP-only** remains competitive. If the **Baseline** and **+RP** scores are nearly identical, it means traditional spending history already effectively captured the necessary patterns.
 
 .. _eco-results:
 
@@ -80,7 +75,7 @@ Results
      - Target
      - Baseline
      - +RP
-     - Lift%
+     - Lift %
      - RP-only
    * - Dunnhumby
      - 2,222
