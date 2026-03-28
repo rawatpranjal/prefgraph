@@ -134,35 +134,35 @@ Results
      - 0.996
      - +0.0%
      - 0.990
-   * - Taobao (Buy Window)
+   * - Taobao Buy Window
      - 29,519
      - Pref Drift (AP)
      - 0.940
      - 0.938
      - -0.2%
      - —
-   * - Taobao (Buy Window)
+   * - Taobao Buy Window
      - 29,519
      - High Entropy (AP)
      - 0.789
      - **0.790**
      - **+0.1%**
      - —
-   * - Taobao (Buy Window)
+   * - Taobao Buy Window
      - 29,519
      - High Active Time (AUC)
      - 0.777
      - 0.778
      - +0.1%
      - —
-   * - Taobao (Buy Window)
+   * - Taobao Buy Window
      - 29,519
      - High Click Volume (AUC)
      - 0.818
      - 0.818
      - +0.0%
      - —
-   * - Taobao (Buy Window)
+   * - Taobao Buy Window
      - 29,519
      - Fast Conversion (AUC)
      - 0.561
@@ -176,45 +176,18 @@ RP features contribute modest lift on structural targets; engagement/volume
 targets remain baseline‑dominated.*
 
 
-How The Taobao Choice Data Is Built (Buy‑Anchored)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.. _eco-appendix:
 
-Raw events
-  - File: ``UserBehavior.csv`` with rows ``(user_id, item_id, category_id, behavior_type, timestamp)``.
-  - We keep only ``pv`` (view) and ``buy`` events and sort by ``(user_id, timestamp)``.
+Appendix: Datasets & Assumptions
+--------------------------------
 
-Observation construction (6‑hour window)
-  - For each buy at time ``t_buy``, define a trailing window ``[t_buy − 6h, t_buy)``.
-  - Menu = unique items viewed in this window (pre‑buy only). Choice = the bought item.
-  - Require the bought item was viewed in the window; drop otherwise.
-  - Keep observations with menu size in ``[2, 50]``.
+**Dunnhumby.** 2,222 households, 104 weeks, 10 staple commodity groups. Budget-based RP. Each observation is one active household-week — weeks with zero purchases in tracked categories are excluded, since they represent spending outside the sub-basket, not zero demand. Quantities are total units per commodity per week. Prices are a global median oracle per commodity per week (Dean & Martin 2016), shared across all households — individual price exposure (coupons, store variation) is not captured. RP outputs should be interpreted as reduced-form consistency descriptors of conditional sub-basket allocation, not structural preference parameters.
 
-Per‑user logs and qualification
-  - Collect all buy‑anchored observations for a user as one MenuChoiceLog.
-  - Users must have at least 5 valid observations (``min_sessions=5``).
-  - Item IDs are remapped to a compact per‑user space (0..N‑1) to ensure stable graph ops.
+**Open E‑Commerce.** 4,668 users, category-level quantities. Budget-based RP. Median price per category per month, forward-filled for missing periods, shared across users. Within-category product switching is invisible. RP features underperform the RFM baseline on regression tasks (LTV, Spend Change) but show lift on Spend Drop, suggesting category allocation shifts can precede volume declines.
 
-Why buy‑anchored windows (vs. whole sessions)
-  - Whole‑session, pre‑buy menus (with a 30‑minute inactivity session boundary) are very clean but too sparse per user.
-  - Extending the session gap to 60–180 minutes does not materially increase clean, pre‑buy observations.
-  - Buy‑anchored windows preserve the economic idea (simultaneous availability right before purchase) and produce thousands of qualifying users while enforcing “buy was viewed”.
+**REES46.** 8,832 users, click-to-purchase sessions. Menu-based RP. Server-defined session IDs (gold standard). Menus include only items the user clicked; unviewed items are invisible. Median menu size ≈ 5 items. No prices — choices reveal preference orderings only.
 
-Train/test protocol (leakage‑safe)
-  - Per‑user temporal split: first 70% of observations → features, last 30% → targets. Each half gets its own item remapping.
-  - User holdout: 80/20 split across users (stratified for classification).
-  - Thresholds (e.g., top/bottom tercile) are computed on TRAIN users only, then applied to TEST; labels are re‑binarized with the train‑only threshold in the evaluation routine.
-  - Features: Baseline engagement stats + RP features from ``Engine.analyze_menus`` (SARP/WARP/HM, graph structure). Extended menu RP features are computed per user.
-
-Target definitions (examples)
-  - Pref Drift: 1 if the fraction of unique choices increases in the test window vs. train.
-  - Choice Entropy: normalized entropy of test‑window choice distribution (top tercile = High Entropy).
-  - Active Time: capped sum of inter‑event gaps within each buy window, summed over test windows (top tercile = High Active Time). Gaps are capped (e.g., 5 minutes) to avoid idle inflation.
-  - Fast Conversion: bottom tercile of median latency from last pre‑buy view to the buy.
-
-Notes and caveats
-  - No dwell times are logged; “active seconds” uses capped inter‑event deltas as a practical proxy.
-  - Novelty targets (e.g., any novel choice) can become degenerate on some splits; we report only targets with both classes present.
-  - Results are reported as AUC‑PR (AP) when class imbalance is high and AUC otherwise; the bootstrap CI on lift is computed on the chosen metric.
+**Taobao Buy Window.** ~29.5k users built from UserBehavior.csv (user_id, item_id, category_id, behavior_type, timestamp). Keep only view and buy events. For each buy at time t, define a trailing 6‑hour window [t−6h, t); the menu is the set of unique items viewed in that window (pre‑buy only), and the choice is the bought item. Require that the bought item was viewed; keep menus of size 2–50. Aggregate each user’s buy‑anchored observations into a single MenuChoiceLog with per‑user item remapping; require ≥5 valid observations. This windowed approach preserves availability right before purchase, enforces “buy was viewed,” and yields enough per‑user observations for RP features. Train/test uses a per‑user temporal split (70/30) with separate remappings to avoid leakage; user holdout is 80/20 with thresholds computed on train users only.
 
 .. _eco-findings:
 
@@ -346,36 +319,7 @@ Datasets require ``kaggle`` CLI. See ``case_studies/benchmarks/`` for details.
 
 ----
 
-.. _eco-appendix:
-
-Appendix: Datasets & Assumptions
---------------------------------
-
-.. _eco-assumptions:
-
-**Dunnhumby.** 2,222 households, 104 weeks, 10 staple commodity groups.
-Budget-based RP. Each observation is one active household-week — weeks with
-zero purchases in tracked categories are excluded, since they represent
-spending outside the sub-basket, not zero demand. Quantities are total units
-per commodity per week. Prices are a global median oracle per commodity per
-week (Dean & Martin 2016), shared across all households — individual price
-exposure (coupons, store variation) is not captured. RP outputs should be
-interpreted as reduced-form consistency descriptors of conditional sub-basket
-allocation, not structural preference parameters.
-
-**Open E-Commerce.** 4,668 users, category-level quantities. Budget-based RP.
-Median price per category per month, forward-filled for missing periods. Shared
-oracle across users. Within-category product switching is invisible. While RP 
-features underperform the RFM baseline on regression tasks (LTV, Spend Change), 
-they provide a healthy boost (+1.8% lift) for predicting "Spend Drop", suggesting 
-that shifting category allocations might be an early signal of churn before volume drops.
-
-Polars fast-path (this repo):
-- Users analyzed: 4,744 (goods=50, median T=34 months)
-- Price variation: users with ≥3 distinct price vectors: ~100%
-- GARP pass rate: ~2.9% (strong power)
-- CCEI percentiles: p25≈0.300, p50≈0.424, p75≈0.567, p95≈0.855
-- Tooling: ``tools/open_ecommerce_polars_variation.py``
+Open E‑Commerce variation diagnostics (Polars fast-path): in our runs with ~4.7k users (50 goods; median T≈34 months), almost all users exhibit ≥3 distinct price vectors, GARP passes around 2.9%, and CCEI spans p25≈0.300, p50≈0.424, p75≈0.567, p95≈0.855 (tooling: tools/open_ecommerce_polars_variation.py).
 
 Latest ML benchmark (Open E‑Commerce, ~5k users)
 - Users: 4,668 (after train/test split constraints)
