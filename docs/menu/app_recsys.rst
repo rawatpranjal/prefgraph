@@ -11,10 +11,10 @@ and churn detection.
 
    <div style="margin: 1.5em 0;"></div>
 
-.. image:: ../_static/app_recsys_hero.jpg
+.. image:: ../_static/eco_auc_comparison.png
    :width: 70%
    :align: center
-   :alt: Person clicking on search results and recommendations
+   :alt: E-commerce benchmarking pipeline results map
 
 .. raw:: html
 

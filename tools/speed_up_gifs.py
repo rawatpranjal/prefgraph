@@ -83,6 +83,34 @@ def scale_durations(durations_ms: List[int], factor: float, min_ms: int = 40) ->
     return scaled
 
 
+def balance_durations(
+    durations_ms: List[int],
+    compress: float = 0.5,
+    min_ms: int = 120,
+    max_ms: int = 1500,
+) -> List[int]:
+    """
+    Rebalance frame durations to reduce extremes while preserving sequence rhythm.
+
+    new = median + (old - median) * compress
+    then clamp to [min_ms, max_ms] and round to nearest 10ms.
+
+    - compress in (0,1): smaller → stronger pull toward median
+    - min_ms: ensure very fast text frames linger a bit more
+    - max_ms: cap long holds so illustrations don't stall
+    """
+    if not durations_ms:
+        return durations_ms
+    med = statistics.median(durations_ms)
+    out: List[int] = []
+    for d in durations_ms:
+        nd = med + (d - med) * compress
+        nd = max(min_ms, min(max_ms, int(round(nd))))
+        nd = int(round(nd / 10.0)) * 10
+        out.append(max(10, nd))
+    return out
+
+
 def summarize(label: str, durations: List[int]) -> str:
     if not durations:
         return f"{label}: 0 frames"
@@ -132,9 +160,16 @@ def process_gif(path: Path, factor: float, dry_run: bool = False) -> None:
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Slightly speed up GIFs by reducing frame durations.")
+    parser = argparse.ArgumentParser(description="Adjust GIF frame durations (scale or balance).")
     parser.add_argument("paths", nargs="*", type=Path, help="Directories/files to process")
-    parser.add_argument("--factor", type=float, default=1.25, help="Speed-up factor (>1 = faster)")
+    mode = parser.add_mutually_exclusive_group()
+    mode.add_argument("--factor", type=float, help="Scale: speed-up factor (>1 = faster)")
+    mode.add_argument(
+        "--balance", action="store_true", help="Balance durations by compressing extremes"
+    )
+    parser.add_argument("--compress", type=float, default=0.5, help="Balance: pull toward median (0–1)")
+    parser.add_argument("--min-ms", type=int, default=120, help="Balance: minimum per-frame duration")
+    parser.add_argument("--max-ms", type=int, default=1500, help="Balance: maximum per-frame duration")
     parser.add_argument("--dry-run", action="store_true", help="Print changes without writing GIFs")
     args = parser.parse_args()
 
@@ -148,11 +183,53 @@ def main():
             print(f" - {t}")
         return
 
-    print(f"Processing {len(gifs)} GIF(s) with factor={args.factor} (1.0=unchanged, 1.25=25% faster)")
-    for g in gifs:
-        process_gif(g, factor=args.factor, dry_run=args.dry_run)
+    # Default to a gentle speed-up if no mode specified
+    if not args.balance and not args.factor:
+        args.factor = 1.25
+
+    if args.balance:
+        print(
+            f"Processing {len(gifs)} GIF(s) with balance: compress={args.compress}, "
+            f"min_ms={args.min_ms}, max_ms={args.max_ms}"
+        )
+        for g in gifs:
+            frames, orig_durations, base_info = read_frames_and_durations(g)
+            new_durations = balance_durations(
+                orig_durations,
+                compress=args.compress,
+                min_ms=args.min_ms,
+                max_ms=args.max_ms,
+            )
+            print(f"\n{g}")
+            print("  " + summarize("original", orig_durations))
+            print("  " + summarize("balanced", new_durations))
+            if args.dry_run:
+                continue
+            # Save via process_gif path by temporarily monkey-patching scale behavior
+            # but here we re-use saving logic directly for clarity
+            if not frames:
+                continue
+            first, rest = frames[0], frames[1:]
+            save_kwargs = dict(
+                save_all=True,
+                append_images=rest,
+                duration=new_durations,
+                loop=base_info.get("loop", 0) if base_info.get("loop") is not None else 0,
+                disposal=2,
+                optimize=False,
+            )
+            if base_info.get("transparency") is not None:
+                save_kwargs["transparency"] = base_info["transparency"]
+            tmp_path = g.with_suffix(".tmp.gif")
+            first.save(tmp_path, format="GIF", **save_kwargs)
+            tmp_path.replace(g)
+    else:
+        print(
+            f"Processing {len(gifs)} GIF(s) with factor={args.factor} (1.0=unchanged, 1.25=25% faster)"
+        )
+        for g in gifs:
+            process_gif(g, factor=args.factor, dry_run=args.dry_run)
 
 
 if __name__ == "__main__":
     main()
-
