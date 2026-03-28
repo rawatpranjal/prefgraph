@@ -412,3 +412,44 @@ Spend Change (regression), High Engagement (top tercile sessions).
 
 **Output**: ``case_studies/benchmarks/output/results.json`` (full metrics),
 ``summary_table.csv``, ``figures/``.
+
+Data Assumptions
+~~~~~~~~~~~~~~~~
+
+Every dataset involves assumptions when mapping raw logs to RP inputs.
+Here is what each loader does and what it cannot do.
+
+**Budget datasets** (Dunnhumby, Open E-Commerce, H&M, Instacart):
+
+- **Shared price oracle**: Dunnhumby and Open E-Commerce use global median
+  prices per category per period, shared across all users. Individual price
+  exposure (coupons, regional variation) is not captured. This follows
+  Dean & Martin (2016).
+- **Category-level aggregation**: 10--134 categories depending on dataset.
+  Within-category substitution is invisible (e.g., "Dairy" includes milk,
+  yogurt, and cheese at different prices). RP violations may reflect
+  within-category product switching, not true preference inconsistency.
+- **Instacart heuristic prices**: No prices in raw data. We assign per-aisle
+  prices ($1.50--$14.00) via keyword matching on 134 aisle names. Yields
+  $32/order average (real Instacart ~$35--50). Defensible but approximate.
+- **H&M normalized prices**: Prices are from Kaggle competition data,
+  normalized to 0--1 range. Relative price variation is real; absolute
+  values are not dollar amounts.
+- **Dunnhumby coarse categories**: 10 commodity groups capture ~$19/week
+  of a ~$100--150 weekly grocery budget. The RP analysis is valid within
+  these categories but doesn't cover the full basket.
+
+**Menu datasets** (REES46, Taobao, Tenrec):
+
+- **Impression bias**: Menus contain only items the user viewed/clicked.
+  Items shown but not clicked are invisible. The RP analysis is conditional
+  on the user having engaged with these items, not the full catalog.
+- **REES46 sessions**: Server-defined session IDs (gold standard).
+  Median menu size ~5 items.
+- **Taobao sessions**: 30-minute inactivity gap defines session boundaries
+  (84% of inter-event gaps < 30 min). Median menu size 4 items.
+- **Tenrec sessions**: Click-to-like windows with positional feedback
+  tracking. Median ~5 clicks between likes. Menus reflect algorithmic
+  recommendations, not organic browsing.
+- **No budget constraint**: Menu datasets have no prices. Choices reveal
+  preference orderings, not willingness-to-pay.
