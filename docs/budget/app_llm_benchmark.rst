@@ -1,5 +1,5 @@
-LLM Consistency Benchmarks
-==========================
+Consistency Benchmarks (LLMs)
+==============================
 
 Do LLMs have stable action rankings, or does the ranking change when
 different alternatives are shown? We build preference graphs from LLM
@@ -15,10 +15,6 @@ screening is the weakest case at 74 percent with many IIA violations.
 Alert triage is the strongest at 92 percent with very few violations.
 There is no single best prompt. Decision tree is perfect on procurement
 but performs poorly on jobs.
-
-.. image:: ../_static/app_llm_benchmark_summary.png
-   :alt: LLM Benchmark Summary
-   :align: center
 
 .. code-block:: text
 
