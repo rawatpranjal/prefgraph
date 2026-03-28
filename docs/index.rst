@@ -138,10 +138,10 @@ same. Deterministic–stochastic agreement = percent of menus where the
 deterministic choice matches the stochastic majority. RUM pass rate aggregates
 frequencies over K samples and tests Random Utility Model consistency.*
 
-E-commerce Benchmarks
+Predictive Benchmarks
 ---------------------
 
-Does measuring behavioral consistency actually improve machine learning models? We evaluated PrefGraph across seven public datasets to predict concrete business outcomes like future spend, churn, and engagement. Using CatBoost, we compared strong baselines against models augmented with revealed preference (RP) features. 
+Do revealed-preference (RP) features improve predictive models? We add GARP/CCEI/MPI/HM/VEI-based features to strong spend/engagement baselines and evaluate lift on churn, high-spender, novelty, and LTV across multiple public datasets.
 Full results: :doc:`benchmarks_ecommerce`.
 
 .. list-table::
