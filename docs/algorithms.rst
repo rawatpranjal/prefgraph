@@ -3,20 +3,19 @@ Algorithms
 
 .. admonition:: Design Philosophy
 
-   Every default in PrefGraph is paper-led. Algorithms are chosen to be provably
+   Algorithms are chosen to be provably
    optimal or best-in-class. The Rust engine (``rpt-core``) handles all graph and LP
    computation; Python is I/O only. Rayon thread-pool parallelism gives linear
    scaling across cores.
 
 This page documents the algorithmic choices, complexity analysis, and the reasoning
-behind each implementation decision. Focus: budget-based and menu-based methods.
+behind each implementation decision.
 
-Complexity Landscape
+Complexity
 --------------------
 
-The definitive complexity classification for preference-graph acyclicity testing is due to
-Smeulders, Cherchye, De Rock & Spieksma (2014, *ACM TEAC* 2(1)), which established the
-computational hardness of various goodness-of-fit measures. A comprehensive survey of
+The complexity classification for preference-graph acyclicity testing is due to
+Smeulders, Cherchye, De Rock & Spieksma (2014, *ACM TEAC* 2(1)). A comprehensive survey of
 the algorithmic landscape is provided by Smeulders, Crama & Spieksma (2019, *EJOR* 272(3)).
 
 .. list-table::
@@ -51,7 +50,7 @@ the algorithmic landscape is provided by Smeulders, Crama & Spieksma (2019, *EJO
 Budget-Based Methods
 --------------------
 
-GARP — :math:`O(T^2)` SCC Algorithm
+GARP — SCC Algorithm
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 **Definition**: A dataset :math:`\{(p_t, x_t)\}_{t=1}^T` satisfies the Generalized
@@ -129,7 +128,7 @@ between them. **GARP fails.**
   requested.
 
 
-CCEI (Afriat Efficiency Index) — :math:`O(T^2 \log T)`
+CCEI (Afriat Efficiency Index)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 **Definition**: The Critical Cost Efficiency Index (CCEI) is the supremum of all
@@ -181,7 +180,7 @@ efficiency ratios :math:`\{E_{ij} / E_{ii}\}`.
    </div>
 
 
-MPI (Money Pump Index) — :math:`O(T^3)` Karp's Algorithm
+MPI (Money Pump Index) — Karp's Algorithm
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 **Definition**: The Money Pump Index (MPI) measures the maximum average budget
@@ -219,7 +218,7 @@ optimal cycle in :math:`O(VE)` time, which is :math:`O(T^3)` here.
 **References**: Echenique, Lee & Shum (2011); Smeulders et al. (2013).
 
 
-HARP (Homothetic Axiom) — :math:`O(T^3)` Max-Product Paths
+HARP (Homothetic Axiom) — Max-Product Paths
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 **Definition**: The Homothetic Axiom of Revealed Preference (HARP) tests if
@@ -245,7 +244,7 @@ requirement.
 - **Rust**: ``rpt-core/src/harp.rs`` — ``harp_check()``.
 
 
-Houtman-Maks Index — NP-hard; Greedy + ILP
+Houtman-Maks Index — Greedy + ILP
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 **Definition**: The Houtman-Maks index is the size of the largest subset of
@@ -297,7 +296,7 @@ Directed Feedback Vertex Set (DFVS)** on the preference graph.
    </div>
 
 
-VEI (Varian Efficiency Index) — NP-hard; Exact MILP
+VEI (Varian Efficiency Index) — Exact MILP
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 **Definition**: The VEI assigns an individual efficiency level :math:`e_t \in [0,1]`
@@ -335,7 +334,7 @@ as a fast polynomial-time heuristic.
 **References**: Varian (1990, *J Econometrics*); Mononen (2023).
 
 
-GAPP (Generalized Axiom of Price Preference) — :math:`O(T^3)`
+GAPP (Generalized Axiom of Price Preference)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 **Definition**: GAPP tests whether prices (not quantities) reveal consistent
@@ -381,8 +380,8 @@ a random error term.
 
 **Algorithms**:
 PrefGraph implements maximum likelihood estimation for:
-- **Logit**: Errors :math:`\epsilon` follow a Gumbel distribution (IIA holds).
-- **Luce Model**: Probability of choosing :math:`x` is proportional to its weight :math:`w_x`.
+- **Multinomial Logit (MNL)**: Type‑I Extreme Value (Gumbel) errors; satisfies IIA.
+- **Luce choice rule**: :math:`P(x\mid A) = \dfrac{w_x}{\sum_{y\in A} w_y}`; equivalent to MNL under a log‑weight parameterization.
 
 .. rubric:: Implementation
 
@@ -478,21 +477,3 @@ To build with Gurobi support:
 
    # Requires GUROBI_HOME set and gurobi shared library available
    cd rust && cargo build --release --features gurobi
-
-
-Open Research Directions
-------------------------
-
-These represent genuine open problems where no published work exists:
-
-- **GPU-accelerated GARP**: The :math:`O(T^2)` arc-building step (all pairwise
-  :math:`p_i \cdot q_j`) is embarrassingly parallel and GPU-suitable. SCC
-  decomposition (Tarjan) is inherently sequential (DFS-based). A hybrid
-  GPU-parallel construction + CPU SCC approach could push throughput for very
-  large :math:`T`.
-- **Streaming / online GARP**: Incremental consistency checking as observations
-  arrive, without re-checking from scratch.
-- **Warm-starting CCEI**: Reusing SCC structure from previous binary search
-  iterations to speed up subsequent checks.
-- **Randomized approximate GARP**: Trading exactness for sub-quadratic runtime.
-

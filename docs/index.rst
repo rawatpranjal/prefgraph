@@ -71,37 +71,70 @@ Two Core Data Types
    3. How much? → compute_integrity_score()  3. How much? → compute_menu_efficiency()
    4. Segment users by score                 4. Segment users by score
 
-Performance
------------
+LLM Consistency Benchmark
+--------------------------
 
-Benchmarked on synthetic data, T=15 observations, 10 goods, M1 Mac:
+Do LLMs have stable action rankings? We build preference graphs from
+gpt-4o-mini decisions across 5 enterprise scenarios (support triage,
+alert routing, content moderation, job screening, procurement) and test
+for cycles. Full results: :doc:`budget/app_llm_benchmark`.
+
+Key takeaways
+~~~~~~~~~~~~~
+
+- Stable rankings: 74–92% SARP pass (deterministic). Majority vote at temp=0.7
+  changes little; 96–98% agreement with deterministic picks.
+- Structure, not noise: only 8–12% of menus are mixed across 20 reps.
+- Where inconsistency shows up: compromise effects in jobs; severity anchoring
+  in content; patterns persist under stochastic aggregation.
+- Prompt matters by domain: decision‑tree is perfect on procurement but weak on
+  jobs; conservative/CoT stabilize support/alert. No single best prompt.
+
+Summary metrics
+~~~~~~~~~~~~~~~
 
 .. list-table::
    :header-rows: 1
-   :widths: 30 25 25 20
+   :widths: 18 20 18 16 18
 
-   * - Configuration
-     - Throughput
-     - Latency (per agent)
-     - Complexity
-   * - **GARP only**
-     - ~49,000 agents/sec
-     - 20 μs
-     - O(T²)
-   * - **GARP + CCEI**
-     - ~2,400 agents/sec
-     - 420 μs
-     - O(T² log T)
-   * - **Full suite** (GARP, CCEI, MPI, HARP)
-     - ~2,000 agents/sec
-     - 500 μs
-     - O(T³)
-   * - **Menu** (SARP + WARP + HM)
-     - ~19,000 agents/sec
-     - 50 μs
-     - O(N³)
+   * - Scenario
+     - SARP pass (det/stoch)
+     - IIA (det/stoch)
+     - Mixed menus (%)
+     - Det↔Stoch agree (%)
+   * - Support
+     - 88 / 90
+     - 3 / 3
+     - 11
+     - 95.8
+   * - Alert
+     - 92 / 90
+     - 2 / 3
+     - 8
+     - 96.6
+   * - Content
+     - 82 / 76
+     - 9 / 12
+     - 12
+     - 95.5
+   * - Jobs
+     - 74 / 78
+     - 15 / 14
+     - 8
+     - 97.6
+   * - Procurement
+     - 84 / 83
+     - 8 / 6
+     - 12
+     - 97.7
 
-Empirical benchmarks: CCEI ≈ 0.88 in lab experiments (Choi et al., 2014); HM ≈ 0.70–0.85 in recommendation click data.
+Preference graphs reveal what accuracy benchmarks miss: decoy/compromise
+effects (jobs), scenario‑dependent prompt effects (decision‑tree 100% on
+procurement but weak on jobs), and severity anchoring even on “clear” content
+inputs.
+
+*Det = temp=0 deterministic; Stoch = majority‑vote at temp=0.7 with K=20.
+Mixed menus = percent of menus with non‑unanimous responses across K reps.*
 
 E-commerce Benchmarks
 ---------------------
@@ -151,60 +184,46 @@ Full results: :doc:`benchmarks_ecommerce`.
 
 Budget datasets: RP adds ~0% over strong RFM baselines. Menu datasets: RP features competitive — Taobao RP-only (0.925) beats baseline (0.913).
 
-LLM Consistency Benchmark
---------------------------
+Performance
+-----------
 
-Do LLMs have stable action rankings? We build preference graphs from
-gpt-4o-mini decisions across 5 enterprise scenarios (support triage,
-alert routing, content moderation, job screening, procurement) and test
-for cycles. Full results: :doc:`budget/app_llm_benchmark`.
+Benchmarked on synthetic data, T=15 observations, 10 goods, M1 Mac:
 
 .. list-table::
    :header-rows: 1
-   :widths: 18 16 16 16 16
+   :widths: 30 25 25 20
 
-   * -
-     - SARP pass
-     - IIA violations
-     - % stochastic
-     - Det/Stoch agree
-   * - Support
-     - 88%
-     - 3
-     - 11%
-     - 98%
-   * - Alert
-     - 92%
-     - 2
-     - 8%
-     - 98%
-   * - Content
-     - 82%
-     - 9
-     - 12%
-     - 97%
-   * - Jobs
-     - 74%
-     - 15
-     - 8%
-     - 98%
-   * - Procurement
-     - 84%
-     - 8
-     - 12%
-     - 98%
+   * - Configuration
+     - Throughput
+     - Latency (per agent)
+     - Complexity
+   * - **GARP only**
+     - ~49,000 agents/sec
+     - 20 μs
+     - O(T²)
+   * - **GARP + CCEI**
+     - ~2,400 agents/sec
+     - 420 μs
+     - O(T² log T)
+   * - **Full suite** (GARP, CCEI, MPI, HARP)
+     - ~2,000 agents/sec
+     - 500 μs
+     - O(T³)
+   * - **Menu** (SARP + WARP + HM)
+     - ~19,000 agents/sec
+     - 50 μs
+     - O(N³)
 
-Preference graphs reveal what accuracy benchmarks miss: decoy effects
-(15 IIA violations in job screening), scenario-dependent prompt effects
-(decision-tree 60% on jobs vs 100% on alert), and menu-dependent
-severity judgments even on "clear" content moderation inputs (60% pass).
+Empirical benchmarks: CCEI ≈ 0.88 in lab experiments (Choi et al., 2014); HM ≈ 0.70–0.85 in recommendation click data.
 
-Reading List
+ 
+
+Selected Reading
 --------------------
 
 Recent applied work using revealed preference methods on real-world data:
 
-- **Chen et al. (2024)** — "The Emergence of Economic Rationality of GPT." CCEI testing on GPT budget-allocation tasks across risk, time, social, and food domains. *PNAS*.
+- "Revealed preference theory: An algorithmic outlook" (2019). *European Journal of Operational Research*.
 
 See :doc:`references` for the full bibliography.
 
