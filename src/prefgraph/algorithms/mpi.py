@@ -13,11 +13,9 @@ from prefgraph.core.types import Cycle
 
 # Hyperparameter: ILP vs greedy threshold for Houtman-Maks.
 # ILP (scipy.optimize.milp) gives exact optimal solution but is O(exponential).
-# Greedy FVS is O(T^2) and in practice matches ILP on all tested data.
-# Benchmarked on 200+ random/structured datasets: identical removal counts every time.
-# Greedy is 2-10x faster. Set to 0 to always use greedy (default).
-# Set higher (e.g., 200) if you want ILP's exact guarantee for small datasets.
-HOUTMAN_MAKS_ILP_THRESHOLD = 0
+# Greedy FVS is O(T^2) but is a 2-approximation that can over-remove.
+# For T <= threshold, use ILP for exact results; above, fall back to greedy.
+HOUTMAN_MAKS_ILP_THRESHOLD = 100
 
 
 def compute_mpi(
@@ -391,15 +389,19 @@ def _houtman_maks_ilp(
     c = np.zeros(n_vars)
     c[:T] = -1.0  # Minimize negative z = maximize z
 
-    # Build constraints: for each (i,j) pair with i != j:
-    # U_i - U_j - lambda_j * (E[j,i] - E[j,j]) <= M * (2 - z_i - z_j)
-    # Rearranged: U_i - U_j - lambda_j*(E[j,i]-E[j,j]) + M*z_i + M*z_j <= 2*M
-
-    # M must be large enough to deactivate constraints but small enough
-    # for numerical stability. Bound: max |U_i - U_j| + max |lambda_j * coeff|
+    # Variable bounds
     max_exp = float(np.max(own_exp))
-    M = max(10.0, 3.0 * max_exp)  # Conservative but numerically stable
+    max_coeff = float(np.max(np.abs(E - own_exp[:, np.newaxis])))
+    U_max = max_exp * T
+    lambda_lb = 1e-3
+    lambda_ub = T * 1.0
 
+    # M must deactivate the constraint when at least one z=0.
+    # Max |LHS| = U_max + lambda_ub * max_coeff. M must exceed this.
+    M = U_max + lambda_ub * max_coeff + 1.0
+
+    # Build constraints: for each (i,j) pair with i != j:
+    # U_i - U_j - lambda_j * (E[j,i] - E[j,j]) + M*z_i + M*z_j <= 2*M
     n_constraints = T * (T - 1)
     A = np.zeros((n_constraints, n_vars))
     b = np.full(n_constraints, 2.0 * M)
@@ -410,7 +412,6 @@ def _houtman_maks_ilp(
             if i == j:
                 continue
 
-            # U_i - U_j - lambda_j * (E[j,i] - E[j,j]) + M*z_i + M*z_j <= 2M
             A[idx, T + i] = 1.0          # U_i
             A[idx, T + j] = -1.0         # -U_j
             A[idx, 2 * T + j] = -(E[j, i] - own_exp[j])  # -lambda_j * coeff
@@ -421,15 +422,12 @@ def _houtman_maks_ilp(
 
     constraints = LinearConstraint(A, ub=b)
 
-    # Bounds: z_i in [0,1], U_i in [0, M], lambda_i in [lambda_lb, M]
-    # lambda_lb must be large enough that violations exceed solver tolerance.
-    # If violation slack is lambda * min_diff, we need lambda * min_diff > ~1e-7.
-    min_diff = tolerance if tolerance > 0 else 1e-10
-    lambda_lb = max(1e-3, 1e-5 / min_diff)
     lb = np.zeros(n_vars)
     ub = np.full(n_vars, M)
-    ub[:T] = 1.0  # z_i <= 1
-    lb[2 * T:] = lambda_lb  # lambda_i > 0
+    ub[:T] = 1.0        # z_i in [0, 1]
+    ub[T:2*T] = U_max   # U_i in [0, U_max]
+    ub[2*T:] = lambda_ub # lambda_i in [lambda_lb, lambda_ub]
+    lb[2*T:] = lambda_lb
 
     bounds = Bounds(lb, ub)
 
