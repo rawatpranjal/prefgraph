@@ -78,28 +78,28 @@ Results
      - 0.589
      - +0.012
      - 0.246
-   * - Open E-Commerce
+   * - Amazon
      - 4,668
      - High Spender
      - 0.940
      - 0.942
      - +0.2%
      - 0.932
-   * - Open E-Commerce
+   * - Amazon
      - 4,668
      - Spend Drop
      - 0.784
      - 0.798
      - +1.8%
      - 0.684
-   * - Open E-Commerce
+   * - Amazon
      - 4,668
      - Spend Change (R²)
      - 0.144
      - 0.091
      - -0.053
      - -0.032
-   * - Open E-Commerce
+   * - Amazon
      - 4,668
      - Future LTV (R²)
      - 0.633
@@ -183,7 +183,7 @@ Appendix: Datasets & Assumptions
 
 **Dunnhumby.** 2,222 households, 104 weeks, 10 staple commodity groups. Budget-based RP. Each observation is one active household-week — weeks with zero purchases in tracked categories are excluded, since they represent spending outside the sub-basket, not zero demand. Quantities are total units per commodity per week. Prices are a global median oracle per commodity per week (Dean & Martin 2016), shared across all households — individual price exposure (coupons, store variation) is not captured. RP outputs should be interpreted as reduced-form consistency descriptors of conditional sub-basket allocation, not structural preference parameters.
 
-**Open E‑Commerce.** 4,668 users, category-level quantities. Budget-based RP. Median price per category per month, forward-filled for missing periods, shared across users. Within-category product switching is invisible. RP features underperform the RFM baseline on regression tasks (LTV, Spend Change) but show lift on Spend Drop, suggesting category allocation shifts can precede volume declines.
+**Amazon (Open E‑Commerce).** 4,668 users, category-level quantities. Budget-based RP. Median price per category per month, forward-filled for missing periods, shared across users. Within-category product switching is invisible. RP features underperform the RFM baseline on regression tasks (LTV, Spend Change) but show lift on Spend Drop, suggesting category allocation shifts can precede volume declines.
 
 **REES46.** 8,832 users, click-to-purchase sessions. Menu-based RP. Server-defined session IDs (gold standard). Menus include only items the user clicked; unviewed items are invisible. Median menu size ≈ 5 items. No prices — choices reveal preference orderings only.
 
@@ -319,9 +319,9 @@ Datasets require ``kaggle`` CLI. See ``case_studies/benchmarks/`` for details.
 
 ----
 
-Open E‑Commerce variation diagnostics (Polars fast-path): in our runs with ~4.7k users (50 goods; median T≈34 months), almost all users exhibit ≥3 distinct price vectors, GARP passes around 2.9%, and CCEI spans p25≈0.300, p50≈0.424, p75≈0.567, p95≈0.855 (tooling: tools/open_ecommerce_polars_variation.py).
+Amazon (Open E‑Commerce) variation diagnostics (Polars fast-path): in our runs with ~4.7k users (50 goods; median T≈34 months), almost all users exhibit ≥3 distinct price vectors, GARP passes around 2.9%, and CCEI spans p25≈0.300, p50≈0.424, p75≈0.567, p95≈0.855 (tooling: tools/open_ecommerce_polars_variation.py).
 
-Latest ML benchmark (Open E‑Commerce, ~5k users)
+Latest ML benchmark (Amazon, ~5k users)
 - Users: 4,668 (after train/test split constraints)
 
   - Targets and results

@@ -52,7 +52,7 @@ But e-commerce data looks very different:
    * - Exogenous prices
      - Consumers choose *when* to buy
 
-**The Dataset:** Open E-Commerce 1.0 from Harvard Dataverse contains Amazon
+**The Dataset:** Amazon (Open E‑Commerce) 1.0 from Harvard Dataverse contains Amazon
 purchase histories from 5,027 US consumers spanning 2018-2023.
 
 .. list-table:: Dataset Overview
@@ -459,7 +459,7 @@ Comparison to controlled experiments.
    :widths: 40 30 30
 
    * - Metric
-     - Open E-Commerce
+     - Amazon
      - CKMS Lab
    * - GARP pass rate
      - 8-13%
@@ -700,5 +700,4 @@ Exercises
 
 4. **Alternative Aggregation:** Try weekly instead of monthly periods.
    How do results change?
-
 
