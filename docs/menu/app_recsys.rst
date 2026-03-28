@@ -1,3 +1,5 @@
+:orphan:
+
 Recommender Systems
 ===================
 
@@ -524,4 +526,4 @@ Limitations
   never co-occur in a menu, SARP says nothing about their relative ranking.
 - Session-level analysis assumes within-session independence; fatigue or
   position bias may create spurious violations.
-
+:orphan:

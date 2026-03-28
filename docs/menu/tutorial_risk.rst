@@ -1,3 +1,5 @@
+:orphan:
+
 Tutorial 8: Risk Analysis
 =========================
 
@@ -460,3 +462,4 @@ See Also
 - :doc:`tutorial_menu_choice` - Menu-based choice analysis
 - :doc:`/api` - Full API documentation
 - :doc:`/menu/theory_abstract` - Mathematical foundations (Chapter 8)
+:orphan:

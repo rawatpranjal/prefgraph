@@ -80,9 +80,8 @@ html_theme_options = {
 }
 
 # All pages get left sidebar with nav tree + in-page section TOC
+# Enforce left sidebar (nav tree + in-page TOC) on ALL pages, including index
 html_sidebars = {
-    "index": ["sidebar-nav-bs"],
-    "api": ["sidebar-nav-bs"],
     "**": ["sidebar-nav-bs", "page-toc"],
 }
 

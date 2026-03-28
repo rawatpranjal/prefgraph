@@ -1,3 +1,5 @@
+:orphan:
+
 LLM Prompt Consistency
 ======================
 
@@ -268,3 +270,4 @@ Limitations
   Parse failures (malformed responses) are excluded from analysis.
 - 100 trials per prompt may be insufficient for rare menu combinations.
   Increase trials for production-grade audits.
+:orphan:

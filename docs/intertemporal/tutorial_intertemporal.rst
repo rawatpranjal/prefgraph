@@ -1,3 +1,5 @@
+:orphan:
+
 Tutorial 10: Intertemporal Choice
 ==================================
 
@@ -618,3 +620,4 @@ See Also
 - :doc:`/budget/tutorial` - Budget-based analysis fundamentals
 - :doc:`/menu/tutorial_risk` - Risk preferences under uncertainty
 - :doc:`/api` - Full API documentation
+:orphan:
