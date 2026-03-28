@@ -27,7 +27,13 @@ median prices per category per period, shared across all households — individu
 price exposure (coupons, regional variation) is not captured (Dean & Martin 2016).
 H&M uses each customer's own average paid price per product group per month;
 unpurchased groups are imputed via period-group median, then group median, then
-global median. All budget datasets aggregate to 10--134 categories, so
+global median. Each row in the raw H&M CSV is one purchased article unit (confirmed
+by duplicate (date, customer, article) rows), so quantities are article counts per
+product group per month. Product groups are the first 2 digits of article_id (top
+20 by frequency). A customer-month is one budget observation; customers need ≥ 6
+active months to enter the panel. Prices are normalized 0--1 (Kaggle competition);
+relative price variation is real but absolute dollar interpretation is lost. Sales
+channel is ignored. All budget datasets aggregate to 10--134 categories, so
 within-category substitution is invisible. Dunnhumby's 10 commodity groups
 capture ~$19/week of a ~$100--150 weekly grocery budget.
 
