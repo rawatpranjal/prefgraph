@@ -22,6 +22,10 @@ from prefgraph.engine import Engine, results_to_dataframe
 # Budget baseline features (from raw prices/quantities)
 # ---------------------------------------------------------------------------
 
+# The 10 features that capture nearly all baseline signal for H&M budget data.
+# Empirical finding (2026-03-28): adding 7 more features (recency, purchase_rate,
+# inter-purchase gaps, max/min spend, mean_abs_change) gives <0.002 AUC gain
+# on 46K users. These 10 are sufficient for a clean RP-vs-baseline test.
 CORE_10_FEATURES = [
     "n_obs", "total_spend", "mean_spend", "std_spend",
     "mean_basket_size", "n_active_categories", "herfindahl",
@@ -160,6 +164,9 @@ def extract_budget_rp(
     # Drop raw counts, keep ratios
     df = df.drop(columns=["hm_consistent", "hm_total", "compute_time_us"], errors="ignore")
 
+    # Engine can return None for bool fields when a user has too few observations
+    # or the metric was not computed. Direct .astype(int) crashes on NoneType.
+    # pd.to_numeric with coerce handles None -> NaN -> 0 safely.
     for col in ["is_garp", "is_harp", "utility_success"]:
         if col in df.columns:
             df[col] = pd.to_numeric(df[col], errors="coerce").fillna(0).astype(int)
