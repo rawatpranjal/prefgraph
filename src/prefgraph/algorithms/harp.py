@@ -94,7 +94,18 @@ def check_harp(
     max_cycle_product = 1.0
 
     if not is_consistent:
-        violations, max_cycle_product = _find_harp_violations(
+        # Compute max_cycle_product from pairwise 2-cycles (exact for length-2).
+        # FW diagonal overestimates because it traverses cycles multiple times.
+        T = log_ratio_matrix.shape[0]
+        for i in range(T):
+            for j in range(i + 1, T):
+                if adjacency[i, j] and adjacency[j, i]:
+                    product = float(np.exp(
+                        log_ratio_matrix[i, j] + log_ratio_matrix[j, i]
+                    ))
+                    max_cycle_product = max(max_cycle_product, product)
+
+        violations, _ = _find_harp_violations(
             log_ratio_matrix, adjacency, max_log_product, tolerance
         )
 
