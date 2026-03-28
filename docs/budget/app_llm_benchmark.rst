@@ -6,12 +6,12 @@ different alternatives are shown? We build preference graphs from LLM
 decisions and check for cycles.
 
 **TL;DR.** GPT-4o-mini operates with stable logical rankings for most tasks but
-struggles with context-dependent framing. Between 74% to 92% of scenarios pass
-the Strong Axiom of Revealed Preference (SARP) at temperature 0. Decisions are
+struggles with context-dependent framing. Between 74% to 92% of scenarios display
+perfect logical consistency (SARP) at temperature 0. Decisions are
 highly stable in domains like **Alert Triage** (92% pass rate), where showing
 or hiding intermediate routing options rarely causes it to contradict its core
 logic. In contrast, **Job Screening** is the weakest category (74% pass rate)
-with frequent violations of Independence of Irrelevant Alternatives (IIA)—for
+with frequent violations of menu independence (IIA)—for
 example, the LLM might prefer "Interview" over "Reject" natively, but
 introducing "Waitlist" as a third option inexplicably flips its choice to
 "Reject". We test this logical consistency natively, evaluating probabilistic
@@ -67,18 +67,11 @@ K=20 reps per menu).
 How to read the results
 -----------------------
 
-SARP is a deterministic consistency check. We build a preference graph by
-adding an edge from the chosen item to every unchosen item in the same
-menu. SARP passes when the transitive closure of this graph has no
-cycles. That is equivalent to having a strict ranking that explains all
-choices.
+**Perfect Consistency (SARP)** checks if the model operates using a single, strict ranking of actions. If it prefers Action A over B, and B over C, it must logically prefer A over C. If it navigates all menus without contradicting itself or forming cyclical loops, it passes.
 
-IIA is about menu independence. We compare pairwise menus with the
-corresponding triples. If A beats B in the pair {A, B}, but adding C
-shifts the choice to B in {A, B, C}, then the result depends on the menu
-and independence is violated.
+**Menu Independence (IIA)** checks if adding a third option changes how the model feels about the first two. If it picks "Interview" over "Reject" in a pair, but switches to "Reject" when "Waitlist" is added to the menu, the result is dependent on the menu framing and independence is violated.
 
-Stochastic results evaluate K=20 samples at temperature 0.7 per menu as probability distributions, testing directly against Random Utility Model (RUM) consistency. Percent mixed is the share of menus where the K responses are not completely deterministic.
+**Probabilistic Consistency (RUM)** evaluates 20 samples per menu (at temperature 0.7) as a probability distribution. Instead of demanding a single fixed answer, it tests whether the model\'s varied responses can be explained by a logical distribution of preferences rather than random noise.
 
 .. _llm-why-design:
 
@@ -93,9 +86,7 @@ effects.
 Results 1: Deterministic (temp=0)
 ---------------------------------
 
-We first measure consistency with no sampling. Each cell shows the percentage
-of tested configurations where the LLM's preference graph is perfectly acyclic
-(passing SARP).
+First, we measure simple deterministic consistency. Each cell shows the percentage of configurations where the LLM behaves perfectly logically with no contradictions (passing SARP).
 
 .. list-table:: SARP Pass Rate by Prompt Framework (%)
    :header-rows: 1
@@ -223,12 +214,7 @@ The Jobs and Content moderation categories exhibit the highest susceptibility to
 Results 2: Stochastic Choice (RUM)
 ----------------------------------
 
-We aggregate the K responses into choice frequencies and test random
-utility consistency. This reveals whether the observed probabilities
-admit a rationalizing distribution over rankings.
-
-To test stochastic choice directly, we aggregate the K responses per menu into frequencies and
-check Random Utility Model consistency, regularity, IIA, and transitivity.
+Instead of testing single decisions, we ask the model 20 times per menu and convert the responses into choice frequencies. We then test if this distribution of choices is logically consistent. Do its probabilities stem from a stable distribution of preferences, or are they just random noise?
 
 .. list-table:: RUM Pass Rate by Prompt Framework (%)
    :header-rows: 1
@@ -482,20 +468,20 @@ Metrics
 
 .. list-table::
    :header-rows: 1
-   :widths: 22 12 66
+   :widths: 24 12 64
 
    * - Metric
      - Range
      - Meaning
-   * - SARP pass rate
+   * - Perfect Consistency (SARP)
      - 0--100%
-     - % of vignettes with acyclic preference graph
-   * - IIA violations
+     - % of configurations with completely logical, non-contradictory preferences
+   * - Menu Independence (IIA)
      - 0--n
-     - Adding a third option flips a pairwise preference
-   * - % mixed
+     - Frequency of context-dependent preference reversals
+   * - Mixed Choices (%)
      - 0--100%
-     - % of menus with different choices across K reps
+     - % of menus where probabilistic sampling yielded varied responses
 
 Limitations
 ~~~~~~~~~~~
