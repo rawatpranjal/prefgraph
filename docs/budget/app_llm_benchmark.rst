@@ -42,37 +42,28 @@ K=20 reps per menu).
 
 .. list-table::
    :header-rows: 1
-   :widths: 18 82
+   :widths: 14 50 36
 
    * - Scenario
      - Actions
+     - Prompts
    * - Support
      - auto-reply KB, bug ticket, billing, account mgr, escalate VP
+     - **minimal** (bare instruction), **decision-tree** (if/then rules),
+       **conservative** (prefer escalation), **aggressive** (prefer automation),
+       **chain-of-thought** (numbered reasoning)
    * - Alert
      - auto-resolve, P3 ticket, page on-call, incident channel, runbook
+     - same 5 prompts, adapted per scenario
    * - Content
      - approve, warning, hide, remove+strike, suspend+legal
+     - same 5
    * - Jobs
      - reject, hold, phone screen, technical, fast-track
+     - same 5
    * - Procurement
      - auto-approve, tag, request quotes, escalate, deny
-
-.. list-table::
-   :header-rows: 1
-   :widths: 18 82
-
-   * - Prompt
-     - Framing
-   * - minimal
-     - One-line instruction with no guidance ("Route support tickets.")
-   * - decision-tree
-     - Explicit if/then rules mapping input features to actions
-   * - conservative
-     - Risk-averse persona that prefers escalation over automation
-   * - aggressive
-     - Efficiency-first persona that prefers automation over escalation
-   * - chain-of-thought
-     - Numbered reasoning steps (identify intent, assess urgency, etc.)
+     - same 5
 
 How to read the results
 -----------------------
