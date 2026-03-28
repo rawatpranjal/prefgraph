@@ -18,6 +18,16 @@ Extended features. These include GARP, CCEI, MPI, HARP, HM, VEI, graph density
 and transitivity, utility recovery metrics such as Gini and CV, choice entropy,
 and ordinal utility. Models use CatBoost with default hyperparameters. The split uses a per-user temporal divide (first 70% features, last 30% targets) followed by an 80/20 user holdout and bootstrap confidence intervals on lift.
 
+.. admonition:: Null rates in RP features
+
+   Not all 42 RP features are populated for every user.
+
+   **Budget datasets (Dunnhumby, H&M):** The 14 Engine features are always non-null — booleans are coerced to 0/1 and numeric metrics have defined defaults. Of the 28 Extended features, 8 utility-recovery features (``util_mean``, ``util_std``, ``util_range``, ``util_cv``, ``util_gini``, ``lambda_mean``, ``lambda_std``, ``lambda_cv``) are NaN for every user who violates GARP, because Afriat's LP has no feasible solution when cycles exist. In real grocery data the majority of users violate GARP, so these features are NaN for most of the budget-dataset rows. One additional feature (``violation_mean_position``) is NaN for every GARP-consistent user, since there are no violation positions to average.
+
+   **Menu datasets (REES46, Taobao):** The Engine features are always non-null. Ordinal utility features (``menu_util_range``, ``menu_util_std``) and congruence features (``is_congruent``, ``n_maximality_violations``) are NaN when the underlying LP or algorithm call fails.
+
+   All NaN values are imputed with the per-feature train-set median before model training, so the models always see complete feature matrices. High imputation rates mean those features carry limited information.
+
 The hardest part is reconstructing the choice set and the observed choices.
 For budgets, prices and quantities must reflect what the customer could have
 afforded at each observation. For menus, the available alternatives must be
