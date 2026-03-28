@@ -204,13 +204,7 @@ Reading List
 
 Recent applied work using revealed preference methods on real-world data:
 
-- **Chen et al. (2024)** — "Rationality of LLMs." CCEI testing on GPT budget-allocation tasks. *PNAS*.
-- **Cazzola & Daly (2024)** — "Rank-preference consistency in recommender systems." SARP as evaluation metric. *Working paper*.
-- **Deb, Kitamura, Quah & Stoye (2023)** — GAPP: price-preference tests + population welfare bounds. *Review of Economic Studies*.
-- **Demuynck & Rehbeck (2023)** — Integer programming for goodness-of-fit measures at scale. *Economic Theory*.
-- **Smeulders, Crama & Spieksma (2021)** — Collective rationality tests via integer programming. *Operations Research*.
-- **Cattaneo, Ma, Masatlioglu & Suleymanov (2020)** — Random Attention Model: stochastic WARP violations from inattention. *Journal of Political Economy*.
-- **Echenique, Imai & Saito (2020)** — Testable restrictions on time preferences. *AEJ: Micro*.
+- **Chen et al. (2024)** — "The Emergence of Economic Rationality of GPT." CCEI testing on GPT budget-allocation tasks across risk, time, social, and food domains. *PNAS*.
 
 See :doc:`references` for the full bibliography.
 
