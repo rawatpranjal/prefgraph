@@ -5,14 +5,16 @@ build:
   tools:
     python: "3.11"
 
-python:
-  install:
-    - method: pip
-      path: .
-      extra_requirements:
-        - docs
-
 sphinx:
   configuration: docs/conf.py
+  # Keep warnings visible in RTD logs, but do not fail the build for now
   fail_on_warning: false
+
+python:
+  install:
+    # Install only doc/runtime deps to avoid compiling the Rust extension on RTD
+    - requirements: docs/requirements.txt
+
+formats:
+  - htmlzip
 
