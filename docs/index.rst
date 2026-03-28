@@ -162,8 +162,8 @@ Full results: :doc:`benchmarks_ecommerce`.
    * - Open E-Commerce
      - 4,694
      - Churn
-     - 0.846
-     - 0.846
+     - 0.784
+     - 0.798
      - -0.0%
      - 0.769
    * - H&M
