@@ -1,7 +1,7 @@
 Benchmarks
 ==========
 
-Empirical evaluation of PrefGraph on real data: LLM decision consistency and e‑commerce prediction.
+Empirical evaluation of PrefGraph on real data.
 
 .. raw:: html
 
@@ -17,15 +17,15 @@ Empirical evaluation of PrefGraph on real data: LLM decision consistency and e�
      </div>
    </div>
 
-`E‑commerce Benchmarks <benchmarks_ecommerce>`_
------------------------------------------------
-
 .. raw:: html
 
    <div style="display:flex; gap:16px; align-items:flex-start;">
      <img src="_static/app_recsys_hero.jpg" alt="E‑commerce recommendations — stock illustration" style="width:180px; border-radius:6px; box-shadow: 0 2px 4px rgba(0,0,0,0.08);" />
      <div>
-       <p style="margin-top:0;">
+       <h2 style="margin:0 0 6px 0; font-size:1.6rem;">
+         <a href="benchmarks_ecommerce.html" style="text-decoration:none;">E‑commerce Benchmarks</a>
+       </h2>
+       <p style="margin:0;">
          Do revealed‑preference (RP) features improve predictive models? We add GARP/CCEI/MPI/HM/VEI‑based features to strong spend/engagement baselines and evaluate lift on churn, high‑spender, novelty, and LTV across multiple public datasets.
        </p>
      </div>
