@@ -387,7 +387,7 @@ A high `RP_features` drop means the model **relies on** RP features for predicti
 
 ### Budget datasets
 
-- **Shared price oracle** (Dunnhumby, Open E-Commerce): All users face the same median prices per category per period. Individual price variation (coupons, regional differences) is not captured. Follows Dean & Martin (2016) approach.
+- **Shared price oracle** (Dunnhumby, Open E-Commerce): All users face the same median prices per category per period. Individual price variation (coupons, regional differences) is not captured.
 - **Category-level aggregation**: 10–134 categories depending on dataset. Within-category substitution is invisible. A GARP violation may reflect switching between products within a category, not true preference inconsistency.
 - **Instacart heuristic prices**: No prices in raw data. Per-aisle prices ($1.50–$14.00) assigned via keyword matching on 134 aisle names. Yields plausible order totals ($32 avg vs real $35–50) but are approximate.
 - **H&M normalized prices**: Real price variation exists but values are normalized to 0–1 range. Relative comparisons are valid; absolute dollar amounts are not.
@@ -476,7 +476,7 @@ Instead of forcing prices, construct product-level menu-choice data within depar
 **Lesson learned:** RP budget analysis requires genuine temporal price variation. Without it, all users appear perfectly rational. Heuristic prices at any granularity cannot substitute for real market price dynamics.
 
 **Other budget datasets - price oracle concerns:**
-- **Dunnhumby & Open E-Commerce**: Global median price oracle shared across all users. Individual price exposure (coupons, store location) not captured. Forward-fill/backward-fill for missing periods creates artificial price continuity. Accepted limitation - follows Dean & Martin (2016) precedent.
+- **Dunnhumby & Open E-Commerce**: Global median price oracle shared across all users. Individual price exposure (coupons, store location) not captured. Forward-fill/backward-fill for missing periods creates artificial price continuity. Accepted limitation.
 - **H&M**: Real transaction prices (normalized 0–1). 4-level fallback chain (ffill → bfill → group median → 0.01) for missing prices. Some prices are heavily imputed. Accepted - the alternative is dropping observations.
 
 ### 9.2 Menu Datasets: The Session Boundary Problem
