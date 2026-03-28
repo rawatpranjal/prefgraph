@@ -448,10 +448,22 @@ The `v*` tag triggers `.github/workflows/release.yml` which:
 - Builds manylinux2_28 x86_64 wheels (Python 3.10–3.13)
 - Builds macOS x86_64 + aarch64 wheels (Python 3.10–3.13)
 - Builds Windows x64 wheels (Python 3.10–3.13)
-- Publishes all 16 wheels + sdist to PyPI via `PYPI_API_TOKEN` secret
+- Publishes all wheels + sdist to PyPI via **Trusted Publishing (OIDC)**
 
-**Never use `python3 -m build` + `twine upload` for releases.** That only builds
-a single local wheel. The CI builds all 16 platform/version combinations.
+**PyPI Trusted Publishing** is configured at https://pypi.org/manage/project/prefgraph/settings/publishing/.
+The workflow uses `permissions: id-token: write` so no API token secret is needed.
+If OIDC is not yet configured on PyPI, the user must add a trusted publisher:
+  - Owner: `rawatpranjal`, Repo: `prefgraph`, Workflow: `release.yml`, Environment: (blank)
+
+**CRITICAL: After every release, VERIFY PyPI updated:**
+```bash
+pip index versions prefgraph   # Must show new version
+```
+If CI publish fails, upload locally as a fallback:
+```bash
+rm -rf dist/ build/ && python3 -m build && python3 -m twine upload dist/*
+```
+This only builds one local wheel. The CI builds all 16 platform/version combinations.
 
 Monitor: `gh run list --workflow=release.yml --limit 1`
 
