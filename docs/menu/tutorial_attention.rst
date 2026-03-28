@@ -1003,4 +1003,4 @@ See Also
 - :doc:`tutorial_menu_choice` - Menu-based choice fundamentals (WARP, SARP)
 - :doc:`tutorial_stochastic` - Stochastic choice models (RUM, IIA)
 - :doc:`theory_attention` - Mathematical foundations of limited attention
-- :doc:`/references` - Academic papers on attention models
+- :doc:`/papers` - Papers cited in the implementation

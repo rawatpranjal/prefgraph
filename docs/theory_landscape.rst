@@ -158,7 +158,7 @@ Abbreviations
 - **H&M**: Houtman & Maks (1985)
 - **vNM**: von Neumann & Morgenstern (1944)
 
-See :doc:`/references` for full bibliography.
+See :doc:`/papers` for papers cited in the implementation.
 
 Contents
 --------

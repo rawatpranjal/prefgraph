@@ -799,7 +799,7 @@ See Also
 
 - :doc:`tutorial_menu_choice` - Deterministic menu-based choice
 - :doc:`/budget/tutorial` - Budget-based revealed preference
-- :doc:`/references` - Full API documentation
+- :doc:`/papers` - Papers cited in the implementation
 - :doc:`theory_stochastic` - Mathematical foundations (Chapter 13)
 
 :orphan:

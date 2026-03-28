@@ -20,4 +20,3 @@ Empirical evaluation of PrefGraph on real data.
    budget/app_llm_benchmark
    benchmarks_ecommerce
    performance
-   performance
