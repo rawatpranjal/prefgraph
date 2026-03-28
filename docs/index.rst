@@ -141,7 +141,8 @@ frequencies over K samples and tests Random Utility Model consistency.*
 Predictive Benchmarks (E-commerce)
 -----------------------------------
 
-Do revealed-preference (RP) features improve predictive models? We add GARP/CCEI/MPI/HM/VEI-based features to strong spend/engagement baselines and evaluate lift on churn, high-spender, novelty, and LTV across multiple public datasets.
+Do RP features improve predictive models?
+We benchmark GARP, CCEI, MPI, HM, and VEI features against spend/engagement baselines on churn, high-spender, novelty, and LTV tasks.
 Full results: :doc:`benchmarks_ecommerce`.
 
 .. list-table::
