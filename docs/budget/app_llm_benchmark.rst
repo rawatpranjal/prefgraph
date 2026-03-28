@@ -5,9 +5,7 @@ Do LLMs have stable action rankings, or does the ranking change when
 different alternatives are shown? We build preference graphs from LLM
 decisions and check for cycles.
 
-.. image:: ../_static/app_llm_stock.svg
-   :alt: LLM Consistency Benchmarks
-   :align: center
+
 
 **TL;DR.** GPT-4o-mini usually keeps a stable ranking of actions.
 Between 74 to 92 percent of vignettes pass SARP at temperature 0, and
