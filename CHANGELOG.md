@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.5.13] - 2026-03-28
+
+### Added
+- E-commerce benchmarks: consolidate Taobao (Buy-Anchored) results into main index and benchmarks.
+
+## [0.5.13] - 2026-03-28
+
+### Added
+- E-commerce benchmarks: consolidate Taobao (Buy-Anchored) results into main index and benchmarks.
+
 ## [0.5.9] - 2026-03-28
 
 ### Changed
