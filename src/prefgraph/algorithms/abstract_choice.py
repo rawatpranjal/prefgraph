@@ -505,6 +505,12 @@ check_abstract_warp = validate_menu_warp
 check_abstract_sarp = validate_menu_sarp
 """Legacy alias: use validate_menu_sarp instead."""
 
+menu_sarp_check = validate_menu_sarp
+"""Technical alias: use validate_menu_sarp instead."""
+
+menu_warp_check = validate_menu_warp
+"""Technical alias: use validate_menu_warp instead."""
+
 check_congruence = validate_menu_consistency
 """Legacy alias: use validate_menu_consistency instead."""
 

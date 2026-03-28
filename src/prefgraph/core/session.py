@@ -846,8 +846,24 @@ class MenuChoiceLog:
         return len(self.all_items)
 
     def to_engine_tuple(self) -> tuple[list[list[int]], list[int], int]:
-        """Convert to ``(menus, choices, n_items)`` tuple for ``Engine.analyze_menus()``."""
-        return ([sorted(m) for m in self.menus], list(self.choices), self.num_items)
+        """Convert to ``(menus, choices, n_items)`` tuple for ``Engine.analyze_menus()``.
+        
+        Note: Automatically remaps item IDs to 0..N-1 if they are not already 
+        compact, to prevent out-of-bounds access in the Rust engine.
+        """
+        all_items = sorted(self.all_items)
+        n_items = len(all_items)
+        
+        # Check if already 0..N-1
+        if n_items > 0 and all_items[0] == 0 and all_items[-1] == n_items - 1:
+            return ([sorted(m) for m in self.menus], list(self.choices), n_items)
+            
+        # Need remapping
+        item_map = {item: idx for idx, item in enumerate(all_items)}
+        remapped_menus = [[item_map[i] for i in sorted(m)] for m in self.menus]
+        remapped_choices = [item_map[c] for c in self.choices]
+        
+        return (remapped_menus, remapped_choices, n_items)
 
     def get_item_label(self, idx: int) -> str:
         """Get label for an item index."""

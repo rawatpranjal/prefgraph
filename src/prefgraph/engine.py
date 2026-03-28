@@ -42,8 +42,8 @@ class EngineResult:
         mpi: Money Pump Index (Echenique, Lee & Shum 2011). Average
             exploitability per dollar. 0.0 = unexploitable. Range: [0, 1).
         is_harp: True if choices satisfy HARP (homothetic preferences).
-        hm_consistent: Houtman-Maks: size of largest GARP-consistent subset.
-        hm_total: Total observations. ``hm_consistent / hm_total`` = rationalizable fraction.
+        hm_consistent: Houtman-Maks: number of consistent observations (budget) or items (menu).
+        hm_total: Total observations (budget) or items (menu).
         utility_success: True if Afriat's LP recovered a rationalizing utility.
         vei_mean: Mean Varian Efficiency Index across observations. Range: [0, 1].
         vei_min: Worst-observation VEI. Range: [0, 1].
@@ -145,8 +145,8 @@ class MenuResult:
             ``compute_warp_la=True``.
         n_sarp_violations: Number of SARP violation cycles found.
         n_warp_violations: Number of WARP violation pairs found.
-        hm_consistent: Houtman-Maks: size of largest SARP-consistent subset.
-        hm_total: Total observations. ``hm_consistent / hm_total`` = consistency fraction.
+        hm_consistent: Houtman-Maks: number of consistent observations (budget) or items (menu).
+        hm_total: Total observations (budget) or items (menu).
         max_scc: Largest SCC in the item graph. 1 = acyclic.
         compute_time_us: Wall-clock computation time in microseconds.
     """
@@ -468,9 +468,11 @@ class Engine:
         chunk: list[tuple[np.ndarray, np.ndarray]],
         flags: dict[str, bool],
     ) -> list[EngineResult]:
-        """Fallback: analyze using Python backend."""
+        """Fallback: analyze using Python backend when Rust is unavailable."""
         from prefgraph import BehaviorLog, check_garp, compute_aei, compute_mpi
         from prefgraph.algorithms.mpi import compute_houtman_maks_index
+        from prefgraph.algorithms.harp import check_harp
+        from prefgraph.algorithms.utility import recover_utility
 
         results = []
         for prices, quantities in chunk:
@@ -481,6 +483,8 @@ class Engine:
             mpi_val = 0.0
             hm_consistent = 0
             hm_total = 0
+            is_harp = False
+            utility_success = False
 
             if flags.get("ccei") and not garp.is_consistent:
                 aei = compute_aei(log, method="discrete")
@@ -495,6 +499,17 @@ class Engine:
                 hm_result = compute_houtman_maks_index(log, self.tolerance)
                 hm_consistent = hm_total - len(hm_result.removed_observations)
 
+            if flags.get("harp"):
+                harp_result = check_harp(log, self.tolerance)
+                is_harp = harp_result.is_consistent
+
+            if flags.get("utility"):
+                try:
+                    util_result = recover_utility(log)
+                    utility_success = util_result.success
+                except Exception:
+                    utility_success = False
+
             results.append(EngineResult(
                 is_garp=garp.is_consistent,
                 n_violations=len(garp.violations),
@@ -502,6 +517,8 @@ class Engine:
                 mpi=mpi_val,
                 hm_consistent=hm_consistent,
                 hm_total=hm_total,
+                is_harp=is_harp,
+                utility_success=utility_success,
             ))
         return results
 
