@@ -32,13 +32,65 @@ Within-commodity substitution is invisible.
 Median price per category per month, forward-filled for missing periods. Shared
 oracle across users. Within-category product switching is invisible.
 
-**H&M.** 46,757 customers, 20 product groups (first 2 digits of article_id).
-Budget-based RP. Each customer's own average paid price per product group per
-month; unpurchased groups imputed via period-group median, then group median,
-then global median. Each raw CSV row is one purchased article unit, so quantities
-are article counts per group per month. Customers need ≥ 6 active months. Prices
-normalized 0--1 (Kaggle); relative variation is real, absolute dollar
-interpretation is lost. Sales channel ignored.
+**H&M.** 46,757 customers, 31.8M transactions (2018-09 to 2020-09). Budget-based
+RP with per-customer realized prices.
+
+*Observation unit.* Customer × month. Each customer-month is one budget
+observation consisting of a price vector and a quantity vector over 20 product
+groups.
+
+*Goods.* Product groups are the first 2 digits of article_id, top 20 by
+transaction frequency. Coarse but necessary — finer grouping destroys repeated
+support across months.
+
+*Quantities.* Article counts per group per month. Each raw CSV row is one
+purchased article unit (confirmed by duplicate (date, customer, article) rows
+representing distinct units). If a customer bought 5 items in group "06" in June,
+quantity = 5.
+
+*Prices.* Per-customer realized prices, not a shared oracle. For groups the
+customer purchased in a given month: their own average paid price across all
+articles in that group-month. For groups they did not purchase: imputed via
+period-group median → group median → global median. This three-tier fallback
+ensures every observation has a full price vector (required for RP tests) while
+preserving individual price variation where it exists. Prices are normalized 0--1
+(Kaggle competition); relative variation is real, absolute dollar values are not.
+
+*Panel eligibility.* ≥ 6 active months, ≥ 10 total observations, ≥ 5 in the
+feature window, ≥ 3 in the target window. 46,757 of ~50,000 most-active
+customers pass these filters.
+
+*Time toggle.* Default is month. Week and quarter are available as robustness
+checks but are not used in the main benchmark (week is too sparse, quarter too
+coarse).
+
+*Ignored.* Sales channel (online vs in-store) is dropped for simplicity. Any
+resulting price heterogeneity is treated as noise.
+
+*Targets.* Three targets from the last 30% of each customer's history: (1) High
+Spender — top tercile of target-window total spend (classification); (2) Future
+Spend — mean spend per period in target window (regression); (3) Spend Change —
+target mean spend minus train mean spend (regression). "Churn" was dropped
+because the design excludes customers with no future window, making it
+spend-decline-among-survivors rather than true disappearance. "LTV" was renamed
+to "Future Spend" for the same reason.
+
+*Features.* Baseline: 10 spending/concentration features (total spend, mean
+spend, std, basket size, Herfindahl, top group share, spend slope, spend CV,
+active groups, observation count). RP: GARP, CCEI, MPI, HARP, Houtman-Maks, VEI
+distributions, utility recovery, graph structure (~42 features via Engine +
+extended per-user algorithms). A dual-baseline comparison (10 core vs 17 full
+features) confirmed the extra 7 baseline features add < 0.002 AUC.
+
+*Model.* CatBoost with default parameters, 80/20 user holdout, bootstrap CI on
+lift (1000 iterations), grouped permutation importance.
+
+*Key finding.* RP features add negligible signal for classification (−0.1% AUC
+lift on High Spender) but show small consistent gains for regression (+0.003 R²
+on Future Spend, +0.005 R² on Spend Change). RP grouped importance (0.005) is
+55× smaller than baseline importance (0.276). Spending history already captures
+the predictive signal; CCEI and MPI are correlated with spending features and
+do not carry independent information for this dataset.
 
 **Instacart.** 50,000 users, 134 aisles. Menu-based RP (no prices in raw data).
 Observation = user × order × aisle with exactly one reordered SKU. Menu =
