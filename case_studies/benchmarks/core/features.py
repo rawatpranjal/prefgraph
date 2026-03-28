@@ -301,6 +301,19 @@ def extract_budget_rp_extended(
       - Graph structural: cycle count, cycle lengths, SCC structure
       - Alternative scores: swaps index, observation contributions
       - Temporal: early vs late violation patterns
+
+    Null rates (measured on n=442 Dunnhumby users):
+      - 50/59 total features fully populated (always non-null).
+      - violation_mean_position: 100% NaN — Dunnhumby's shared category prices
+        produce zero GARP cycles for every user, so there are no violation
+        positions to average. Datasets with real per-user price variation will
+        have lower null rates here.
+      - util_mean, util_std, util_range, util_cv, util_gini,
+        lambda_mean, lambda_std, lambda_cv: 89% NaN — Afriat's LP requires
+        GARP to hold AND numerical feasibility; shared-price data is near-
+        degenerate and causes frequent solver failures even when GARP holds.
+      All NaN values are imputed with the train-set median before model
+      training. High-null features are effectively constant post-imputation.
     """
     from prefgraph import BehaviorLog
     from prefgraph.algorithms.garp import check_garp
@@ -461,6 +474,15 @@ def extract_menu_rp_extended(
       - Preference graph: density, transitivity
       - Congruence: full rationalizability test
       - Ordinal utility: preference ranking stats
+
+    Null rates (measured on n=500 users per dataset):
+      - 25/27 features fully populated across all menu datasets (always non-null).
+      - menu_util_range, menu_util_std: NaN when the ordinal utility LP is
+        under-constrained (too few distinct choice observations to pin down a
+        ranking). Rates vary by dataset richness:
+          REES46 (server-defined sessions, rich history):  26% NaN
+          Taobao buy-window (sparse 6h windows):           82% NaN
+      All NaN values are imputed with the train-set median before model training.
     """
     from prefgraph.algorithms.abstract_choice import (
         validate_menu_sarp,
