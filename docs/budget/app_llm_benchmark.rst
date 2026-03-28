@@ -78,10 +78,7 @@ corresponding triples. If A beats B in the pair {A, B}, but adding C
 shifts the choice to B in {A, B, C}, then the result depends on the menu
 and independence is violated.
 
-Stochastic results use K=20 samples at temperature 0.7 per menu and
-report the majority choice. Agreement measures the percent of menus where
-this majority matches the deterministic pick. Percent mixed is the share
-of menus where the K responses do not all agree.
+Stochastic results evaluate K=20 samples at temperature 0.7 per menu as probability distributions, testing directly against Random Utility Model (RUM) consistency. Percent mixed is the share of menus where the K responses are not completely deterministic.
 
 .. _llm-why-design:
 
@@ -199,44 +196,28 @@ or adversarial. Content is notably fragile on clear cases.
 
 .. _llm-iia:
 
-.. list-table:: IIA violations
+.. list-table:: IIA violations (Deterministic)
    :header-rows: 1
-   :widths: 20 15 15 20
+   :widths: 50 50
 
-   * -
-     - Deterministic
-     - Stochastic
-     - Agreement
+   * - Scenario
+     - IIA Violations
    * - Support
      - 3
-     - 3
-     - 95.8%
    * - Alert
      - 2
-     - 3
-     - 96.6%
    * - Content
      - 9
-     - 12
-     - 95.5%
    * - Jobs
      - 15
-     - 14
-     - 97.6%
    * - Procurement
      - 8
-     - 6
-     - 97.7%
 
 *IIA violation = adding a third option flips the pairwise preference.
-Stochastic = majority-vote from K=20 reps. Agreement = % of menus
-where temp=0 and temp=0.7 majority match. Procurement stochastic
-based on 82% of expected data (41/50 vignette-prompt combos).*
+Procurement stochastic based on 82% of expected data (41/50 vignette-prompt combos).*
 
 Read this table as a stress test for menu dependence. Higher IIA counts
-mean more flips when a third option is added. High agreement means the
-stochastic sample reinforces the deterministic choice rather than
-contradicting it.
+mean more flips when a third option is added.
 
 .. _llm-stoch-results:
 
@@ -246,12 +227,10 @@ Results 2: Stochastic Choice (RUM)
 ----------------------------------
 
 We aggregate the K responses into choice frequencies and test random
-utility consistency. This complements majority vote and reveals whether
-the observed probabilities admit a rationalizing distribution over
-rankings.
+utility consistency. This reveals whether the observed probabilities
+admit a rationalizing distribution over rankings.
 
-Majority vote summarizes what the model usually picks. To test stochastic
-choice directly, we aggregate the K responses per menu into frequencies and
+To test stochastic choice directly, we aggregate the K responses per menu into frequencies and
 check Random Utility Model consistency, regularity, IIA, and transitivity.
 
 .. list-table:: RUM pass rate by prompt (percent of vignette plus prompt pairs)
@@ -345,12 +324,12 @@ Patterns
 --------
 
 IIA violations are not evenly distributed. Decision-tree is the IIA
-hotspot on job screening (6 of 14 stochastic violations), while it
+hotspot on job screening (accounting for nearly half of the category's violations), while it
 scores 100% SARP on procurement. Conservative leads on content
-moderation (4 of 12). The same prompt can be the most and least
+moderation (accounting for nearly half of the category's violations). The same prompt can be the most and least
 consistent depending on the decision domain.
 
-.. list-table:: IIA violations by prompt (stochastic, top entries)
+.. list-table:: IIA violations by prompt (top entries)
    :header-rows: 1
    :widths: 22 22 16
 
@@ -417,9 +396,7 @@ preferred, a hallmark of the compromise pattern.
 Content moderation shows that clear cases are not always stable. The
 clear tier passes only 47 percent of the time under stochastic sampling
 while ambiguous and adversarial tiers are much higher. Menu dependent
-severity judgments remain even after majority voting. We still see 12
-stochastic IIA violations, which confirms that context effects persist
-when we aggregate.
+severity judgments remain even under probabilistic sampling. We still see persistent probability shifts indicating IIA violations, which confirms that context effects remain strong even when we aggregate.
 
 Prompt effects are real and specific to the domain. Decision tree is the
 only prompt to reach 100 percent on a scenario and it does so on
@@ -432,11 +409,11 @@ conservative prompt has 24 percent mixed menus, the highest of any
 scenario and prompt. Spending authority choices are more sensitive to
 sampling temperature when the prompt emphasizes caution.
 
-Finally, stochastic sampling barely changes the big picture. Between 96
-and 98 percent of menus agree between temperature 0 and the majority vote
-at temperature 0.7. Only 8 to 12 percent of menus produce mixed responses
-across 20 repetitions. The inconsistency we see is structural rather than
-noise.
+Finally, stochastic sampling exhibits strongly peaked distributions. Only
+8 to 12 percent of menus produce mixed responses across 20 repetitions, meaning
+the language model stays highly confident in its ranking, even when it is
+contradicting itself under different menu contexts. The inconsistency we see
+is structural rather than noise.
 
 .. _llm-replication:
 
@@ -528,8 +505,7 @@ Limitations
 
 No ground truth (consistency ≠ accuracy). Synthetic vignettes. Single
 model family. Procurement stochastic based on 82% of expected data.
-Stochastic analysis uses majority-vote aggregation over K=20 reps, not
-a formal RUM LP test. For stochastic rationality testing (regularity,
+For theoretical details on stochastic rationality testing (regularity,
 Block-Marschak) see :doc:`../menu/theory_stochastic`.
 
 Worked Example
