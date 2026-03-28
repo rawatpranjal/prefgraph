@@ -103,10 +103,10 @@ def run_benchmark(data_dir=None, n_users=None) -> list[BenchmarkResult]:
         results.append(result)
 
         if task_type == "classification":
-            print(f"    AUC: RP={result.auc_rp:.3f}  Base={result.auc_base:.3f}  "
-                  f"Combined={result.auc_combined:.3f}  Lift={result.auc_lift:+.3f}")
+            print(f"    AUC: RP={result.oos_auc_rp:.3f}  Base={result.oos_auc_base:.3f}  "
+                  f"Combined={result.oos_auc_combined:.3f}  Lift={result.oos_auc_combined - result.oos_auc_base:+.3f}")
         else:
-            print(f"    R2: RP={result.r2_rp:.3f}  Base={result.r2_base:.3f}  "
-                  f"Combined={result.r2_combined:.3f}")
+            print(f"    R2: RP={result.oos_r2_rp:.3f}  Base={result.oos_r2_base:.3f}  "
+                  f"Combined={result.oos_r2_combined:.3f}")
 
     return results
