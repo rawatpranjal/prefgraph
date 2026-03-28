@@ -224,6 +224,10 @@ def main():
     parser.add_argument("--compress", type=float, default=0.5, help="Balance: pull toward median (0–1)")
     parser.add_argument("--min-ms", type=int, default=120, help="Balance: minimum per-frame duration")
     parser.add_argument("--max-ms", type=int, default=1500, help="Balance: maximum per-frame duration")
+    parser.add_argument("--text-ms", type=int, default=1100,
+                        help="pace-text: hold time (ms) for frames where caption text changes")
+    parser.add_argument("--body-ms", type=int, default=400,
+                        help="pace-text: hold time (ms) for illustration-only frames")
     parser.add_argument("--dry-run", action="store_true", help="Print changes without writing GIFs")
     args = parser.parse_args()
 
@@ -279,11 +283,11 @@ def main():
             tmp_path.replace(g)
     elif args.pace_text:
         print(
-            f"Processing {len(gifs)} GIF(s) with pace-text: text_ms=1100, body_ms=400"
+            f"Processing {len(gifs)} GIF(s) with pace-text: text_ms={args.text_ms}, body_ms={args.body_ms}"
         )
         for g in gifs:
             frames, orig_durations, base_info = read_frames_and_durations(g)
-            new_durations = pace_text_frames(frames, text_ms=1100, body_ms=400, band_ratio=0.22)
+            new_durations = pace_text_frames(frames, text_ms=args.text_ms, body_ms=args.body_ms, band_ratio=0.22)
             print(f"\n{g}")
             print("  " + summarize("original", orig_durations))
             print("  " + summarize("paced   ", new_durations))
