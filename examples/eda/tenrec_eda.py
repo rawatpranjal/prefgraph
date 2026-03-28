@@ -17,6 +17,88 @@ Six diagnostics:
 6. User-level pathology rates (size-1 prevalence, like rates)
 
 Run: python examples/eda/tenrec_eda.py
+
+================================================================================
+CRITICAL ISSUES IDENTIFIED (see tenrec_report.md for full results)
+================================================================================
+
+1. CHOSEN-ITEM ALWAYS LAST (100%, STRUCTURAL)
+   Windows are defined ending at a like event. The liked item is mechanically
+   terminal. This means the signal is NOT preference from a set, but sequential
+   stopping behavior ("user scrolls until they find something they like, stops").
+
+   Consequence: Cannot be fixed by window redefinition. The like/share/follow
+   is the only credible choice signal, but it's always the terminal event.
+
+2. HIGH SIZE-1 PREVALENCE (35-46% of windows)
+   35-46% of windows are single-item exposures. A one-item "menu" is not a
+   choice set. These observations have zero information for preference revelation.
+
+3. HUGE TAIL RISK (p99 = 198-372 items)
+   Window size distribution is heavily right-skewed. While median is small (2-3),
+   the p99 reaches 198-372 items. Some users see hundreds of items before liking
+   something. These degenerate windows violate the coherent-menu assumption.
+
+4. SIZE vs CATEGORY COHERENCE TRADE-OFF (UNRESOLVABLE)
+   - Category-run micro-sessions: Preserve 99.8% category coherence but produce
+     median window size 1.0 (too small to be a menu)
+   - K=5 windows: Achieve reasonable size but only 22% same-category
+   - K=10 windows: Larger size but only 8.6% same-category
+
+   No construction achieves both reasonable size (≥4) AND high coherence (>70%).
+
+5. SPARSE LIKE SIGNAL (0.8-1.1% of rows)
+   Like events are rare. Only ~1 in 100-125 rows is a like. This makes it hard
+   to build enough valid windows per user for stable RP analysis.
+
+6. NO TIMESTAMPS, ONLY TEMPORAL ORDER
+   Tenrec released data have no timestamps, only row order. Any "session"
+   definition is synthetic. Cannot use gap-based sessioning heuristics.
+
+7. WINDOWS ARE INHERENTLY SEQUENTIAL, NOT SIMULTANEOUS
+   Data represent a recommendation feed where users see items one-by-one
+   in time order. This is NOT a simultaneous menu-choice context (like a
+   grocery shelf). Sequential behavior confounds choice with order effects
+   and stopping rules.
+
+8. CATEGORY DIVERSITY IN FULL WINDOWS
+   In full-file analysis (2.44M rows): median unique category = 2.0, not 1.0.
+   Larger window definitions (K=10) can span many categories. This destroys
+   the coherent-menu assumption for classical RP.
+
+9. ACCEPTANCE CRITERIA ALL CONSTRUCTIONS FAIL
+   Threshold: 4+ out of 5 criteria pass (80%)
+   Result: All three salvage constructions score 3/5 (60%)
+
+   Failing criteria:
+   - Chosen-last < 100%: All fail (100% across all constructions)
+   - Median size >= 4: Cat-run fails (median 1.0)
+   - Same-category > 70%: K-windows fail (22%, 8.6%)
+
+10. FULL-FILE ROBUSTNESS CHECK CONFIRMS FINDINGS
+    Tested on full 2.44M row QB-video.csv (not just sequential 500K):
+    - Chosen-last = 100% identical (structural, not artifact)
+    - p99 window size 220 (similar to 500K: 199)
+    - Size-1 prevalence 34.8% (similar to 500K: 45.6%)
+    - Category coherence stable (81.6% vs 85.9%)
+
+    Conclusion: 500K sequential sample IS representative. Salvage failure
+    is robust across entire dataset.
+
+================================================================================
+BOTTOM LINE
+================================================================================
+
+Tenrec is a recommender-system engagement log, not a menu-choice dataset.
+
+Cannot be salvaged for classical RP analysis. The fundamental issue is that
+the "choice" (like) is the terminal event in a sequence, not a decision from
+a simultaneous set of alternatives.
+
+Recommended action: Move to appendix (sequential-engagement reframe) or drop.
+
+See: tenrec_report.md (facts), tenrec_salvage_report.md (salvage results),
+     tenrec_robustness_check.md (full-file validation)
 """
 
 from __future__ import annotations
