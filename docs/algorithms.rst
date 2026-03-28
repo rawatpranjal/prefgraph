@@ -418,13 +418,13 @@ Python API.
 
 .. code-block:: python
 
-   from prefgraph import MenuChoiceLog, menu_sarp_check
+   from prefgraph import MenuChoiceLog, validate_menu_sarp
 
    # 1. Create a log (Menus and chosen item indices)
-   log = MenuChoiceLog(menus=menus, picks=picks)
+   log = MenuChoiceLog(menus=menus, choices=choices)
 
    # 2. Test SARP (O(T²))
-   result = menu_sarp_check(log)
+   result = validate_menu_sarp(log)
    print(f"SARP Consistent: {result.is_consistent}")
 
 **Money Pump Index (MPI)**
@@ -444,7 +444,7 @@ Python API.
    from prefgraph import StochasticChoiceLog, fit_random_utility_model
 
    # 1. Create a log (Menus and choice frequencies)
-   log = StochasticChoiceLog(menus=menus, counts=counts)
+   log = StochasticChoiceLog(menus=menus, choice_frequencies=choice_frequencies)
 
    # 2. Fit Logit model
    result = fit_random_utility_model(log, model_type="logit")

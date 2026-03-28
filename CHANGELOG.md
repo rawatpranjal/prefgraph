@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.5.7] - 2026-03-28
+
+### Fixed
+- Python fallback engine now computes HARP and utility_success (were always False without Rust)
+
 ## [0.5.6] - 2026-03-28
 
 Re-release of 0.5.5 with multi-platform wheels (Linux manylinux2_28, macOS x86+arm, Windows, Python 3.10–3.13). v0.5.5 only shipped a macOS cp311 wheel.

@@ -15,8 +15,7 @@ PrefGraph scores *how much* (0 = incoherent, 1 = perfectly rational).
    <div class="feature-grid">
      <div class="feature-card">
        <h3>Build &amp; Test</h3>
-       <p>Budget data (prices × quantities) → observation graph. Menu data (sets × picks) → item graph. Test GARP, SARP, WARP for cycles via Floyd-Warshall and Tarjan SCC.</p>
-     </div>
+       <p>Budget data (prices × quantities) → observation graph. Menu data (menus × choices) → item graph. Test GARP, SARP, WARP for cycles via Floyd-Warshall and Tarjan SCC.</p>     </div>
      <div class="feature-card">
        <h3>Score &amp; Recover</h3>
        <p>CCEI, MPI, Houtman-Maks, VEI — each user gets a 0-to-1 rationality score. Then recover utility functions, welfare bounds, or detect IIA violations.</p>
@@ -66,8 +65,7 @@ Two Core Data Types
 
 .. code-block:: text
 
-   Budget Data (prices + quantities)          Menu Data (sets + picks)
-   ───────────────────────────────            ──────────────────────────
+   Budget Data (prices + quantities)          Menu Data (menus + choices)   ───────────────────────────────            ──────────────────────────
    1. Load → BehaviorLog                     1. Load → MenuChoiceLog
    2. Rational? → validate_consistency()     2. Rational? → validate_menu_sarp()
    3. How much? → compute_integrity_score()  3. How much? → compute_menu_efficiency()
