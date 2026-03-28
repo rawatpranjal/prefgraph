@@ -11,7 +11,25 @@ sys.path.insert(0, os.path.abspath("../src"))
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 
 # Mock the compiled Rust extension so autodoc works without Rust toolchain (RTD)
-autodoc_mock_imports = ["prefgraph._rust_core", "numba"]
+autodoc_mock_imports = ["prefgraph._rust_core"]
+
+import sys
+from unittest.mock import MagicMock
+
+class MockNumba(MagicMock):
+    @classmethod
+    def njit(cls, *args, **kwargs):
+        def decorator(func):
+            return func
+        if len(args) == 1 and callable(args[0]) and not kwargs:
+            return args[0]
+        return decorator
+        
+    @classmethod
+    def prange(cls, *args):
+        return range(*args)
+
+sys.modules['numba'] = MockNumba()
 
 # -- Project information -----------------------------------------------------
 
