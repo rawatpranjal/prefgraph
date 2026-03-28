@@ -47,9 +47,9 @@ chose item X at price P when items Y, Z were also available at their prices.
      - Promotions, surge pricing, and dynamic pricing create 10-30% price
        variation across orders, which is essential for GARP violations.
    * - Dense R graph
-     - Despite sparse choices, the revealed preference graph R has ~50%
-       density. If you spent $25 on a burger, every item under $25 is
-       "revealed affordable."
+     - Despite sparse choices, the observation graph :math:`R` has approximately 50%
+       density. An order of $25 renders every item priced below $25
+       affordable, creating a revealed preference edge to each.
    * - High violation rates
      - Simulated users are only ~25% GARP-consistent, with mean AEI around
        0.87. Noisy discrete choices from menus generate apparent inconsistency

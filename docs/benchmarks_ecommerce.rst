@@ -353,7 +353,7 @@ Menu-dataset top features (Taobao + Tenrec):
    * - 2
      - menu_transitivity
      - **RP**
-     - Preference graph transitivity ratio
+     - Item graph transitivity ratio
    * - 3
      - n_sessions
      - Baseline
@@ -361,7 +361,7 @@ Menu-dataset top features (Taobao + Tenrec):
    * - 4
      - menu_pref_density
      - **RP**
-     - Revealed preference graph edge density
+     - Item graph edge density
    * - 5
      - choice_entropy_norm
      - **RP**
@@ -371,8 +371,8 @@ Menu-dataset top features (Taobao + Tenrec):
      - **RP**
      - Ordinal utility spread (max - min recovered rank)
 
-Four of the top 8 menu features are RP-derived — preference graph
-structure and choice entropy carry signal that engagement stats miss.
+Four of the top 8 menu features are RP-derived. Item graph
+structure and choice entropy carry signal that engagement statistics do not capture.
 
 Reproduce
 ---------
@@ -399,7 +399,7 @@ Appendix: Pipeline
           Baseline (13): RFM, category concentration, temporal trends
           RP Engine (14): CCEI, MPI, HM, VEI, GARP, HARP, SCC, n_scc, harp_severity
           RP Extended (28): VEI distribution, utility recovery (Gini, CV),
-              preference graph (density, transitivity, cycles), MPI cycle costs,
+              graph network (density, transitivity, cycles), MPI cycle costs,
               choice reversals, choice entropy, congruence, ordinal utility
      -> LightGBM (num_leaves=15, lr=0.03, reg_alpha=1.0, reg_lambda=5.0)
      -> 5-fold stratified CV

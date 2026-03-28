@@ -438,7 +438,7 @@ Part 6: Recovering Preferences
 ------------------------------
 
 For SARP-consistent data, we can recover the ordinal preference ranking
-using topological sort of the revealed preference graph.
+using topological sort of the item graph.
 
 .. code-block:: python
 

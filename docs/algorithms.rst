@@ -60,12 +60,12 @@ Axiom of Revealed Preference (GARP) if for every sequence of observations
 \dots, p_{t_k}x_{t_k} \geq p_{t_k}x_{t_1}` implies that all inequalities are
 actually equalities.
 
-**Intuition**: If you choose bundle :math:`A` when :math:`B` was cheaper, you
-reveal :math:`A \succeq B`. If you then choose :math:`B` when :math:`A` was
-strictly cheaper, you have a contradiction (:math:`B \succ A`), implying no stable
-utility function can explain your behavior.
+**Intuition**: If an agent selects bundle :math:`A` when :math:`B` was less expensive,
+this reveals :math:`A \succeq B`. If the agent subsequently selects :math:`B` when :math:`A` was
+strictly less expensive, this produces a contradiction (:math:`B \succ A`), implying no stable
+utility function can rationalize the observed behavior.
 
-**Traditional approach** (pre-2015): Build the direct revealed preference graph
+**Traditional approach** (pre-2015): Build the direct observation graph
 :math:`G_{R_0}`, compute its transitive closure :math:`R^*` via Floyd-Warshall in
 :math:`O(T^3)`, then check :math:`\neg(i R^* j \wedge j P_0 i)` for all pairs.
 

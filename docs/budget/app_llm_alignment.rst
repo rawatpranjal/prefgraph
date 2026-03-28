@@ -37,7 +37,7 @@ a shortlist) --- and vary the **system prompt** rather than the model.
 **What you'll learn:**
 
 - How to design a controlled SARP experiment for LLM agents
-- Why system prompts can introduce cycles into the preference graph
+- Why system prompts can introduce cycles into the item graph
 - How to measure prompt-induced inconsistency with Houtman-Maks
 - A practical pipeline for auditing prompts before deployment
 
@@ -68,7 +68,7 @@ tests whether such a ranking exists.
 SARP for prompt testing
 ~~~~~~~~~~~~~~~~~~~~~~~
 
-Build the item preference graph :math:`G` from all trials. SARP holds
+Build the item graph :math:`G` from all trials. SARP holds
 iff the transitive closure :math:`G^*` is acyclic:
 
 .. math::
