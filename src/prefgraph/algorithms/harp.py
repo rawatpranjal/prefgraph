@@ -89,22 +89,12 @@ def check_harp(
     diagonal_products = np.diag(max_log_product)
     is_consistent = not np.any(diagonal_products > tolerance)
 
-    # Find violating cycles
+    # HARP is a binary test only — Varian (1983) and C&E (2016, Thm 4.2)
+    # define no severity metric. max_cycle_product is always 1.0.
     violations: list[tuple[Cycle, float]] = []
     max_cycle_product = 1.0
 
     if not is_consistent:
-        # Compute max_cycle_product from pairwise 2-cycles (exact for length-2).
-        # FW diagonal overestimates because it traverses cycles multiple times.
-        T = log_ratio_matrix.shape[0]
-        for i in range(T):
-            for j in range(i + 1, T):
-                if adjacency[i, j] and adjacency[j, i]:
-                    product = float(np.exp(
-                        log_ratio_matrix[i, j] + log_ratio_matrix[j, i]
-                    ))
-                    max_cycle_product = max(max_cycle_product, product)
-
         violations, _ = _find_harp_violations(
             log_ratio_matrix, adjacency, max_log_product, tolerance
         )

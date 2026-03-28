@@ -8,7 +8,7 @@ use rpt_core::ccei::ccei_search;
 use rpt_core::garp::{garp_check, garp_check_with_closure};
 use rpt_core::graph::PreferenceGraph;
 use rpt_core::harp::harp_check;
-use rpt_core::houtman_maks::houtman_maks;
+use rpt_core::houtman_maks::{houtman_maks, houtman_maks_exact};
 use rpt_core::mpi::mpi_karp;
 use rpt_core::utility::recover_utility;
 use rpt_core::vei::{compute_vei as run_vei, compute_vei_exact as run_vei_exact};
@@ -265,8 +265,16 @@ fn process_users_parallel(
                     (false, 1.0)
                 };
 
+                // Houtman-Maks: use exact ILP (Demuynck & Rehbeck 2023) for
+                // T ≤ 200 where MILP is tractable; greedy FVS for larger T
+                // where the NP-hard problem is approximated.
+                // Reference: Smeulders et al. (2014) prove HM is NP-hard.
                 let (hm_c, hm_t) = if flags.hm {
-                    houtman_maks(graph)
+                    if graph.t <= 200 {
+                        houtman_maks_exact(graph)
+                    } else {
+                        houtman_maks(graph)
+                    }
                 } else {
                     (0, 0)
                 };
