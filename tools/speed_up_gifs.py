@@ -34,7 +34,7 @@ import statistics
 from pathlib import Path
 from typing import Iterable, List, Tuple
 
-from PIL import Image, ImageSequence
+from PIL import Image, ImageSequence, ImageChops, ImageStat
 
 
 def iter_gifs(paths: Iterable[Path]) -> Iterable[Path]:
@@ -159,6 +159,54 @@ def process_gif(path: Path, factor: float, dry_run: bool = False) -> None:
     tmp_path.replace(path)
 
 
+def detect_text_change(prev: Image.Image, curr: Image.Image, band_ratio: float = 0.22, thr: float = 3.0) -> bool:
+    """
+    Heuristic: detect significant change in the top band (where captions/steps live).
+    Uses mean absolute difference on a grayscale crop of the top band.
+    """
+    w, h = curr.size
+    band_h = max(1, int(h * band_ratio))
+    box = (0, 0, w, band_h)
+    a = prev.convert("L").crop(box)
+    b = curr.convert("L").crop(box)
+    diff = ImageChops.difference(a, b)
+    mean_val = ImageStat.Stat(diff).mean[0]
+    return mean_val >= thr
+
+
+def pace_text_frames(
+    frames: List[Image.Image],
+    text_ms: int = 1100,
+    body_ms: int = 400,
+    band_ratio: float = 0.22,
+) -> List[int]:
+    """
+    Assign longer delays when the text/caption area changes, shorter for in-between frames.
+
+    - text_ms: hold time for frames where the top band text changes
+    - body_ms: default hold time for other frames (illustrations)
+    """
+    if not frames:
+        return []
+    durations: List[int] = []
+    prev = frames[0]
+    durations.append(int(round(text_ms / 10.0)) * 10)
+    for i in range(1, len(frames)):
+        if detect_text_change(prev, frames[i], band_ratio=band_ratio):
+            d = text_ms
+        else:
+            d = body_ms
+        d = int(round(d / 10.0)) * 10
+        durations.append(max(10, d))
+        prev = frames[i]
+    return durations
+
+
+def set_uniform_duration(frames: List[Image.Image], ms: int) -> List[int]:
+    d = int(round(ms / 10.0)) * 10
+    return [max(10, d) for _ in frames]
+
+
 def main():
     parser = argparse.ArgumentParser(description="Adjust GIF frame durations (scale or balance).")
     parser.add_argument("paths", nargs="*", type=Path, help="Directories/files to process")
@@ -166,6 +214,12 @@ def main():
     mode.add_argument("--factor", type=float, help="Scale: speed-up factor (>1 = faster)")
     mode.add_argument(
         "--balance", action="store_true", help="Balance durations by compressing extremes"
+    )
+    mode.add_argument(
+        "--pace-text", action="store_true", help="Hold frames longer when text changes in top band"
+    )
+    mode.add_argument(
+        "--uniform", type=int, help="Set a uniform per-frame duration in ms (e.g., 900)"
     )
     parser.add_argument("--compress", type=float, default=0.5, help="Balance: pull toward median (0–1)")
     parser.add_argument("--min-ms", type=int, default=120, help="Balance: minimum per-frame duration")
@@ -207,6 +261,60 @@ def main():
                 continue
             # Save via process_gif path by temporarily monkey-patching scale behavior
             # but here we re-use saving logic directly for clarity
+            if not frames:
+                continue
+            first, rest = frames[0], frames[1:]
+            save_kwargs = dict(
+                save_all=True,
+                append_images=rest,
+                duration=new_durations,
+                loop=base_info.get("loop", 0) if base_info.get("loop") is not None else 0,
+                disposal=2,
+                optimize=False,
+            )
+            if base_info.get("transparency") is not None:
+                save_kwargs["transparency"] = base_info["transparency"]
+            tmp_path = g.with_suffix(".tmp.gif")
+            first.save(tmp_path, format="GIF", **save_kwargs)
+            tmp_path.replace(g)
+    elif args.pace_text:
+        print(
+            f"Processing {len(gifs)} GIF(s) with pace-text: text_ms=1100, body_ms=400"
+        )
+        for g in gifs:
+            frames, orig_durations, base_info = read_frames_and_durations(g)
+            new_durations = pace_text_frames(frames, text_ms=1100, body_ms=400, band_ratio=0.22)
+            print(f"\n{g}")
+            print("  " + summarize("original", orig_durations))
+            print("  " + summarize("paced   ", new_durations))
+            if args.dry_run:
+                continue
+            if not frames:
+                continue
+            first, rest = frames[0], frames[1:]
+            save_kwargs = dict(
+                save_all=True,
+                append_images=rest,
+                duration=new_durations,
+                loop=base_info.get("loop", 0) if base_info.get("loop") is not None else 0,
+                disposal=2,
+                optimize=False,
+            )
+            if base_info.get("transparency") is not None:
+                save_kwargs["transparency"] = base_info["transparency"]
+            tmp_path = g.with_suffix(".tmp.gif")
+            first.save(tmp_path, format="GIF", **save_kwargs)
+            tmp_path.replace(g)
+    elif args.uniform:
+        print(f"Processing {len(gifs)} GIF(s) with uniform duration: {args.uniform} ms")
+        for g in gifs:
+            frames, orig_durations, base_info = read_frames_and_durations(g)
+            new_durations = set_uniform_duration(frames, ms=args.uniform)
+            print(f"\n{g}")
+            print("  " + summarize("original", orig_durations))
+            print("  " + summarize("uniform ", new_durations))
+            if args.dry_run:
+                continue
             if not frames:
                 continue
             first, rest = frames[0], frames[1:]

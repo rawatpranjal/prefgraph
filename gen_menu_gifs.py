@@ -23,6 +23,7 @@ def draw_box(ax, x, y, text, w, h, bg, txt_c, lw=1, ec="#95a5a6"):
 # 1. Deterministic
 def gen_deterministic():
     fig, ax = plt.subplots(figsize=(4, 3), facecolor=PALETTE["bg"])
+    fig.subplots_adjust(left=0, right=1, bottom=0, top=1)
     items = ["Laptop", "Tablet", "Phone"]
     frames = 20
     def update(f):
@@ -31,7 +32,7 @@ def gen_deterministic():
         ax.set_xlim(-2.5, 2.5)
         ax.set_ylim(-2.0, 2.0)
         ax.axis("off")
-        ax.set_title("Deterministic\nMenuChoiceLog", fontsize=12, fontweight="bold", pad=10, color="#333")
+        ax.text(0, 1.4, "Deterministic\nMenuChoiceLog", ha="center", va="top", fontsize=14, fontweight="bold", color="#333")
         
         for i, item in enumerate(items):
             y = 0.6 - i*0.6
@@ -42,12 +43,13 @@ def gen_deterministic():
                 draw_box(ax, 0, y, item, 2.0, 0.4, "white", PALETTE["secondary"])
     
     anim = FuncAnimation(fig, update, frames=frames, interval=250)
-    anim.save(out_dir / "deterministic.gif", writer="pillow", dpi=DPI, savefig_kwargs={'transparent': True})
+    anim.save(out_dir / "deterministic.gif", writer="pillow", dpi=DPI)
     plt.close(fig)
 
 # 2. Stochastic
 def gen_stochastic():
     fig, ax = plt.subplots(figsize=(4, 3), facecolor=PALETTE["bg"])
+    fig.subplots_adjust(left=0, right=1, bottom=0, top=1)
     items = [("Laptop", 0.6), ("Tablet", 0.3), ("Phone", 0.1)]
     frames = 20
     def update(f):
@@ -56,7 +58,7 @@ def gen_stochastic():
         ax.set_xlim(-2.5, 2.5)
         ax.set_ylim(-2.0, 2.0)
         ax.axis("off")
-        ax.set_title("Stochastic\nStochasticChoiceLog", fontsize=12, fontweight="bold", pad=10, color="#333")
+        ax.text(0, 1.4, "Stochastic\nStochasticChoiceLog", ha="center", va="top", fontsize=14, fontweight="bold", color="#333")
         
         prog = min(1.0, f / 12.0)
         for i, (item, prob) in enumerate(items):
@@ -73,12 +75,13 @@ def gen_stochastic():
                 ax.add_patch(rect)
     
     anim = FuncAnimation(fig, update, frames=frames, interval=250)
-    anim.save(out_dir / "stochastic.gif", writer="pillow", dpi=DPI, savefig_kwargs={'transparent': True})
+    anim.save(out_dir / "stochastic.gif", writer="pillow", dpi=DPI)
     plt.close(fig)
 
 # 3. Risk
 def gen_risk():
     fig, ax = plt.subplots(figsize=(4, 3), facecolor=PALETTE["bg"])
+    fig.subplots_adjust(left=0, right=1, bottom=0, top=1)
     frames = 20
     def update(f):
         ax.clear()
@@ -86,7 +89,7 @@ def gen_risk():
         ax.set_xlim(-2.5, 2.5)
         ax.set_ylim(-2.0, 2.0)
         ax.axis("off")
-        ax.set_title("Risk / Lotteries\nRiskChoiceLog", fontsize=12, fontweight="bold", pad=10, color="#333")
+        ax.text(0, 1.4, "Risk / Lotteries\nRiskChoiceLog", ha="center", va="top", fontsize=14, fontweight="bold", color="#333")
         
         # Risk A: 50% \$100 / 50% \$0
         draw_box(ax, 0, 0.4, "Gamble A\n50% \$100 | 50% \$0", 2.2, 0.6, "white", PALETTE["secondary"])
@@ -99,7 +102,7 @@ def gen_risk():
             ax.text(1.3, -0.6, "✓", color=PALETTE["highlight"], fontsize=16, va="center")
             
     anim = FuncAnimation(fig, update, frames=frames, interval=250)
-    anim.save(out_dir / "risk.gif", writer="pillow", dpi=DPI, savefig_kwargs={'transparent': True})
+    anim.save(out_dir / "risk.gif", writer="pillow", dpi=DPI)
     plt.close(fig)
 
 if __name__ == '__main__':

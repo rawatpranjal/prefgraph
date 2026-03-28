@@ -547,3 +547,19 @@ html[data-theme="dark"] .bd-content a:hover {
         transition: none !important;
     }
 }
+
+.bd-content table.docutils.gif-grid, 
+.bd-content table.docutils.gif-grid tr, 
+.bd-content table.docutils.gif-grid td, 
+.bd-content table.docutils.gif-grid th {
+    border: none !important;
+}
+
+.bd-content table.docutils.gif-grid td {
+    padding: 8px !important;
+}
+
+.bd-content table.docutils.gif-grid img {
+    border-radius: 8px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+}
