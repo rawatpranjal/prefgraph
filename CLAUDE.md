@@ -29,6 +29,13 @@ from these local files rather than paraphrasing from memory. Key papers per modu
 - **Always commit and push after completing changes.** Do not wait for the user to ask - commit and push to main automatically when work is done.
 - **Never add Co-Authored-By or any Claude attribution to commit messages.**
 
+## Visual Asset Rules
+
+- **Match docs theme.** All visuals (GIFs, graphs, diagrams) use PrefGraph blue (`#2563eb` / `#3b82f6`) on white (`#fafafa`). No dark themes or flashy styles.
+- **Strip all unnecessary text.** No titles, counters, percentages, or captions that the visual already communicates. Keep only the essential metric (e.g. the HM fraction).
+- **Visual legends over sentence captions.** Use compact icon + label legends (e.g. mini circle = "option", mini arrow = "prefers") instead of paragraph descriptions.
+- **LinkedIn-quality.** Assets serve double duty on docs and social media. Use 150 DPI minimum, clean typography, drop shadows on nodes.
+
 ## Documentation Rules
 
 - **RTD nav tab order:** Loading Data, Budgets, Menus, Case Studies, Algorithms, API, References. API/References are intentionally pushed right so they overflow into "More" on narrow viewports. Case Studies wraps LLM Consistency + E-commerce Predictive + Performance.
