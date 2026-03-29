@@ -108,14 +108,10 @@ containing at least one "strictly more expensive" edge.
 
 - **Rust**: ``rpt-core/src/garp.rs`` - ``garp_check()`` uses Tarjan's SCC (no closure).
 - **Batch dispatch**: ``batch.rs`` auto-selects :math:`O(T^2)` when only GARP is
-  requested.
-- **Transitive closure**: When downstream metrics need :math:`R^*` (MPI, VEI),
-  ``ensure_closure()`` uses SCC-optimized Floyd-Warshall with **u64 bitset
-  DAG propagation** — reachability vectors are packed 64 nodes per word, so
-  component merges use bitwise OR instead of per-element comparison.
-  Benchmarked at 35× faster than per-element propagation at T=800 with 200+
-  components.  Legacy implementation kept as ``scc_transitive_closure()`` in
-  ``closure.rs``.
+  requested. When downstream metrics need the full transitive closure
+  :math:`R^*` (MPI, VEI), the engine runs Floyd-Warshall within each SCC and
+  propagates reachability across the condensed DAG using bitwise operations,
+  so the :math:`O(T^3)` cost is only paid once and shared.
 
 
 CCEI (Afriat Efficiency Index)
@@ -198,11 +194,11 @@ optimal cycle in :math:`O(VE)` time, which is :math:`O(T^3)` here.
 
 .. rubric:: Implementation
 
-- **Rust**: ``rpt-core/src/mpi.rs`` - ``mpi_karp_v2()`` (default) uses
-  **sparse predecessor lists** so the inner DP loop only iterates over actual
-  R-edges instead of scanning all T nodes.  At typical R-density of 30–40%,
-  this skips 60–70% of iterations for a 4.3× speedup at T=500.  The dense
-  variant ``mpi_karp()`` is kept as legacy for comparison.
+- **Rust**: ``rpt-core/src/mpi.rs`` - Karp's DP with sparse adjacency, so the
+  algorithm only visits actual preference edges rather than the full
+  :math:`T \times T` matrix.  Theoretical complexity remains :math:`O(T^3)` in the
+  worst case, but real consumer data is sparse enough that MPI runs several
+  times faster than a naive dense implementation.
 
 **References**: Karp (1978); Echenique, Lee & Shum (2011, *JPE*).
 
@@ -263,14 +259,13 @@ Directed Feedback Vertex Set (DFVS)** on the preference graph.
 
 .. rubric:: Implementation
 
-- **Rust**: ``rpt-core/src/houtman_maks.rs`` - ``houtman_maks()`` dispatches to
-  greedy (T > 200) or exact ILP (T ≤ 200).  The greedy default
-  (``houtman_maks_greedy_v2``) **scores node degrees directly** from the
-  sub-adjacency matrix using SCC labels, eliminating the per-SCC adjacency
-  copy that the legacy version allocates each iteration.  Benchmarked at
-  12.3× faster at T=300 with highly irrational data.
-- **ILP solver**: ``rpt-core/src/lp.rs`` - ``solve_hm_ilp()`` (Demuynck &
-  Rehbeck 2023, Corollary 2).
+- **Rust**: ``rpt-core/src/houtman_maks.rs`` - dispatches to greedy for large
+  datasets (T > 200) or exact ILP for smaller ones (T ≤ 200).  The greedy
+  heuristic decomposes the graph by SCC and iteratively removes the
+  highest-degree node, recomputing components after each removal.
+- **ILP solver**: ``rpt-core/src/lp.rs`` - ``solve_hm_ilp()`` uses the
+  Demuynck & Rehbeck (2023) formulation, which avoids Big-M sensitivity
+  issues through fixed parameters :math:`\alpha, \delta, \varepsilon`.
 
 **References**: Houtman & Maks (1985); Demuynck & Rehbeck (2023, *Econ Theory*).
 
