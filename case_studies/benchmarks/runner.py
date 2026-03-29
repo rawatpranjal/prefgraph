@@ -238,12 +238,22 @@ def main():
     all_results: list[BenchmarkResult] = []
     start = time.time()
 
+    try:
+        from tqdm import tqdm
+    except ImportError:
+        tqdm = None
+
+    def _iter(names, desc):
+        if tqdm is not None:
+            return tqdm(names, desc=desc, unit="ds")
+        return names
+
     # ---- LightGBM ----
     if run_lgbm:
         print("\n" + "-" * 50)
         print(" LightGBM")
         print("-" * 50)
-        for name in dataset_names:
+        for name in _iter(dataset_names, "LGBM"):
             display_name = DATASET_DISPLAY_NAMES.get(name, name)
 
             if args.skip_existing:
@@ -285,7 +295,7 @@ def main():
         )
 
         lasso_results: list[LassoResult] = []
-        for name in dataset_names:
+        for name in _iter(dataset_names, "Lasso"):
             if name not in LASSO_DATASETS:
                 print(f"  [{name}] Not in lasso registry, skipping")
                 continue
