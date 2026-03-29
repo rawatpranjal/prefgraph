@@ -345,3 +345,142 @@ Not all RP features are populated for every user. Measured on n=500 samples per 
      - Same two features, 82% NaN (buy-window sessions are sparse — few choices per user make the ordinal utility LP under-constrained)
 
 The vast majority of RP features are fully populated: 50/59 on Dunnhumby, 25/27 on REES46 and Taobao. This issue is quite isolated; it primarily affects utility-recovery and ordinal features which mathematically require a minimum number of intersecting choices to solve smoothly. The remaining features (GARP, CCEI, MPI, HM, VEI, graph density, transitivity, entropy, etc.) are always non-null. All NaN values are imputed with the per-feature train-set median before model training; the handful of high-null features carry little signal after imputation.
+
+Appendix: Dataset Summary
+--------------------------
+
+Standardized EDA across all 11 validated datasets (measured at N=2,000 users per dataset where available). T = choice occasions per user, K = number of alternatives (goods for budget, median unique items for menu), Repeat = fraction of observations where the chosen item was chosen before, Uniq% = median fraction of distinct items chosen per user.
+
+.. list-table::
+   :header-rows: 1
+   :widths: 16 7 7 7 5 5 5 6 6 6
+
+   * - Dataset
+     - Type
+     - N
+     - Total obs
+     - T med
+     - K
+     - %T≥10
+     - Repeat
+     - Uniq%
+     - Domain
+   * - Dunnhumby
+     - Budget
+     - 1,779
+     - 55,388
+     - 30
+     - 10
+     - 93%
+     - 28%
+     - 24%
+     - Grocery
+   * - Amazon
+     - Budget
+     - 1,870
+     - 54,356
+     - 31
+     - 15
+     - 95%
+     - 73%
+     - 13%
+     - E-commerce
+   * - H&M
+     - Budget
+     - 1,991
+     - 29,132
+     - 15
+     - 9
+     - 97%
+     - 68%
+     - 21%
+     - Fashion
+   * - Instacart
+     - Menu
+     - 2,000
+     - 59,649
+     - 16
+     - 18
+     - 64%
+     - 57%
+     - 50%
+     - Grocery
+   * - REES46
+     - Menu
+     - 2,000
+     - 14,922
+     - 7
+     - 24
+     - 15%
+     - 19%
+     - 86%
+     - E-commerce
+   * - Taobao
+     - Menu
+     - 2,000
+     - 11,061
+     - 5
+     - 30
+     - 2%
+     - 2%
+     - 100%
+     - E-commerce
+   * - Taobao BW
+     - Menu
+     - 590
+     - 2,593
+     - 4
+     - 25
+     - 3%
+     - 6%
+     - 100%
+     - E-commerce
+   * - RetailRocket
+     - Menu
+     - 47
+     - 356
+     - 5
+     - 57
+     - 19%
+     - 0%
+     - 100%
+     - E-commerce
+   * - Tenrec
+     - Menu
+     - 2,000
+     - 12,847
+     - 5
+     - 24
+     - 16%
+     - 0%
+     - 100%
+     - Video
+   * - MIND
+     - Menu
+     - 200
+     - 855
+     - 4
+     - 86
+     - 2%
+     - 1%
+     - 100%
+     - News
+   * - FINN
+     - Menu
+     - 1,869
+     - 15,850
+     - 9
+     - 57
+     - 39%
+     - 6%
+     - 100%
+     - Classifieds
+
+Budget datasets have rich, repeated purchase histories (T=15–31 median, 93–97% of users with T≥10, repeat rates of 28–73%). This structure is ideal for revealed preference testing: users revisit the same goods under varying prices, creating the overlapping budget sets that GARP, CCEI, and MPI require. Menu datasets are much thinner (T=4–9, 2–39% with T≥10). Recommendation platforms surface novel items, so users rarely face the same choice set twice — repeat rates are 0–6% for most menu datasets. The exceptions are Instacart (57% repeat, grocery aisles) and REES46 (19% repeat, session-based e-commerce), which are the menu datasets where RP features show the strongest predictive signal.
+
+Appendix: Feature Correlation
+-------------------------------
+
+RP features are largely orthogonal to baseline features. Across all budget datasets, the median absolute correlation between RP and baseline features is |r| = 0.10–0.13. Menu datasets show slightly higher cross-correlation (|r| = 0.28 on Instacart) because baseline features like ``choice_concentration`` partially overlap with RP entropy metrics. The strongest RP–baseline correlations are mechanical: ``n_scc`` correlates with ``n_obs`` (r = +0.77) because more observations produce more graph components, and ``pref_graph_density`` anticorrelates with ``n_obs`` (r = −0.79) for the same reason. These reflect graph construction, not economic behavior.
+
+Within the RP feature set, the utility-recovery block (``util_mean/std/range/gini``, ``lambda_mean/std/cv``) is highly redundant — pairwise correlations exceed r = 0.95. These 6–8 features measure one underlying signal (the Afriat utility scale) and could be reduced to 2–3 principal components without information loss. Similarly, ``ccei`` and ``mpi`` anticorrelate at r = −0.94 (both measure consistency in opposite directions) and ``is_garp`` equals ``is_harp`` on shared-price data. The genuinely independent RP features — those with low correlation to both baselines and other RP metrics — are ``choice_entropy``, ``menu_transitivity``, ``sarp_violation_density``, ``hm_ratio``, and ``vei_mean``. These are the same features that survive L1 selection and drive the strongest LGBM lifts.
