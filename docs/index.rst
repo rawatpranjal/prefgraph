@@ -7,28 +7,24 @@ Preference Graphs
 
 .. raw:: html
 
-   <div class="feature-grid">
-     <div class="feature-card">
-       <h3>1. Build Graph</h3>
-       <p>Map budget and menu choices to directed graphs and test for cyclic violations.</p>
+   <div style="display: flex; gap: 24px; align-items: flex-start; flex-wrap: wrap; margin: 1.5em 0;">
+     <div style="flex: 1; min-width: 280px;">
+       <p style="font-size: 1.05em; line-height: 1.6;">
+         When users make choices, we can represent their decisions as a <strong>preference graph</strong>.
+         If someone chooses A over B, B over C, and then C over A, they have formed a logic cycle.
+         These cycles represent a logical contradiction in their decision making.
+         PrefGraph runs high-speed graph algorithms (like Tarjan's SCC) to instantly detect these cycles.
+         By identifying and counting these contradictions, we can rigorously score a user's consistency.
+       </p>
      </div>
-     <div class="feature-card">
-       <h3>2. Score Users</h3>
-       <p>Compute Consistency, Rationality and Exploitability Scores like CCEI and Houtman-Maks.</p>
+     <div style="flex: 1; min-width: 320px;">
+       <img src="_static/intro_graphs.png" style="width: 100%; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);" alt="Example of Preference Graphs">
+       <p style="margin-top: 8px; font-size: 0.85em; color: #555;">
+         <strong>Consistency in action:</strong> User A makes logical choices without contradictions.
+         User B creates a cycle by choosing Item C over Item A — PrefGraph catches this reversal
+         and penalizes User B's score.
+       </p>
      </div>
-     <div class="feature-card">
-       <h3>3. Scale to Millions</h3>
-       <p>Process up to 49k+ users per second with a Rust backend.</p>
-     </div>
-   </div>
-
-When users make choices, we can represent their decisions as a preference graph. If someone chooses A over B, B over C, and then C over A, they have formed a logic cycle. These cycles represent a logical contradiction in their decision making. PrefGraph runs high-speed graph algorithms (like Tarjan's SCC) to instantly detect these cycles. By identifying and counting these contradictions, we can strictly score a user's consistency and evaluate the factual quality of their behavior.
-
-.. raw:: html
-
-   <div style="margin: 2em 0; text-align: center;">
-     <img src="_static/intro_graphs.png" style="width: 100%; max-width: 900px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);" alt="Example of Preference Graphs">
-     <p class="gif-caption" style="margin-top: 10px; font-size: 0.9em; color: #555;"><strong>Consistency in action:</strong> User A makes straightforward, logical choices without any contradictions. Conversely, User B creates a logical cycle by choosing Item C over Item A. PrefGraph catches this graph reversal and immediately penalizes User B's score.</p>
    </div>
 
 Analyse Budgets & Menus
@@ -62,7 +58,7 @@ You can easily feed your data into PrefGraph using Polars DataFrames, Pandas, Pa
    3    False             4  0.972536
    4    False             2  0.978055
 
-**Menu-choice example** --- score 100,000 random menu users:
+**Menu-choice example**
 
 .. code-block:: python
 
@@ -173,20 +169,24 @@ Blazingly Fast
 
 PrefGraph processes choices using a parallel Rust and Rayon backend paired with smart memory streaming. Because it streams the data sequentially, the memory footprint remains entirely flat. Both menus and budgets scale linearly on standard hardware. In practice, you can load and score 100,000 users end-to-end across five different metrics from a 110 MB Parquet file in under two minutes natively. File I/O adds less than 70 milliseconds of total overhead. You can view our extensive format and size comparisons on the :doc:`Performance Benchmarks <performance>` page.
 
+.. raw:: html
+
+   <div style="max-width: 640px;">
+
 .. list-table:: Throughput by Metric Configuration (T=20-100, K=5)
    :header-rows: 1
    :widths: 40 20 20
 
    * - Metrics
-     - Throughput (Agents/sec)
-     - Latency (per Agent)
+     - Throughput (users/sec)
+     - Latency (per user)
    * - **GARP Only** (O(T²))
      - ~49,000
      - 20 μs
    * - **GARP + CCEI**
      - ~2,400
      - 420 μs
-   * - **Comprehensive Metrics** (GARP, CCEI, MPI, HARP)
+   * - **Comprehensive** (GARP, CCEI, MPI, HARP)
      - ~2,000
      - 500 μs
 
@@ -195,9 +195,9 @@ PrefGraph processes choices using a parallel Rust and Rayon backend paired with 
    :widths: 25 15 15 15
 
    * - Configuration
-     - 10,000 Agents
-     - 100,000 Agents
-     - 1,000,000 Agents
+     - 10K users
+     - 100K users
+     - 1M users
    * - GARP (O(T²))
      - 0.1s
      - 2.0s
@@ -215,14 +215,18 @@ PrefGraph processes choices using a parallel Rust and Rayon backend paired with 
    :header-rows: 1
    :widths: 25 15 15 15
 
-   * - Metric Configuration
-     - 10,000 Agents
-     - 100,000 Agents
-     - 1,000,000 Agents
+   * - Configuration
+     - 10K users
+     - 100K users
+     - 1M users
    * - SARP + WARP + HM
      - 0.3s
      - 5.2s
      - **85.6s**
+
+.. raw:: html
+
+   </div>
 
 Explore the :doc:`API Reference <api>` and :doc:`References <papers>` for more.
 
