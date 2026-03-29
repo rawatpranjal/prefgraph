@@ -86,12 +86,6 @@ Components (SCCs)**.
    of the direct weak preference graph :math:`G_{R_0}` contains a strict
    preference arc :math:`P_0`.
 
-**Why this works**: If observations :math:`i` and :math:`j` are in the same SCC
-of :math:`R_0`, then :math:`i R^* j` (there exists a directed path of weak
-preferences from :math:`i` to :math:`j`). A GARP violation occurs if :math:`i R^* j`
-and :math:`p_j x_j > p_j x_i`. This is exactly what the SCC check detects: a cycle
-containing at least one "strictly more expensive" edge.
-
 **Example**: Suppose at :math:`t=1`, you buy :math:`x_1` at prices :math:`p_1` and could have bought :math:`x_2` (:math:`p_1 x_1 \geq p_1 x_2`). At :math:`t=2`, you buy :math:`x_2` at prices :math:`p_2` and could have bought :math:`x_1` while it was **strictly cheaper** (:math:`p_2 x_2 > p_2 x_1`). This forms a 2‑cycle :math:`1 \xrightarrow{R_0} 2 \xrightarrow{P_0} 1`. Both observations are in the same SCC, and there is a strict preference arc :math:`P_0` between them. **GARP fails.**
 
 **Algorithm**:
@@ -143,13 +137,9 @@ efficiency ratios :math:`\{E_{ij} / E_{ii}\}`.
 2. Sort and deduplicate these :math:`\leq T^2` values.
 3. Binary search: for a candidate :math:`e`, check GARP on the deflated data.
 
-**Total**: :math:`O(T^2 \log T)`.
-
-.. admonition:: Optimization: SCC vs Closure
-
-   Previous implementations often called Floyd-Warshall (:math:`O(T^3)`) inside the
-   binary search. Since we only need a pass/fail result, the :math:`O(T^2)` SCC check
-   is sufficient, saving a factor of :math:`T` in the inner loop.
+Each iteration of the binary search only needs a pass/fail GARP result, so PrefGraph
+uses the :math:`O(T^2)` SCC check rather than computing the full transitive closure.
+This keeps the total at :math:`O(T^2 \log T)` instead of :math:`O(T^3 \log T)`.
 
 .. rubric:: Implementation
 
@@ -194,11 +184,7 @@ optimal cycle in :math:`O(VE)` time, which is :math:`O(T^3)` here.
 
 .. rubric:: Implementation
 
-- **Rust**: ``rpt-core/src/mpi.rs`` - Karp's DP with sparse adjacency, so the
-  algorithm only visits actual preference edges rather than the full
-  :math:`T \times T` matrix.  Theoretical complexity remains :math:`O(T^3)` in the
-  worst case, but real consumer data is sparse enough that MPI runs several
-  times faster than a naive dense implementation.
+- **Rust**: ``rpt-core/src/mpi.rs``.
 
 **References**: Karp (1978); Echenique, Lee & Shum (2011, *JPE*).
 
@@ -248,24 +234,14 @@ Directed Feedback Vertex Set (DFVS)** on the preference graph.
 1. **Greedy (Default)**: SCC‑aware heuristic per Heufer & Hjertstrand (2015). Decompose by SCC, then iteratively remove the node with highest violation participation; extremely fast and usually within 1–2% of optimal.
 2. **Exact (ILP)**: Integer program with binary :math:`z_t \in \{0,1\}` indicating whether observation :math:`t` is kept; maximize :math:`\sum z_t` subject to GARP constraints.
 
-**Total**: NP-hard, but practical for :math:`T \leq 500` using SCC decomposition.
-
-.. admonition:: Mononen (2023) correction
-
-   Demuynck & Rehbeck's original formulation can report incorrect values because
-   strict inequality constraints are evaluated as weak in the LP relaxation.
-   Our implementation handles this via the binary threshold (``z < 0.5``), which
-   is robust to this issue since the variables are constrained to be integer.
+NP-hard in general, but practical for :math:`T \leq 500` using SCC decomposition.
+The exact ILP uses the Demuynck & Rehbeck (2023) formulation with integer
+variables, which avoids the LP-relaxation errors documented by Mononen (2023).
 
 .. rubric:: Implementation
 
-- **Rust**: ``rpt-core/src/houtman_maks.rs`` - dispatches to greedy for large
-  datasets (T > 200) or exact ILP for smaller ones (T ≤ 200).  The greedy
-  heuristic decomposes the graph by SCC and iteratively removes the
-  highest-degree node, recomputing components after each removal.
-- **ILP solver**: ``rpt-core/src/lp.rs`` - ``solve_hm_ilp()`` uses the
-  Demuynck & Rehbeck (2023) formulation, which avoids Big-M sensitivity
-  issues through fixed parameters :math:`\alpha, \delta, \varepsilon`.
+- **Rust**: ``rpt-core/src/houtman_maks.rs`` (greedy + ILP dispatch),
+  ``rpt-core/src/lp.rs`` (ILP solver).
 
 **References**: Houtman & Maks (1985); Demuynck & Rehbeck (2023, *Econ Theory*).
 
@@ -299,15 +275,10 @@ PrefGraph implements the state-of-the-art **Row Generation** algorithm.
 4. Run a separation oracle (DFS) to find any remaining violated cycles in the residual graph.
 5. If cycles are found, add new cycle constraints and re-solve; otherwise, terminate.
 
-**Complexity**: NP-hard, but this reformulation is :math:`10{,}000\times` faster than
-previous naive ILP formulations. The LP relaxation (``compute_vei``) is available
-as a fast polynomial-time heuristic.
-
-.. admonition:: Demuynck & Rehbeck (2023) bug
-
-   Mononen (2023) documents a 15–62% error rate in the Demuynck & Rehbeck MILP
-   formulation, caused by treating strict inequality constraints as weak in the
-   LP relaxation. The WFAS reformulation used in PrefGraph avoids this entirely.
+This is NP-hard, but the WFAS reformulation converges orders of magnitude faster
+than earlier ILP approaches and sidesteps the LP-relaxation errors documented by
+Mononen (2023) in the Demuynck & Rehbeck formulation. A polynomial-time LP
+relaxation (``compute_vei``) is also available as a fast heuristic.
 
 .. rubric:: Implementation
 
