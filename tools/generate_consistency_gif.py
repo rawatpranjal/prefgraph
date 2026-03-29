@@ -50,27 +50,28 @@ NODE_POS = {i: (0.9 * np.cos(a), 0.9 * np.sin(a)) for i, a in enumerate(_hex_ang
 NODE_RADIUS = 0.16
 
 # ---------------------------------------------------------------------------
-# 10 choice observations — curated so violations start at obs 6
+# 10 choice observations — curated so the 7 consistent observations are
+# visually obvious (adjacent or one-skip hexagon edges, no crossing diagonals)
+# and all 3 violations are direct reversals of earlier observations.
 #
-# Obs 1-5: consistent (acyclic preference graph)
-#   1: A > B   2: B > C   3: A > D   4: D > E   5: E > F
-# Obs 6: C > A  → creates cycle A>B>C>A  (first violation)
-# Obs 7: F > D  → creates cycle D>E>F>D  (second violation)
-# Obs 8: B > E  (consistent addition)
-# Obs 9: C > D  (consistent addition)
-# Obs 10: E > A → creates cycle A>D>E>A  (third violation)
+# Obs 1-5: adjacent chain A>B>C>D>E>F (hexagon perimeter, all short arrows)
+# Obs 6:   A>C — consistent skip (A already beats B, B beats C)
+# Obs 7:   D>F — consistent skip (D already beats E, E beats F)
+# Obs 8:   C>A — VIOLATION: direct reversal of obs 6
+# Obs 9:   F>D — VIOLATION: direct reversal of obs 7
+# Obs 10:  F>E — VIOLATION: direct reversal of obs 5
 # ---------------------------------------------------------------------------
 OBSERVATIONS = [
-    (frozenset({0, 1}), 0),   # A from {A,B}
-    (frozenset({1, 2}), 1),   # B from {B,C}
-    (frozenset({0, 3}), 0),   # A from {A,D}
-    (frozenset({3, 4}), 3),   # D from {D,E}
-    (frozenset({4, 5}), 4),   # E from {E,F}
-    (frozenset({0, 2}), 2),   # C from {A,C}  ← CYCLE
-    (frozenset({3, 5}), 5),   # F from {D,F}  ← CYCLE
-    (frozenset({1, 4}), 1),   # B from {B,E}
-    (frozenset({2, 3}), 2),   # C from {C,D}
-    (frozenset({0, 4}), 4),   # E from {A,E}  ← CYCLE
+    (frozenset({0, 1}), 0),   # A from {A,B} → A→B  (adjacent, blue)
+    (frozenset({1, 2}), 1),   # B from {B,C} → B→C  (adjacent, blue)
+    (frozenset({2, 3}), 2),   # C from {C,D} → C→D  (adjacent, blue)
+    (frozenset({3, 4}), 3),   # D from {D,E} → D→E  (adjacent, blue)
+    (frozenset({4, 5}), 4),   # E from {E,F} → E→F  (adjacent, blue)
+    (frozenset({0, 2}), 0),   # A from {A,C} → A→C  (one-skip, blue)
+    (frozenset({3, 5}), 3),   # D from {D,F} → D→F  (one-skip, blue)
+    (frozenset({0, 2}), 2),   # C from {A,C} → C→A  ← REVERSAL of obs 6
+    (frozenset({3, 5}), 5),   # F from {D,F} → F→D  ← REVERSAL of obs 7
+    (frozenset({4, 5}), 5),   # F from {E,F} → F→E  ← REVERSAL of obs 5
 ]
 
 # ---------------------------------------------------------------------------
