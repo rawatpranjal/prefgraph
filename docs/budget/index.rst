@@ -3,27 +3,36 @@ Budgets
 
 **Input:** ``BehaviorLog`` - prices × quantities (continuous budget sets)
 
+.. raw:: html
+
+   <div style="margin: 2em 0; max-width: 600px; margin-left: auto; margin-right: auto; text-align: center;">
+     <img src="../_static/budget_hero.gif" style="width: 100%; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);" alt="Budget Choices">
+     <p class="gif-caption" style="margin-top: 10px; font-size: 0.9em; color: #555;"><strong>Budget choices.</strong> CCEI measures how much budgets must shrink to remove contradictions.</p>
+   </div>
+
 Every purchase at observed prices adds directed edges to the agent's **observation graph** (nodes = shopping trips, edges = revealed preferences). Budget analysis checks whether this graph is acyclic (GARP), scores how close it is (CCEI, MPI), and recovers utility.
 The classical setting of Samuelson (1938), Afriat (1967), and Varian (1982).
 
-.. admonition:: What can you do?
-
-   - **Test**: GARP, WARP, SARP, HARP, GAPP, integrability, separability, gross substitutes
-   - **Score**: CCEI, MPI, VEI, Houtman-Maks, Swaps, Bronars power
-   - **Recover**: Utility, demand, welfare (CV/EV), Slutsky matrix, expenditure function
-   - **Structure**: Separability partitions, quasilinear, additive, spatial
-
-.. rubric:: Two entry points, one data type
-
-There is only one input class (``BehaviorLog`` — prices × quantities), but two ways to call it. ``Engine.analyze_arrays()`` or ``Engine.analyze_parquet()`` runs GARP, CCEI, MPI, HM, HARP, VEI, and a utility feasibility check across thousands of users in one Rust-backed batch call. The per-user **Functions API** adds everything the Engine does not yet batch: the actual recovered utility vectors (``recover_utility``), welfare measurement (``compute_cv``, ``compute_ev``), the Slutsky matrix (``compute_slutsky_matrix``), separability tests, and spatial preference recovery. Use the Engine for throughput; use Functions for deep dives on individual users.
+``Engine.analyze_arrays()`` scores thousands of users in one Rust-backed batch call, running GARP, CCEI, MPI, HM, HARP, VEI, and a utility feasibility check. The per-user Functions API adds everything the Engine does not yet batch: recovered utility vectors, welfare measurement (CV/EV), the Slutsky matrix, separability tests, and spatial preference recovery.
 
 .. code-block:: python
 
    from prefgraph import BehaviorLog, validate_consistency, compute_integrity_score
+   import numpy as np
 
+   prices = np.array([[2.0, 1.0], [1.0, 2.0], [1.5, 1.5]])
+   quantities = np.array([[3.0, 2.0], [2.0, 3.0], [2.5, 2.5]])
    log = BehaviorLog(cost_vectors=prices, action_vectors=quantities)
-   garp = validate_consistency(log)          # Test: bool
-   ccei = compute_integrity_score(log)       # Score: 0→1
+
+   garp = validate_consistency(log)
+   ccei = compute_integrity_score(log)
+   print(f"GARP consistent: {garp.is_consistent}")
+   print(f"CCEI: {ccei.efficiency_index:.4f}")
+
+.. code-block:: text
+
+   GARP consistent: False
+   CCEI: 0.8750
 
 Theory
 ------
@@ -37,6 +46,28 @@ Theory
    theory_structure
    theory_advanced
    theory_spatial
+
+Tutorials
+---------
+
+.. toctree::
+   :maxdepth: 1
+
+   tutorial
+   tutorial_budget_advanced
+   tutorial_demand_analysis
+   tutorial_welfare
+   tutorial_ecommerce
+   tutorial_uber_eats
+
+Applications
+------------
+
+.. toctree::
+   :maxdepth: 1
+
+   app_grocery
+   app_llm_alignment
 
 Examples
 --------

@@ -5,7 +5,12 @@ Menu-based analysis evaluates consistency when choices come from finite
 sets of alternatives without prices. Covers classical WARP/SARP,
 limited attention, random utility, and risk preferences.
 
-**3 data subtypes:**
+.. raw:: html
+
+   <div style="margin: 2em 0; max-width: 600px; margin-left: auto; margin-right: auto; text-align: center;">
+     <img src="../_static/menu_hero.gif" style="width: 100%; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);" alt="Menu Choices">
+     <p class="gif-caption" style="margin-top: 10px; font-size: 0.9em; color: #555;"><strong>Menu choices.</strong> HM counts how many choices to discard to restore consistency.</p>
+   </div>
 
 .. list-table::
    :widths: 33 34 33
@@ -39,24 +44,31 @@ limited attention, random utility, and risk preferences.
      - ``RiskChoiceLog``
      - lotteries → choices (e.g., gamble A vs gamble B)
 
-.. admonition:: What can you do?
-
-   - **Test**: WARP, SARP, Congruence, WARP-LA, RAM, RUM, IIA, regularity, expected utility
-   - **Score**: Menu HM, distance to RUM, predictive success
-   - **Recover**: Ordinal utility, consideration sets, attention probabilities, Luce/RUM, risk profile
-   - **Structure**: Attention bounds, RAM parameters
-
-.. rubric:: One question, three data formats
-
-All three subtypes test the same core question — does a consistent preference ordering explain the observed choices? The **Deterministic** subtype feeds directly into ``Engine.analyze_menus()`` for batch Rust processing: pass a list of ``(menus, choices, n_items)`` tuples and get back WARP/SARP/HM scores for every user in one call. **Stochastic** and **Risk** data use the per-user Functions API instead (``validate_menu_sarp``, ``fit_luce_model``, ``compute_risk_profile``, etc.) because their inputs — choice frequency tables and lottery matrices — do not map to the simple tuple format the batch engine expects. The axioms and scores are identical across paths; only the entry point differs.
+Deterministic data feeds directly into ``Engine.analyze_menus()`` for batch Rust processing. Stochastic and Risk data use the per-user Functions API (``fit_luce_model``, ``compute_risk_profile``, etc.) because their inputs do not map to the simple tuple format the batch engine expects. The axioms and scores are identical across paths; only the entry point differs.
 
 .. code-block:: python
 
    from prefgraph import MenuChoiceLog, validate_menu_sarp, compute_menu_efficiency
 
-   log = MenuChoiceLog(menus=menus, choices=choices)
-   sarp = validate_menu_sarp(log)            # Test: bool
-   hm   = compute_menu_efficiency(log)       # Score: 0→1
+   log = MenuChoiceLog(
+       menus=[
+           frozenset({0, 1, 2}),   # chose Pizza from {Pizza, Burger, Salad}
+           frozenset({1, 2, 3}),   # chose Burger from {Burger, Salad, Pasta}
+           frozenset({0, 3}),      # chose Pizza from {Pizza, Pasta}
+           frozenset({0, 1, 3}),   # chose Pizza from {Pizza, Burger, Pasta}
+       ],
+       choices=[0, 1, 0, 0],
+       item_labels=["Pizza", "Burger", "Salad", "Pasta"],
+   )
+   sarp = validate_menu_sarp(log)
+   hm = compute_menu_efficiency(log)
+   print(f"SARP consistent: {sarp.is_consistent}")
+   print(f"HM efficiency: {hm.efficiency_index:.2f}")
+
+.. code-block:: text
+
+   SARP consistent: True
+   HM efficiency: 1.00
 
 Theory
 ------
@@ -67,6 +79,27 @@ Theory
    theory_abstract
    theory_attention
    theory_stochastic
+
+Tutorials
+---------
+
+.. toctree::
+   :maxdepth: 1
+
+   tutorial_menu_choice
+   tutorial_stochastic
+   tutorial_attention
+   tutorial_risk
+   tutorial_ranking
+   tutorial_context_effects
+
+Applications
+------------
+
+.. toctree::
+   :maxdepth: 1
+
+   app_recsys
 
 Examples
 --------
