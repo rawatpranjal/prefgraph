@@ -1,13 +1,18 @@
-"""KuaiRec benchmark: high rewatcher and high engagement prediction.
+"""KuaiRec benchmark: engagement, watch depth, and novelty prediction.
 
 KuaiRec (Gao et al., CIKM 2022) is a near-100% dense interaction matrix:
 1,411 users × 3,327 videos. Menu observations are daily: all videos a user
 watched on a given day form the menu, and the video with the highest
 watch_ratio (most rewatched) is the revealed choice.
 
-Targets (computed on the test window: last 20% of days per user):
-  - High Engagement: top tercile of test session count (many active days).
-  - High Novelty:    top tercile of novel choices fraction (new videos vs train).
+Targets (computed on the test window: last 30% of days per user):
+  - High Engagement:  top tercile of test session count (many active days).
+  - High Watch Depth: top tercile of mean watch_ratio in test window.
+                      watch_ratio = play_duration / video_duration; values > 1
+                      indicate rewatching. High mean watch_ratio proxies watch
+                      time per video → ad revenue / completion rate for a
+                      video platform (Gao et al., 2022, Sec. 3).
+  - High Novelty:     top tercile of novel choices fraction (new videos vs train).
 """
 
 from __future__ import annotations
@@ -48,34 +53,80 @@ def _split_menu_log(log: MenuChoiceLog, fraction: float):
     return train, test
 
 
+def _load_daily_watch_ratios(data_dir, qualifying_uid_strs: set[str]) -> dict[str, list[float]]:
+    """Return per-user list of daily mean watch_ratio, sorted chronologically.
+
+    Applies the same (MIN_MENU_SIZE, MAX_MENU_SIZE) filter as load_kuairec so
+    the resulting list length matches len(MenuChoiceLog.choices) for each user.
+    Re-reads big_matrix.csv filtered to qualifying users only.
+
+    Args:
+        data_dir: Same data_dir argument passed to load_kuairec.
+        qualifying_uid_strs: Set of user ID strings from the returned user_logs.
+
+    Returns:
+        Dict mapping uid_str → chronologically sorted list of daily mean watch_ratio.
+    """
+    import polars as pl
+    from prefgraph.datasets._kuairec import (
+        _find_data_dir as _find_kuairec_dir,
+        MIN_MENU_SIZE,
+        MAX_MENU_SIZE,
+    )
+
+    data_path = _find_kuairec_dir(data_dir)
+    csv_file = data_path / "big_matrix.csv"
+
+    qualifying_int_ids = [int(uid) for uid in qualifying_uid_strs]
+
+    df = (
+        pl.read_csv(csv_file, infer_schema_length=10000)
+        .select([
+            pl.col("user_id").cast(pl.Int64),
+            pl.col("video_id").cast(pl.Int64),
+            pl.col("watch_ratio").cast(pl.Float64),
+            pl.col("date").cast(pl.Utf8),
+        ])
+        .filter(pl.col("user_id").is_in(qualifying_int_ids))
+    )
+
+    # Group by (user_id, date): compute mean watch_ratio and video count per day.
+    # Apply the same menu-size bounds as the loader so the daily list aligns
+    # exactly with the MenuChoiceLog session sequence.
+    daily = (
+        df.group_by(["user_id", "date"])
+        .agg([
+            pl.col("watch_ratio").mean().alias("mean_ratio"),
+            pl.col("video_id").count().alias("n_videos"),
+        ])
+        .filter(
+            (pl.col("n_videos") >= MIN_MENU_SIZE) &
+            (pl.col("n_videos") <= MAX_MENU_SIZE)
+        )
+        .sort(["user_id", "date"])
+    )
+
+    result: dict[str, list[float]] = {}
+    for row in daily.iter_rows(named=True):
+        uid_str = str(row["user_id"])
+        if uid_str not in result:
+            result[uid_str] = []
+        result[uid_str].append(float(row["mean_ratio"]))
+
+    return result
+
+
 def load_and_prepare(data_dir=None, max_users=None):
     """Load KuaiRec and prepare train/target splits and targets.
 
     Targets (computed on test window only):
-      - High Rewatcher:  top tercile of fraction of interactions with
-                         watch_ratio > 1.0 (rewatched).
-                         Proxy: fraction of menu choices where the chosen
-                         item was the argmax AND had watch_ratio > 1.0.
-                         Since load_kuairec already encodes "choice = argmax
-                         watch_ratio", we use per-user rewatch fraction
-                         from the raw data.
-                         However, MenuChoiceLog only stores menus and choices —
-                         not the raw ratios. So we compute: fraction of days
-                         in the test window where the chosen video appeared
-                         more than once in the user's menu across all days
-                         (proxy for popularity/rewatch). For simplicity and
-                         fidelity to the dataset, we use the number of
-                         sessions in the test window as the engagement signal
-                         and compute a rewatch proxy from choice-position
-                         relative to menu size (larger menus = more browsing).
-                         NOTE: The gold standard would require re-loading
-                         raw watch_ratios alongside the logs. Here we use the
-                         available features:
-                           - High Rewatcher: top tercile of test session count
-                             (users who browse more days tend to be rewatchers)
-                           - High Engagement: top tercile of mean menu size in test
-                             (larger daily menus = more videos consumed)
-      - High Engagement: top tercile of mean menu size in test window.
+      - High Engagement:  number of qualifying test sessions (days).
+      - High Watch Depth: mean watch_ratio in test window (top tercile).
+                          watch_ratio > 1.0 means the user rewatched, i.e. they
+                          found the video worth more than one full viewing.
+                          High mean watch_ratio → completion rate / watch time
+                          signal used by video platforms to measure user value.
+      - High Novelty:     fraction of unique test choices not seen in train.
     """
     import time as _time
     import tracemalloc
@@ -87,16 +138,22 @@ def load_and_prepare(data_dir=None, max_users=None):
     user_logs = load_kuairec(
         data_dir=data_dir,
         min_sessions=MIN_OBS_MENU,
-        max_users=max_users,  # None → all 1411 users
+        max_users=max_users,  # None → all qualifying users
     )
     load_and_prepare.load_time_s = _time.perf_counter() - _t_load
+
+    # Load daily mean watch_ratio for the High Watch Depth target.
+    # This re-reads big_matrix.csv for qualifying users only (much faster than
+    # the full initial load since we filter to a small uid set first).
+    print(f"  Loading daily watch_ratio for watch-depth target...")
+    daily_watch_ratios = _load_daily_watch_ratios(data_dir, set(user_logs.keys()))
 
     train_logs: dict[str, MenuChoiceLog] = {}
     user_ids: list[str] = []
 
-    # Raw target primitives — accumulated over the test window
-    raw_engagement: list[float] = []   # test session count (depth of usage)
-    raw_novelty: list[float] = []      # fraction of test choices new vs train
+    raw_engagement: list[float] = []    # test session count
+    raw_watch_depth: list[float] = []   # mean watch_ratio in test window
+    raw_novelty: list[float] = []       # fraction of test choices new vs train
 
     for uid, log in user_logs.items():
         T = len(log.choices)
@@ -111,14 +168,23 @@ def load_and_prepare(data_dir=None, max_users=None):
         train_logs[uid] = train_log
         user_ids.append(uid)
 
-        # Target 1: High Engagement
-        # Number of qualifying test sessions (days with ≥2 videos watched).
+        # Target 1: High Engagement — test session depth
         raw_engagement.append(float(len(test_log.choices)))
 
-        # Target 2: High Novelty
-        # Fraction of unique test choices not seen in train choices.
-        # KuaiRec's dense coverage makes this a clean signal:
-        # novelty-seekers explore new videos while loyal users rewatch known ones.
+        # Target 2: High Watch Depth — mean watch_ratio in test window.
+        # The daily list from _load_daily_watch_ratios is sorted chronologically
+        # and uses the same menu-size filter as the loader, so its length equals
+        # len(log.choices) for each qualifying user. We take the last (T - split)
+        # entries as the test window.
+        uid_ratios = daily_watch_ratios.get(uid, [])
+        if len(uid_ratios) >= T:
+            test_ratios = uid_ratios[split:T]
+            raw_watch_depth.append(float(np.mean(test_ratios)) if test_ratios else 0.0)
+        else:
+            # Fallback: if length mismatch (rare), use full-window mean
+            raw_watch_depth.append(float(np.mean(uid_ratios)) if uid_ratios else 0.0)
+
+        # Target 3: High Novelty — fraction of unique test choices not in train.
         train_items = set(train_log.choices)
         test_items = set(test_log.choices)
         if len(test_items) > 0:
@@ -150,12 +216,17 @@ def load_and_prepare(data_dir=None, max_users=None):
           f"Peak memory: {load_and_prepare.peak_memory_mb:.0f} MB")
 
     engagement = np.array(raw_engagement)
+    watch_depth = np.array(raw_watch_depth)
     novelty = np.array(raw_novelty)
 
     targets_dict = {
         "High Engagement": (
             (engagement > np.percentile(engagement, 66.67)).astype(int),
             "classification", engagement, 66.67,
+        ),
+        "High Watch Depth": (
+            (watch_depth > np.percentile(watch_depth, 66.67)).astype(int),
+            "classification", watch_depth, 66.67,
         ),
         "High Novelty": (
             (novelty > np.percentile(novelty, 66.67)).astype(int),
