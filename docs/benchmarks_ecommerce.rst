@@ -1,7 +1,7 @@
 Predicting Customer Spend and Engagement
 =========================================
 
-Across 11 datasets and 32 prediction targets, revealed preference features add near-zero marginal lift on average. Standard spend and engagement baselines already capture most of the signal. The one consistent exception is churn prediction on e-commerce data, where RP features detect declining purchase efficiency before spending drops.
+Across 11 datasets and 32 prediction targets, revealed preference features add near-zero marginal lift on average. Standard spend and engagement baselines already capture most of the signal.
 
 Setup
 -----
@@ -23,7 +23,7 @@ Each dataset produces one or more prediction targets from the held-out future wi
 Results
 -------
 
-The table shows the percentage lift from adding 42 revealed preference features on top of a 13-feature baseline. Positive means RP helped. Negative means RP hurt. Near zero means no difference.
+The table shows the percentage lift from adding 42 revealed preference features on top of a 13-feature baseline. Positive means the additional features helped. Negative means they hurt. Near zero means no difference.
 
 .. list-table::
    :header-rows: 1
@@ -135,7 +135,7 @@ The table shows the percentage lift from adding 42 revealed preference features 
      - -0.0%
      - -0.2%
 
-All values are percentage lift from adding RP features to the baseline. Bold marks targets where all four columns agree on the direction. One representative target per dataset is shown. Full results for all 32 targets are in ``output/results.json`` and ``output/lasso_results.json``.
+All values are percentage lift from adding revealed preference features to the baseline. Bold marks targets where all four columns agree on the direction. One representative target per dataset is shown. Full results for all 32 targets are in ``output/results.json`` and ``output/lasso_results.json``.
 
 Findings
 --------
@@ -148,8 +148,6 @@ The conclusion is that while revealed preference features may not improve predic
 
 Suggestive Directions
 ---------------------
-
-Although the aggregate lift is near zero, the Lasso model reveals consistent directional patterns in which revealed preference features are selected and how they relate to outcomes. These patterns suggest interpretable relationships between decision-making style and future behavior.
 
 Users who choose from a wider variety of items tend to be more engaged and less loyal. Choice entropy is the most frequently selected revealed preference feature across all datasets. It is positive for engagement in every dataset where it appears, and positive for low loyalty in six of six cases. This suggests that when users explore broadly rather than repeating the same purchases, they are more likely to remain active but less likely to stick with any single product.
 
@@ -226,8 +224,6 @@ Feature Importance
      - 0.064
      - 11 of 13
 
-Three of the top ten features measure choice consistency rather than volume or frequency.
-
 .. _eco-replication:
 
 Replication
@@ -258,7 +254,7 @@ Dataset Descriptions
    * - Dunnhumby
      - Household-level grocery scanner data from 2,222 households over two years. An observation is one active household-week across 10 staple commodity groups. Quantities are total units purchased per category. Prices are the global median price for each commodity that week, since individual receipt data is not available. Targets are Spend Drop, High Spender, and Future LTV.
    * - Amazon
-     - Amazon purchase records from 4,668 consumers across 15 product categories. Purchases are grouped by month at the category level. Prices are median monthly prices across all users, carried forward when a category has no sales in a given month. Targets are Spend Drop, High Spender, Spend Change, and Future LTV.
+     - Amazon purchase records from 4,694 consumers across 15 product categories. Purchases are grouped by month at the category level. Prices are median monthly prices across all users, carried forward when a category has no sales in a given month. Targets are Spend Drop, High Spender, Spend Change, and Future LTV.
    * - H&M
      - Fashion transactions from 46,757 customers over two years. Each customer's purchases are grouped into monthly choice occasions across 9 product groups. Prices are the customer's own average paid price that month, falling back to period-group medians for months with no purchase. Targets are High Spender, Spend Change, and Future Spend.
    * - Instacart
