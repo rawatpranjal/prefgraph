@@ -1,17 +1,12 @@
 Case Study 1: Detecting Inconsistency in AI Agents
 ==================================================
 
-.. list-table::
-   :widths: 25 25 25 25
-
-   * - **78,750 API calls**
-     - **5 scenarios × 50 vignettes**
-     - **5 prompt frameworks**
-     - **15 menus per vignette**
-
 Do LLMs have stable action rankings, or does the ranking change when
-different alternatives are shown? We build preference graphs from LLM
-decisions and check for cycles.
+different alternatives are shown? We collected roughly 78,750 GPT-4o-mini
+API calls — 3,750 deterministic (temp=0) and 75,000 stochastic (temp=0.7,
+20 repetitions per menu) — across 5 enterprise scenarios, 50 vignettes, 5
+prompt frameworks, and 15 menus per vignette. We built preference graphs
+from these responses and checked for cycles.
 
 **TL;DR.** GPT-4o-mini operates with stable logical rankings for most tasks but
 struggles with context-dependent framing. Between 74% to 92% of scenarios display

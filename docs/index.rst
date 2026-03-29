@@ -84,7 +84,14 @@ You can easily feed your data into PrefGraph using Polars DataFrames, Pandas, Pa
 Case Study 1: Inconsistency in AI Agents
 --------------------------------------------------
 
-Do LLMs have stable action rankings? We collected 78,750 GPT-4o-mini API calls across 5 enterprise scenarios, 50 vignettes, 5 prompt frameworks, and 15 menus per vignette — then built preference graphs and tested for cycles. Full results: :doc:`budget/app_llm_benchmark`.
+Do LLMs have stable action rankings, or does the ranking change when different
+alternatives are shown? We queried GPT-4o-mini across 5 enterprise scenarios
+(support triage, alert routing, content moderation, hiring, procurement), each
+with 10 vignettes, 5 prompt frameworks, and 15 menus per vignette. The
+deterministic stage collected 3,750 calls at temperature 0; the stochastic stage
+sampled each menu 20 times at temperature 0.7, adding 75,000 calls — roughly
+78,750 API calls in total over 15 hours. We built preference graphs from these
+responses and tested for logical cycles. Full results: :doc:`budget/app_llm_benchmark`.
 
 .. list-table::
    :header-rows: 1
