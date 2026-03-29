@@ -1,5 +1,3 @@
-:orphan:
-
 Tutorial 1: Budget-Based Analysis
 ==================================
 

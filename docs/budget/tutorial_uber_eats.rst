@@ -1,5 +1,3 @@
-:orphan:
-
 Tutorial 7: Uber Eats at Scale
 ==============================
 
@@ -202,5 +200,3 @@ Running the Example
 
    # Sequential mode (for profiling)
    python examples/07_uber_eats_scale.py --sequential
-
-:orphan:

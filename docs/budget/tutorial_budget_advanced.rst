@@ -1,5 +1,3 @@
-:orphan:
-
 Tutorial 1a: Advanced Budget Analysis
 =====================================
 
@@ -211,5 +209,3 @@ See Also
 - :doc:`tutorial` - Basic budget analysis
 - :doc:`tutorial_demand_analysis` - Slutsky and integrability
 - :doc:`tutorial_welfare` - CV/EV and deadweight loss
-
-:orphan:
