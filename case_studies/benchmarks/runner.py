@@ -206,6 +206,16 @@ def main():
 
     output_dir = Path(args.output_dir) if args.output_dir else Path(__file__).parent / "output"
 
+    try:
+        from tqdm import tqdm
+    except ImportError:
+        tqdm = None
+
+    def _iter(names, desc):
+        if tqdm is not None:
+            return tqdm(names, desc=desc, unit="ds")
+        return names
+
     # --replot: just load cached results and regenerate outputs
     if args.replot:
         print("=" * 70)
@@ -315,16 +325,6 @@ def main():
 
     all_results: list[BenchmarkResult] = []
     start = time.time()
-
-    try:
-        from tqdm import tqdm
-    except ImportError:
-        tqdm = None
-
-    def _iter(names, desc):
-        if tqdm is not None:
-            return tqdm(names, desc=desc, unit="ds")
-        return names
 
     # ---- LightGBM ----
     if run_lgbm:
