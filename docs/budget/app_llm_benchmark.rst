@@ -1,5 +1,5 @@
-Case Study 1: Detecting Inconsistency in AI Agents
-==================================================
+Detecting Inconsistency in AI Agents
+======================================
 
 Do LLMs have stable action rankings, or does the ranking change when
 different alternatives are shown? We collected roughly 78,750 GPT-4o-mini
