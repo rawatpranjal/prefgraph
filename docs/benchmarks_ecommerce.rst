@@ -1,5 +1,5 @@
-Case Study 2: Predicting Customer Spend and Engagement
-=======================================================
+Predicting Customer Spend and Engagement
+=========================================
 
 Across 11 datasets and 32 prediction targets, revealed preference features add near-zero marginal lift on average. Standard spend and engagement baselines already capture most of the signal. The one consistent exception is churn prediction on e-commerce data, where RP features detect declining purchase efficiency before spending drops.
 
