@@ -15,33 +15,6 @@ Spend Change. Targets use top tercile thresholds for consistency. Features combi
 and transitivity, utility recovery metrics such as Gini and CV, choice entropy,
 and ordinal utility. Models use CatBoost with default hyperparameters. The split uses a per-user temporal divide (first 70% features, last 30% targets) followed by an 80/20 user holdout and bootstrap confidence intervals on lift.
 
-.. admonition:: Null rates in RP features
-
-   Not all RP features are populated for every user. Measured on n=500 samples per dataset:
-
-   .. list-table::
-      :header-rows: 1
-      :widths: 20 12 12 56
-
-      * - Dataset
-        - Features
-        - Null features
-        - Which features, and why
-      * - Dunnhumby
-        - 59
-        - 9 (15%)
-        - ``violation_mean_position`` 100% NaN (shared category prices → zero GARP cycles for every user); 8 utility-recovery features (``util_mean/std/range/cv/gini``, ``lambda_mean/std/cv``) 89% NaN (Afriat LP near-degenerate on shared prices)
-      * - REES46
-        - 27
-        - 2 (7%)
-        - ``menu_util_range``, ``menu_util_std`` 26% NaN (ordinal utility LP fails when preference graph has insufficient constraints)
-      * - Taobao
-        - 27
-        - 2 (7%)
-        - Same two features, 82% NaN (buy-window sessions are sparse — few choices per user make the ordinal utility LP under-constrained)
-
-   The vast majority of RP features are fully populated: 50/59 on Dunnhumby, 25/27 on REES46 and Taobao. This issue is quite isolated; it primarily affects utility-recovery and ordinal features which mathematically require a minimum number of intersecting choices to solve smoothly. The remaining features (GARP, CCEI, MPI, HM, VEI, graph density, transitivity, entropy, etc.) are always non-null. All NaN values are imputed with the per-feature train-set median before model training; the handful of high-null features carry little signal after imputation.
-
 The hardest part is reconstructing the choice set and the observed choices.
 For budgets, prices and quantities must reflect what the customer could have
 afforded at each observation. For menus, the available alternatives must be
@@ -302,3 +275,31 @@ Appendix: Pipeline
 
 **Output**: ``case_studies/benchmarks/output/results.json`` (full metrics),
 ``summary_table.csv``, ``figures/``.
+
+Appendix: Null Rates in RP Features
+-------------------------------------
+
+Not all RP features are populated for every user. Measured on n=500 samples per dataset:
+
+.. list-table::
+   :header-rows: 1
+   :widths: 20 12 12 56
+
+   * - Dataset
+     - Features
+     - Null features
+     - Which features, and why
+   * - Dunnhumby
+     - 59
+     - 9 (15%)
+     - ``violation_mean_position`` 100% NaN (shared category prices → zero GARP cycles for every user); 8 utility-recovery features (``util_mean/std/range/cv/gini``, ``lambda_mean/std/cv``) 89% NaN (Afriat LP near-degenerate on shared prices)
+   * - REES46
+     - 27
+     - 2 (7%)
+     - ``menu_util_range``, ``menu_util_std`` 26% NaN (ordinal utility LP fails when preference graph has insufficient constraints)
+   * - Taobao
+     - 27
+     - 2 (7%)
+     - Same two features, 82% NaN (buy-window sessions are sparse — few choices per user make the ordinal utility LP under-constrained)
+
+The vast majority of RP features are fully populated: 50/59 on Dunnhumby, 25/27 on REES46 and Taobao. This issue is quite isolated; it primarily affects utility-recovery and ordinal features which mathematically require a minimum number of intersecting choices to solve smoothly. The remaining features (GARP, CCEI, MPI, HM, VEI, graph density, transitivity, entropy, etc.) are always non-null. All NaN values are imputed with the per-feature train-set median before model training; the handful of high-null features carry little signal after imputation.
