@@ -1,4 +1,13 @@
-use crate::closure::scc_transitive_closure;
+// 2026-03-29 performance audit: scc_transitive_closure_v2 is the default
+// (u64 bitset DAG reachability, 35x faster at T=800 with many SCCs).
+// The original scc_transitive_closure (Vec<bool> per-element merge) is kept
+// in closure.rs as legacy for A/B benchmarking via benchmark_closure().
+// Both produce bit-identical closure matrices. The bitset version matters
+// most when n_components is high (near-consistent data with many small SCCs)
+// because DAG propagation is O(n_comp² × T/64) instead of O(n_comp² × T).
+// For single-SCC data (all violations in one cluster), both are the same
+// speed since FW dominates.
+use crate::closure::scc_transitive_closure_v2 as scc_transitive_closure;
 use crate::expenditure::build_expenditure;
 
 /// Universal intermediate representation for revealed preference analysis.

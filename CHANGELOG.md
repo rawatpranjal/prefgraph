@@ -1,8 +1,10 @@
 # Changelog
 
-## [Unreleased]
+## [0.5.15] - 2026-03-29
 
 ### Changed
+- **Performance**: MPI uses sparse predecessor lists (4.3× at T=500), HM greedy scores degrees directly without per-SCC adjacency copies (12.3× at T=300), transitive closure uses u64 bitset DAG propagation (35× at T=800). All produce identical results; legacy variants kept for A/B comparison.
+- Docs: updated Under the Hood page with optimized implementation details and benchmark numbers.
 - Docs: homepage overhaul — moved quickstart examples to front page, renamed sections (Build Graph / Score Users / Scale to Millions), added full performance tables, curated predictive benchmarks to top 4 by lift.
 - Docs: renamed Benchmarks → Case Studies, Papers → References, Quickstart → Loading Data across RTD navigation.
 - Docs: renamed LLM benchmark to "Detecting Inconsistency in AI Agents"; e-commerce to "Predicting Customer Lifetime Values".
