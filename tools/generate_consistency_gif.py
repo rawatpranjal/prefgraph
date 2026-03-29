@@ -1,10 +1,12 @@
 """
 Generate animated preference-graph GIF for the PrefGraph homepage and LinkedIn.
 
-Shows a single user making 10 sequential choices. Edges appear one by one.
-Consistent preferences appear blue. When a new observation conflicts, it arrives
-red, pauses, then fades to gray — Houtman-Maks has marked it for removal.
-The score on the right counts only the surviving blue observations.
+Shows a single user making 8 sequential choices. Edges appear one by one.
+Consistent preferences appear blue. When obs 8 (B→A) conflicts with the older
+obs 1 (A→B), it arrives red and pauses — then Houtman-Maks removes the OLDER
+obs 1, turning A→B gray, while the "violation" B→A turns blue and is kept.
+This demonstrates that HM maximises the consistent subset, not just deletes
+the newest conflicting observation. The score shows only the surviving edges.
 
 Usage:
     python3 tools/generate_consistency_gif.py
@@ -51,39 +53,39 @@ NODE_POS = {i: (0.9 * np.cos(a), 0.9 * np.sin(a)) for i, a in enumerate(_hex_ang
 NODE_RADIUS = 0.16
 
 # ---------------------------------------------------------------------------
-# 10 choice observations — all 3 violations come from item F, which never
-# appears as the chosen item in the 7 consistent observations. This ensures
-# the HM greedy removes exactly F's observations (the violations) at each
-# step, giving the optimal 7/10 score rather than a suboptimal result.
+# 8 choice observations — demonstrates HM removing an OLDER, consistent
+# observation rather than the newly arriving "violation".
 #
-# If violations come from items that appear in multiple consistent
-# observations (like C, which appears in C→D and C→A), the greedy FVS
-# removes the item as a source — killing the consistent C→D observation
-# collaterally. Using F (never chosen in obs 1-7) avoids this.
+# Obs 1-7 build a consistent partial order: A is chosen over B in obs 1.
+# Six additional consistent observations give A and B symmetric in-degree:
+#   F, C, E all prefer A (three in-edges to A).
+#   F, C, D all prefer B (three in-edges to B).
+# Both A and B have zero outgoing edges except A→B, so no cycles exist.
 #
-# Obs 1-5: adjacent chain A>B>C>D>E>F (hexagon perimeter)
-# Obs 6:   A>F — consistent (adjacent; A precedes F in the chain)
-# Obs 7:   B>F — consistent (one-skip; B precedes F)
-# Obs 8:   F>A — VIOLATION: direct reversal of obs 6
-# Obs 9:   F>E — VIOLATION: direct reversal of obs 5
-# Obs 10:  F>B — VIOLATION: direct reversal of obs 7
+# Obs 8: B→A — direct reversal of obs 1, creating the 2-cycle {A,B}.
 #
-# Violation order matters for the greedy: F→A arrives first, creating a
-# 2-cycle {A,F}. F has higher total degree than A (3 incoming vs 1) so the
-# greedy correctly removes F (obs 8) rather than A. Subsequent violations
-# also correctly remove F's chosen observations, giving 7/8 → 7/9 → 7/10.
+# When obs 8 arrives, the greedy Feedback Vertex Set examines node degrees:
+#   Degree(A) = 5  (out: A→B;  in: F→A, C→A, E→A, B→A [new])
+#   Degree(B) = 5  (out: B→A [new];  in: A→B, F→B, C→B, D→B)
+#
+# Equal degree → tie-breaking by item index → A (index 0) < B (index 1).
+# Greedy removes A as a source node, eliminating obs 1 (A→B).
+# Result: obs 8 (B→A, the "violation") is KEPT as blue; obs 1 (A→B, the
+# older consistent edge) turns gray. Final score: 7/8.
+#
+# This shows that HM does not simply delete the newest conflicting arrow —
+# it finds the maximum-cardinality consistent subset, which here requires
+# removing an observation that arrived long before the conflict did.
 # ---------------------------------------------------------------------------
 OBSERVATIONS = [
-    (frozenset({0, 1}), 0),   # A from {A,B} → A→B  (adjacent, blue)
-    (frozenset({1, 2}), 1),   # B from {B,C} → B→C  (adjacent, blue)
-    (frozenset({2, 3}), 2),   # C from {C,D} → C→D  (adjacent, blue)
-    (frozenset({3, 4}), 3),   # D from {D,E} → D→E  (adjacent, blue)
-    (frozenset({4, 5}), 4),   # E from {E,F} → E→F  (adjacent, blue)
-    (frozenset({0, 5}), 0),   # A from {A,F} → A→F  (adjacent, blue)
-    (frozenset({1, 5}), 1),   # B from {B,F} → B→F  (one-skip, blue)
-    (frozenset({0, 5}), 5),   # F from {A,F} → F→A  ← REVERSAL of obs 6
-    (frozenset({4, 5}), 5),   # F from {E,F} → F→E  ← REVERSAL of obs 5
-    (frozenset({1, 5}), 5),   # F from {B,F} → F→B  ← REVERSAL of obs 7
+    (frozenset({0, 1}), 0),   # A from {A,B} → A→B  (adjacent; will be REMOVED by HM)
+    (frozenset({5, 0}), 5),   # F from {F,A} → F→A  (adjacent, stays blue)
+    (frozenset({2, 0}), 2),   # C from {C,A} → C→A  (one-skip, stays blue)
+    (frozenset({4, 0}), 4),   # E from {E,A} → E→A  (one-skip, stays blue)
+    (frozenset({5, 1}), 5),   # F from {F,B} → F→B  (one-skip, stays blue)
+    (frozenset({2, 1}), 2),   # C from {C,B} → C→B  (adjacent, stays blue)
+    (frozenset({3, 1}), 3),   # D from {D,B} → D→B  (one-skip, stays blue)
+    (frozenset({0, 1}), 1),   # B from {A,B} → B→A  (adjacent; VIOLATION — KEPT by HM!)
 ]
 
 # ---------------------------------------------------------------------------
