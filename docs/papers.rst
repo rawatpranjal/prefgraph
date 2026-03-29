@@ -1,5 +1,5 @@
-Papers
-======
+References
+==========
 
 Academic papers underlying PrefGraph's implementation, organized by the methods they enable.
 Chapter numbers throughout the documentation refer to Chambers & Echenique (2016).

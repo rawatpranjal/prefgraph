@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+### Changed
+- Docs: homepage overhaul — moved quickstart examples to front page, renamed sections (Build Graph / Score Users / Scale to Millions), added full performance tables, curated predictive benchmarks to top 4 by lift.
+- Docs: renamed Benchmarks → Case Studies, Papers → References, Quickstart → Loading Data across RTD navigation.
+- Docs: renamed LLM benchmark to "Detecting Inconsistency in AI Agents"; e-commerce to "Predicting Customer Lifetime Values".
+- Docs: bolded all scenario names (Jobs Task, Content Moderation Task, Support, Alert, Procurement) in LLM benchmark tables and text for clarity.
+
 ## [0.5.14] - 2026-03-28
 
 ### Added

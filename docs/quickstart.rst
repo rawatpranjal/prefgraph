@@ -1,26 +1,5 @@
-Quickstart
-==========
-
-Install
--------
-
-.. code-block:: bash
-
-   pip install "prefgraph[datasets]"
-
-
-.. code-block:: python
-
-   from prefgraph.datasets import load_demo
-   from prefgraph.engine import Engine
-
-   users = load_demo()  # 100 synthetic consumers, no download
-   engine = Engine(metrics=["garp", "ccei", "mpi", "hm"])
-   results = engine.analyze_arrays(users)
-
-   for r in results[:5]:
-       print(r)
-
+Loading Data
+============
 
 Load your own data
 ------------------
