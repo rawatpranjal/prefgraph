@@ -141,6 +141,118 @@ fn houtman_maks_greedy(graph: &PreferenceGraph) -> (usize, usize) {
     (t - removed_count, t)
 }
 
+/// Public entry point for the challenger greedy FVS (for benchmarking).
+/// Requires closure already computed (call ensure_closure first).
+pub fn houtman_maks_greedy_v2_pub(graph: &PreferenceGraph) -> (usize, usize) {
+    let t = graph.t;
+    if t == 0 { return (0, 0); }
+    // Check violations from closure
+    let mut has_violation = false;
+    for i in 0..t {
+        for j in 0..t {
+            if graph.r_star[i * t + j] && graph.p[j * t + i] {
+                has_violation = true;
+                break;
+            }
+        }
+        if has_violation { break; }
+    }
+    if !has_violation { return (t, t); }
+    houtman_maks_greedy_v2(graph)
+}
+
+/// Challenger: Greedy FVS without per-SCC adjacency matrix copies.
+///
+/// Same algorithm as houtman_maks_greedy(), but computes node degree scores
+/// directly from sub_adj + sub_labels instead of building a separate scc_adj
+/// matrix for each non-trivial SCC. Eliminates O(scc_n²) allocation per SCC
+/// per iteration.
+fn houtman_maks_greedy_v2(graph: &PreferenceGraph) -> (usize, usize) {
+    let t = graph.t;
+
+    // Work on a mutable copy of the R adjacency
+    let mut adj = vec![false; t * t];
+    adj[..t * t].copy_from_slice(&graph.r[..t * t]);
+
+    let mut active = vec![true; t];
+    let mut removed_count = 0usize;
+
+    loop {
+        // Collect active node indices
+        let active_nodes: Vec<usize> = (0..t).filter(|&i| active[i]).collect();
+        let n_active = active_nodes.len();
+        if n_active < 2 {
+            break;
+        }
+
+        // Build sub-adjacency for active nodes
+        let mut sub_adj = vec![false; n_active * n_active];
+        for (li, &ni) in active_nodes.iter().enumerate() {
+            for (lj, &nj) in active_nodes.iter().enumerate() {
+                sub_adj[li * n_active + lj] = adj[ni * t + nj];
+            }
+        }
+
+        // Find SCCs on the active subgraph
+        let mut sub_labels = vec![0u32; n_active];
+        let n_comp = tarjan_scc(&sub_adj, n_active, &mut sub_labels);
+
+        // Find non-trivial SCCs (size > 1)
+        let mut scc_sizes = vec![0usize; n_comp];
+        for &l in &sub_labels {
+            scc_sizes[l as usize] += 1;
+        }
+
+        let has_nontrivial = scc_sizes.iter().any(|&s| s > 1);
+        if !has_nontrivial {
+            break;
+        }
+
+        // Score nodes directly from sub_adj + sub_labels (no per-SCC copy)
+        let mut best_local = usize::MAX;
+        let mut best_score = 0usize;
+
+        for li in 0..n_active {
+            let my_comp = sub_labels[li] as usize;
+            if scc_sizes[my_comp] <= 1 {
+                continue;
+            }
+            // Count out-degree and in-degree within same SCC
+            let mut out_deg = 0usize;
+            let mut in_deg = 0usize;
+            for lj in 0..n_active {
+                if sub_labels[lj] as usize == my_comp {
+                    if sub_adj[li * n_active + lj] {
+                        out_deg += 1;
+                    }
+                    if sub_adj[lj * n_active + li] {
+                        in_deg += 1;
+                    }
+                }
+            }
+            let score = out_deg + in_deg;
+            if score > best_score {
+                best_score = score;
+                best_local = active_nodes[li];
+            }
+        }
+
+        if best_local == usize::MAX {
+            break;
+        }
+
+        // Remove the best node
+        active[best_local] = false;
+        for j in 0..t {
+            adj[best_local * t + j] = false;
+            adj[j * t + best_local] = false;
+        }
+        removed_count += 1;
+    }
+
+    (t - removed_count, t)
+}
+
 /// Exact Houtman-Maks via ILP.
 ///
 /// Finds the true maximum consistent subset using integer linear programming.
@@ -243,6 +355,41 @@ mod tests {
         let exact = houtman_maks_exact(&mut graph);
         assert_eq!(greedy.0, exact.0);
         assert_eq!(greedy.1, exact.1);
+    }
+
+    #[test]
+    fn test_greedy_v2_matches_champion_consistent() {
+        let prices = [1.0, 2.0, 2.0, 1.0];
+        let quantities = [4.0, 1.0, 1.0, 4.0];
+        let mut graph = PreferenceGraph::new(2);
+        graph.parse_budget(&prices, &quantities, 2, 2, 1e-10);
+        let champion = houtman_maks(&mut graph);
+        // Reset and run challenger
+        graph.reset();
+        graph.parse_budget(&prices, &quantities, 2, 2, 1e-10);
+        graph.ensure_closure();
+        let challenger = houtman_maks_greedy_v2(&graph);
+        // Consistent data: both should return (2, 2)
+        assert_eq!(champion, (2, 2));
+        assert_eq!(challenger, (2, 2));
+    }
+
+    #[test]
+    fn test_greedy_v2_matches_champion_violation() {
+        let prices = [2.0, 1.0, 1.0, 2.0];
+        let quantities = [3.0, 2.0, 2.0, 3.0];
+        let mut graph = PreferenceGraph::new(2);
+        graph.parse_budget(&prices, &quantities, 2, 2, 1e-10);
+        let champion = houtman_maks(&mut graph);
+        graph.reset();
+        graph.parse_budget(&prices, &quantities, 2, 2, 1e-10);
+        graph.ensure_closure();
+        let challenger = houtman_maks_greedy_v2(&graph);
+        assert_eq!(
+            champion, challenger,
+            "HM mismatch: champion={:?}, challenger={:?}",
+            champion, challenger
+        );
     }
 
     #[test]
