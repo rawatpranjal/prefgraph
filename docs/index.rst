@@ -24,21 +24,15 @@ Preference Graphs
 
 In a preference graph, a cycle (A > B > C > A) represents a logical contradiction. Using fast algorithms like Tarjan's SCC (see :doc:`algorithms`), PrefGraph detects these cycles to quantify consistency and evaluate choice quality directly from the data.
 
-Analyse Budgets & Menus
-------------------------
-
 .. raw:: html
 
-   <div style="display: flex; gap: 20px; justify-content: space-between; flex-wrap: wrap;">
-     <div style="width: 48%;">
-       <img src="_static/budget_hero.gif" style="width: 100%; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);" alt="Budget Choices">
-       <p class="gif-caption"><strong>Budget choices.</strong> CCEI measures how much budgets must shrink to remove contradictions.</p>
-     </div>
-     <div style="width: 48%;">
-       <img src="_static/menu_hero.gif" style="width: 100%; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);" alt="Menu Choices">
-       <p class="gif-caption"><strong>Menu choices.</strong> HM counts how many choices to discard to restore consistency.</p>
-     </div>
+   <div style="margin: 2em 0; text-align: center;">
+     <img src="_static/intro_graphs.png" style="width: 100%; max-width: 900px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);" alt="Preference Graphs Overview">
+     <p class="gif-caption" style="margin-top: 10px; font-size: 0.9em; color: #555;"><strong>High-level explanation:</strong> User A demonstrates rational behavior, while User B exhibits a cyclic contradiction, resulting in varying consistency scores.</p>
    </div>
+
+Analyse Budgets & Menus
+------------------------
 
 PrefGraph handles two types of choice data: :doc:`Budgets <budget/index>` (prices x quantities, e.g. retail shopping) and :doc:`Menus <menu/index>` (discrete selections, e.g. search clicks or LLM prompting). Menus support three data subtypes: deterministic (``MenuChoiceLog``), stochastic (``StochasticChoiceLog``), and risk/lotteries (``RiskChoiceLog``).
 
@@ -91,8 +85,8 @@ Load data from Polars, Pandas, Parquet, or raw NumPy arrays. See :doc:`quickstar
    1    False                  3              2         3
    2    False                  6              2         4
 
-Detecting Inconsistency in LLMs
----------------------------------
+Case Study 1: Detecting Inconsistency in AI Agents
+--------------------------------------------------
 
 Do LLMs have stable action rankings? We build preference graphs from gpt-4o-mini decisions across 5 enterprise scenarios and test for cycles. Full results: :doc:`budget/app_llm_benchmark`.
 
@@ -119,8 +113,8 @@ Do LLMs have stable action rankings? We build preference graphs from gpt-4o-mini
      - 84
      - 61
 
-Predicting LTV
---------------
+Case Study 2: Predicting Customer Lifetime Values
+-------------------------------------------------
 
 Do RP features improve predictive models? We benchmark GARP, CCEI, MPI, HM, and VEI features against spend/engagement baselines. Full results: :doc:`benchmarks_ecommerce`.
 
@@ -219,6 +213,8 @@ Parallel Rust/Rayon backend with streaming for flat memory. Menus and budgets bo
      - 0.3s
      - 5.2s
      - **85.6s**
+
+End-to-end from a 280 MB CSV or 110 MB Parquet file, 100K users score in under 2 minutes with the full 5-metric suite. File I/O adds under 70 ms. See :doc:`performance` for format comparisons.
 
 Explore the :doc:`API Reference <api>` and :doc:`References <papers>` for more.
 
