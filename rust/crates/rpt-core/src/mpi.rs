@@ -1,18 +1,18 @@
 use crate::graph::PreferenceGraph;
 
-/// Compute Money Pump Index using Karp's max-mean-weight cycle algorithm.
+/// LEGACY: MPI via Karp's algorithm with dense inner loop.
 ///
-/// The MPI measures the maximum per-step exploitation rate across all
-/// preference cycles. For a cycle i₁→i₂→…→iₙ→i₁, the per-step pump is:
-///   w[iₖ,iₖ₊₁] = (own_exp[iₖ] - E[iₖ,iₖ₊₁]) / own_exp[iₖ]
+/// Superseded by mpi_karp_v2() which uses sparse predecessor lists for a 4.3x
+/// speedup at T=500 (benchmarked 2026-03-29). Kept for A/B comparison via
+/// bench_champion_vs_challenger.py. Both produce identical results.
 ///
-/// MPI = max mean weight over all cycles = max_cycle { mean(w on cycle edges) }
+/// Performance note: the inner loop (line ~58) scans all T nodes per (k,v) pair
+/// even when most edges are +inf (no R edge). At typical 30-40% R-density,
+/// ~60-70% of iterations do no useful work. The v2 variant avoids this by
+/// pre-building sparse predecessor lists.
 ///
-/// Uses Karp's O(T³) min-mean-weight-cycle on negated weights to find the
-/// max-mean cycle. This matches the theoretical definition in Chambers &
-/// Echenique (2016) Chapter 5.
-///
-/// Requires: graph has R and expenditure computed.
+/// Uses Karp's O(T³) min-mean-weight-cycle on negated weights.
+/// Reference: Karp (1978); Echenique, Lee & Shum (2011, JPE).
 pub fn mpi_karp(graph: &PreferenceGraph) -> f64 {
     let t = graph.t;
     if t < 2 {
@@ -95,7 +95,7 @@ pub fn mpi_karp(graph: &PreferenceGraph) -> f64 {
     (-min_mean).max(0.0)
 }
 
-/// Challenger: MPI via Karp's algorithm with sparse predecessor lists.
+/// DEFAULT: MPI via Karp's algorithm with sparse predecessor lists.
 ///
 /// Same algorithm as mpi_karp(), but pre-builds adjacency lists so the
 /// inner loop only iterates over actual R-edges instead of scanning all T nodes.

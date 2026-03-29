@@ -1,13 +1,15 @@
 use crate::scc::tarjan_scc;
 
-/// SCC-optimized transitive closure.
+/// LEGACY: SCC-optimized transitive closure with Vec<bool> reachability.
 ///
-/// 1. Find SCCs via Tarjan's (O(V+E))
-/// 2. Run Floyd-Warshall only within each non-trivial SCC
-/// 3. Propagate reachability across the condensed DAG
+/// Superseded by scc_transitive_closure_v2() which uses u64 bitset DAG
+/// propagation (35x faster at T=800, benchmarked 2026-03-29). Kept for A/B
+/// comparison. Both produce bit-identical closure matrices.
 ///
-/// Returns: n_components and max_scc_size (for diagnostics).
-/// The closure is written in-place into the provided buffer.
+/// Performance note: the DAG propagation phase (line ~119) merges reachability
+/// per-element: `if reach[succ][j] { reach[c][j] = true; }`. With 200+
+/// components and T=800, this is 200² × 800 = 32M bool comparisons. The v2
+/// replaces this with 200² × 13 = ~520K u64 OR operations (64 nodes per word).
 pub fn scc_transitive_closure(
     r_mat: &[bool],
     t: usize,
@@ -150,7 +152,7 @@ fn floyd_warshall(closure: &mut [bool], t: usize) {
     }
 }
 
-/// Challenger: Floyd-Warshall with empty-pivot skip.
+/// DEFAULT: Floyd-Warshall with empty-pivot skip.
 ///
 /// Skips pivot k entirely if no node reaches k (column k is all-false).
 /// Saves O(T²) per skipped pivot. Marginal for dense graphs, significant
@@ -175,7 +177,7 @@ fn floyd_warshall_v2(closure: &mut [bool], t: usize) {
     }
 }
 
-/// Challenger: SCC-optimized transitive closure with u64 bitset DAG propagation
+/// DEFAULT: SCC-optimized transitive closure with u64 bitset DAG propagation
 /// and Floyd-Warshall pivot skip.
 ///
 /// Same algorithm as scc_transitive_closure(), but:

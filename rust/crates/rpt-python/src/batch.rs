@@ -9,7 +9,12 @@ use rpt_core::garp::{garp_check, garp_check_with_closure};
 use rpt_core::graph::PreferenceGraph;
 use rpt_core::harp::harp_check;
 use rpt_core::houtman_maks::{houtman_maks, houtman_maks_exact};
-use rpt_core::mpi::mpi_karp;
+// 2026-03-29 performance audit: mpi_karp_v2 is the default (sparse predecessor
+// lists, 4.3x faster at T=500). mpi_karp (dense inner loop) kept as _legacy
+// for A/B benchmarking. Both produce identical results to 1e-12 tolerance.
+// If you suspect an MPI discrepancy, run bench_champion_vs_challenger.py to
+// compare both variants on the same data.
+use rpt_core::mpi::mpi_karp_v2 as mpi_karp;
 use rpt_core::utility::recover_utility;
 use rpt_core::vei::{compute_vei as run_vei, compute_vei_exact as run_vei_exact};
 

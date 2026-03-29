@@ -1,4 +1,4 @@
-use crate::closure::scc_transitive_closure;
+use crate::closure::scc_transitive_closure_v2 as scc_transitive_closure;
 use crate::graph::PreferenceGraph;
 use crate::types::GarpResult;
 
