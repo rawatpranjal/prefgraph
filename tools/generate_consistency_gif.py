@@ -51,16 +51,27 @@ NODE_POS = {i: (0.9 * np.cos(a), 0.9 * np.sin(a)) for i, a in enumerate(_hex_ang
 NODE_RADIUS = 0.16
 
 # ---------------------------------------------------------------------------
-# 10 choice observations — curated so the 7 consistent observations are
-# visually obvious (adjacent or one-skip hexagon edges, no crossing diagonals)
-# and all 3 violations are direct reversals of earlier observations.
+# 10 choice observations — all 3 violations come from item F, which never
+# appears as the chosen item in the 7 consistent observations. This ensures
+# the HM greedy removes exactly F's observations (the violations) at each
+# step, giving the optimal 7/10 score rather than a suboptimal result.
 #
-# Obs 1-5: adjacent chain A>B>C>D>E>F (hexagon perimeter, all short arrows)
-# Obs 6:   A>C — consistent skip (A already beats B, B beats C)
-# Obs 7:   D>F — consistent skip (D already beats E, E beats F)
-# Obs 8:   C>A — VIOLATION: direct reversal of obs 6
-# Obs 9:   F>D — VIOLATION: direct reversal of obs 7
-# Obs 10:  F>E — VIOLATION: direct reversal of obs 5
+# If violations come from items that appear in multiple consistent
+# observations (like C, which appears in C→D and C→A), the greedy FVS
+# removes the item as a source — killing the consistent C→D observation
+# collaterally. Using F (never chosen in obs 1-7) avoids this.
+#
+# Obs 1-5: adjacent chain A>B>C>D>E>F (hexagon perimeter)
+# Obs 6:   A>F — consistent (adjacent; A precedes F in the chain)
+# Obs 7:   B>F — consistent (one-skip; B precedes F)
+# Obs 8:   F>A — VIOLATION: direct reversal of obs 6
+# Obs 9:   F>E — VIOLATION: direct reversal of obs 5
+# Obs 10:  F>B — VIOLATION: direct reversal of obs 7
+#
+# Violation order matters for the greedy: F→A arrives first, creating a
+# 2-cycle {A,F}. F has higher total degree than A (3 incoming vs 1) so the
+# greedy correctly removes F (obs 8) rather than A. Subsequent violations
+# also correctly remove F's chosen observations, giving 7/8 → 7/9 → 7/10.
 # ---------------------------------------------------------------------------
 OBSERVATIONS = [
     (frozenset({0, 1}), 0),   # A from {A,B} → A→B  (adjacent, blue)
@@ -68,11 +79,11 @@ OBSERVATIONS = [
     (frozenset({2, 3}), 2),   # C from {C,D} → C→D  (adjacent, blue)
     (frozenset({3, 4}), 3),   # D from {D,E} → D→E  (adjacent, blue)
     (frozenset({4, 5}), 4),   # E from {E,F} → E→F  (adjacent, blue)
-    (frozenset({0, 2}), 0),   # A from {A,C} → A→C  (one-skip, blue)
-    (frozenset({3, 5}), 3),   # D from {D,F} → D→F  (one-skip, blue)
-    (frozenset({0, 2}), 2),   # C from {A,C} → C→A  ← REVERSAL of obs 6
-    (frozenset({3, 5}), 5),   # F from {D,F} → F→D  ← REVERSAL of obs 7
+    (frozenset({0, 5}), 0),   # A from {A,F} → A→F  (adjacent, blue)
+    (frozenset({1, 5}), 1),   # B from {B,F} → B→F  (one-skip, blue)
+    (frozenset({0, 5}), 5),   # F from {A,F} → F→A  ← REVERSAL of obs 6
     (frozenset({4, 5}), 5),   # F from {E,F} → F→E  ← REVERSAL of obs 5
+    (frozenset({1, 5}), 5),   # F from {B,F} → F→B  ← REVERSAL of obs 7
 ]
 
 # ---------------------------------------------------------------------------
