@@ -145,6 +145,65 @@ On discrete menus (50 items, 20–100 sessions), the SARP+WARP+HM bundle complet
      - 5.2s
      - **85.6s**
 
+End-to-End from Disk
+--------------------
+
+The preceding benchmarks measure scoring throughput on in-memory arrays. Below we verify the full disk-to-scores pipeline, including file I/O and data transformation, on 100,000 synthetic consumers (T=15, K=5, full 5-metric suite).
+
+.. raw:: html
+
+   <div style="margin: 1.5em 0;"></div>
+
+.. list-table:: Budget: 100K Users, 5 Metrics (GARP, CCEI, MPI, HARP, HM)
+   :header-rows: 1
+   :widths: 30 12 12 12 12 12
+
+   * - Pipeline
+     - Read
+     - Transform
+     - Score
+     - Total
+     - File Size
+   * - **CSV + Polars**
+     - 63 ms
+     - 18.0 s
+     - 1m 32s
+     - **1m 50s**
+     - 281 MB
+   * - **Parquet + Polars**
+     - 68 ms
+     - 14.1 s
+     - 1m 43s
+     - **1m 57s**
+     - 110 MB
+   * - **Parquet (streaming)**
+     - —
+     - —
+     - —
+     - **1m 45s**
+     - 110 MB
+
+.. raw:: html
+
+   <div style="margin: 1.5em 0;"></div>
+
+.. list-table:: Menu: 1,000 Users (SARP + WARP + HM, 50 items)
+   :header-rows: 1
+   :widths: 40 20
+
+   * - Pipeline
+     - Total
+   * - In-memory
+     - 131 ms
+   * - CSV + reconstruct
+     - 200 ms
+
+.. raw:: html
+
+   <div style="margin: 1.5em 0;"></div>
+
+File I/O is negligible—both CSV and Parquet reads complete in under 70 ms for 280 MB. The bottleneck is the Rust scoring engine, which dominates wall time for any metric suite beyond GARP-only. Parquet streaming via ``engine.analyze_parquet()`` avoids the Python transformation step entirely and delivers the best end-to-end throughput (~950 users/sec for the comprehensive suite). Parquet with zstd compression is 2.6× smaller than CSV.
+
 Complexity Summary
 ------------------
 
