@@ -1,8 +1,10 @@
 # CLAUDE.md
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
-Pelase write clearly, what did you run what did yo find. no shorthand.
-please write heavy code comments in the code as you refine your context and imporve your understanding with sources (form papers in the repo) 
+
+-- when you add text add full sentecnes and in 2-3 lines. do not leave stubs. 
+-- Pelase write clearly, what did you run what did yo find. no shorthand.
+-- please write heavy code comments in the code as you refine your context and -- imporve your understanding with sources (form papers in the repo).
 
 ## Paper References
 
@@ -35,6 +37,7 @@ from these local files rather than paraphrasing from memory. Key papers per modu
 - **README is user-forward.** Paste-and-run example first (using `load_demo`), then Scores, "Which API?", Choice Categories, Performance. Architecture details live in RTD only.
 - **CHANGELOG.md** lives at repo root. Update it when making user-visible changes.
 - **Never describe the dual naming convention as "tech vs economics".** The two API layers are Engine (batch, Rust) and Functions (per-user deep dives). Legacy aliases exist but are not a selling point.
+- **No one-sentence descriptions.** Never add tagline descriptions before toctree sections, after headings, or as section summaries. Section headings stand alone. No laundry lists of features/capabilities either — explain through prose and code examples.
 
 ## Data Processing
 
