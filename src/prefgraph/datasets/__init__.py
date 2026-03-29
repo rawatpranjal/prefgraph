@@ -15,6 +15,12 @@ Note:
 """
 
 from prefgraph.datasets._demo import load_demo
+from prefgraph.datasets._generators import (
+    generate_random_budgets,
+    generate_random_menus,
+    generate_random_production,
+    generate_random_intertemporal,
+)
 from prefgraph.datasets._dunnhumby import load_dunnhumby
 from prefgraph.datasets._open_ecommerce import load_open_ecommerce
 from prefgraph.datasets._uci_retail import load_uci_retail
@@ -220,4 +226,8 @@ __all__ = [
     "load_mind",
     "load_finn_slates",
     "list_datasets",
+    "generate_random_budgets",
+    "generate_random_menus",
+    "generate_random_production",
+    "generate_random_intertemporal",
 ]

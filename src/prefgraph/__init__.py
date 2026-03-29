@@ -37,6 +37,12 @@ HiGHS LP solver). Feed it choice data, get back per-user scores.
 from prefgraph.engine import Engine, EngineResult, MenuResult, results_to_dataframe
 from prefgraph.analyze import analyze
 from prefgraph.datasets._demo import load_demo
+from prefgraph.datasets._generators import (
+    generate_random_budgets,
+    generate_random_menus,
+    generate_random_production,
+    generate_random_intertemporal,
+)
 from prefgraph.auditor import BehavioralAuditor, AuditReport, MenuAuditReport
 from prefgraph.encoder import PreferenceEncoder, MenuPreferenceEncoder
 from prefgraph.lancaster import (
@@ -583,6 +589,10 @@ __all__ = [
     "MenuResult",
     "results_to_dataframe",
     "load_demo",
+    "generate_random_budgets",
+    "generate_random_menus",
+    "generate_random_production",
+    "generate_random_intertemporal",
     # ==========================================================================
     # HIGH-LEVEL CLASSES (Primary API)
     # ==========================================================================
