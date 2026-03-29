@@ -195,9 +195,8 @@ def draw_edge(ax, src, dst, color=COL_EDGE, lw=2.5, alpha=0.85):
 
 def draw_hm_score(ax, consistent, total, ratio):
     """Draw the HM score on the right side of the figure."""
-    # Position in axes coordinates (right side)
     x_anchor = 2.05
-    y_top = 0.7
+    y_top = 0.55
 
     ax.text(x_anchor, y_top, "Houtman-Maks", ha="center", va="top",
             fontsize=11, fontweight="bold", color=COL_TEXT, zorder=20)
@@ -208,15 +207,40 @@ def draw_hm_score(ax, consistent, total, ratio):
             fontsize=28, fontweight="bold", color=COL_NODE, zorder=20,
             fontfamily="monospace")
 
-    # Percentage below
-    pct = f"{ratio * 100:.0f}% consistent"
-    pct_color = COL_NODE if ratio >= 0.8 else (COL_RED if ratio < 0.6 else "#e67e22")
-    ax.text(x_anchor, y_top - 0.75, pct, ha="center", va="top",
-            fontsize=11, color=pct_color, zorder=20)
 
-    # Observation counter
-    ax.text(x_anchor, y_top - 1.1, f"Observation {total} of 10", ha="center",
-            va="top", fontsize=9, color=COL_SUBTEXT, zorder=20)
+def draw_legend(ax):
+    """Draw a small legend explaining nodes = options, arrows = preferences."""
+    x_anchor = 2.05
+    y_base = -0.55
+
+    # Mini node circle + "option" label
+    mini_node = Circle((x_anchor - 0.25, y_base), radius=0.07,
+                        facecolor=COL_NODE, edgecolor="white", lw=1.2, zorder=20)
+    ax.add_patch(mini_node)
+    ax.text(x_anchor + 0.0, y_base, "= option", ha="left", va="center",
+            fontsize=9, color=COL_SUBTEXT, zorder=20)
+
+    # Mini arrow + "prefers" label
+    y_arrow = y_base - 0.25
+    arrow = FancyArrowPatch(
+        (x_anchor - 0.32, y_arrow), (x_anchor - 0.12, y_arrow),
+        arrowstyle="-|>,head_length=4,head_width=3",
+        color=COL_EDGE, lw=1.8, zorder=20,
+    )
+    ax.add_patch(arrow)
+    ax.text(x_anchor + 0.0, y_arrow, "= prefers", ha="left", va="center",
+            fontsize=9, color=COL_SUBTEXT, zorder=20)
+
+    # Mini red arrow + "cycle" label
+    y_cycle = y_arrow - 0.25
+    arrow_r = FancyArrowPatch(
+        (x_anchor - 0.32, y_cycle), (x_anchor - 0.12, y_cycle),
+        arrowstyle="-|>,head_length=4,head_width=3",
+        color=COL_RED, lw=1.8, zorder=20,
+    )
+    ax.add_patch(arrow_r)
+    ax.text(x_anchor + 0.0, y_cycle, "= violation", ha="left", va="center",
+            fontsize=9, color=COL_SUBTEXT, zorder=20)
 
 
 # ---------------------------------------------------------------------------
@@ -269,13 +293,9 @@ def generate_gif():
             else:
                 draw_edge(ax, src, dst, color=COL_EDGE, lw=2.5, alpha=0.85)
 
-        # Draw HM score
+        # Draw HM score and legend
         draw_hm_score(ax, step["hm_consistent"], step["hm_total"], step["hm_ratio"])
-
-        # Title
-        ax.text(-0.0, 1.18, "Building a Preference Graph",
-                ha="center", va="top", fontsize=14, fontweight="bold",
-                color=COL_TEXT, zorder=20)
+        draw_legend(ax)
 
     anim = FuncAnimation(fig, update, frames=len(SCHEDULE), interval=250)
     out_path = OUT_DIR / "consistency.gif"
