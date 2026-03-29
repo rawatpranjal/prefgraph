@@ -261,16 +261,36 @@ Replication
 .. code-block:: bash
 
    pip install prefgraph lightgbm scikit-learn
-   python case_studies/benchmarks/runner.py --datasets all
 
-Datasets require ``kaggle`` CLI. See ``case_studies/benchmarks/`` for details.
+   # Full run: LightGBM on all 11 validated datasets
+   python case_studies/benchmarks/runner.py --datasets validated
+
+   # Both models (LightGBM + Logit-Lasso) with bootstrap SE
+   python case_studies/benchmarks/runner.py --datasets validated --model both
+
+   # Quick smoke test (250 users, 20 bootstrap resamples)
+   python case_studies/benchmarks/runner.py --datasets validated --max-users 250 --model both --n-bootstrap 20
+
+   # Single dataset
+   python case_studies/benchmarks/runner.py --datasets dunnhumby
+
+   # Regenerate summary + plots from cached per-dataset JSON files
+   python case_studies/benchmarks/runner.py --replot
+
+   # Skip datasets that already have cached results
+   python case_studies/benchmarks/runner.py --datasets validated --skip-existing
+
+   # Standalone Lasso benchmark with coefficient tables
+   python case_studies/benchmarks/lasso_benchmark.py --datasets validated --max-users 250
+
+Datasets on external drives: set ``PYREVEALED_DATA_DIR=/path/to/datasets`` for MIND, FINN, KuaiRec. Budget datasets (Dunnhumby, Amazon, H&M) require ``kaggle`` CLI. All results are deterministic (``SEED=42``). Per-dataset JSON files are saved to ``case_studies/benchmarks/output/``.
 
 Appendix: Pipeline
 ------------------
 
 .. code-block:: text
 
-   Raw CSV
+   Raw CSV / Parquet / NPZ
      -> Loader (prefgraph.datasets)
      -> BehaviorPanel / MenuChoiceLog per user
      -> Temporal split: first 70% -> features, last 30% -> targets
@@ -280,9 +300,10 @@ Appendix: Pipeline
           RP Extended (28): VEI distribution, utility recovery (Gini, CV),
               graph network (density, transitivity, cycles), MPI cycle costs,
               choice reversals, choice entropy, congruence, ordinal utility
-     -> CatBoost (random_seed=42, default hyperparameters)
-     -> 80/20 User Holdout (stratified for classification) with Bootstrap CI 
-     -> Metrics: AUC-ROC, AUC-PR, R², Lift %
+     -> LightGBM (random_state=42, default hyperparameters)
+     -> Logit-Lasso / LassoCV (StandardScaler + L1 CV, 5-fold)
+     -> 80/20 User Holdout (stratified for classification) with Bootstrap CI
+     -> Metrics: AUC-PR (primary), AUC-ROC, R², Lift %, in-sample gap
 
 **Three models per dataset/target pair**: (a) Baseline only, (b) RP only, (c) Baseline + RP.
 
