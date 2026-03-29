@@ -1,5 +1,5 @@
-Predictive Benchmarks (E-commerce)
-===================================
+Predicting Customer Lifetime Values
+====================================
 
 **TL;DR.** RP features deliver a modest 0–1% gain on predictive tasks; strong engagement/spend baselines already capture most of the signal.
 
