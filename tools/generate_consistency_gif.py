@@ -249,14 +249,14 @@ def draw_legend(ax):
 
 def generate_gif():
     fig, ax = plt.subplots(figsize=(FIG_W, FIG_H), facecolor=COL_BG)
-    fig.subplots_adjust(left=0.02, right=0.98, bottom=0.02, top=0.98)
+    fig.subplots_adjust(left=0.0, right=1.0, bottom=0.0, top=1.0)
 
     def update(frame_idx):
         ax.clear()
         ax.set_facecolor(COL_BG)
         # Graph area on the left, score on the right
-        ax.set_xlim(-1.4, 2.8)
-        ax.set_ylim(-1.3, 1.3)
+        ax.set_xlim(-1.2, 2.65)
+        ax.set_ylim(-1.15, 1.15)
         ax.set_aspect("equal")
         ax.axis("off")
 
