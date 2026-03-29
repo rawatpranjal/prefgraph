@@ -11,17 +11,21 @@ PrefGraph ships four Rayon-parallel generators that produce data in the exact fo
    from prefgraph import generate_random_budgets, generate_random_menus
    from prefgraph.engine import Engine, results_to_dataframe
 
-   # Budget data: 100K users, 15 obs x 5 goods, Cobb-Douglas demand
+   # Budget data: each user has 15 shopping trips across 5 goods.
+   # rationality=0.7 means 70% of choices follow Cobb-Douglas utility,
+   # 30% are random — simulating realistic noisy behaviour.
    budget_data = generate_random_budgets(
        n_users=100_000, n_obs=15, n_goods=5,
        functional_form="cobb_douglas",   # also "ces" or "leontief"
        rationality=0.7, noise_scale=0.3, seed=42,
    )
+   # Score all 100K users in one Rust-parallel batch call
    engine = Engine(metrics=["garp", "ccei", "hm"])
    df = results_to_dataframe(engine.analyze_arrays(budget_data))
    print(df[["is_garp", "ccei", "hm_consistent", "hm_total"]].head())
 
-   # Menu data: 100K users, 10 obs, variable menu sizes 2-5
+   # Menu data: each user picks one item from a variable-size menu (2–5 items).
+   # logit choice model adds realistic substitution noise.
    menu_data = generate_random_menus(
        n_users=100_000, n_obs=10, n_items=5,
        menu_size=(2, 5), choice_model="logit",  # also "fixed_ranking" or "uniform"
@@ -61,15 +65,17 @@ Wide format means one row per observation with separate price and quantity colum
    import polars as pl
    from prefgraph.engine import Engine
 
+   # Wide format: one row per observation, separate columns for each good's price/qty.
    # Example schema: user_id, t, p_milk, p_bread, q_milk, q_bread
    path = "my_budget_wide.parquet"
 
-   engine = Engine(metrics=["garp", "ccei", "mpi", "hm"])  # batch, Rust-backed
+   # analyze_parquet reads the file, groups by user, and scores in Rust
+   engine = Engine(metrics=["garp", "ccei", "mpi", "hm"])
    results_df = engine.analyze_parquet(
        path,
        user_col="user_id",
-       cost_cols=["p_milk", "p_bread"],
-       action_cols=["q_milk", "q_bread"],
+       cost_cols=["p_milk", "p_bread"],      # price columns (one per good)
+       action_cols=["q_milk", "q_bread"],    # quantity columns (one per good)
    )
    print(results_df.head())
 
@@ -83,17 +89,19 @@ Long format means one row per (user, time, item) with columns for item id, price
    import polars as pl
    from prefgraph.engine import Engine
 
+   # Long format: one row per (user, time, item) — the engine pivots internally.
    # Example schema: user_id, t, item, price, quantity
    path = "my_budget_long.parquet"
 
-   engine = Engine(metrics=["garp", "ccei", "mpi", "hm"])  # batch, Rust-backed
+   # Passing item_col + time_col tells the engine to pivot to wide format per user
+   engine = Engine(metrics=["garp", "ccei", "mpi", "hm"])
    results_df = engine.analyze_parquet(
        path,
        user_col="user_id",
-       item_col="item",
-       time_col="t",
-       cost_col="price",
-       action_col="quantity",
+       item_col="item",        # identifies the good
+       time_col="t",           # identifies the observation
+       cost_col="price",       # single price column
+       action_col="quantity",  # single quantity column
    )
    print(results_df.head())
 
@@ -108,20 +116,21 @@ If you already have a DataFrame in memory, build per‑user price/quantity matri
    import numpy as np
    from prefgraph.engine import Engine
 
-   # Long format: user_id, t, item, price, quantity
+   # When you need full control over the pivot step (e.g., custom imputation),
+   # build per-user (prices, quantities) arrays yourself.
    df = pl.read_parquet("my_budget_long.parquet")
 
    users: list[tuple[np.ndarray, np.ndarray]] = []
    for uid, g in df.group_by("user_id", maintain_order=True):
-       # Pivot items to columns ordered by item id for consistent matrices
+       # Pivot from long to wide: rows = observations, columns = goods
        price_wide = g.pivot(values="price", index="t", on="item").sort("t").drop("t")
        qty_wide   = g.pivot(values="quantity", index="t", on="item").sort("t").drop("t")
-       # Missing quantities imply zero; prices must be present
-       P = price_wide.to_numpy()
-       Q = qty_wide.fill_null(0).to_numpy()
+       P = price_wide.to_numpy()                  # shape: (n_obs, n_goods)
+       Q = qty_wide.fill_null(0).to_numpy()       # missing qty → 0 (not purchased)
        users.append((P, Q))
 
-   engine = Engine(metrics=["garp", "ccei", "mpi", "hm"])  # batch, Rust-backed
+   # analyze_arrays accepts list[tuple[ndarray, ndarray]] directly
+   engine = Engine(metrics=["garp", "ccei", "mpi", "hm"])
    results = engine.analyze_arrays(users)
    print(results[0])
 
@@ -135,33 +144,35 @@ For clickstream data, build menus from what the user actually saw (e.g., viewed 
    import polars as pl
    from prefgraph.engine import Engine
 
-   # Example schema: user_id, session_id, event_type in {"view","purchase"}, product_id
+   # Clickstream events: "view" = item appeared on screen, "purchase" = user bought it.
+   # The goal is to reconstruct menus (what the user saw) and choices (what they picked).
    ev = pl.read_parquet("my_events.parquet").filter(
-       pl.col("event_type").is_in(["view", "purchase"])  # keep only needed events
+       pl.col("event_type").is_in(["view", "purchase"])
    )
 
    user_batches: list[tuple[list[list[int]], list[int], int]] = []
 
    for uid, ug in ev.group_by("user_id", maintain_order=True):
-       # Build per-session menu and single choice
+       # Step 1: group views by session to build menus
        views = ug.filter(pl.col("event_type") == "view").group_by("session_id").agg(
            pl.col("product_id").unique().alias("viewed")
        )
+       # Step 2: keep only sessions with exactly one purchase (clean single-choice)
        buys = ug.filter(pl.col("event_type") == "purchase").group_by("session_id").agg(
            pl.col("product_id").n_unique().alias("n_buy"),
            pl.col("product_id").first().alias("choice")
        ).filter(pl.col("n_buy") == 1)
 
+       # Step 3: join views + purchases; ensure the chosen item is in the menu
        sess = buys.join(views, on="session_id", how="inner")
-       # Union viewed with purchased to guarantee choice ∈ menu; filter 2–50
        sess = sess.with_columns(
            pl.concat_list([pl.col("viewed"), pl.col("choice").map_elements(lambda x: [x])])
              .list.unique()
              .alias("menu")
        ).with_columns(pl.col("menu").list.len().alias("m"))
-       sess = sess.filter((pl.col("m") >= 2) & (pl.col("m") <= 50))
+       sess = sess.filter((pl.col("m") >= 2) & (pl.col("m") <= 50))  # drop trivial menus
 
-       # Per‑user item remap to 0..N-1
+       # Step 4: remap product IDs to 0..N-1 (Engine expects contiguous indices)
        all_items = sorted({int(i) for ms in sess["menu"] for i in ms})
        to_local = {pid: i for i, pid in enumerate(all_items)}
        menus   = [[to_local[int(i)] for i in ms] for ms in sess["menu"]]
@@ -171,6 +182,7 @@ For clickstream data, build menus from what the user actually saw (e.g., viewed 
        if menus:
            user_batches.append((menus, choices, n_items))
 
-   engine = Engine(metrics=["hm"])  # SARP/WARP/HM etc.
-   results = engine.analyze_menus(user_batches)  # list[MenuResult]
+   # analyze_menus expects list[tuple[menus, choices, n_items]] — one tuple per user
+   engine = Engine(metrics=["hm"])
+   results = engine.analyze_menus(user_batches)
    print(results[:3])

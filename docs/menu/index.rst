@@ -50,17 +50,20 @@ Deterministic data feeds directly into ``Engine.analyze_menus()`` for batch Rust
 
    from prefgraph import MenuChoiceLog, validate_menu_sarp, compute_menu_efficiency
 
+   # 4 observations: each menu is a set of item indices, choice is which was picked
    log = MenuChoiceLog(
        menus=[
-           frozenset({0, 1, 2}),   # chose Pizza from {Pizza, Burger, Salad}
-           frozenset({1, 2, 3}),   # chose Burger from {Burger, Salad, Pasta}
-           frozenset({0, 3}),      # chose Pizza from {Pizza, Pasta}
-           frozenset({0, 1, 3}),   # chose Pizza from {Pizza, Burger, Pasta}
+           frozenset({0, 1, 2}),   # menu 1: {Pizza, Burger, Salad}
+           frozenset({1, 2, 3}),   # menu 2: {Burger, Salad, Pasta}
+           frozenset({0, 3}),      # menu 3: {Pizza, Pasta}
+           frozenset({0, 1, 3}),   # menu 4: {Pizza, Burger, Pasta}
        ],
-       choices=[0, 1, 0, 0],
+       choices=[0, 1, 0, 0],      # picked Pizza, Burger, Pizza, Pizza
        item_labels=["Pizza", "Burger", "Salad", "Pasta"],
    )
+   # SARP: are there any preference cycles? (stricter than WARP)
    sarp = validate_menu_sarp(log)
+   # HM: fraction of choices consistent with a single ranking
    hm = compute_menu_efficiency(log)
    print(f"SARP consistent: {sarp.is_consistent}")
    print(f"HM efficiency: {hm.efficiency_index:.2f}")
