@@ -673,3 +673,118 @@ pub fn analyze_parquet_file<'py>(
 
     Ok(all_results)
 }
+
+// ============================================================================
+// Champion vs Challenger benchmark comparison functions
+// ============================================================================
+
+use rpt_core::mpi::mpi_karp_v2;
+use rpt_core::closure::scc_transitive_closure_v2;
+
+/// Benchmark MPI: champion (dense inner loop) vs challenger (sparse predecessors).
+///
+/// Runs both on the same user data and returns:
+/// (mpi_champion, mpi_challenger, microseconds_champion, microseconds_challenger)
+#[pyfunction]
+#[pyo3(signature = (prices, quantities, tolerance=1e-10))]
+pub fn benchmark_mpi<'py>(
+    _py: Python<'py>,
+    prices: PyReadonlyArray2<'py, f64>,
+    quantities: PyReadonlyArray2<'py, f64>,
+    tolerance: f64,
+) -> PyResult<(f64, f64, u64, u64)> {
+    let (p_flat, q_flat, t, k) = extract_user_data(&prices, &quantities);
+
+    // Champion: mpi_karp (dense)
+    let mut graph = PreferenceGraph::new(t);
+    graph.parse_budget(&p_flat, &q_flat, t, k, tolerance);
+    let g = garp_check(&mut graph);
+    if g.is_consistent {
+        return Ok((0.0, 0.0, 0, 0));
+    }
+    let start = Instant::now();
+    let mpi_champ = rpt_core::mpi::mpi_karp(&graph);
+    let us_champ = start.elapsed().as_micros() as u64;
+
+    // Challenger: mpi_karp_v2 (sparse)
+    let start = Instant::now();
+    let mpi_chall = mpi_karp_v2(&graph);
+    let us_chall = start.elapsed().as_micros() as u64;
+
+    Ok((mpi_champ, mpi_chall, us_champ, us_chall))
+}
+
+/// Benchmark HM greedy: champion (per-SCC copies) vs challenger (direct scoring).
+///
+/// Uses T > 200 to trigger greedy path (not ILP).
+/// Returns: (hm_champion, hm_challenger, microseconds_champion, microseconds_challenger)
+/// where hm = n_consistent (integer).
+#[pyfunction]
+#[pyo3(signature = (prices, quantities, tolerance=1e-10))]
+pub fn benchmark_hm<'py>(
+    _py: Python<'py>,
+    prices: PyReadonlyArray2<'py, f64>,
+    quantities: PyReadonlyArray2<'py, f64>,
+    tolerance: f64,
+) -> PyResult<(u32, u32, u32, u64, u64)> {
+    use rpt_core::houtman_maks::{houtman_maks, houtman_maks_greedy_v2_pub};
+    let (p_flat, q_flat, t, k) = extract_user_data(&prices, &quantities);
+
+    // Champion: houtman_maks (greedy with per-SCC copies)
+    let mut graph = PreferenceGraph::new(t);
+    graph.parse_budget(&p_flat, &q_flat, t, k, tolerance);
+    let start = Instant::now();
+    let (c_champ, t_champ) = houtman_maks(&mut graph);
+    let us_champ = start.elapsed().as_micros() as u64;
+
+    // Challenger: greedy_v2 (direct scoring, no per-SCC copies)
+    graph.reset();
+    graph.parse_budget(&p_flat, &q_flat, t, k, tolerance);
+    graph.ensure_closure();
+    let start = Instant::now();
+    let (c_chall, _) = houtman_maks_greedy_v2_pub(&graph);
+    let us_chall = start.elapsed().as_micros() as u64;
+
+    Ok((c_champ as u32, c_chall as u32, t_champ as u32, us_champ, us_chall))
+}
+
+/// Benchmark closure: champion (Vec<bool> reachability) vs challenger (u64 bitsets).
+///
+/// Runs both on the same preference graph and compares resulting closure matrices.
+/// Returns: (closures_match, microseconds_champion, microseconds_challenger)
+#[pyfunction]
+#[pyo3(signature = (prices, quantities, tolerance=1e-10))]
+pub fn benchmark_closure<'py>(
+    _py: Python<'py>,
+    prices: PyReadonlyArray2<'py, f64>,
+    quantities: PyReadonlyArray2<'py, f64>,
+    tolerance: f64,
+) -> PyResult<(bool, u64, u64)> {
+    let (p_flat, q_flat, t, k) = extract_user_data(&prices, &quantities);
+
+    // Build R matrix
+    let mut graph = PreferenceGraph::new(t);
+    graph.parse_budget(&p_flat, &q_flat, t, k, tolerance);
+    graph.ensure_r(tolerance);
+
+    let r_copy = graph.r[..t * t].to_vec();
+
+    // Champion: scc_transitive_closure (Vec<bool> reach)
+    let mut c1 = vec![false; t * t];
+    let mut l1 = vec![0u32; t];
+    let start = Instant::now();
+    rpt_core::closure::scc_transitive_closure(&r_copy, t, &mut c1, &mut l1);
+    let us_champ = start.elapsed().as_micros() as u64;
+
+    // Challenger: scc_transitive_closure_v2 (u64 bitsets + FW pivot skip)
+    let mut c2 = vec![false; t * t];
+    let mut l2 = vec![0u32; t];
+    let start = Instant::now();
+    scc_transitive_closure_v2(&r_copy, t, &mut c2, &mut l2);
+    let us_chall = start.elapsed().as_micros() as u64;
+
+    // Compare closures
+    let match_ = c1 == c2;
+
+    Ok((match_, us_champ, us_chall))
+}

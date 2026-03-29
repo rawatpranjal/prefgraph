@@ -16,6 +16,10 @@ fn _rust_core(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(generators::generate_random_menus, m)?)?;
     m.add_function(wrap_pyfunction!(generators::generate_random_production, m)?)?;
     m.add_function(wrap_pyfunction!(generators::generate_random_intertemporal, m)?)?;
+    // Champion vs Challenger benchmarks
+    m.add_function(wrap_pyfunction!(batch::benchmark_mpi, m)?)?;
+    m.add_function(wrap_pyfunction!(batch::benchmark_hm, m)?)?;
+    m.add_function(wrap_pyfunction!(batch::benchmark_closure, m)?)?;
     #[cfg(feature = "parquet")]
     m.add_function(wrap_pyfunction!(batch::analyze_parquet_file, m)?)?;
     Ok(())
