@@ -37,7 +37,7 @@ class BenchmarkResult:
     n_test: int
     positive_rate: float = 0.0
 
-    # Test set metrics
+    # Out-of-sample metrics (test set)
     auc_rp: float = 0.0
     auc_base: float = 0.0
     auc_combined: float = 0.0
@@ -48,6 +48,17 @@ class BenchmarkResult:
     r2_base: float = 0.0
     r2_combined: float = 0.0
 
+    # In-sample metrics (train set) — for overfitting detection
+    auc_rp_train: float = 0.0
+    auc_base_train: float = 0.0
+    auc_combined_train: float = 0.0
+    ap_rp_train: float = 0.0
+    ap_base_train: float = 0.0
+    ap_combined_train: float = 0.0
+    r2_rp_train: float = 0.0
+    r2_base_train: float = 0.0
+    r2_combined_train: float = 0.0
+
     # Bootstrap CI on lift
     lift_pct: float = 0.0
     lift_ci_lower: float = 0.0
@@ -56,6 +67,9 @@ class BenchmarkResult:
 
     # Grouped permutation importance
     group_importance: dict = field(default_factory=dict)
+
+    # LGBM feature importance (combined model, gain-based, normalized sum=1)
+    feature_importance: dict = field(default_factory=dict)
 
     top_features: list | None = None
     wall_time_s: float = 0.0
@@ -185,8 +199,9 @@ def run_three_way(
 
     y_train, y_test = y[tr], y[te]
 
-    # Train 3 models, collect test predictions
-    metrics = {}
+    # Train 3 models, collect test + train predictions
+    metrics_test = {}
+    metrics_train = {}
     test_preds = {}
     combined_model = None
 
@@ -202,23 +217,35 @@ def run_three_way(
             if task_type == "classification":
                 model = LGBMClassifier(**MODEL_PARAMS)
                 model.fit(X_tr, y_train)
-                y_prob = model.predict_proba(X_te)[:, 1]
+                y_prob_te = model.predict_proba(X_te)[:, 1]
+                y_prob_tr = model.predict_proba(X_tr)[:, 1]
                 try:
-                    auc = roc_auc_score(y_test, y_prob)
+                    auc_te = roc_auc_score(y_test, y_prob_te)
                 except ValueError:
-                    auc = 0.5
+                    auc_te = 0.5
                 try:
-                    ap = average_precision_score(y_test, y_prob)
+                    ap_te = average_precision_score(y_test, y_prob_te)
                 except ValueError:
-                    ap = 0.0
-                metrics[name] = {"auc": auc, "ap": ap}
-                test_preds[name] = y_prob
+                    ap_te = 0.0
+                try:
+                    auc_tr = roc_auc_score(y_train, y_prob_tr)
+                except ValueError:
+                    auc_tr = 0.5
+                try:
+                    ap_tr = average_precision_score(y_train, y_prob_tr)
+                except ValueError:
+                    ap_tr = 0.0
+                metrics_test[name] = {"auc": auc_te, "ap": ap_te}
+                metrics_train[name] = {"auc": auc_tr, "ap": ap_tr}
+                test_preds[name] = y_prob_te
             else:
                 model = LGBMRegressor(**MODEL_PARAMS)
                 model.fit(X_tr, y_train)
-                y_pred = model.predict(X_te)
-                metrics[name] = {"r2": float(r2_score(y_test, y_pred))}
-                test_preds[name] = y_pred
+                y_pred_te = model.predict(X_te)
+                y_pred_tr = model.predict(X_tr)
+                metrics_test[name] = {"r2": float(r2_score(y_test, y_pred_te))}
+                metrics_train[name] = {"r2": float(r2_score(y_train, y_pred_tr))}
+                test_preds[name] = y_pred_te
 
             if name == "combined":
                 combined_model = model
@@ -243,6 +270,19 @@ def run_three_way(
             combined_names, rp_cols, base_cols, metric_fn_perm, task_type
         )
 
+    # LGBM feature importance (gain-based, normalized to sum=1)
+    raw_imp = combined_model.feature_importances_
+    total_imp = raw_imp.sum()
+    if total_imp > 0:
+        norm_imp = raw_imp / total_imp
+    else:
+        norm_imp = raw_imp
+    feature_importance = {
+        fname: float(imp)
+        for fname, imp in zip(combined_names, norm_imp)
+        if imp > 1e-6
+    }
+
     result = BenchmarkResult(
         dataset=dataset, target=target, task_type=task_type,
         n_users=n_users, n_train=len(tr), n_test=len(te),
@@ -250,19 +290,31 @@ def run_three_way(
         lift_pct=lift_mean, lift_ci_lower=ci_lo, lift_ci_upper=ci_hi,
         lift_p_value=p_val,
         group_importance=group_imp,
+        feature_importance=feature_importance,
     )
 
+    # Out-of-sample metrics
     if task_type == "classification":
-        result.auc_rp = metrics["rp"]["auc"]
-        result.auc_base = metrics["base"]["auc"]
-        result.auc_combined = metrics["combined"]["auc"]
-        result.ap_rp = metrics["rp"]["ap"]
-        result.ap_base = metrics["base"]["ap"]
-        result.ap_combined = metrics["combined"]["ap"]
+        result.auc_rp = metrics_test["rp"]["auc"]
+        result.auc_base = metrics_test["base"]["auc"]
+        result.auc_combined = metrics_test["combined"]["auc"]
+        result.ap_rp = metrics_test["rp"]["ap"]
+        result.ap_base = metrics_test["base"]["ap"]
+        result.ap_combined = metrics_test["combined"]["ap"]
+        # In-sample metrics
+        result.auc_rp_train = metrics_train["rp"]["auc"]
+        result.auc_base_train = metrics_train["base"]["auc"]
+        result.auc_combined_train = metrics_train["combined"]["auc"]
+        result.ap_rp_train = metrics_train["rp"]["ap"]
+        result.ap_base_train = metrics_train["base"]["ap"]
+        result.ap_combined_train = metrics_train["combined"]["ap"]
     else:
-        result.r2_rp = metrics["rp"]["r2"]
-        result.r2_base = metrics["base"]["r2"]
-        result.r2_combined = metrics["combined"]["r2"]
+        result.r2_rp = metrics_test["rp"]["r2"]
+        result.r2_base = metrics_test["base"]["r2"]
+        result.r2_combined = metrics_test["combined"]["r2"]
+        result.r2_rp_train = metrics_train["rp"]["r2"]
+        result.r2_base_train = metrics_train["base"]["r2"]
+        result.r2_combined_train = metrics_train["combined"]["r2"]
 
     result.wall_time_s = _time.time() - _t0
     return result

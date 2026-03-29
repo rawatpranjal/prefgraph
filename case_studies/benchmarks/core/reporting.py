@@ -95,14 +95,14 @@ def print_summary(results: list[BenchmarkResult]) -> None:
         print(
             f"\n  {'Dataset':<20} {'Target':<20} {'N':>6} {'%pos':>5} "
             f"{'AP Base':>8} {'AP +RP':>8} {'Lift':>7} {'95% CI':>16} {'p-val':>6} "
-            f"{'AUC Base':>9} {'AUC +RP':>8} "
+            f"{'AP train':>9} {'Gap':>5} "
+            f"{'AUC +RP':>8} "
             f"{'Load':>7} {'Engine':>8} {'Feat':>7} {'Mem':>6}"
         )
-        print("  " + "-" * 156)
+        print("  " + "-" * 165)
 
         last_dataset = None
         for r in cls:
-            # Primary metric: always AUC-PR (average precision)
             base_m, comb_m = r.ap_base, r.ap_combined
 
             ci_str = f"({r.lift_ci_lower:+.1f}, {r.lift_ci_upper:+.1f})"
@@ -113,9 +113,10 @@ def print_summary(results: list[BenchmarkResult]) -> None:
                 else ""
             )
 
-            # AUC-ROC as supplementary column
-            auc_base_str = f"{r.auc_base:.3f}"
-            auc_comb_str = f"{r.auc_combined:.3f}"
+            # Overfitting gap: train AP - test AP
+            ap_train = r.ap_combined_train
+            gap = ap_train - comb_m
+            overfit_flag = " !" if gap > 0.10 else ""
 
             # Timing: only show on first row per dataset
             if r.dataset != last_dataset:
@@ -130,25 +131,29 @@ def print_summary(results: list[BenchmarkResult]) -> None:
             print(
                 f"  {r.dataset:<20} {r.target:<20} {r.n_test:>6} {r.positive_rate:>5.1%} "
                 f"{base_m:>8.3f} {comb_m:>8.3f} {r.lift_pct:>+6.1f}% {ci_str:>16} {r.lift_p_value:>5.3f}{sig:<3} "
-                f"{auc_base_str:>9} {auc_comb_str:>8} "
+                f"{ap_train:>9.3f} {gap:>+4.2f}{overfit_flag} "
+                f"{r.auc_combined:>8.3f} "
                 f"{load_str:>7} {eng_str:>8} {feat_str:>7} {mem_str:>6}"
             )
 
-        print("  " + "-" * 156)
-        print("  Primary metric: AUC-PR (average precision). AUC-ROC shown as supplementary.")
-        print("  Lift % and bootstrap CI are computed on AUC-PR.")
+        print("  " + "-" * 165)
+        print("  Primary metric: AUC-PR (average precision). Gap = AP_train - AP_test (! if > 0.10 = overfitting risk).")
 
     if reg:
         print(
             f"\n  {'Dataset':<20} {'Target':<20} {'N':>6} "
             f"{'Base R2':>8} {'+RP R2':>8} {'dR2':>7} "
+            f"{'R2 train':>9} {'Gap':>5} "
             f"{'Load':>7} {'Engine':>8} {'Feat':>7} {'Mem':>6}"
         )
-        print("  " + "-" * 100)
+        print("  " + "-" * 115)
 
         last_dataset = None
         for r in reg:
             delta = r.r2_combined - r.r2_base
+            r2_train = r.r2_combined_train
+            gap = r2_train - r.r2_combined
+            overfit_flag = " !" if gap > 0.10 else ""
 
             if r.dataset != last_dataset:
                 load_str = _fmt_time(r.load_time_s)
@@ -162,9 +167,10 @@ def print_summary(results: list[BenchmarkResult]) -> None:
             print(
                 f"  {r.dataset:<20} {r.target:<20} {r.n_test:>6} "
                 f"{r.r2_base:>8.3f} {r.r2_combined:>8.3f} {delta:>+7.3f} "
+                f"{r2_train:>9.3f} {gap:>+4.2f}{overfit_flag} "
                 f"{load_str:>7} {eng_str:>8} {feat_str:>7} {mem_str:>6}"
             )
-        print("  " + "-" * 100)
+        print("  " + "-" * 115)
 
     total_time = sum(r.wall_time_s for r in results)
     print(f"\n  Wall time: {total_time:.0f}s")

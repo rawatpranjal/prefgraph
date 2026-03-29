@@ -19,6 +19,8 @@ import sys
 import time
 from pathlib import Path
 
+import numpy as np
+
 # Ensure repo root is on path
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
@@ -72,6 +74,16 @@ DATASET_DISPLAY_NAMES = {
     "finn_slates": "FINN.no Slates",
 }
 
+# Datasets validated for RP feature computation (see datasets_issues.md).
+# Excluded: kuairec (post-hoc choice assignment, not revealed preference),
+#           yoochoose (synthetic users, violates same-agent assumption).
+VALIDATED_DATASETS = [
+    "dunnhumby", "open_ecommerce", "hm",
+    "instacart_v2_menu", "rees46", "taobao", "taobao_buy_window",
+    "retailrocket", "tenrec",
+    "mind", "finn_slates",
+]
+
 
 def run_dataset(
     name: str,
@@ -93,7 +105,14 @@ def run_dataset(
     elif name == "open_ecommerce":
         if max_users:
             kwargs["n_users"] = max_users
-    elif name in ("instacart_v2_menu", "rees46", "hm", "taobao", "retailrocket", "tenrec", "yoochoose", "mind", "finn_slates"):
+    elif name == "mind":
+        # MIND's 1-click filter is aggressive: 250 raw users → ~23 qualifying.
+        # Inflate the cap so enough users survive filtering.
+        effective = max_users or 50000
+        if max_users is not None and max_users < 2000:
+            effective = max(max_users * 20, 5000)
+        kwargs["max_users"] = effective
+    elif name in ("instacart_v2_menu", "rees46", "hm", "taobao", "retailrocket", "tenrec", "yoochoose", "finn_slates"):
         kwargs["max_users"] = max_users or 50000
     elif name == "kuairec":
         # KuaiRec has only 1411 users; max_users=None means all users
@@ -124,7 +143,7 @@ def main():
         "--datasets",
         type=str,
         default="all",
-        help=f"Comma-separated dataset names or 'all'. Available: {', '.join(AVAILABLE_DATASETS)}",
+        help=f"Comma-separated names, 'all', or 'validated'. Available: {', '.join(AVAILABLE_DATASETS)}",
     )
     parser.add_argument(
         "--max-users",
@@ -160,10 +179,25 @@ def main():
         action="store_true",
         help="Load all cached results and regenerate summary + plots without running benchmarks.",
     )
+    parser.add_argument(
+        "--model",
+        type=str,
+        default="lgbm",
+        choices=["lgbm", "lasso", "both"],
+        help="Model to run: lgbm (default), lasso, or both.",
+    )
+    parser.add_argument(
+        "--n-bootstrap",
+        type=int,
+        default=100,
+        help="Bootstrap resamples for Lasso SE (default: 100, 0=skip).",
+    )
     args = parser.parse_args()
 
     if args.datasets == "all":
         dataset_names = list(AVAILABLE_DATASETS.keys())
+    elif args.datasets == "validated":
+        dataset_names = VALIDATED_DATASETS
     else:
         dataset_names = [d.strip() for d in args.datasets.split(",")]
         for d in dataset_names:
@@ -188,11 +222,15 @@ def main():
             print(f"\n  No cached results found in {output_dir}")
         return
 
+    run_lgbm = args.model in ("lgbm", "both")
+    run_lasso = args.model in ("lasso", "both")
+
     print("=" * 70)
     print(" ML BENCHMARK: Revealed Preference Features as Predictive Signals")
     print("=" * 70)
     print(f"\n  Datasets: {', '.join(dataset_names)}")
     print(f"  Max users: {args.max_users or 'unlimited'}")
+    print(f"  Model(s): {args.model}")
     print(f"  Output: {output_dir}")
     if args.skip_existing:
         print(f"  Mode: skip-existing (use cached results where available)")
@@ -200,32 +238,118 @@ def main():
     all_results: list[BenchmarkResult] = []
     start = time.time()
 
-    for name in dataset_names:
-        display_name = DATASET_DISPLAY_NAMES.get(name, name)
+    # ---- LightGBM ----
+    if run_lgbm:
+        print("\n" + "-" * 50)
+        print(" LightGBM")
+        print("-" * 50)
+        for name in dataset_names:
+            display_name = DATASET_DISPLAY_NAMES.get(name, name)
 
-        # Check cache if --skip-existing
-        if args.skip_existing:
-            cached = load_dataset_results(display_name, output_dir)
-            if cached:
-                print(f"\n  [{name}] Using cached results ({len(cached)} targets)")
-                all_results.extend(cached)
+            if args.skip_existing:
+                cached = load_dataset_results(display_name, output_dir)
+                if cached:
+                    print(f"\n  [{name}] Using cached results ({len(cached)} targets)")
+                    all_results.extend(cached)
+                    continue
+
+            t0 = time.time()
+            results = run_dataset(
+                name,
+                args.max_users,
+                taobao_window_seconds=args.taobao_window,
+                n_rows=args.n_rows,
+            )
+            elapsed = time.time() - t0
+            print(f"  [{name}] Completed in {elapsed:.1f}s ({len(results)} targets)")
+
+            if results:
+                save_dataset_results(results, results[0].dataset, output_dir)
+
+            all_results.extend(results)
+
+    # ---- Logit-Lasso ----
+    if run_lasso:
+        print("\n" + "-" * 50)
+        print(" Logit-Lasso / LassoCV")
+        print("-" * 50)
+        from case_studies.benchmarks.lasso_benchmark import (
+            DATASETS as LASSO_DATASETS,
+            run_lasso_three_way,
+            load_dataset as lasso_load_dataset,
+            print_fit_table,
+            print_three_way_table,
+            print_coefficient_table,
+            save_lasso_results,
+            LassoResult,
+        )
+
+        lasso_results: list[LassoResult] = []
+        for name in dataset_names:
+            if name not in LASSO_DATASETS:
+                print(f"  [{name}] Not in lasso registry, skipping")
                 continue
 
-        t0 = time.time()
-        results = run_dataset(
-            name,
-            args.max_users,
-            taobao_window_seconds=args.taobao_window,
-            n_rows=args.n_rows,
-        )
-        elapsed = time.time() - t0
-        print(f"  [{name}] Completed in {elapsed:.1f}s ({len(results)} targets)")
+            try:
+                raw = lasso_load_dataset(name, args.max_users)
+                if len(raw) == 5:
+                    X_rp, X_base, _, targets_dict, user_ids = raw
+                else:
+                    X_rp, X_base, targets_dict, user_ids = raw
+            except FileNotFoundError as e:
+                print(f"\n  [SKIP] {name}: {e}")
+                continue
+            except Exception as e:
+                print(f"\n  [ERROR] {name}: {e}")
+                import traceback
+                traceback.print_exc()
+                continue
 
-        # Persist per-dataset results immediately
-        if results:
-            save_dataset_results(results, results[0].dataset, output_dir)
+            if X_rp is None:
+                print(f"\n  [SKIP] {name}: too few users")
+                continue
 
-        all_results.extend(results)
+            for target_name, target_tuple in targets_dict.items():
+                if len(target_tuple) == 4:
+                    y, task_type, y_cont, pctl = target_tuple
+                    if y_cont is not None:
+                        y_cont = np.asarray(y_cont)
+                else:
+                    y, task_type = target_tuple
+                    y_cont, pctl = None, None
+
+                if task_type == "classification":
+                    pr = float(np.mean(y))
+                    if pr < 0.02 or pr > 0.98:
+                        print(f"  [{name}] Skipping {target_name} — too imbalanced ({pr:.3f})")
+                        continue
+
+                print(f"  [{name}] {target_name} ({task_type})...", end=" ", flush=True)
+                try:
+                    result = run_lasso_three_way(
+                        X_rp, X_base, y, name, target_name, task_type,
+                        y_continuous=y_cont, threshold_pctl=pctl,
+                        n_bootstrap=args.n_bootstrap,
+                    )
+                except Exception as e:
+                    print(f"SKIP ({e})")
+                    continue
+
+                lasso_results.append(result)
+                if task_type == "classification":
+                    gap = result.auc_pr_combined_train - result.auc_pr_combined
+                    print(f"AP={result.auc_pr_combined:.3f} (train={result.auc_pr_combined_train:.3f} gap={gap:+.2f})  "
+                          f"{result.n_features_nonzero} feat  [{result.wall_time_s:.1f}s]")
+                else:
+                    gap = result.r2_combined_train - result.r2_combined
+                    print(f"R²={result.r2_combined:.3f} (train={result.r2_combined_train:.3f} gap={gap:+.2f})  "
+                          f"{result.n_features_nonzero} feat  [{result.wall_time_s:.1f}s]")
+
+        if lasso_results:
+            print_fit_table(lasso_results)
+            print_three_way_table(lasso_results)
+            print_coefficient_table(lasso_results)
+            save_lasso_results(lasso_results, output_dir)
 
     total_time = time.time() - start
     print(f"\nTotal time: {total_time:.1f}s")
@@ -234,6 +358,8 @@ def main():
         print_summary(all_results)
         save_results(all_results, output_dir)
         generate_plots(all_results, output_dir)
+    elif not run_lgbm:
+        pass  # lasso-only mode, results already printed
     else:
         print("\nNo results - check that at least one dataset is available.")
 
