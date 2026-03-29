@@ -186,6 +186,11 @@ def main():
         choices=["lgbm", "lasso", "both"],
         help="Model to run: lgbm (default), lasso, or both.",
     )
+    parser.add_argument(
+        "--eda-only",
+        action="store_true",
+        help="Load datasets and compute EDA summary only — no ML models.",
+    )
     args = parser.parse_args()
 
     if args.datasets == "all":
@@ -214,6 +219,46 @@ def main():
             generate_plots(all_results, output_dir)
         else:
             print(f"\n  No cached results found in {output_dir}")
+        return
+
+    # --eda-only: load datasets, compute EDA from raw data, no ML
+    if args.eda_only:
+        import importlib as _imp
+        from case_studies.benchmarks.core.eda import (
+            compute_budget_eda, compute_menu_eda, print_eda_summary, save_eda,
+        )
+        print("=" * 70)
+        print(" EDA ONLY: Loading datasets and computing summary statistics")
+        print("=" * 70)
+
+        BUDGET_DATASETS = {"dunnhumby", "open_ecommerce", "hm"}
+        eda_list = []
+
+        for name in (tqdm(dataset_names, desc="EDA", unit="ds") if tqdm else dataset_names):
+            display = DATASET_DISPLAY_NAMES.get(name, name)
+            try:
+                # Run load_and_prepare to load data (it also computes features but
+                # we store the EDA attribute). Each bench file stores
+                # load_and_prepare.eda if the EDA call was added, otherwise we
+                # skip and the runner computes from what's available.
+                results = run_dataset(name, args.max_users)
+                mod_path = AVAILABLE_DATASETS[name]
+                mod = _imp.import_module(mod_path)
+                eda = getattr(mod.load_and_prepare, "eda", None)
+                if eda is not None:
+                    eda["dataset"] = display
+                    eda_list.append(eda)
+                    print(f"  [{name}] {display}: {eda['n_users']} users, {eda['total_obs']} obs")
+                else:
+                    print(f"  [{name}] {display}: EDA not yet instrumented")
+            except FileNotFoundError as e:
+                print(f"  [SKIP] {name}: {e}")
+            except Exception as e:
+                print(f"  [ERROR] {name}: {e}")
+
+        if eda_list:
+            print_eda_summary(eda_list)
+            save_eda(eda_list, output_dir)
         return
 
     run_lgbm = args.model in ("lgbm", "both")
