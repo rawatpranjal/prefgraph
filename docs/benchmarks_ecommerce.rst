@@ -224,6 +224,14 @@ Feature Importance
      - 0.064
      - 11 of 13
 
+The three revealed preference features that appear in the top ten are:
+
+- **Menu transitivity** measures how often a user's preferences form a consistent ordering. A user who prefers A over B and B over C but then picks C over A has low transitivity. High transitivity means the user knows what they want.
+
+- **Choice entropy** measures how spread out a user's choices are across items. A user who always picks the same item has zero entropy. A user who picks many different items has high entropy. This captures exploration versus habit.
+
+- **Menu preference density** measures how many pairwise comparisons can be inferred from a user's choices. A user who has been observed choosing between many different pairs of items has a dense preference graph. This captures how much evidence the data contains about that user's preferences.
+
 .. _eco-replication:
 
 Replication
@@ -241,38 +249,6 @@ Replication
 All results are deterministic. Per-dataset JSON files are saved to ``case_studies/benchmarks/output/``. For datasets on external drives, set ``PYREVEALED_DATA_DIR``.
 
 .. _eco-appendix:
-
-Dataset Descriptions
---------------------------
-
-.. list-table::
-   :header-rows: 1
-   :widths: 12 88
-
-   * - Dataset
-     - Description
-   * - Dunnhumby
-     - Household-level grocery scanner data from 2,222 households over two years. An observation is one active household-week across 10 staple commodity groups. Quantities are total units purchased per category. Prices are the global median price for each commodity that week, since individual receipt data is not available. Targets are Spend Drop, High Spender, and Future LTV.
-   * - Amazon
-     - Amazon purchase records from 4,694 consumers across 15 product categories. Purchases are grouped by month at the category level. Prices are median monthly prices across all users, carried forward when a category has no sales in a given month. Targets are Spend Drop, High Spender, Spend Change, and Future LTV.
-   * - H&M
-     - Fashion transactions from 46,757 customers over two years. Each customer's purchases are grouped into monthly choice occasions across 9 product groups. Prices are the customer's own average paid price that month, falling back to period-group medians for months with no purchase. Targets are High Spender, Spend Change, and Future Spend.
-   * - Instacart
-     - Grocery reorder data from 50,000 users. Each observation is a single reordered SKU in a given order and aisle. The menu is the set of distinct products the user purchased from that aisle in the trailing three orders. The choice is the product they actually reordered. Targets are High Engagement, Low Loyalty, and High Novelty.
-   * - REES46
-     - Multi-category e-commerce sessions from 8,832 users over two months. The platform provides native session boundaries. The menu is all items the user viewed in a single session. The choice is the purchased item. Targets are High Engagement, Low Loyalty, and High Novelty.
-   * - Taobao
-     - Click and purchase events from 15,806 users on China's largest e-commerce platform. Sessions are defined by a 30-minute inactivity gap. The menu is all items viewed in the session. The choice is the purchased item. Targets are High Engagement.
-   * - Taobao BW
-     - A variant of Taobao using buy-anchored windows. Whenever a user purchases an item, the menu is defined as all items viewed in the preceding 6-hour window. This avoids arbitrary session boundaries. Only 590 users qualify after filtering. Targets are High Engagement, Low Loyalty, High Entropy, Pref Drift, High Click Volume, High Active Time, and Fast Conversion.
-   * - RetailRocket
-     - Click-stream data from a large e-commerce platform. Sessions are reconstructed using 30-minute inactivity windows. The menu is all items viewed in a session. The choice is the purchased item. Only 47 users have enough repeat sessions to qualify, making this the smallest dataset. Targets are High Engagement and Low Loyalty.
-   * - Tenrec
-     - Video recommendation data from 50,000 users on Tencent QQ Browser. The menu is all items clicked since the previous positive feedback event. The choice is the item the user liked or shared. Targets are High Engagement and Low Loyalty.
-   * - MIND
-     - News impression logs from 5,091 users on Microsoft News. Each impression is a directly logged slate of candidate articles. Only impressions with exactly one click are retained so the choice is unambiguous. The menu is the full set of articles shown. Targets are High Engagement, Low Loyalty, High Novelty, and High CTR.
-   * - FINN
-     - Directly logged recommendation slates from 46,858 users on Norway's largest classifieds marketplace. Each slate of up to 25 items is recorded by the platform along with which item was clicked. This is the strongest menu dataset because the choice set is observed rather than reconstructed. Targets are High Engagement, Low Loyalty, and High Search Ratio.
 
 Dataset Summary
 --------------------------
@@ -407,9 +383,45 @@ Budget datasets have rich histories with 15 to 31 observations per user and repe
 Feature Correlation
 -------------------------------
 
-Revealed preference features are largely orthogonal to baseline features with a median cross-correlation of 0.12. The utility-recovery features are internally redundant with pairwise correlations above 0.95. The genuinely independent revealed preference features are choice entropy, menu transitivity, violation density, consistency ratio, and per-observation efficiency.
+Revealed preference features are largely orthogonal to baseline features with a median cross-correlation of 0.12. Within the revealed preference feature set, three clusters of highly correlated features emerge. The utility-recovery cluster contains eight features measuring Afriat utility scale and marginal values, all with pairwise correlations above 0.95. The consistency cluster contains CCEI, MPI, and GARP pass, which all measure rationality from different angles and correlate at 0.90 or above. The graph-structure cluster contains the number and size of strongly connected components, fragmentation, and preference density, which are mechanically linked through graph construction.
+
+The three top-performing revealed preference features in the importance table are only moderately correlated with the traditional consistency scores. Menu transitivity correlates with CCEI at about 0.5 and with MPI at about 0.3. Choice entropy is nearly uncorrelated with all traditional scores. Preference density correlates with GARP pass at about 0.5. This means the graph-structural features that drive model importance are capturing different information from the classical rationality tests. They are not simply repackaging CCEI or MPI in a different form.
+
+In the Lasso model, baseline features have a median standardized coefficient of 0.33 while revealed preference features have a median of 0.06. The baseline features are roughly five times larger on average. However, the top revealed preference features reach magnitudes comparable to major baseline features. Choice entropy reaches 3.0 on REES46 Low Loyalty, which is in the same range as session count. The number of strongly connected components reaches 3.8 on Instacart High Engagement. When the Lasso does select a revealed preference feature, it gives it meaningful weight.
 
 Null Rates
 ---------------------
 
 50 of 59 revealed preference features are always populated on budget data. 25 of 27 are always populated on menu data. The exceptions are utility-recovery features that require a minimum number of intersecting choices. All missing values are imputed with training-set medians.
+
+Dataset Descriptions
+--------------------------
+
+.. list-table::
+   :header-rows: 1
+   :widths: 12 88
+
+   * - Dataset
+     - Description
+   * - Dunnhumby
+     - Household-level grocery scanner data from 2,222 households over two years. An observation is one active household-week across 10 staple commodity groups. Quantities are total units purchased per category. Prices are the global median price for each commodity that week, since individual receipt data is not available. Targets are Spend Drop, High Spender, and Future LTV.
+   * - Amazon
+     - Amazon purchase records from 4,694 consumers across 15 product categories. Purchases are grouped by month at the category level. Prices are median monthly prices across all users, carried forward when a category has no sales in a given month. Targets are Spend Drop, High Spender, Spend Change, and Future LTV.
+   * - H&M
+     - Fashion transactions from 46,757 customers over two years. Each customer's purchases are grouped into monthly choice occasions across 9 product groups. Prices are the customer's own average paid price that month, falling back to period-group medians for months with no purchase. Targets are High Spender, Spend Change, and Future Spend.
+   * - Instacart
+     - Grocery reorder data from 50,000 users. Each observation is a single reordered SKU in a given order and aisle. The menu is the set of distinct products the user purchased from that aisle in the trailing three orders. The choice is the product they actually reordered. Targets are High Engagement, Low Loyalty, and High Novelty.
+   * - REES46
+     - Multi-category e-commerce sessions from 8,832 users over two months. The platform provides native session boundaries. The menu is all items the user viewed in a single session. The choice is the purchased item. Targets are High Engagement, Low Loyalty, and High Novelty.
+   * - Taobao
+     - Click and purchase events from 15,806 users on China's largest e-commerce platform. Sessions are defined by a 30-minute inactivity gap. The menu is all items viewed in the session. The choice is the purchased item. Target is High Engagement.
+   * - Taobao BW
+     - A variant of Taobao using buy-anchored windows. Whenever a user purchases an item, the menu is defined as all items viewed in the preceding 6-hour window. This avoids arbitrary session boundaries. Only 590 users qualify after filtering. Targets are High Engagement, Low Loyalty, High Entropy, Pref Drift, High Click Volume, High Active Time, and Fast Conversion.
+   * - RetailRocket
+     - Click-stream data from a large e-commerce platform. Sessions are reconstructed using 30-minute inactivity windows. The menu is all items viewed in a session. The choice is the purchased item. Only 47 users have enough repeat sessions to qualify. Targets are High Engagement and Low Loyalty.
+   * - Tenrec
+     - Video recommendation data from 50,000 users on Tencent QQ Browser. The menu is all items clicked since the previous positive feedback event. The choice is the item the user liked or shared. Targets are High Engagement and Low Loyalty.
+   * - MIND
+     - News impression logs from 5,091 users on Microsoft News. Each impression is a directly logged slate of candidate articles. Only impressions with exactly one click are retained so the choice is unambiguous. The menu is the full set of articles shown. Targets are High Engagement, Low Loyalty, High Novelty, and High CTR.
+   * - FINN
+     - Directly logged recommendation slates from 46,858 users on Norway's largest classifieds marketplace. Each slate of up to 25 items is recorded by the platform along with which item was clicked. This is the strongest menu dataset because the choice set is observed rather than reconstructed. Targets are High Engagement, Low Loyalty, and High Search Ratio.
