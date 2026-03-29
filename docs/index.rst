@@ -7,9 +7,9 @@ Preference Graphs
 
 .. raw:: html
 
-   <div style="display: flex; gap: 24px; align-items: flex-start; flex-wrap: wrap; margin: 1.5em 0;">
+   <div style="display: flex; gap: 24px; align-items: center; flex-wrap: wrap; margin: 1.5em 0;">
      <div style="flex: 1; min-width: 280px;">
-       <p style="font-size: 1.05em; line-height: 1.6;">
+       <p style="font-size: 1.05em; line-height: 1.6; margin: 0;">
          When users make choices, we can represent their decisions as a <strong>preference graph</strong>.
          If someone chooses A over B, B over C, and then C over A, they have formed a cycle.
          These cycles could represent an inconsistency in their decision making.
