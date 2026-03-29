@@ -13,7 +13,7 @@ import io
 plt.switch_backend("Agg")
 
 OUTPUT_DIR = Path(__file__).parent / "_static"
-DPI = 100
+DPI = 150
 
 # Durations for variable-speed algorithm GIFs
 # Slow text-heavy frames further (~+33%); keep visual transitions as-is
@@ -40,11 +40,12 @@ def _save_gif_variable_speed(fig, update_fn, total_frames, text_frames,
     )
 PALETTE = {
     "bg": "#fafafa",
-    "edge": "#4a4a4a",
-    "node": "#5b8def",
+    "edge": "#333333",
+    "node": "#2563eb",
+    "node_light": "#3b82f6",
     "node_text": "white",
     "highlight": "#e74c3c",
-    "secondary": "#95a5a6",
+    "secondary": "#666666",
     "rust": "#dea584",
     "python": "#4b8bbe",
     "accent": "#27ae60",
@@ -60,7 +61,7 @@ def generate_budget_hero():
     prices = np.array([[1.0, 2.0], [2.0, 1.0]])
     quants = np.array([[2.0, 3.0], [3.0, 2.0]])
     expenditures = np.sum(prices * quants, axis=1)  # [8, 8]
-    colors = ["#5b8def", "#8e44ad"]
+    colors = ["#2563eb", "#8e44ad"]
     CCEI_FINAL = 0.875
     TOTAL_FRAMES = 48
 
@@ -213,7 +214,7 @@ def generate_menu_hero():
         (["Laptop", "Phone"], "Laptop"),
     ]
     item_colors = {
-        "Laptop": "#5b8def",
+        "Laptop": "#2563eb",
         "Tablet": "#e67e22",
         "Phone": "#27ae60",
     }
@@ -222,7 +223,7 @@ def generate_menu_hero():
     fig, ax = plt.subplots(1, 1, figsize=(7, 5), facecolor=PALETTE["bg"])
     plt.subplots_adjust(top=0.88, bottom=0.08, left=0.05, right=0.95)
 
-    def _draw_item_box(ax, x, y, text, chosen=False, color="#5b8def"):
+    def _draw_item_box(ax, x, y, text, chosen=False, color="#2563eb"):
         """Draw a labeled rectangle for a menu item."""
         w, h = 1.1, 0.4
         alpha = 1.0 if chosen else 0.25
@@ -987,7 +988,7 @@ def generate_ccei_algorithm():
     quants = np.array([[3.0, 2.5], [2.5, 3.0]])
     expends = np.sum(prices * quants, axis=1)  # [8.0, 8.0]
     CCEI_STAR = expends[0] / (prices[0] @ quants[1])  # critical e
-    colors_obs = ["#5b8def", "#8e44ad"]
+    colors_obs = ["#2563eb", "#8e44ad"]
     labels_obs = ["$x_1$", "$x_2$"]
     # expenditure matrix E[i,j] = p_i · x_j
     E_matrix = prices @ quants.T  # 2×2
