@@ -20,11 +20,14 @@ The classical setting of Samuelson (1938), Afriat (1967), and Varian (1982).
    from prefgraph import BehaviorLog, validate_consistency, compute_integrity_score
    import numpy as np
 
+   # 3 shopping trips, 2 goods — rows are observations, columns are goods
    prices = np.array([[2.0, 1.0], [1.0, 2.0], [1.5, 1.5]])
    quantities = np.array([[3.0, 2.0], [2.0, 3.0], [2.5, 2.5]])
    log = BehaviorLog(cost_vectors=prices, action_vectors=quantities)
 
+   # GARP: does a consistent utility function exist? (True/False)
    garp = validate_consistency(log)
+   # CCEI: how much must budgets shrink to remove contradictions? (0–1)
    ccei = compute_integrity_score(log)
    print(f"GARP consistent: {garp.is_consistent}")
    print(f"CCEI: {ccei.efficiency_index:.4f}")

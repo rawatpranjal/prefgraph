@@ -36,9 +36,14 @@ You can easily feed your data into PrefGraph using Polars DataFrames, Pandas, Pa
    from prefgraph.datasets import load_demo
    from prefgraph.engine import Engine, results_to_dataframe
 
+   # load_demo returns list[tuple[prices, quantities]] — synthetic shoppers
    users = load_demo(n_users=100_000)
-   engine = Engine(metrics=["garp", "ccei"])
+
+   # Engine scores every user in parallel via Rust/Rayon
+   engine = Engine(metrics=["garp", "ccei"])  # GARP = acyclicity test, CCEI = efficiency score
    results = engine.analyze_arrays(users)
+
+   # Flatten to a DataFrame for analysis
    df = results_to_dataframe(results)
    print(df[["is_garp", "n_violations", "ccei"]].head())
 
@@ -60,11 +65,15 @@ You can easily feed your data into PrefGraph using Polars DataFrames, Pandas, Pa
    from prefgraph import generate_random_menus
    from prefgraph.engine import Engine, results_to_dataframe
 
+   # Generate discrete-choice data: each user picks one item from a menu
    menus_data = generate_random_menus(
        n_users=100_000, n_obs=10, n_items=5,
-       menu_size=(2, 5), choice_model="logit", rationality=0.7, seed=42
+       menu_size=(2, 5),        # menus contain 2–5 items each
+       choice_model="logit",    # logit model with some noise
+       rationality=0.7, seed=42
    )
 
+   # HM = Houtman-Maks: counts how many choices to discard for consistency
    engine = Engine(metrics=["hm"])
    results = engine.analyze_menus(menus_data)
    df = results_to_dataframe(results)
