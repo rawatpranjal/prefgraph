@@ -1,5 +1,5 @@
-Consistency Benchmarks (LLMs)
-==============================
+Detecting Inconsistency in AI Agents
+=====================================
 
 Do LLMs have stable action rankings, or does the ranking change when
 different alternatives are shown? We build preference graphs from LLM
@@ -44,21 +44,21 @@ K=20 reps per menu).
    * - Scenario
      - Actions
      - Prompts
-   * - Support
+   * - **Support**
      - auto-reply KB, bug ticket, billing, account mgr, escalate VP
      - **minimal** (bare instruction), **decision-tree** (if/then rules),
        **conservative** (prefer escalation), **aggressive** (prefer automation),
        **chain-of-thought** (numbered reasoning)
-   * - Alert
+   * - **Alert**
      - auto-resolve, P3 ticket, page on-call, incident channel, runbook
      - same 5 prompts, adapted per scenario
-   * - Content
+   * - **Content Moderation Task**
      - approve, warning, hide, remove+strike, suspend+legal
      - same 5
-   * - Jobs
+   * - **Jobs Task**
      - reject, hold, phone screen, technical, fast-track
      - same 5
-   * - Procurement
+   * - **Procurement**
      - auto-approve, tag, request quotes, escalate, deny
      - same 5
 
@@ -99,35 +99,35 @@ First, we measure simple deterministic consistency. Each cell shows the percenta
      - Aggressive
      - Chain-of-Thought
      - Mean
-   * - Support
+   * - **Support**
      - 90
      - 80
      - 100
      - 80
      - 90
      - 88
-   * - Alert
+   * - **Alert**
      - 80
      - 100
      - 90
      - 100
      - 90
      - 92
-   * - Content
+   * - **Content Moderation Task**
      - 90
      - 80
      - 70
      - 90
      - 80
      - 82
-   * - Jobs
+   * - **Jobs Task**
      - 70
      - 60
      - 80
      - 80
      - 80
      - 74
-   * - Procurement
+   * - **Procurement**
      - 70
      - 100
      - 70
@@ -149,31 +149,31 @@ tends to out-perform unguided Minimal prompts across most operational domains.
      - Ambiguous
      - Adversarial
      - Mean
-   * - Support
+   * - **Support**
      - 87
      - 93
      - 90
      - 80
      - 88
-   * - Alert
+   * - **Alert**
      - 93
      - 100
      - 90
      - 80
      - 92
-   * - Content
+   * - **Content Moderation Task**
      - 60
      - 80
      - 100
      - 100
      - 82
-   * - Jobs
+   * - **Jobs Task**
      - 87
      - 67
      - 70
      - 70
      - 74
-   * - Procurement
+   * - **Procurement**
      - 93
      - 73
      - 90
@@ -181,8 +181,8 @@ tends to out-perform unguided Minimal prompts across most operational domains.
      - 84
 
 Model consistency does not uniformly degrade on harder tasks. Paradoxically, 
-Content moderation decisions are less consistent on ostensibly "Clear" cases 
-(60%), while Jobs screening struggles most on simplified "Binary" rulesets (67%).
+**Content** moderation decisions are less consistent on ostensibly "Clear" cases
+(60%), while **Jobs** screening struggles most on simplified "Binary" rulesets (67%).
 
 .. _llm-iia:
 
@@ -192,20 +192,20 @@ Content moderation decisions are less consistent on ostensibly "Clear" cases
 
    * - Operational Scenario
      - Reversal Frequency (IIA Count)
-   * - Support
+   * - **Support**
      - 3
-   * - Alert
+   * - **Alert**
      - 2
-   * - Content
+   * - **Content Moderation Task**
      - 9
-   * - Jobs
+   * - **Jobs Task**
      - 15
-   * - Procurement
+   * - **Procurement**
      - 8
 
 *IIA violation = adding a third option inexplicably reverses the preference between two existing options.*
 
-The Jobs and Content moderation categories exhibit the highest susceptibility to context-dependent preference reversals, indicating that the mere presence of decoy options can systematically manipulate the LLM's logical alignment.
+The **Jobs** and **Content** moderation categories exhibit the highest susceptibility to context-dependent preference reversals, indicating that the mere presence of decoy options can systematically manipulate the LLM's logical alignment.
 
 .. _llm-stoch-results:
 
@@ -226,31 +226,31 @@ Instead of testing single decisions, we ask the model 20 times per menu and conv
      - Conservative
      - Aggressive
      - Chain-of-Thought
-   * - Support
+   * - **Support**
      - 50
      - 30
      - 70
      - 50
      - 70
-   * - Alert
+   * - **Alert**
      - 70
      - 60
      - 90
      - 70
      - 80
-   * - Content
+   * - **Content Moderation Task**
      - 50
      - 60
      - 60
      - 80
      - 50
-   * - Jobs
+   * - **Jobs Task**
      - 70
      - 40
      - 60
      - 80
      - 60
-   * - Procurement\*
+   * - **Procurement**\*
      - 67
      - 88
      - 50
@@ -258,7 +258,7 @@ Instead of testing single decisions, we ask the model 20 times per menu and conv
      - 63
 
 Stochastic robustness requires tailored instructional frameworks. Decision Tree paths 
-prove remarkably effective for Procurement, whereas Jobs pipelines align better with 
+prove remarkably effective for Procurement, whereas **Jobs** pipelines align better with 
 Aggressive pacing.
 
 .. list-table:: RUM Pass Rate by Case Difficulty (%)
@@ -270,33 +270,33 @@ Aggressive pacing.
      - Binary Cases
      - Ambiguous
      - Adversarial
-   * - Support
+   * - **Support**
      - 53
      - 67
      - 40
      - 50
-   * - Alert
+   * - **Alert**
      - 67
      - 93
      - 70
      - 60
-   * - Content
+   * - **Content Moderation Task**
      - 13
      - 80
      - 70
      - 90
-   * - Jobs
+   * - **Jobs Task**
      - 80
      - 60
      - 50
      - 50
-   * - Procurement\*
+   * - **Procurement**\*
      - 47
      - 47
      - 100
      - 100
 
-Stochastic consistency testing reinforces the deterministic findings. Procurement paradoxically performs perfectly under Ambiguous and Adversarial constraints, while seemingly clear-cut Content moderation fractures into inconsistent distributions. Jobs, conversely, correctly performs best on Clear cases but degrades under complex scenarios. 
+Stochastic consistency testing reinforces the deterministic findings. Procurement paradoxically performs perfectly under Ambiguous and Adversarial constraints, while seemingly clear-cut **Content** moderation fractures into inconsistent distributions. **Jobs**, conversely, correctly performs best on Clear cases but degrades under complex scenarios. 
 (*Results with asterisks are based on partial procurement stage2 coverage.*)
 
 .. _llm-patterns:
@@ -305,8 +305,8 @@ Patterns
 --------
 
 IIA violations are not evenly distributed. Decision-tree is the IIA
-hotspot on job screening (accounting for nearly half of the category's violations), while it
-scores 100% SARP on procurement. Conservative leads on content
+hotspot on **Jobs** screening (accounting for nearly half of the category's violations), while it
+scores 100% SARP on **Procurement**. Conservative leads on **Content**
 moderation (accounting for nearly half of the category's violations). The same prompt can be the most and least
 consistent depending on the decision domain.
 
@@ -317,29 +317,29 @@ consistent depending on the decision domain.
    * - Scenario
      - Prompt Framework
      - Flips (IIA Count)
-   * - Jobs
+   * - **Jobs Task**
      - Decision Tree
      - 6
-   * - Content
+   * - **Content Moderation Task**
      - Conservative
      - 4
-   * - Content
+   * - **Content Moderation Task**
      - Decision Tree
      - 3
-   * - Content
+   * - **Content Moderation Task**
      - Aggressive
      - 2
-   * - Jobs
+   * - **Jobs Task**
      - Minimal
      - 2
-   * - Procurement
+   * - **Procurement**
      - Minimal
      - 2
-   * - Procurement
+   * - **Procurement**
      - Conservative
      - 2
 
-**Compromise effect (job screening).** In most job screening IIA cases
+**Compromise effect (Jobs screening).** In most **Jobs** screening IIA cases
 the mechanism is the same. Adding an extreme option shifts the choice
 toward the middle option. For example, the model prefers
 *phone_screen* over *hold_for_review* in a pair. When shown the triple
@@ -348,7 +348,7 @@ reverse also appears. Adding *fast_track* can move a choice from
 *auto_reject* to *technical_interview*. This is the familiar
 compromise pattern.
 
-**Severity anchor (content moderation).** Adding a lenient option pushes
+**Severity anchor (Content moderation).** Adding a lenient option pushes
 the choice toward a stricter action, and adding an extreme option pushes
 the choice toward a moderate action. For example, the model prefers
 *remove_and_strike* over *suspend_and_legal* in a pair. When shown the
@@ -368,13 +368,13 @@ as a constraint revealed by the model.
 Findings
 --------
 
-Job screening is the least consistent scenario. The deterministic SARP
+**Jobs** screening is the least consistent scenario. The deterministic SARP
 pass rate is 74 percent and the stochastic rate is 78 percent. We count
 15 deterministic and 14 stochastic IIA violations. In practice this means
 that adding a third candidate often changes which of two candidates is
 preferred, a hallmark of the compromise pattern.
 
-Content moderation shows that clear cases are not always stable. The
+**Content** moderation shows that clear cases are not always stable. The
 clear tier passes only 47 percent of the time under stochastic sampling
 while ambiguous and adversarial tiers are much higher. Menu dependent
 severity judgments remain even under probabilistic sampling. We still see persistent probability shifts indicating IIA violations, which confirms that context effects remain strong even when we aggregate.

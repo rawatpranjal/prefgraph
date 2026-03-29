@@ -123,7 +123,7 @@ The Rust engine (`rpt-core`) handles graph algorithms and LP solving via Rayon t
 **Full docs**: https://prefgraph.readthedocs.io/ - examples, theory, API reference, and applications.
 
 - Benchmarks overview: https://prefgraph.readthedocs.io/en/latest/benchmarks.html
-- Consistency Benchmarks (LLMs): https://prefgraph.readthedocs.io/en/latest/budget/app_llm_benchmark.html
+- Detecting Inconsistency in AI Agents: https://prefgraph.readthedocs.io/en/latest/budget/app_llm_benchmark.html
 - E‑commerce benchmarks (incl. Amazon): https://prefgraph.readthedocs.io/en/latest/benchmarks_ecommerce.html
 - Dataset loaders (15+): https://prefgraph.readthedocs.io/en/latest/api.html#dataset-loaders
 
