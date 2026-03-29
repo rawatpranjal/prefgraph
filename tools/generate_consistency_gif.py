@@ -196,7 +196,7 @@ def draw_edge(ax, src, dst, color=COL_EDGE, lw=2.5, alpha=0.85):
 def draw_hm_score(ax, consistent, total, ratio):
     """Draw the HM score on the right side of the figure."""
     x_anchor = 2.05
-    y_top = 0.55
+    y_top = 0.85
 
     ax.text(x_anchor, y_top, "Houtman-Maks", ha="center", va="top",
             fontsize=11, fontweight="bold", color=COL_TEXT, zorder=20)
@@ -211,7 +211,7 @@ def draw_hm_score(ax, consistent, total, ratio):
 def draw_legend(ax):
     """Draw a small legend explaining nodes = options, arrows = preferences."""
     x_anchor = 2.05
-    y_base = -0.55
+    y_base = -0.25
 
     # Mini node circle + "option" label
     mini_node = Circle((x_anchor - 0.25, y_base), radius=0.07,
