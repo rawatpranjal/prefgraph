@@ -6,7 +6,7 @@ Across 11 datasets and 32 prediction targets, revealed preference features add n
 Setup
 -----
 
-We test whether choice-consistency features improve predictions of spend, churn, engagement, and loyalty at the individual user level. Each user's purchase or click history is split in time. The early portion produces features. The later portion defines the prediction target. A regularized LightGBM and an L1-penalized logistic regression are each trained on a holdout sample and evaluated out of sample. All runs use SEED 42.
+We test whether choice-consistency features improve predictions of spend, churn, engagement, and loyalty at the individual user level. Each user's purchase or click history is split in time. The early portion produces features. The later portion defines the prediction target. A regularized LightGBM is evaluated by 5-fold cross-validation. An L1-penalized logistic regression is used separately for feature selection and directional interpretation. All runs use SEED 42.
 
 Features
 ^^^^^^^^
@@ -241,9 +241,16 @@ Replication
 
    pip install prefgraph lightgbm scikit-learn
 
+   # 5-fold CV results (main table)
+   python case_studies/benchmarks/cv_benchmark.py --datasets validated
+
+   # Single holdout with both models
    python case_studies/benchmarks/runner.py --datasets validated --model both
+
+   # Quick smoke test
    python case_studies/benchmarks/runner.py --datasets validated --max-users 250 --model both
-   python case_studies/benchmarks/runner.py --datasets dunnhumby
+
+   # Regenerate from cached results
    python case_studies/benchmarks/runner.py --replot
 
 All results are deterministic. Per-dataset JSON files are saved to ``case_studies/benchmarks/output/``. For datasets on external drives, set ``PYREVEALED_DATA_DIR``.
