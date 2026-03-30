@@ -19,7 +19,7 @@ PrefGraph uses a Rust engine (``rpt-core``) for batch choice analysis. It combin
 Scalability and Throughput
 --------------------------
 
-Throughput scales roughly linearly with core count since each user is independent. On a 10-12 core CPU, GARP-only processing reaches about 49k agents/sec. Adding CCEI yields about 2.4k/sec. The full suite (GARP, CCEI, MPI, HARP) sustains about 2.0k/sec.
+Throughput scales roughly linearly with core count since each user is independent. On a 10-12 core CPU, GARP-only processing reaches about 49k users/sec. Adding CCEI yields about 2.4k/sec. The full suite (GARP, CCEI, MPI, HARP) sustains about 2.0k/sec.
 
 .. raw:: html
 
@@ -27,13 +27,13 @@ Throughput scales roughly linearly with core count since each user is independen
 
 .. image:: _static/perf_throughput.png
    :width: 100%
-   :alt: Throughput characteristics across agent cohorts
+   :alt: Throughput characteristics across user cohorts
 
 .. raw:: html
 
    <div style="margin: 1.5em 0;"></div>
 
-Per-agent latency is about 20 microseconds for GARP-only, 420 microseconds for GARP+CCEI, and 500 microseconds for the full four-metric suite. These figures vary with core count and clock speed.
+Per-user latency is about 20 microseconds for GARP-only, 420 microseconds for GARP+CCEI, and 500 microseconds for the full four-metric suite. These figures vary with core count and clock speed.
 
 .. raw:: html
 
@@ -45,15 +45,15 @@ Per-agent latency is about 20 microseconds for GARP-only, 420 microseconds for G
    :align: center
 
    * - Metrics
-     - Throughput (Agents/sec)
-     - Latency (per Agent)
+     - Throughput (users/sec)
+     - Latency (per user)
    * - **GARP Only** (O(T²))
      - ~49,000
      - 20 μs
    * - **GARP + CCEI**
      - ~2,400
      - 420 μs
-   * - **Comprehensive Metrics** (GARP, CCEI, MPI, HARP)
+   * - **Comprehensive** (GARP, CCEI, MPI, HARP)
      - ~2,000
      - 500 μs
 
@@ -68,7 +68,7 @@ Throughput varies by algorithm complexity. See :doc:`Algorithms <algorithms>` fo
 
 .. image:: _static/perf_per_user.png
    :width: 100%
-   :alt: Per-agent computational cost by metric and observation count (T)
+   :alt: Per-user computational cost by metric and observation count (T)
 
 .. raw:: html
 
@@ -100,9 +100,9 @@ At the default chunk size, peak memory is 100-200 MB. Million-user runs work on 
 Large-Scale Benchmarks
 ----------------------
 
-For budgets with T=20–100 and K=5, GARP alone completes 10k, 100k, and 1M agents in roughly 0.1s, 2.0s, and ~20s. Adding CCEI yields about 4.2s, 39.5s, and ~6.6 minutes. Running the full suite (GARP, CCEI, MPI, HARP) takes around 6.8s, 67.1s, and ~11 minutes for the same scales.
+For budgets with T=20–100 and K=5, GARP alone completes 10k, 100k, and 1M users in roughly 0.1s, 2.0s, and ~20s. Adding CCEI yields about 4.2s, 39.5s, and ~6.6 minutes. Running the full suite (GARP, CCEI, MPI, HARP) takes around 6.8s, 67.1s, and ~11 minutes for the same scales.
 
-On discrete menus (50 items, 20–100 sessions), the SARP+WARP+HM bundle completes ~0.3s at 10k agents, ~5.2s at 100k, and ~85.6s at 1M. Measured on Apple M-series hardware. Timings scale with core count.
+On discrete menus (50 items, 20–100 sessions), the SARP+WARP+HM bundle completes ~0.3s at 10k users, ~5.2s at 100k, and ~85.6s at 1M. Measured on Apple M-series hardware. Timings scale with core count.
 
 .. raw:: html
 
@@ -114,9 +114,9 @@ On discrete menus (50 items, 20–100 sessions), the SARP+WARP+HM bundle complet
    :align: center
 
    * - Configuration
-     - 10,000 Agents
-     - 100,000 Agents
-     - 1,000,000 Agents
+     - 10K users
+     - 100K users
+     - 1M users
    * - GARP (O(T²))
      - 0.1s
      - 2.0s
@@ -139,10 +139,10 @@ On discrete menus (50 items, 20–100 sessions), the SARP+WARP+HM bundle complet
    :widths: 25 15 15 15
    :align: center
 
-   * - Metric Configuration
-     - 10,000 Agents
-     - 100,000 Agents
-     - 1,000,000 Agents
+   * - Configuration
+     - 10K users
+     - 100K users
+     - 1M users
    * - SARP + WARP + HM
      - 0.3s
      - 5.2s
