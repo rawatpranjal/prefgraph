@@ -249,7 +249,12 @@ class Engine:
     @staticmethod
     def _validate_budget_input(users: Any) -> None:
         """Validate input for analyze_arrays()."""
-        from prefgraph.core.exceptions import DataValidationError, DimensionError
+        from prefgraph.core.exceptions import (
+            DataValidationError,
+            DimensionError,
+            NaNInfError,
+            ValueRangeError,
+        )
 
         if not isinstance(users, (list, tuple)):
             raise TypeError(
@@ -293,6 +298,29 @@ class Engine:
                     f"users[{i}]: prices shape {p.shape} != quantities shape {q.shape}. "
                     f"Both must be (T, K) with matching dimensions."
                 )
+            if not np.all(np.isfinite(p)):
+                raise NaNInfError(
+                    f"users[{i}]: prices contain NaN or Inf values. "
+                    f"Clean your data before scoring. "
+                    f"Hint: Use BehaviorLog(..., nan_policy='drop') for automatic handling."
+                )
+            if not np.all(np.isfinite(q)):
+                raise NaNInfError(
+                    f"users[{i}]: quantities contain NaN or Inf values. "
+                    f"Clean your data before scoring. "
+                    f"Hint: Use BehaviorLog(..., nan_policy='drop') for automatic handling."
+                )
+            if np.any(p <= 0):
+                raise ValueRangeError(
+                    f"users[{i}]: prices must be strictly positive, "
+                    f"found non-positive values. "
+                    f"Revealed preference requires positive prices."
+                )
+            if np.any(q < 0):
+                raise ValueRangeError(
+                    f"users[{i}]: quantities must be non-negative, "
+                    f"found negative values."
+                )
 
     @staticmethod
     def _validate_menu_input(users: Any) -> None:
@@ -332,6 +360,18 @@ class Engine:
                     raise DataValidationError(
                         f"users[{i}], observation {j}: choice {choice} not in menu {menu}."
                     )
+                if len(menu) != len(set(menu)):
+                    raise DataValidationError(
+                        f"users[{i}], observation {j}: menu contains duplicate items {menu}. "
+                        f"Each item should appear at most once per menu."
+                    )
+                for item_id in menu:
+                    if item_id < 0 or item_id >= n_items:
+                        raise DataValidationError(
+                            f"users[{i}], observation {j}: item ID {item_id} is out of range "
+                            f"for n_items={n_items}. Item IDs must be in 0..{n_items - 1}. "
+                            f"Hint: Remap your product IDs to contiguous 0-based indices."
+                        )
 
     # ------------------------------------------------------------------
     # Budget analysis
