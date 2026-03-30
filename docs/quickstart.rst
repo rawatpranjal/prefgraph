@@ -24,6 +24,17 @@ PrefGraph ships four Rayon-parallel generators that produce data in the exact fo
    df = results_to_dataframe(engine.analyze_arrays(budget_data))
    print(df[["is_garp", "ccei", "hm_consistent", "hm_total"]].head())
 
+.. code-block:: text
+
+      is_garp  ccei  hm_consistent  hm_total
+   0     True   1.0             15        15
+   1     True   1.0             15        15
+   2     True   1.0             15        15
+   3     True   1.0             15        15
+   4     True   1.0             15        15
+
+.. code-block:: python
+
    # Menu data: each user picks one item from a variable-size menu (2–5 items).
    # logit choice model adds realistic substitution noise.
    menu_data = generate_random_menus(
@@ -34,6 +45,15 @@ PrefGraph ships four Rayon-parallel generators that produce data in the exact fo
    engine2 = Engine(metrics=["hm"])
    df2 = results_to_dataframe(engine2.analyze_menus(menu_data))
    print(df2[["is_sarp", "n_sarp_violations", "hm_consistent", "hm_total"]].head())
+
+.. code-block:: text
+
+      is_sarp  n_sarp_violations  hm_consistent  hm_total
+   0    False                  6              3         5
+   1    False                  3              4         5
+   2    False                  6              3         5
+   3    False                  3              4         5
+   4    False                  6              3         5
 
 Production and intertemporal generators follow the same pattern:
 
@@ -52,6 +72,9 @@ Production and intertemporal generators follow the same pattern:
        n_users=10_000, n_obs=10, n_periods=5,
        discount_factor=(0.8, 0.99), rationality=0.7, seed=42,
    )
+
+   # prod_data:  10,000 users, each (15, 5) — 15 observations × (3 inputs + 2 outputs)
+   # inter_data: 10,000 users, each (10, 5) — 10 observations × 5 periods
 
 Both ``n_obs`` and ``menu_size`` accept an ``int`` for fixed counts or a ``(min, max)`` tuple for variable counts per user. A pure-NumPy fallback runs automatically if the Rust extension is unavailable.
 
@@ -77,7 +100,17 @@ Wide format means one row per observation with separate price and quantity colum
        cost_cols=["p_milk", "p_bread"],      # price columns (one per good)
        action_cols=["q_milk", "q_bread"],    # quantity columns (one per good)
    )
-   print(results_df.head())
+   print(results_df[["is_garp", "ccei", "mpi", "hm_consistent", "hm_total"]].head())
+
+.. code-block:: text
+
+            is_garp      ccei       mpi  hm_consistent  hm_total
+   user_id
+   0          False  0.880033  0.253057              8        10
+   1          False  0.676351  0.423827              8        10
+   2           True  1.000000  0.000000             10        10
+   3          False  0.937556  0.129736              8        10
+   4          False  0.942781  0.084905              9        10
 
 Budget data from Parquet (long format)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -103,7 +136,17 @@ Long format means one row per (user, time, item) with columns for item id, price
        cost_col="price",       # single price column
        action_col="quantity",  # single quantity column
    )
-   print(results_df.head())
+   print(results_df[["is_garp", "ccei", "mpi", "hm_consistent", "hm_total"]].head())
+
+.. code-block:: text
+
+            is_garp      ccei       mpi  hm_consistent  hm_total
+   user_id
+   0          False  0.722626  0.322987              7        10
+   1          False  0.853556  0.349261              7        10
+   2          False  0.747051  0.262645              9        10
+   3          False  0.850580  0.210591              8        10
+   4          False  0.842826  0.151106              9        10
 
 Budget data from a DataFrame (per‑user arrays)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -133,6 +176,10 @@ If you already have a DataFrame in memory, build per‑user price/quantity matri
    engine = Engine(metrics=["garp", "ccei", "mpi", "hm"])
    results = engine.analyze_arrays(users)
    print(results[0])
+
+.. code-block:: text
+
+   EngineResult: [-] 13 violations  ccei=0.7226  mpi=0.3230  hm=7/10  (50905us)
 
 Menu data from Parquet (events → menus)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -186,3 +233,9 @@ For clickstream data, build menus from what the user actually saw (e.g., viewed 
    engine = Engine(metrics=["hm"])
    results = engine.analyze_menus(user_batches)
    print(results[:3])
+
+.. code-block:: text
+
+   [MenuResult: [+] SARP-consistent  hm=17/17  (759us),
+    MenuResult: [-] 6 SARP violations  hm=16/18  (560us),
+    MenuResult: [-] 4 SARP violations  hm=16/18  (398us)]
