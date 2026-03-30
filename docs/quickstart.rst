@@ -1,6 +1,8 @@
 Loading Data
 ============
 
+Consistency scores are only meaningful when the input represents genuine feasible choices. For budget data, prices must be positive and quantities non-negative. For menu data, reconstruct menus from what the user actually saw, keep only sessions with exactly one purchase, ensure the chosen item appears in the menu, and remap item IDs to contiguous ``0..N-1`` indices. The Engine validates types, shapes, value ranges, and menu structure before scoring. If your data passes validation but the menus or budgets do not approximate real choice sets, the resulting scores will measure data artifacts rather than behavior.
+
 Synthetic data (Rust-parallel generators)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
