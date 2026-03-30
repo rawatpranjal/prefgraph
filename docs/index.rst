@@ -90,7 +90,7 @@ PrefGraph accepts Polars DataFrames, Pandas, Parquet files, or raw NumPy arrays.
    3    False                  3              4         5
    4    False                  6              3         5
 
-Case Study 1: Inconsistency in AI Agents
+Inconsistency in AI Agents
 --------------------------------------------------
 
 Do LLMs have stable action rankings, or does the ranking change when different
@@ -125,50 +125,40 @@ responses and tested for logical cycles. Full results: :doc:`budget/app_llm_benc
      - 84
      - 61
 
-Case Study 2: Predicting Customer Spend and Engagement
--------------------------------------------------------
+Predicting Customer Spend and Engagement
+-----------------------------------------
 
-Do RP features improve predictive models? We benchmark GARP, CCEI, MPI, HM, and VEI features against spend/engagement baselines. Full results: :doc:`benchmarks_ecommerce`.
+We tested whether revealed preference features improve user-level predictions across 11 datasets and 32 targets. Under 5-fold cross-validation, the median lift is zero. The one exception is Amazon churn prediction. Despite near-zero predictive lift, three revealed preference features rank in the top ten by model importance. Full results: :doc:`benchmarks_ecommerce`.
 
 .. list-table::
    :header-rows: 1
-   :widths: 18 8 15 10 10 8 10
+   :widths: 18 8 15 12 12
 
    * - Dataset
      - N
      - Target
-     - Baseline
-     - +RP
-     - Lift%
-     - RP-only
+     - Base AUC-PR
+     - +RP AUC-PR
+   * - Amazon
+     - 4,694
+     - Spend Drop
+     - .226
+     - **.248**
+   * - REES46
+     - 8,832
+     - Low Loyalty
+     - .709
+     - .715
    * - H&M
      - 46,757
-     - Spend Change (R²)
-     - 0.290
-     - 0.295
-     - +0.005
-     - \-
-   * - Taobao
-     - 29,519
-     - High Entropy (AP)
-     - 0.789
-     - 0.790
-     - +0.1%
-     - \-
-   * - Amazon
-     - 4,668
-     - Spend Drop
-     - 0.784
-     - 0.798
-     - +1.8%
-     - 0.684
-   * - Dunnhumby
-     - 2,222
-     - Churn
-     - 0.711
-     - 0.724
-     - +1.8%
-     - 0.622
+     - High Spender
+     - .683
+     - .682
+   * - FINN
+     - 46,858
+     - Low Loyalty
+     - .780
+     - .781
 
 Performance
 -----------
