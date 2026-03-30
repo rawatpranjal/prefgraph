@@ -83,6 +83,8 @@ Both ``n_obs`` and ``menu_size`` accept an ``int`` for fixed counts or a ``(min,
 Budget data from Parquet (wide format)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+Budget analysis assumes each row is a shopping trip where the consumer faced known prices and chose how much of each good to buy. The same set of goods must appear in every observation for a given user, and prices should reflect what the consumer actually paid rather than list prices or averages. Observations with missing goods should be filled with zero quantity and the prevailing market price.
+
 Wide format means one row per observation with separate price and quantity columns for each good.
 
 .. code-block:: python
@@ -185,6 +187,8 @@ If you already have a DataFrame in memory, build per‑user price/quantity matri
 
 Menu data from Parquet (events → menus)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Menu analysis assumes each observation is a single choice from a known set of available alternatives. The menu must approximate what the user actually had access to, not the full product catalog. If menus are too large or include items the user never considered, apparent violations may reflect menu misspecification rather than inconsistent preferences.
 
 For clickstream data, build menus from what the user actually saw (e.g., viewed items) and use the purchased/clicked item as the choice. ``analyze_menus`` expects per‑user tuples ``(menus, choices, n_items)`` where menus are lists of item indices.
 
