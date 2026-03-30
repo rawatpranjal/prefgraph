@@ -145,15 +145,7 @@ Under 5-fold cross-validation the results are stable and the earlier single-hold
 Suggestive Directions
 ---------------------
 
-Users who choose from a wider variety of items tend to be more engaged and less loyal. Choice entropy is the most frequently selected revealed preference feature across all datasets. It is positive for engagement in every dataset where it appears, and positive for low loyalty in six of six cases. This suggests that when users explore broadly rather than repeating the same purchases, they are more likely to remain active but less likely to stick with any single product.
-
-Users with more fragmented preference graphs tend to spend more. The number of strongly connected components in the preference graph is positive for high spending in all five budget targets where it appears. This suggests that when users have internally contradictory preferences across product categories, they end up buying more rather than less. Impulse buyers who do not optimize may be more valuable customers than deliberate ones.
-
-Users whose per-observation purchase efficiency is declining are more likely to churn. On Amazon, per-observation efficiency is the only feature the Lasso selects for spend drop prediction. The coefficient is negative, meaning lower efficiency predicts higher churn. This suggests that when users start making less rational purchases over time, they are mentally disengaging before their spending actually falls.
-
-Users with more transitive preference graphs tend to click more but stay more loyal. Menu transitivity is positive for engagement targets and negative for low loyalty targets. This suggests that when users have a clear and consistent preference ordering, they engage actively but do not wander across products.
-
-These directions are suggestive rather than causal. The Lasso selects features under strong regularization, so only the most robust associations survive. But the consistency of directions across independent datasets and domains gives some confidence that these patterns reflect real behavioral differences rather than statistical artifacts.
+The following directions are suggestive rather than causal and are based on Lasso coefficient signs under strong L1 regularization across all 11 datasets. Users who explore a wider variety of items tend to be more engaged but less loyal. Users with more fragmented preference graphs tend to spend more, suggesting that impulse buyers who do not optimize may be more valuable than deliberate ones. Users whose purchase efficiency is declining over time are more likely to churn, as if they are mentally disengaging before their spending actually falls. Users with more transitive preference graphs tend to click more but stay more loyal to specific products. These patterns are consistent across independent datasets and domains.
 
 .. _eco-features:
 
