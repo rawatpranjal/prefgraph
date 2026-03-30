@@ -23,128 +23,128 @@ Each dataset produces one or more prediction targets from the held-out future wi
 Results
 -------
 
-The table shows the percentage lift from adding 42 revealed preference features on top of a 13-feature baseline. Positive means the additional features helped. Negative means they hurt. Near zero means no difference.
+The table shows the lift from adding 42 revealed preference features on top of a 13-feature baseline, measured by 5-fold cross-validation with a regularized LightGBM. The standard deviation across folds is shown in parentheses.
 
 .. list-table::
    :header-rows: 1
-   :widths: 12 16 7 10 10 10 10
+   :widths: 12 16 7 12 12 12 12
 
    * - Dataset
      - Target
      - N
-     - LGBM AUC-ROC
-     - LGBM AUC-PR
-     - Lasso AUC-ROC
-     - Lasso AUC-PR
+     - Base AUC-ROC
+     - +RP AUC-ROC
+     - Base AUC-PR
+     - +RP AUC-PR
    * - Dunnhumby
      - Spend Drop
      - 2,222
-     - +1.6%
-     - -20.5%
-     - -2.1%
-     - -2.6%
+     - .730 (.020)
+     - .706 (.016)
+     - .180
+     - .145
    * - Dunnhumby
      - High Spender
      - 2,222
-     - -0.1%
-     - -0.2%
-     - -0.1%
-     - -0.1%
+     - .958 (.003)
+     - .957 (.002)
+     - .929
+     - .925
    * - Dunnhumby
      - Future LTV (R²)
      - 2,222
-     - +0.9%
+     - .562 (.050)
+     - .569 (.042)
      -
-     - -0.0%
      -
    * - Amazon
      - Spend Drop
      - 4,694
-     - **+0.6%**
-     - **+1.0%**
-     - **+1.1%**
-     - **+2.5%**
+     - .776 (.020)
+     - **.789 (.012)**
+     - .226
+     - **.248**
    * - Amazon
      - High Spender
      - 4,694
-     - -0.1%
-     - +0.2%
-     - +0.0%
-     - +0.0%
+     - .944 (.007)
+     - .945 (.008)
+     - .903
+     - .905
    * - H&M
      - High Spender
      - 46,757
-     - -0.2%
-     - -0.1%
-     - +0.3%
-     - +0.2%
+     - .792 (.004)
+     - .791 (.003)
+     - .683
+     - .682
    * - H&M
      - Spend Change (R²)
      - 46,757
-     - +0.5%
+     - .285 (.013)
+     - .287 (.013)
      -
-     - +0.0%
      -
    * - Instacart
      - Low Loyalty
      - 50,000
-     - +0.1%
-     - +0.1%
-     - +0.1%
-     - +0.2%
+     - .969 (.002)
+     - .969 (.002)
+     - .935
+     - .935
    * - REES46
      - Low Loyalty
      - 8,832
-     - -0.0%
-     - **+0.5%**
-     - **+0.5%**
-     - **+0.9%**
+     - .887 (.008)
+     - .887 (.008)
+     - .709
+     - **.715**
    * - Taobao
      - Engagement
      - 15,806
-     - -0.0%
-     - -0.0%
-     - -0.0%
-     - -0.2%
+     - .930 (.006)
+     - .931 (.006)
+     - .806
+     - .807
    * - Taobao BW
-     - High Entropy
+     - Low Loyalty
      - 590
-     - -0.1%
-     - +2.0%
-     - +6.5%
-     - +5.0%
+     - .989 (.006)
+     - .991 (.005)
+     - .868
+     - .873
    * - Tenrec
      - Engagement
      - 50,000
-     - -0.0%
-     - -0.0%
-     - -0.0%
-     - -0.0%
+     - .993 (.000)
+     - .993 (.000)
+     - .983
+     - .983
    * - MIND
      - High CTR
      - 5,091
-     - -1.5%
-     - -2.1%
-     - -0.8%
-     - -1.0%
+     - .657 (.022)
+     - .653 (.018)
+     - .514
+     - .510
    * - FINN
      - Low Loyalty
-     - 1,869
-     - +0.0%
-     - +0.1%
-     - -0.0%
-     - -0.2%
+     - 46,858
+     - .958 (.001)
+     - .958 (.001)
+     - .780
+     - .781
 
-All values are percentage lift from adding revealed preference features to the baseline. Bold marks targets where all four columns agree on the direction. One representative target per dataset is shown. Full results for all 32 targets are in ``output/results.json`` and ``output/lasso_results.json``.
+All values are 5-fold cross-validated means from a regularized LightGBM. Standard deviations across folds are in parentheses. Bold marks the one target where the lift is clearly above the fold-to-fold noise. Full results are in ``output/cv_results.json``.
 
 Findings
 --------
 
-Across all 118 lift values in the table, 26 percent are positive, 26 percent are negative, and 47 percent are effectively zero. The median lift above standard RFM features is near zero.
+Amazon Spend Drop is the only target where revealed preference features produce a lift that exceeds the fold-to-fold variation. The AUC-ROC improves from 0.776 to 0.789 and the AUC-PR from 0.226 to 0.248. On this target, per-observation budget efficiency detects declining rationality before spending drops. REES46 Low Loyalty shows a smaller positive on AUC-PR from 0.709 to 0.715. Everything else is within the noise.
 
-However, revealed preference features consistently rank among the most important features in the model. Menu transitivity appears in the top ten for 18 of 19 menu targets. Choice entropy appears in 17 of 19. These features describe how consistently a user makes decisions, which is fundamentally different from what volume and frequency baselines measure.
+Revealed preference features consistently rank among the most important features in the model. Menu transitivity appears in the top ten for 18 of 19 menu targets. Choice entropy appears in 17 of 19. These features describe how consistently a user makes decisions, which is different from what volume and frequency baselines measure.
 
-The conclusion is that while revealed preference features may not improve prediction accuracy over well-constructed baselines, they do contain valuable signal about decision-making behavior that is worth investigating. The directional patterns from the Lasso model below suggest interpretable relationships between choice consistency and future outcomes that standard features do not capture.
+The conclusion is that revealed preference features do not improve prediction accuracy over well-constructed baselines in most settings. They do contain valuable signal about decision-making behavior that is worth investigating. The directional patterns from the Lasso model below suggest interpretable relationships between choice consistency and future outcomes that standard features do not capture.
 
 Suggestive Directions
 ---------------------
