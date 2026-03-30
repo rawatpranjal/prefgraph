@@ -581,7 +581,7 @@ pub fn build_preference_graph<'py>(
 
     let mut graph = PreferenceGraph::new(t);
     graph.parse_budget(&p_flat, &q_flat, t, k, tolerance);
-    let garp = garp_check(&mut graph);
+    let garp = garp_check_with_closure(&mut graph);
     graph.ensure_weights();
 
     let dict = PyDict::new_bound(py);
