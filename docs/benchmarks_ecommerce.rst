@@ -27,115 +27,115 @@ The table shows the lift from adding 42 revealed preference features on top of a
 
 .. list-table::
    :header-rows: 1
-   :widths: 12 16 7 12 12 12 12
+   :widths: 12 16 7 14 8 12 8
 
    * - Dataset
      - Target
      - N
      - Base AUC-ROC
-     - +RP AUC-ROC
+     - Δ ROC (pp)
      - Base AUC-PR
-     - +RP AUC-PR
+     - Δ PR (pp)
    * - Dunnhumby
      - Spend Drop
      - 2,222
      - .730 (.020)
-     - .706 (.016)
+     - -2.4
      - .180
-     - .145
+     - -3.5
    * - Dunnhumby
      - High Spender
      - 2,222
      - .958 (.003)
-     - .957 (.002)
+     - -0.1
      - .929
-     - .925
+     - -0.4
    * - Dunnhumby
      - Future LTV (R²)
      - 2,222
      - .562 (.050)
-     - .569 (.042)
+     - +0.7
      -
      -
    * - Amazon
      - Spend Drop
      - 4,694
      - .776 (.020)
-     - **.789 (.012)**
+     - **+1.3**
      - .226
-     - **.248**
+     - **+2.2**
    * - Amazon
      - High Spender
      - 4,694
      - .944 (.007)
-     - .945 (.008)
+     - 0.0
      - .903
-     - .905
+     - +0.2
    * - H&M
      - High Spender
      - 46,757
      - .792 (.004)
-     - .791 (.003)
+     - -0.1
      - .683
-     - .682
+     - -0.1
    * - H&M
      - Spend Change (R²)
      - 46,757
      - .285 (.013)
-     - .287 (.013)
+     - +0.1
      -
      -
    * - Instacart
      - Low Loyalty
      - 50,000
      - .969 (.002)
-     - .969 (.002)
+     - 0.0
      - .935
-     - .935
+     - +0.1
    * - REES46
      - Low Loyalty
      - 8,832
      - .887 (.008)
-     - .887 (.008)
+     - 0.0
      - .709
-     - **.715**
+     - +0.6
    * - Taobao
      - Engagement
      - 15,806
      - .930 (.006)
-     - .931 (.006)
+     - +0.1
      - .806
-     - .807
+     - +0.1
    * - Taobao BW
      - Low Loyalty
      - 590
      - .989 (.006)
-     - .991 (.005)
+     - +0.2
      - .868
-     - .873
+     - +0.5
    * - Tenrec
      - Engagement
      - 50,000
      - .993 (.000)
-     - .993 (.000)
+     - 0.0
      - .983
-     - .983
+     - 0.0
    * - MIND
      - High CTR
      - 5,091
      - .657 (.022)
-     - .653 (.018)
+     - -0.4
      - .514
-     - .510
+     - -0.4
    * - FINN
      - Low Loyalty
      - 46,858
      - .958 (.001)
-     - .958 (.001)
+     - 0.0
      - .780
-     - .781
+     - +0.1
 
-All values are 5-fold cross-validated means from a regularized LightGBM. Standard deviations across folds are in parentheses. Bold marks the one target where the lift is clearly above the fold-to-fold noise. Full results are in ``output/cv_results.json``.
+All values are 5-fold cross-validated means from a regularized LightGBM. Standard deviations across folds are shown in parentheses next to each baseline. Δ columns show the percentage point change from adding revealed preference features. For R² targets, Δ is in R² units. Bold marks the one target where the lift clearly exceeds the fold-to-fold noise. Full results are in ``output/cv_results.json``.
 
 Findings
 --------
