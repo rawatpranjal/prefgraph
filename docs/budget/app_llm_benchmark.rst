@@ -38,18 +38,7 @@ from these responses and checked for cycles.
 Setup
 -----
 
-A **scenario** is a real enterprise decision task such as support triage
-or alert routing. Each scenario has five **actions** the LLM can choose
-from. A **vignette** is a single concrete input such as a specific
-support ticket, alert payload, or candidate resume that the LLM must
-respond to. A **prompt** is the system prompt persona that frames how the
-LLM should approach the decision. A **menu** is a subset of the five
-actions shown to the LLM for a given vignette. We present all
-C(5,2)=10 pairwise menus + 5 size-3 menus = 15 menus per vignette.
-
-5 scenarios, 10 vignettes each, 5 prompts, 15 menus per vignette.
-Model: gpt-4o-mini. Deterministic (temp=0) and stochastic (temp=0.7,
-K=20 reps per menu).
+Each **scenario** is an enterprise decision task with five possible **actions**. A **vignette** is a concrete input (a support ticket, alert payload, or resume) that the LLM must act on. A **prompt** is the system prompt persona framing how the LLM approaches the decision. A **menu** is the subset of actions shown for a given vignette. We present all 10 pairwise menus and 5 size-3 menus per vignette, giving 15 menus total. The model is gpt-4o-mini, tested at temperature 0 (deterministic) and temperature 0.7 with 20 repetitions per menu (stochastic).
 
 .. list-table::
    :header-rows: 1
@@ -81,11 +70,7 @@ K=20 reps per menu).
 How to read the results
 -----------------------
 
-**Perfect Consistency (SARP)** checks if the model operates using a single, strict ranking of actions. If it prefers Action A over B, and B over C, it must logically prefer A over C. If it navigates all menus without contradicting itself or forming cyclical loops, it passes.
-
-**Menu Independence (IIA)** checks if adding a third option changes how the model feels about the first two. If it picks "Interview" over "Reject" in a pair, but switches to "Reject" when "Waitlist" is added to the menu, the result is dependent on the menu framing and independence is violated.
-
-**Probabilistic Consistency (RUM)** evaluates 20 samples per menu (at temperature 0.7) as a probability distribution. Instead of demanding a single fixed answer, it tests whether the model\'s varied responses can be explained by a logical distribution of preferences rather than random noise.
+**Perfect Consistency (SARP)** tests whether the model operates from a single strict ranking of actions, with no contradictions across all menus. **Menu Independence (IIA)** tests whether adding a third option changes the preference between two existing options. **Probabilistic Consistency (RUM)** takes 20 samples per menu at temperature 0.7 and tests whether the resulting choice frequencies can be explained by a stable distribution of preferences rather than noise.
 
 .. _llm-why-design:
 
@@ -100,7 +85,7 @@ effects.
 Results 1: Deterministic (temp=0)
 ---------------------------------
 
-First, we measure simple deterministic consistency. Each cell shows the percentage of configurations where the LLM behaves perfectly logically with no contradictions (passing SARP).
+Each cell shows the percentage of vignette-prompt configurations that pass SARP.
 
 .. list-table:: SARP Pass Rate by Prompt Framework (%)
    :header-rows: 1
@@ -149,10 +134,6 @@ First, we measure simple deterministic consistency. Each cell shows the percenta
      - 90
      - 84
 
-Prompt engineering affects consistency. Structuring decisions with 
-rigid rules (Decision Tree) or directional bias (Conservative/Aggressive) 
-tends to out-perform unguided Minimal prompts across most operational domains.
-
 .. list-table:: SARP Pass Rate by Case Difficulty (%)
    :header-rows: 1
    :widths: 18 16 16 16 16 16
@@ -194,10 +175,6 @@ tends to out-perform unguided Minimal prompts across most operational domains.
      - 80
      - 84
 
-Model consistency does not uniformly degrade on harder tasks. In some cases,
-**Content Moderation Task** decisions are less consistent on ostensibly "Clear" cases
-(60%), while the **Jobs Task** struggles most on simplified "Binary" rulesets (67%).
-
 .. _llm-iia:
 
 .. list-table:: Independence of Irrelevant Alternatives (IIA) Flips
@@ -217,9 +194,7 @@ Model consistency does not uniformly degrade on harder tasks. In some cases,
    * - **Procurement**
      - 8
 
-*IIA violation = adding a third option reverses the preference between two existing options.*
-
-The **Jobs Task** and **Content Moderation Task** categories exhibit the highest susceptibility to context-dependent preference reversals, indicating that the mere presence of decoy options can systematically manipulate the LLM's logical alignment.
+Structured prompts (Decision Tree, Conservative) generally outperform unguided Minimal prompts, but the effect is domain-specific. Consistency does not uniformly degrade on harder tasks. Content Moderation is less consistent on clear cases than on adversarial ones, while Jobs Task struggles most on binary decisions. The Jobs Task and Content Moderation also produce the most IIA violations, meaning that adding a third option frequently reverses the preference between the original two.
 
 .. _llm-stoch-results:
 
@@ -228,7 +203,7 @@ The **Jobs Task** and **Content Moderation Task** categories exhibit the highest
 Results 2: Stochastic Choice (RUM)
 ----------------------------------
 
-Instead of testing single decisions, we ask the model 20 times per menu and convert the responses into choice frequencies. We then test if this distribution of choices is logically consistent. Do its probabilities stem from a stable distribution of preferences, or are they just random noise?
+We ask the model 20 times per menu at temperature 0.7 and test whether the resulting choice frequencies are consistent with a Random Utility Model.
 
 .. list-table:: RUM Pass Rate by Prompt Framework (%)
    :header-rows: 1
@@ -271,10 +246,6 @@ Instead of testing single decisions, we ask the model 20 times per menu and conv
      - 38
      - 63
 
-Stochastic robustness requires tailored instructional frameworks. Decision Tree paths 
-are effective for Procurement, whereas **Jobs Task** pipelines align better with 
-Aggressive pacing.
-
 .. list-table:: RUM Pass Rate by Case Difficulty (%)
    :header-rows: 1
    :widths: 18 16 16 16 16
@@ -310,19 +281,12 @@ Aggressive pacing.
      - 100
      - 100
 
-Stochastic consistency testing reinforces the deterministic findings. Procurement reaches 100 percent under Ambiguous and Adversarial constraints, while seemingly clear-cut **Content Moderation Task** becomes inconsistent. The **Jobs Task**, conversely, correctly performs best on Clear cases but degrades under complex scenarios. 
-(*Results with asterisks are based on partial procurement stage2 coverage.*)
+RUM pass rates drop 20 to 30 percentage points below the deterministic SARP rates across most scenarios, confirming that stochastic sampling reveals inconsistencies that single-shot testing misses. The same patterns hold. Content Moderation passes only 13 percent of clear cases under stochastic testing, while Alert remains the most consistent domain. No single prompt framework dominates. Procurement results are based on partial stage 2 coverage.
 
 .. _llm-patterns:
 
 Patterns
 --------
-
-IIA violations are not evenly distributed. Decision-tree is the IIA
-hotspot on the **Jobs Task** (accounting for nearly half of the category's violations), while it
-scores 100% SARP on **Procurement**. Conservative leads on the **Content Moderation Task**
-moderation (accounting for nearly half of the category's violations). The same prompt can be the most and least
-consistent depending on the decision domain.
 
 .. list-table:: IIA Violations by Framework (Top Entries)
    :header-rows: 1
@@ -353,62 +317,14 @@ consistent depending on the decision domain.
      - Conservative
      - 2
 
-**Compromise effect (Jobs Task).** In most **Jobs Task** IIA cases
-the mechanism is the same. Adding an extreme option shifts the choice
-toward the middle option. For example, the model prefers
-*phone_screen* over *hold_for_review* in a pair. When shown the triple
-{auto_reject, hold, phone_screen}, the choice moves to *hold*. The
-reverse also appears. Adding *fast_track* can move a choice from
-*auto_reject* to *technical_interview*. This is the familiar
-compromise pattern.
-
-**Severity anchor (Content Moderation Task).** Adding a lenient option pushes
-the choice toward a stricter action, and adding an extreme option pushes
-the choice toward a moderate action. For example, the model prefers
-*remove_and_strike* over *suspend_and_legal* in a pair. When shown the
-triple {approve, remove, suspend}, *suspend* wins. In the opposite
-direction, adding *suspend* can make *remove* preferable to *approve*.
-The model anchors to the extremes of the menu.
-
-**Parse failures as a policy floor.** In severe **Content Moderation Task** cases, all-mild
-menus sometimes return PARSE_FAIL. The model refuses to pick a mild
-action and outputs a severe action instead, even though it is not in the
-menu. This is not random error. It reveals a safety floor that the model
-will not cross. SARP counts this as a violation, but it is better read
-as a constraint revealed by the model.
+Two mechanisms drive most IIA violations. In the Jobs Task, adding an extreme option (auto-reject or fast-track) shifts the choice toward the middle candidate, which is the classic compromise effect from behavioral economics. In Content Moderation, the model anchors to whichever end of the severity spectrum is present in the menu, so adding a lenient option pushes toward strictness and adding an extreme option pushes toward moderation. The same prompt can be the biggest IIA hotspot in one domain and score 100 percent SARP in another. In severe Content Moderation cases, the model occasionally refuses to pick any mild action at all, revealing a safety floor that SARP counts as a violation but is better read as a hard constraint.
 
 .. _llm-findings:
 
 Findings
 --------
 
-The **Jobs Task** is the least consistent scenario. The deterministic SARP
-pass rate is 74 percent and the stochastic rate is 78 percent. We count
-15 deterministic and 14 stochastic IIA violations. In practice this means
-that adding a third candidate often changes which of two candidates is
-preferred, a hallmark of the compromise pattern.
-
-The **Content Moderation Task** shows that clear cases are not always stable. The
-clear tier passes only 47 percent of the time under stochastic sampling
-while ambiguous and adversarial tiers are much higher. Menu dependent
-severity judgments remain even under probabilistic sampling. We still see persistent probability shifts indicating IIA violations, which confirms that context effects remain strong even when we aggregate.
-
-Prompt effects are real and specific to the domain. Decision tree is the
-only prompt to reach 100 percent on a scenario and it does so on
-procurement. The same prompt scores 60 percent on the **Jobs Task**. Conservative
-steadies support at 90 percent but scores 60 percent on the **Content Moderation Task**.
-There is no universal best prompt. Alert triage is the most consistent
-scenario at 90 percent under stochastic SARP, likely because the action
-set has a clear ordinal severity ladder. Procurement with the
-conservative prompt has 24 percent mixed menus, the highest of any
-scenario and prompt. Spending authority choices are more sensitive to
-sampling temperature when the prompt emphasizes caution.
-
-Finally, stochastic sampling exhibits strongly peaked distributions. Only
-8 to 12 percent of menus produce mixed responses across 20 repetitions, meaning
-the language model stays confident in its ranking, even when it is
-contradicting itself under different menu contexts. The inconsistency we see
-is structural rather than noise.
+The Jobs Task is the least consistent scenario at 74 percent deterministic SARP and 15 IIA violations, driven by the compromise effect. Content Moderation shows that clear cases are paradoxically less stable than adversarial ones, with only 13 percent stochastic consistency on clear vignettes. There is no universal best prompt. Decision Tree reaches 100 percent on Procurement but scores 60 percent on Jobs Task. Alert Triage is the most consistent domain overall, likely because its actions form a natural severity ladder. Only 8 to 12 percent of menus produce mixed responses across 20 stochastic repetitions, which means the model stays confident in its ranking even when that ranking contradicts itself across different menus. The inconsistency is structural, not noise.
 
 .. _llm-cost:
 
@@ -520,13 +436,9 @@ Metrics
 Limitations
 ~~~~~~~~~~~
 
-Consistency measures internal coherence, not correctness. A model that always picks the same wrong answer scores perfectly on SARP. These metrics detect when a model contradicts its own earlier preferences, but they say nothing about whether those preferences are good.
+Consistency measures internal coherence, not correctness. A model that always picks the same wrong answer scores perfectly on SARP. The vignettes are synthetic and drawn from a single model family (GPT-4o-mini), so we do not know whether these rates generalize across architectures or predict behavior on production tasks. We also have no human baseline for comparison.
 
-The vignettes are synthetic, generated by GPT-4o-mini across four difficulty tiers. Real-world decisions involve institutional context, ambiguous constraints, and stakes that synthetic prompts do not capture. We do not know whether consistency rates on these vignettes predict consistency on production tasks.
-
-All results come from a single model family. Different architectures, scales, or fine-tuning regimes may produce different consistency profiles. We also have no human baseline. Without knowing how often human decision-makers contradict themselves on the same tasks, it is hard to say whether 74 percent consistency is low or expected.
-
-The menus in this study contain two to three actions drawn from a five-action set. Production deployments often face larger action spaces with more nuanced tradeoffs. Consistency may degrade as menu complexity grows, but this study does not test that.
+Menus in this study contain two to three actions drawn from a five-action set. Production deployments face larger action spaces where consistency may degrade further, but this study does not test that.
 
 For theoretical details on stochastic rationality testing see :doc:`../menu/theory_stochastic`.
 
