@@ -12,14 +12,16 @@ from prefgraph.core.session import StochasticChoiceLog
 class TestZeroFrequencies:
     """EVAL: Zero and near-zero choice frequencies."""
 
-    def test_all_zero_frequencies(self, zero_frequency_stochastic):
-        """EVAL: Menu with all zero frequencies."""
-        from prefgraph.algorithms.stochastic import fit_random_utility_model
+    def test_all_zero_frequencies_rejected(self):
+        """EVAL: Menu with all zero frequencies is rejected at construction."""
+        from prefgraph.core.session import StochasticChoiceLog
+        from prefgraph.core.exceptions import InsufficientDataError
 
-        result = fit_random_utility_model(zero_frequency_stochastic)
-
-        # Should handle gracefully
-        assert hasattr(result, 'model_type')
+        with pytest.raises(InsufficientDataError, match="zero total observations"):
+            StochasticChoiceLog(
+                menus=[frozenset({0, 1, 2}), frozenset({0, 1})],
+                choice_frequencies=[{0: 0, 1: 0, 2: 0}, {0: 50, 1: 50}],
+            )
 
     def test_single_nonzero_frequency(self, single_choice_stochastic):
         """EVAL: Only one item ever chosen (100% probability)."""

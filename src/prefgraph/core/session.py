@@ -1023,6 +1023,17 @@ class StochasticChoiceLog:
             self.total_observations_per_menu = [
                 sum(freq.values()) for freq in self.choice_frequencies
             ]
+        else:
+            # Validate explicit totals are consistent with frequencies
+            for t, (total, freqs) in enumerate(
+                zip(self.total_observations_per_menu, self.choice_frequencies)
+            ):
+                freq_sum = sum(freqs.values())
+                if freq_sum > total:
+                    raise ValueRangeError(
+                        f"Menu {t}: frequency sum ({freq_sum}) exceeds "
+                        f"total_observations ({total})."
+                    )
 
     def _validate(self) -> None:
         """Validate stochastic choice data."""
@@ -1051,6 +1062,12 @@ class StochasticChoiceLog:
                     raise ValueRangeError(
                         f"Negative frequency {count} for item {item} at observation {t}."
                     )
+            # Check for zero total observations
+            if sum(freqs.values()) == 0:
+                raise InsufficientDataError(
+                    f"Menu at observation {t} has zero total observations. "
+                    f"Each menu must have at least one observed choice."
+                )
 
     @property
     def num_menus(self) -> int:

@@ -82,6 +82,49 @@ class TestBudgetReviewerCases:
         assert garp.is_consistent is True
         assert len(garp.violations) == 0
 
+    def test_mci_symmetric_violation(self):
+        """MCI on symmetric 2-obs GARP violation returns positive cost.
+
+        Regression: MCI had a sign error yielding 0 on obvious violations.
+        Slack for each edge is 0.2, so breaking the cheapest edge costs 0.2.
+        """
+        from prefgraph import compute_minimum_cost_index
+
+        p = np.array([[1.0, 2.0], [2.0, 1.0]])
+        q = np.array([[0.2, 0.4], [0.4, 0.2]])
+        log = BehaviorLog(prices=p, quantities=q)
+        r = compute_minimum_cost_index(log)
+
+        assert r.is_consistent is False
+        assert r.mci_value == pytest.approx(0.2, abs=0.01)
+        assert r.mci_normalized == pytest.approx(0.1, abs=0.01)
+
+    def test_mci_consistent_data(self):
+        """MCI is zero for GARP-consistent data."""
+        from prefgraph import compute_minimum_cost_index
+
+        p = np.array([[1.0, 2.0], [2.0, 1.0]])
+        q = np.array([[4.0, 1.0], [1.0, 4.0]])
+        log = BehaviorLog(prices=p, quantities=q)
+        r = compute_minimum_cost_index(log)
+
+        assert r.is_consistent is True
+        assert r.mci_value == 0.0
+        assert r.mci_normalized == 0.0
+        assert r.adjustments == {}
+
+    def test_mci_adjustments_nonempty(self):
+        """MCI adjustments dict is non-empty when violations exist."""
+        from prefgraph import compute_minimum_cost_index
+
+        p = np.array([[1.0, 2.0], [2.0, 1.0]])
+        q = np.array([[0.2, 0.4], [0.4, 0.2]])
+        log = BehaviorLog(prices=p, quantities=q)
+        r = compute_minimum_cost_index(log)
+
+        assert len(r.adjustments) > 0
+        assert all(v > 0 for v in r.adjustments.values())
+
 
 # =============================================================================
 # Menu cases

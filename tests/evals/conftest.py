@@ -222,13 +222,9 @@ def extreme_ratio_log():
 # =============================================================================
 
 
-@pytest.fixture
-def zero_frequency_stochastic():
-    """All zero frequencies in one menu."""
-    return StochasticChoiceLog(
-        menus=[frozenset({0, 1, 2}), frozenset({0, 1})],
-        choice_frequencies=[{0: 0, 1: 0, 2: 0}, {0: 50, 1: 50}],
-    )
+## zero_frequency_stochastic fixture removed: zero-total menus are now
+## rejected at construction time (InsufficientDataError). Tests that
+## need this case should use pytest.raises directly.
 
 
 @pytest.fixture

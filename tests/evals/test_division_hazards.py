@@ -84,18 +84,16 @@ class TestSlutskyDivision:
 class TestStochasticDivision:
     """EVAL: Stochastic choice division hazards."""
 
-    def test_stochastic_zero_total_observations(self, zero_frequency_stochastic):
-        """EVAL: Division by total_observations = 0 in get_choice_probability.
+    def test_stochastic_zero_total_observations_rejected(self):
+        """EVAL: Zero-observation menu is rejected at construction time."""
+        from prefgraph.core.session import StochasticChoiceLog
+        from prefgraph.core.exceptions import InsufficientDataError
 
-        In session.py around line 994:
-            if total == 0:
-                return 0.0
-            return self.choice_frequencies[menu_idx].get(item, 0) / total
-        """
-        prob = zero_frequency_stochastic.get_choice_probability(0, 0)
-
-        # Should return 0.0, not crash
-        assert prob == 0.0, f"Zero-observation menu should return 0.0, got {prob}"
+        with pytest.raises(InsufficientDataError, match="zero total observations"):
+            StochasticChoiceLog(
+                menus=[frozenset({0, 1, 2}), frozenset({0, 1})],
+                choice_frequencies=[{0: 0, 1: 0, 2: 0}, {0: 50, 1: 50}],
+            )
 
     def test_iia_zero_probability_denominator(self):
         """EVAL: IIA odds ratio with p_y = 0 in denominator.
