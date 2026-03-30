@@ -1,6 +1,8 @@
 API
 ===
 
+Most users need only the ``Engine`` class. For budget data (prices and quantities), call ``Engine.analyze_arrays()`` or ``Engine.analyze_parquet()``. For menu data (discrete choices from item sets), call ``Engine.analyze_menus()``. The one-liner ``prefgraph.analyze()`` handles DataFrames directly. See the :doc:`Loading Data <quickstart>` guide for required input schemas and the :doc:`install` page for choosing between array, Parquet, and event-log workflows.
+
 One-Liner API
 -------------
 

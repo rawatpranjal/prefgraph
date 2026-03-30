@@ -3,7 +3,11 @@ Preference Graphs
 
 .. code-block:: bash
 
-   pip install prefgraph
+   pip install prefgraph                  # core library
+   pip install "prefgraph[parquet]"       # + Parquet file support
+   pip install "prefgraph[datasets]"      # + real-world dataset loaders
+
+See the :doc:`install` page for all extras and workflow options.
 
 .. raw:: html
 
@@ -90,8 +94,16 @@ PrefGraph accepts Polars DataFrames, Pandas, Parquet files, or raw NumPy arrays.
    3    False                  3              4         5
    4    False                  6              3         5
 
+Before You Trust the Scores
+---------------------------
+
+Consistency scores are only meaningful when the input data represents genuine feasible choices. Menus must reflect what the user actually saw, not a retroactive reconstruction from purchase logs. Keep only clean single-choice sessions where the user picked exactly one item. The chosen item must be present in the menu. Item IDs must be remapped to contiguous ``0..N-1`` indices before scoring. For budget data, prices must be positive and quantities non-negative. The Engine now rejects NaN, Inf, negative prices, out-of-range item IDs, and duplicate menu items with clear error messages, but the harder question is whether your menus and budgets approximate real choice sets at all. If they do not, the scores measure data artifacts, not behavior. See the :doc:`Loading Data <quickstart>` guide for worked examples of building clean inputs from raw event logs.
+
+Case Studies
+------------
+
 Inconsistency in AI Agents
---------------------------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Do LLMs have stable action rankings, or does the ranking change when different
 alternatives are shown? We queried GPT-4o-mini across 5 enterprise scenarios
@@ -128,7 +140,7 @@ than a general benchmark. Full results: :doc:`budget/app_llm_benchmark`.
      - 61
 
 Predicting Customer Spend and Engagement
------------------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 We tested whether revealed preference features improve user-level predictions across 11 datasets and 32 targets. Under 5-fold cross-validation, the median lift is zero. The one exception is Amazon churn prediction. Despite near-zero predictive lift, three revealed preference features rank in the top ten by model importance. Full results: :doc:`benchmarks_ecommerce`.
 
@@ -163,7 +175,7 @@ We tested whether revealed preference features improve user-level predictions ac
      - .781
 
 Performance
------------
+~~~~~~~~~~~
 
 The Rust engine processes users in parallel via Rayon and streams them in fixed-size chunks, so memory stays flat regardless of population size. On a 10-core laptop, scoring 100,000 users across five metrics from a 110 MB Parquet file takes under two minutes. See the :doc:`Performance Benchmarks <performance>` page for details.
 
@@ -235,6 +247,7 @@ Explore the :doc:`API Reference <api>` and :doc:`References <papers>` for more.
    :maxdepth: 2
    :hidden:
 
+   install
    quickstart
    budget/index
    menu/index
