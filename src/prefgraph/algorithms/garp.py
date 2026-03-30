@@ -637,7 +637,7 @@ def compute_minimum_cost_index(
     amount that would need to be "wasted" to make behavior consistent.
 
     For each observation t, we find adjustment e_t >= 0 such that:
-    - The adjusted expenditures p^t @ x^t + e_t eliminate all GARP violations
+    - The adjusted expenditures p^t @ x^t - e_t eliminate all GARP violations
     - The total adjustment sum(e_t) is minimized
 
     The normalized MCI is sum(e_t) / sum(p^t @ x^t), giving a proportion
@@ -714,9 +714,11 @@ def compute_minimum_cost_index(
             computation_time_ms=computation_time,
         )
 
-    # Simple approach: for each violation cycle, we need to increase
-    # expenditure at some observation to break the cycle
-    # Use heuristic: adjust observations that appear in most cycles
+    # Greedy heuristic: for each violation cycle, find the edge with
+    # smallest slack (cheapest to break) and reduce that observation's
+    # expenditure by slack + tolerance. Dean & Martin (2016) describe
+    # the exact LP, but disjunctive cycle-breaking constraints make the
+    # full problem NP-hard. This greedy approach provides an upper bound.
 
     # Count cycle participation
     cycle_counts = np.zeros(T)
@@ -729,8 +731,8 @@ def compute_minimum_cost_index(
     # For each cycle (t1, t2, ..., tk), at least one e must be positive
     # enough to break the preference chain
 
-    # Simplified version: adjust observations proportionally to cycle participation
-    # This is an approximation to the true MCI LP which can be complex
+    # For each cycle, break the weakest edge by reducing own expenditure
+    # by at least slack + tolerance so the R relation no longer holds.
 
     # For each cycle, estimate minimum adjustment needed
     adjustments = {}
@@ -740,11 +742,14 @@ def compute_minimum_cost_index(
         if len(cycle) < 2:
             continue
 
-        # Find the weakest link in the cycle
+        # Find the weakest link in the cycle.
+        # Cycles are stored as (v0, v1, ..., vk, v0) with the first node
+        # repeated, so iterate len-1 edges to avoid a self-loop.
         min_slack = float("inf")
         weak_obs = cycle[0]
+        n_edges = len(cycle) - 1 if cycle[0] == cycle[-1] else len(cycle)
 
-        for i in range(len(cycle)):
+        for i in range(n_edges):
             t = cycle[i]
             s = cycle[(i + 1) % len(cycle)]
 
@@ -758,8 +763,8 @@ def compute_minimum_cost_index(
         if weak_obs not in adjustments:
             adjustments[weak_obs] = 0.0
 
-        # Amount needed to break this preference
-        adjustment_needed = max(0.0, -min_slack + tolerance)
+        # Amount needed to reduce expenditure enough to break this edge
+        adjustment_needed = max(0.0, min_slack + tolerance)
         adjustments[weak_obs] = max(adjustments[weak_obs], adjustment_needed)
         cycles_broken += 1
 
