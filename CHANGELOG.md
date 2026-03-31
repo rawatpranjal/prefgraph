@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.5.17] - 2026-03-31
+
+### Added
+- FINN.no classifieds descriptive case study analyzing 69,752 users with SARP, HM, and RUM consistency tests at the category-geography group level.
+- Rust RUM batch API with column generation for K > 6 items. Processes 3,462 stochastic users in 12 seconds versus minutes in Python.
+- `rum_consistency_batch()` exposed via Rayon-parallel batch wrapper in the Rust engine.
+
+### Changed
+- Renamed "Case Studies" to "Examples" across RTD navigation and homepage.
+
 ## [0.5.16] - 2026-03-30
 
 ### Fixed

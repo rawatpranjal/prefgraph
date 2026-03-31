@@ -99,8 +99,8 @@ Before You Trust the Scores
 
 Consistency scores are only meaningful when the input data represents genuine feasible choices. Menus must reflect what the user actually saw, not a retroactive reconstruction from purchase logs. Keep only clean single-choice sessions where the user picked exactly one item. The chosen item must be present in the menu. Item IDs must be remapped to contiguous ``0..N-1`` indices before scoring. For budget data, prices must be positive and quantities non-negative. The Engine now rejects NaN, Inf, negative prices, out-of-range item IDs, and duplicate menu items with clear error messages, but the harder question is whether your menus and budgets approximate real choice sets at all. If they do not, the scores measure data artifacts, not behavior. See the :doc:`Loading Data <quickstart>` guide for worked examples of building clean inputs from raw event logs.
 
-Case Studies
-------------
+Examples
+--------
 
 Inconsistency in AI Agents
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
