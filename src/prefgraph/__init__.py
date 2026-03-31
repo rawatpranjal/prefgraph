@@ -574,7 +574,7 @@ from prefgraph.core.result import (
     RankDependentUtilityResult,
 )
 
-__version__ = "0.5.16"
+__version__ = "0.5.17"
 
 __all__ = [
     # ==========================================================================

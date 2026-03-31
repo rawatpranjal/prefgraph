@@ -35,9 +35,12 @@ in multiple slates. Analyzing preferences at the item level produces
 very sparse preference graphs with only 6 percent item overlap. This
 study instead maps each item to one of 290 category-geography groups
 defined in the dataset metadata. Groups combine a product category with
-a Norwegian county, such as "MOTOR, Rogaland" for motor vehicles in
-Rogaland or "BAP, antiques, Trondlag" for antiques in the Trondlag
-region. At the group level, overlap across slates rises to roughly 60
+a Norwegian county. "MOTOR, Rogaland" means motor vehicles listed in
+Rogaland county, and "BAP, antiques, Trondlag" means secondhand
+antiques listed in the Trondlag region. BAP is the Norwegian
+abbreviation for "Torget" (the marketplace section for general goods),
+MOTOR covers cars and motorcycles, REAL_ESTATE covers property, and
+JOB covers job postings. At the group level, overlap across slates rises to roughly 60
 percent, which is dense enough for meaningful SARP and WARP analysis.
 
 .. image:: ../_static/fig1_data_portrait.png
