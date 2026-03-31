@@ -500,7 +500,7 @@ grep -n "github" pyproject.toml docs/conf.py
 ### Common Issues
 
 - **PyPI "file already exists"**: You forgot to bump version. PyPI never allows re-uploading the same version.
-- **ReadTheDocs not updating**: Push to GitHub triggers rebuild. Wait 1-2 min. If stuck, check build logs at readthedocs.org.
+- **ReadTheDocs not updating**: The GitHub webhook (hook ID 590258858) must point to the correct RTD integration URL. As of 2026-03-31 the webhook ID on RTD needs to be updated at https://app.readthedocs.org/dashboard/prefgraph/integrations/ (copy the URL) and pasted into the GitHub webhook at https://github.com/rawatpranjal/prefgraph/settings/hooks/590258858. If builds still don't trigger, manually build from https://app.readthedocs.org/projects/prefgraph/builds/.
 - **Local docs not updating**: Delete `docs/_build/` and rebuild. Sphinx caches aggressively.
 
 ### Quick Deploy Commands
