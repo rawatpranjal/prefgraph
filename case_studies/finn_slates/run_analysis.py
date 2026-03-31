@@ -49,6 +49,7 @@ from case_studies.finn_slates.group_loader import (
     build_stochastic_logs,
     compute_search_ratios,
 )
+from case_studies.finn_slates.generate_hero import translate_group
 
 # --- Style constants (PrefGraph visual spec) ---
 BG_COLOR = "#fafafa"
@@ -147,7 +148,7 @@ def section_1_data_portrait(user_logs, group_labels, stats):
     top20 = group_freq.most_common(20)
     if top20:
         gids, counts = zip(*top20)
-        labels = [group_labels.get(g, str(g))[:20] for g in gids]
+        labels = [translate_group(group_labels.get(g, str(g)))[:22] for g in gids]
         y_pos = np.arange(len(labels))
         ax.barh(y_pos, counts, color=LIGHT_BLUE, edgecolor="white", linewidth=0.5)
         ax.set_yticks(y_pos)
