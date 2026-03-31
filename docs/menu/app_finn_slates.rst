@@ -10,10 +10,10 @@ search versus recommendation behavior.
 
    <div style="margin: 1.5em 0;"></div>
 
-.. image:: ../_static/fig2_consistency_portrait.png
-   :width: 80%
+.. image:: ../_static/fig0_hero.png
+   :width: 85%
    :align: center
-   :alt: Distribution of Houtman-Maks consistency ratios across FINN.no users
+   :alt: One interaction on FINN.no showing a slate of items and the revealed preference from the click
 
 .. raw:: html
 
