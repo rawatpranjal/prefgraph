@@ -105,6 +105,67 @@ items with enough data to actually test consistency. Their results are
 close to the group-level analysis, which validates the aggregation.
 
 
+User Profiles
+~~~~~~~~~~~~~
+
+Behind the population averages are individual browsing histories that
+range from perfectly orderly to deeply tangled. The following three
+users illustrate what consistency and inconsistency look like in
+practice. Each node is a category-region group, each arrow means "was
+chosen over," and red nodes sit inside a preference cycle.
+
+**Consistent user.** This user browses property and home improvement
+listings in the Trondheim area. Over 8 interactions they clicked on
+12 different category-region groups without ever contradicting a
+previous preference. Their preference graph is acyclic and admits a
+complete ranking. The Houtman-Maks ratio is 1.0.
+
+.. image:: ../_static/fig6a_user_consistent.png
+   :width: 80%
+   :align: center
+   :alt: Acyclic preference graph for a consistent Trondheim home hunter
+
+.. raw:: html
+
+   <div style="margin: 1.5em 0;"></div>
+
+**Mild violator.** This user shops for vehicles across Norwegian
+regions. Over 12 interactions they clicked on 22 groups and built up
+a mostly coherent ranking, but four regional vehicle groups form a
+small preference cycle. They preferred Akershus vehicles over Oslo
+vehicles in one session but reversed that preference in another. The
+Houtman-Maks ratio is 0.91, meaning 91 percent of their choices are
+consistent with a single ranking and only two observations need to be
+removed to restore full consistency.
+
+.. image:: ../_static/fig6b_user_mild.png
+   :width: 80%
+   :align: center
+   :alt: Preference graph with a small 4-node cycle for a vehicle shopper
+
+.. raw:: html
+
+   <div style="margin: 1.5em 0;"></div>
+
+**Severe violator.** This user browses boat listings across 18
+regions over 18 interactions. Eleven of those regions form a single
+large cycle. The user clicked Boats in Trondheim over Bergen in one
+session, Bergen over Vestfold in another, and Vestfold over Trondheim
+in a third, creating interlocking preference loops. The Houtman-Maks
+ratio is 0.72 and 55 SARP violations were detected. This user does
+not have a stable regional preference for boats and instead clicks
+opportunistically across the entire country.
+
+.. image:: ../_static/fig6c_user_severe.png
+   :width: 80%
+   :align: center
+   :alt: Dense preference graph with 11-node SCC for a boat browser
+
+.. raw:: html
+
+   <div style="margin: 1.5em 0;"></div>
+
+
 Stochastic Consistency
 ~~~~~~~~~~~~~~~~~~~~~~
 
