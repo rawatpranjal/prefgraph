@@ -39,13 +39,12 @@ GARP checks whether this graph contains preference cycles. CCEI measures how muc
 Theory
 ------
 
-.. toctree::
-   :maxdepth: 1
+Read these in order from the dedicated :doc:`Theory </theory/index>` section:
 
-   theory_foundations
-   theory_consistency
-   theory_efficiency
-   theory_structure
+- :doc:`Foundations </budget/theory_foundations>` - notation, assumptions, and axiom hierarchy.
+- :doc:`Consistency </budget/theory_consistency>` - WARP, GARP, SARP, and related tests.
+- :doc:`Efficiency </budget/theory_efficiency>` - CCEI, MPI, Houtman-Maks, and power.
+- :doc:`Structure </budget/theory_structure>` - HARP, quasilinearity, separability, and utility recovery.
 
 Tutorials
 ---------
