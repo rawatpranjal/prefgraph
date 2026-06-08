@@ -505,6 +505,9 @@ check_abstract_warp = validate_menu_warp
 check_abstract_sarp = validate_menu_sarp
 """Legacy alias: use validate_menu_sarp instead."""
 
+check_sarp = validate_menu_sarp
+"""Compatibility alias: use validate_menu_sarp instead."""
+
 menu_sarp_check = validate_menu_sarp
 """Technical alias: use validate_menu_sarp instead."""
 

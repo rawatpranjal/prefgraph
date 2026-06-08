@@ -1504,3 +1504,11 @@ check_warp_la = test_warp_la
 
 validate_attention_filter = validate_attention_filter_consistency
 """Legacy alias: use validate_attention_filter_consistency instead."""
+
+test_limited_attention = test_attention_rationality
+"""Compatibility alias: use test_attention_rationality instead."""
+
+
+def infer_attention_filters(log: "MenuChoiceLog") -> dict[str, list[set[int]]]:
+    """Compatibility wrapper returning inferred attention sets."""
+    return {"attention_sets": estimate_consideration_sets(log)}

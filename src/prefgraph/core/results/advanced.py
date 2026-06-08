@@ -717,6 +717,11 @@ class AttentionResult(ResultDisplayMixin, ResultPlotMixin):
     computation_time_ms: float
 
     @property
+    def is_consistent(self) -> bool:
+        """Compatibility alias for older attention test APIs."""
+        return self.is_attention_rational
+
+    @property
     def num_observations(self) -> int:
         """Number of choice observations."""
         return len(self.consideration_sets)
@@ -985,4 +990,3 @@ Tech-friendly alias for ProductionGARPResult.
 
 Production theory consistency test for firm behavior.
 """
-

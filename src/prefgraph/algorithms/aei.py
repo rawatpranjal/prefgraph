@@ -323,3 +323,6 @@ Example:
 Returns:
     IntegrityResult with efficiency_index in [0, 1]
 """
+
+compute_ccei = compute_aei
+"""Compatibility alias: CCEI and AEI are the same efficiency index."""

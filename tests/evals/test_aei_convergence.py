@@ -56,10 +56,10 @@ class TestAEIBinarySearch:
         """EVAL: AEI just below 1.0 (near-consistent data)."""
         from prefgraph.algorithms.aei import compute_aei
 
-        # Data with tiny violation
+        # Strict 2-cycle violation.
         log = BehaviorLog(
-            cost_vectors=np.array([[1.0, 1.0], [1.0, 1.0]]),
-            action_vectors=np.array([[3.0, 1.0], [1.0, 3.0]]),
+            cost_vectors=np.array([[2.0, 1.0], [1.0, 2.0]]),
+            action_vectors=np.array([[3.0, 2.0], [2.0, 3.0]]),
         )
 
         result = compute_aei(log)
@@ -142,10 +142,10 @@ class TestAEIEdgeCases:
             action_vectors=np.array([[4.0, 1.0], [1.0, 4.0]]),
         )
 
-        # Violation data
+        # Strict 2-cycle violation.
         violation = BehaviorLog(
-            cost_vectors=np.array([[1.0, 1.0], [1.0, 1.0]]),
-            action_vectors=np.array([[3.0, 1.0], [1.0, 3.0]]),
+            cost_vectors=np.array([[2.0, 1.0], [1.0, 2.0]]),
+            action_vectors=np.array([[3.0, 2.0], [2.0, 3.0]]),
         )
 
         aei_consistent = compute_aei(consistent).efficiency_index
@@ -177,8 +177,8 @@ class TestCCEI:
         from prefgraph.algorithms.aei import compute_aei, compute_ccei
 
         log = BehaviorLog(
-            cost_vectors=np.array([[1.0, 1.0], [1.0, 1.0]]),
-            action_vectors=np.array([[3.0, 1.0], [1.0, 3.0]]),
+            cost_vectors=np.array([[2.0, 1.0], [1.0, 2.0]]),
+            action_vectors=np.array([[3.0, 2.0], [2.0, 3.0]]),
         )
 
         aei = compute_aei(log)

@@ -124,7 +124,7 @@ def compute_risk_profile(
 
         # Compute probability of choosing risky (logistic model)
         # P(risky) = 1 / (1 + exp(-(EU_risky - U_safe)))
-        diff = eu_risky - u_safe
+        diff = np.nan_to_num(eu_risky - u_safe, nan=0.0, posinf=500.0, neginf=-500.0)
 
         # Clip to avoid overflow
         diff = np.clip(diff, -500, 500)
@@ -145,7 +145,7 @@ def compute_risk_profile(
         options={"xatol": tolerance},
     )
 
-    rho = result.x
+    rho = float(result.x) if result.success and np.isfinite(result.x) else 0.0
 
     # Compute certainty equivalents for each lottery
     certainty_equivalents = _compute_certainty_equivalents(session, rho)
@@ -197,12 +197,13 @@ def _crra_utility(x: NDArray[np.float64], rho: float) -> NDArray[np.float64]:
     x = np.asarray(x, dtype=np.float64)
 
     # Handle zeros and negatives (add small epsilon)
-    x_safe = np.maximum(x, 1e-10)
+    x_safe = np.clip(np.maximum(x, 1e-300), 1e-300, 1e300)
 
     if np.abs(rho - 1.0) < 1e-10:
         return np.log(x_safe)
-    else:
-        return np.power(x_safe, 1 - rho) / (1 - rho)
+    exponent = np.clip((1 - rho) * np.log(x_safe), -700.0, 700.0)
+    utility = np.exp(exponent) / (1 - rho)
+    return np.nan_to_num(utility, nan=0.0, posinf=1e300, neginf=-1e300)
 
 
 def _crra_curvature(x: float, rho: float) -> float:
@@ -228,12 +229,14 @@ def _compute_certainty_equivalents(
     # Invert CRRA to get CE
     if np.abs(rho - 1.0) < 1e-10:
         # u(x) = ln(x) => x = exp(u)
-        ce = np.exp(eu)
+        ce = np.exp(np.clip(eu, -700.0, 700.0))
     else:
         # u(x) = x^(1-ρ)/(1-ρ) => x = ((1-ρ)*u)^(1/(1-ρ))
-        ce = np.power(np.maximum((1 - rho) * eu, 1e-10), 1 / (1 - rho))
+        base = np.maximum((1 - rho) * eu, 1e-300)
+        exponent = np.clip(np.log(base) / (1 - rho), -700.0, 700.0)
+        ce = np.exp(exponent)
 
-    return ce
+    return np.nan_to_num(ce, nan=0.0, posinf=1e300, neginf=0.0)
 
 
 def check_expected_utility_axioms(session: RiskSession) -> tuple[bool, list[str]]:
@@ -1022,3 +1025,6 @@ check_eu_consistency = test_expected_utility
 
 check_rdu_consistency = test_rank_dependent_utility
 """Legacy alias: use test_rank_dependent_utility instead."""
+
+estimate_crra_parameter = compute_risk_profile
+"""Compatibility alias: use compute_risk_profile instead."""

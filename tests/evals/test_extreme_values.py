@@ -114,12 +114,13 @@ class TestInfinityHandling:
 
     def test_log_of_zero_utility(self):
         """EVAL: Log utility with zero quantities."""
-        # BehaviorLog validation should prevent zero quantities
-        with pytest.raises(Exception):
-            BehaviorLog(
-                cost_vectors=np.array([[1.0, 1.0]]),
-                action_vectors=np.array([[0.0, 1.0]]),  # Zero quantity
-            )
+        # BehaviorLog allows sparse nonnegative quantities; algorithms that
+        # take logs must handle zero quantities locally.
+        log = BehaviorLog(
+            cost_vectors=np.array([[1.0, 1.0]]),
+            action_vectors=np.array([[0.0, 1.0]]),
+        )
+        assert np.all(np.isfinite(log.total_spend))
 
     def test_division_creating_infinity(self):
         """EVAL: Operations that could create infinity."""

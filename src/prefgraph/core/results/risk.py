@@ -50,6 +50,11 @@ class RiskProfileResult(ResultDisplayMixin, ResultPlotMixin):
     computation_time_ms: float
 
     @property
+    def rho(self) -> float:
+        """Compatibility alias for the CRRA coefficient."""
+        return self.risk_aversion_coefficient
+
+    @property
     def is_risk_seeking(self) -> bool:
         """True if decision-maker is classified as risk-seeking."""
         return self.risk_category == "risk_seeking"

@@ -253,7 +253,7 @@ class BehaviorLog:
         """
         if self._expenditure_matrix is None:
             self._compute_expenditure_matrix()
-        return self._expenditure_matrix  # type: ignore
+        return self._expenditure_matrix.copy()  # type: ignore
 
     @property
     def total_spend(self) -> NDArray[np.float64]:
@@ -262,7 +262,9 @@ class BehaviorLog:
 
         total_spend[i] = cost_i @ action_i = total cost at observation i.
         """
-        return np.diag(self.spend_matrix)
+        if self._expenditure_matrix is None:
+            self._compute_expenditure_matrix()
+        return np.diag(self._expenditure_matrix).copy()  # type: ignore
 
     @property
     def num_records(self) -> int:
