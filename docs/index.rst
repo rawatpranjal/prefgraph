@@ -249,6 +249,7 @@ Explore the :doc:`API Reference <api>` and :doc:`References <papers>` for more.
 
    install
    quickstart
+   theory/index
    budget/index
    menu/index
    benchmarks

@@ -74,12 +74,11 @@ Deterministic data feeds directly into ``Engine.analyze_menus()`` for batch Rust
 Theory
 ------
 
-.. toctree::
-   :maxdepth: 1
+Read these in order from the dedicated :doc:`Theory </theory/index>` section:
 
-   theory_abstract
-   theory_attention
-   theory_stochastic
+- :doc:`Abstract choice </menu/theory_abstract>` - WARP, SARP, congruence, and ordinal utility.
+- :doc:`Stochastic choice </menu/theory_stochastic>` - RUM, RAM, IIA, and regularity.
+- :doc:`Limited attention </menu/theory_attention>` - consideration sets, attention filters, and overload.
 
 Tutorials
 ---------

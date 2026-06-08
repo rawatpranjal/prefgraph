@@ -13,7 +13,6 @@ warnings.filterwarnings("ignore", category=DeprecationWarning)
 # Mock the compiled Rust extension so autodoc works without Rust toolchain (RTD)
 autodoc_mock_imports = ["prefgraph._rust_core"]
 
-import sys
 from unittest.mock import MagicMock
 
 class MockNumba(MagicMock):
@@ -59,7 +58,7 @@ exclude_patterns = [
 
 # -- Options for HTML output -------------------------------------------------
 
-html_theme = "pydata_sphinx_theme"
+html_theme = "sphinx_rtd_theme"
 html_static_path = ["_static"]
 html_css_files = ["custom.css"]
 html_logo = "_static/logo.svg"
@@ -71,18 +70,15 @@ html_meta = {
 }
 
 html_theme_options = {
-    "github_url": "https://github.com/rawatpranjal/PrefGraph",
-    "show_toc_level": 2,
-    "navigation_with_keys": True,
-    "show_prev_next": False,
-    "secondary_sidebar_items": [],  # no right sidebar anywhere
-}
-
-# All pages get left sidebar with nav tree + in-page section TOC
-# Homepage gets no sidebar for maximum content width
-html_sidebars = {
-    "index": [],
-    "**": ["sidebar-nav-bs", "page-toc"],
+    "analytics_id": "",
+    "collapse_navigation": False,
+    "includehidden": True,
+    "logo_only": False,
+    "navigation_depth": 4,
+    "prev_next_buttons_location": "bottom",
+    "sticky_navigation": True,
+    "style_external_links": True,
+    "titles_only": False,
 }
 
 # -- Extension configuration -------------------------------------------------
