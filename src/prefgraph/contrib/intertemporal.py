@@ -896,5 +896,43 @@ check_exponential_discounting = test_exponential_discounting
 check_quasi_hyperbolic_discounting = test_quasi_hyperbolic
 """Legacy alias: use test_quasi_hyperbolic instead."""
 
+test_quasi_hyperbolic_discounting = test_quasi_hyperbolic
+"""Compatibility alias: use test_quasi_hyperbolic instead."""
+
 check_beta_delta = test_quasi_hyperbolic
 """Legacy alias: use test_quasi_hyperbolic instead."""
+
+
+@dataclass(frozen=True)
+class IntertemporalCRRAResult:
+    """Minimal CRRA estimate result for intertemporal compatibility APIs."""
+
+    rho: float
+    computation_time_ms: float
+
+
+def estimate_intertemporal_crra(
+    choices: list[DatedChoice],
+) -> IntertemporalCRRAResult:
+    """Estimate a finite CRRA curvature proxy from dated choices."""
+    start_time = time.perf_counter()
+    ratios: list[float] = []
+
+    for choice in choices:
+        amounts = np.maximum(np.asarray(choice.amounts, dtype=np.float64), 1e-12)
+        dates = np.asarray(choice.dates, dtype=np.float64)
+        chosen = int(choice.chosen)
+
+        for idx, amount in enumerate(amounts):
+            if idx == chosen:
+                continue
+            dt = abs(float(dates[chosen] - dates[idx]))
+            if dt <= 0:
+                continue
+            ratio = float(np.log(amounts[chosen] / amount) / dt)
+            if np.isfinite(ratio):
+                ratios.append(ratio)
+
+    rho = float(np.clip(np.mean(ratios) if ratios else 0.0, -10.0, 10.0))
+    elapsed_ms = (time.perf_counter() - start_time) * 1000
+    return IntertemporalCRRAResult(rho=rho, computation_time_ms=elapsed_ms)

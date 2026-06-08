@@ -15,7 +15,7 @@ from prefgraph.core.types import Cycle
 # ILP (scipy.optimize.milp) gives exact optimal solution but is O(exponential).
 # Greedy FVS is O(T^2) but is a 2-approximation that can over-remove.
 # For T <= threshold, use ILP for exact results; above, fall back to greedy.
-HOUTMAN_MAKS_ILP_THRESHOLD = 100
+HOUTMAN_MAKS_ILP_THRESHOLD = 50
 
 
 def compute_mpi(
@@ -112,6 +112,12 @@ def compute_mpi(
                     cycle_costs.append((cycle, mc))
 
             worst_cycle = max(cycle_costs, key=lambda x: x[1])[0] if cycle_costs else None
+            if cycle_costs:
+                max_cycle_mpi = max(cost for _, cost in cycle_costs)
+                if mpi_val > max_cycle_mpi and worst_cycle is not None:
+                    cycle_costs.append((worst_cycle, mpi_val))
+                elif max_cycle_mpi > mpi_val:
+                    mpi_val = float(max_cycle_mpi)
 
             computation_time = (time.perf_counter() - start_time) * 1000
             return MPIResult(

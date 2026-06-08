@@ -305,9 +305,21 @@ def compute_slutsky_matrix_stone_geary(
     # Estimate Stone-Geary parameters via nonlinear least squares
     # Parameters: γ_1, ..., γ_N (subsistence), β_1, ..., β_N (shares, sum to 1)
 
-    # Initial guess: γ = 0 (Cobb-Douglas), β = budget shares
-    budget_shares = np.mean((P * Q) / expenditures[:, np.newaxis], axis=0)
-    budget_shares = budget_shares / np.sum(budget_shares)  # Normalize
+    # Initial guess: γ = 0 (Cobb-Douglas), β = budget shares.
+    valid_exp = expenditures > 1e-300
+    if np.any(valid_exp):
+        with np.errstate(divide="ignore", invalid="ignore", over="ignore"):
+            share_rows = (P[valid_exp] * Q[valid_exp]) / expenditures[
+                valid_exp, np.newaxis
+            ]
+        budget_shares = np.mean(share_rows, axis=0)
+    else:
+        budget_shares = np.full(N, np.nan)
+
+    if not np.all(np.isfinite(budget_shares)) or np.sum(budget_shares) <= 0:
+        budget_shares = np.full(N, 1.0 / N)
+    else:
+        budget_shares = budget_shares / np.sum(budget_shares)
 
     # For simplicity, assume γ = 0 (Cobb-Douglas case)
     # This gives closed-form Slutsky matrix
@@ -323,14 +335,17 @@ def compute_slutsky_matrix_stone_geary(
     m_bar = np.mean(expenditures)
     supernumerary_income = m_bar - p_bar @ gamma
 
-    if supernumerary_income <= 0:
+    if not np.isfinite(supernumerary_income) or supernumerary_income <= 1e-300:
         # Fall back to Cobb-Douglas (γ = 0)
         gamma = np.zeros(N)
-        supernumerary_income = m_bar
+        supernumerary_income = max(float(m_bar), 1e-300)
 
     # Re-estimate β from budget shares on supernumerary income
     q_bar = np.mean(Q, axis=0)
-    beta = (p_bar * (q_bar - gamma)) / supernumerary_income
+    with np.errstate(divide="ignore", invalid="ignore", over="ignore"):
+        beta = (p_bar * (q_bar - gamma)) / supernumerary_income
+    if not np.all(np.isfinite(beta)) or np.sum(np.maximum(beta, 0)) <= 0:
+        beta = budget_shares.copy()
     beta = np.maximum(beta, 1e-6)
     beta = beta / np.sum(beta)
 
@@ -345,14 +360,19 @@ def compute_slutsky_matrix_stone_geary(
         for j in range(N):
             if i == j:
                 # Own-price Slutsky term (always negative for normal goods)
-                term1 = -beta[i] * supernumerary_income / (p_bar[i] ** 2)
-                term2 = -(1 - beta[i]) * (q_bar[i] - gamma[i]) / p_bar[i]
+                p_i = max(float(p_bar[i]), 1e-300)
+                p_i_sq = max(p_i * p_i, 1e-300)
+                term1 = -beta[i] * supernumerary_income / p_i_sq
+                term2 = -(1 - beta[i]) * (q_bar[i] - gamma[i]) / p_i
                 S[i, j] = term1 + term2
             else:
                 # Cross-price Slutsky term
-                S[i, j] = beta[i] * beta[j] * supernumerary_income / (p_bar[i] * p_bar[j])
+                p_i = max(float(p_bar[i]), 1e-300)
+                p_j = max(float(p_bar[j]), 1e-300)
+                denom = max(p_i * p_j, 1e-300)
+                S[i, j] = beta[i] * beta[j] * supernumerary_income / denom
 
-    return S
+    return np.nan_to_num(S, nan=0.0, posinf=0.0, neginf=0.0)
 
 
 def _compute_slutsky_matrix_finite_diff(

@@ -17,6 +17,7 @@ from prefgraph.core.exceptions import OptimizationError
 def recover_utility(
     session: ConsumerSession,
     tolerance: float = 1e-8,
+    solver: str = "highs",
 ) -> UtilityRecoveryResult:
     """
     Recover utility values satisfying Afriat's inequalities using LP.
@@ -37,6 +38,7 @@ def recover_utility(
     Args:
         session: ConsumerSession with prices and quantities
         tolerance: Numerical tolerance for LP solver
+        solver: scipy.optimize.linprog method name
 
     Returns:
         UtilityRecoveryResult with utility values and multipliers
@@ -108,7 +110,7 @@ def recover_utility(
             A_ub=A_ub,
             b_ub=b_ub,
             bounds=bounds,
-            method="highs",
+            method=solver,
             options={"presolve": True},
         )
     except Exception as e:

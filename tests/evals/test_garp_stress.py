@@ -187,8 +187,8 @@ class TestWARP:
 
         # Create data with WARP violation
         log = BehaviorLog(
-            cost_vectors=np.array([[1.0, 1.0], [1.0, 1.0]]),
-            action_vectors=np.array([[3.0, 1.0], [1.0, 3.0]]),
+            cost_vectors=np.array([[2.0, 1.0], [1.0, 2.0]]),
+            action_vectors=np.array([[3.0, 2.0], [2.0, 3.0]]),
         )
 
         garp = check_garp(log)

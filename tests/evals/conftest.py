@@ -360,8 +360,8 @@ def large_n_100():
 def warp_violation_log():
     """Simple WARP violation - direct contradiction."""
     return BehaviorLog(
-        cost_vectors=np.array([[1.0, 1.0], [1.0, 1.0]]),
-        action_vectors=np.array([[3.0, 1.0], [1.0, 3.0]]),
+        cost_vectors=np.array([[2.0, 1.0], [1.0, 2.0]]),
+        action_vectors=np.array([[3.0, 2.0], [2.0, 3.0]]),
     )
 
 
@@ -370,14 +370,14 @@ def garp_3_cycle_log():
     """3-cycle GARP violation (WARP holds, GARP fails)."""
     return BehaviorLog(
         cost_vectors=np.array([
-            [1.0, 2.0, 3.0],
-            [3.0, 1.0, 2.0],
-            [2.0, 3.0, 1.0],
+            [5.0, 2.0, 3.0],
+            [2.0, 2.0, 7.0],
+            [4.0, 7.0, 3.0],
         ]),
         action_vectors=np.array([
-            [3.0, 0.5, 0.5],
-            [0.5, 3.0, 0.5],
-            [0.5, 0.5, 3.0],
+            [5.0, 1.0, 8.0],
+            [3.0, 6.0, 6.0],
+            [8.0, 2.0, 4.0],
         ]),
     )
 
