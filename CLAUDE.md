@@ -2,6 +2,10 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Current Roadmap
+
+Active cycle is the v0.6 "Trust Release" hardening cycle. See [docs/roadmap.md](docs/roadmap.md). New algorithms are frozen and the API surface is locked for this cycle. Now horizon is CI enforcement and build unification on maturin. Next is the identification docs page and slimming the base install.
+
 ## Writing Rules
 
 Write in complete sentences. Do not use em dashes, colons, semicolons, plus signs, equals signs, or brackets in prose. Do not write lists or bullet points in documentation prose. Every paragraph should read as flowing English. Do not overload sentences with multiple ideas. Say one thing per sentence.
