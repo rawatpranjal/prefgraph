@@ -57,12 +57,11 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
 
       - name: Install prefgraph (builds Rust extension) + test deps
-        # pandas and pyarrow are imported by the test suite (test_analyze.py,
-        # test_generators.py, the parquet tests) but are not in the `dev`
-        # extra, so the `parquet` extra (pandas + pyarrow) is added here.
+        # pandas/pyarrow are imported by the parquet tests, and matplotlib is
+        # imported by optional viz modules that mypy checks under src/.
         run: |
           python -m pip install --upgrade pip
-          pip install -e ".[dev,parquet]"
+          pip install -e ".[dev,parquet,viz]"
 
       - name: Pytest (coverage configured in pyproject addopts)
         run: pytest
