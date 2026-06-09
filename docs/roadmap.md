@@ -126,6 +126,17 @@ RTD rebuild so all pages show 0.6.0, since the source is already coherent.
 Any new algorithm or method. Any API tiering, reorg, experimental namespace, or
 deprecation-policy work. The 313-symbol surface is frozen as-is.
 
+## Parked findings (surfaced during hardening, deferred by the algorithm freeze)
+
+The greedy Houtman-Maks path in `mpi.py` uses `find_sccs(R_star)` (transitive closure) and is a
+conservative over-remover. On a three-observation transitive violation it removes two
+observations (fraction two thirds) where the exact ILP removes only one (fraction one third).
+The public API uses the exact ILP below the size threshold, so small-sample users are unaffected,
+but large-T greedy HM may understate the consistent fraction. Separately, the menu HM path in
+`src/prefgraph/algorithms/abstract_choice.py` (around line 359) still uses `find_sccs(R)`, which is
+inconsistent with the budget path. Both are algorithm-correctness questions for a future cycle,
+not touched here because algorithms are frozen. Surfaced by the v0.6 test-hardening workflow.
+
 ## Verification
 
 CI: open a throwaway PR and confirm `ci.yml` runs pytest, ruff, mypy, and cargo test across the
