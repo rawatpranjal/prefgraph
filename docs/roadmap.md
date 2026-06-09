@@ -179,13 +179,13 @@ Python-backend user a violator, and the `compute_warp_la` flag is silently ignor
 1.0 (reads as perfectly efficient), and `max_scc` 0 (structurally impossible). The triage found no
 genuinely Rust-only fields, so the fix computes the cheap ones and returns None for anything left.
 
-**VEI is mislabeled and mis-specified (MED).** The code minimizes the sum of efficiencies, the
+**VEI is mislabeled and mis-specified (MED, docstring FIXED; native Python exact deferred).** The code minimizes the sum of efficiencies, the
 docstring says the opposite, and the constraints do not encode GARP(e) restoration, so the output
 is an ad-hoc per-observation index, not Varian's VEI. The exact routine exists as Rust
 `compute_vei_exact`. The Engine also reports `vei_exact_mean` 1.0 against a Rust unit test expecting
 0.9375, so the exact path may be mis-wired.
 
-**Quasilinear default truncates cycle search (MED).** `check_quasilinearity` defaults
+**Quasilinear default truncates cycle search (MED, FIXED).** `check_quasilinearity` defaults
 `max_cycle_length=3`, so violations that first appear in longer cycles are missed. The exhaustive
 Bellman-Ford variant already exists and should be the default.
 

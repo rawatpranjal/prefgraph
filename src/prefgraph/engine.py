@@ -53,8 +53,11 @@ class EngineResult:
         utility_success: True if Afriat's LP recovered a rationalizing utility.
         vei_mean: Mean Varian Efficiency Index across observations. Range: [0, 1].
         vei_min: Worst-observation VEI. Range: [0, 1].
-        vei_exact_mean: VEI via exact LP (vs binary-search approximation).
-        vei_exact_min: Exact VEI, worst observation.
+        vei_exact_mean: Exact per-observation VEI (Mononen 2023 weighted
+            feedback arc set) via the Rust backend. Without the Rust extension it
+            falls back to the VEI relaxation (compute_vei), which is a lower
+            bound on the exact value, not the exact value itself.
+        vei_exact_min: Exact VEI, worst observation (same Rust/relaxation note).
         max_scc: Largest strongly connected component in observation graph.
             1 = acyclic (no entangled violations).
         compute_time_us: Wall-clock computation time in microseconds.
