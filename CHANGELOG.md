@@ -4,6 +4,7 @@
 
 ### Fixed
 - CCEI/AEI supremum. The discrete efficiency search returned the next-lower breakpoint instead of the true supremum on roughly 7 percent of datasets, with error up to 0.4. This affected both backends, Production CCEI, and the SARP and WARP variants. An earlier one-float-ULP probe only corrected the case where the binding own-expenditure was about 1. The index is now located exactly as the upper breakpoint of the highest open interval on which the axiom holds, each interval tested at its midpoint where no ratio tie occurs (Smeulders et al. 2014, Algorithm 2). Rust and the pure-Python fallback now agree with an independent supremum oracle to about 1e-11 across random data.
+- Money Pump Index objective. Both backends computed Karp's minimum cycle mean, which divides a cycle's money-pump savings by its edge count, instead of the Money Pump Index, which is the minimum cost-to-budget cycle ratio (Smeulders and Spieksma 2013 Theorem 2; Megiddo 1979). On heterogeneous-budget cycles the reported value could exceed the true maximum money-pump fraction. Both backends now compute the exact minimum cost-to-budget ratio and agree with a brute-force oracle to about 1e-10. The MPI backend-parity test, previously expected-to-fail for this divergence, is now a tight passing assertion.
 - Backend parity tests now genuinely compare Rust against the pure-Python fallback. They previously delegated both sides to Rust, because the per-user functions read HAS_RUST at call time, which is why the CCEI divergence went unnoticed.
 
 ### Added
@@ -11,7 +12,7 @@
 
 ### Notes
 - One golden test value was corrected. A weak-tie-at-e=1 violation has CCEI 1.0 (the supremum holds for every efficiency below 1), not a value below 1. This was verified against the oracle and by hand, not changed to make a test pass.
-- Correctness findings surfaced during this audit are parked for follow-up reconciliation. The Rust and Python MPI values diverge on some users (Karp's max-mean cycle versus cycle enumeration). The pure-Python budget Houtman-Maks can return zero removals on inconsistent data. The menu Houtman-Maks counts items in Rust but observations in Python. Several pure-Python fallback fields return placeholders instead of computing. See the parked findings in `docs/roadmap.md`.
+- Correctness findings surfaced during this audit are parked for follow-up reconciliation. The pure-Python budget Houtman-Maks can return zero removals on inconsistent data. The menu Houtman-Maks counts items in Rust but observations in Python. Several pure-Python fallback fields return placeholders instead of computing. See the parked findings in `docs/roadmap.md`.
 
 ## [0.5.17] - 2026-03-31
 
