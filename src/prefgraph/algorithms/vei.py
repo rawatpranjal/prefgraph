@@ -20,19 +20,18 @@ def compute_vei(
     efficiency_threshold: float = 0.9,
 ) -> VEIResult:
     """
-    Compute Varian's Efficiency Index - per-observation efficiency scores.
+    Per-observation efficiency lower bounds (a fast VEI approximation).
 
-    Unlike AEI which finds a single global efficiency e for all observations,
-    VEI finds individual efficiency scores e_i for each observation such that
-    the data satisfies GARP with minimal total inefficiency.
-
-    The optimization problem is:
-        Minimize: sum(1 - e_i) over all i
-        Subject to: e_i * (p_i @ x_i) >= p_i @ x_j  for all i, j where i R* j
-                    0 <= e_i <= 1
-
-    This identifies which specific observations are problematic, rather than
-    just giving a single aggregate score.
+    Unlike AEI, which finds a single global efficiency e for all observations,
+    this returns an efficiency score e_i per observation. It solves a relaxation:
+    for each observation it returns the tightest e_i consistent with that
+    observation's DIRECT revealed-preference relations,
+        e_i = max_j { (p_i @ x_j) / (p_i @ x_i) : x_i directly preferred to x_j },
+    a lower bound on the per-observation efficiency and a fast way to flag
+    problematic observations. It is NOT the exact Varian (1990) index: it does
+    not re-impose GARP at the deflated budgets, and the code minimizes sum(e_i)
+    rather than the index's sum(1 - e_i). For the exact per-observation index use
+    vei_exact (the Mononen 2023 weighted-feedback-arc-set formulation in Rust).
 
     Args:
         session: ConsumerSession with prices and quantities
@@ -56,6 +55,8 @@ def compute_vei(
     References:
         Varian, H. R. (1990). Goodness-of-fit in optimizing models.
         Journal of Econometrics, 46(1-2), 125-140.
+        Mononen, L. (2023). Computing measures of rationality (exact VEI via
+        weighted feedback arc set; see vei_exact).
     """
     start_time = time.perf_counter()
 
