@@ -15,7 +15,11 @@ import numpy as np
 from prefgraph.core.session import ConsumerSession
 from prefgraph.core.result import AEIResult, GARPResult
 from prefgraph.core.types import Cycle
-from prefgraph.graph.transitive_closure import floyd_warshall_transitive_closure
+from prefgraph.algorithms._budget_axioms import (
+    BudgetAxiomCheck,
+    check_budget_axiom_at_efficiency,
+    normalize_budget_axiom,
+)
 
 
 def compute_aei(
@@ -23,15 +27,16 @@ def compute_aei(
     tolerance: float = 1e-6,
     max_iterations: int = 50,
     method: str = "discrete",
+    axiom: str = "garp",
 ) -> AEIResult:
     """
     Compute Afriat Efficiency Index (CCEI).
 
     The AEI measures how close consumer behavior is to perfect rationality:
 
-        AEI = sup{e in [0,1] : data satisfies GARP with efficiency e}
+        AEI = sup{e in [0,1] : data satisfies the selected axiom with efficiency e}
 
-    where GARP with efficiency e deflates budgets by factor e:
+    where efficiency e deflates budgets by factor e:
         R_e[i,j] = True iff e * (p_i @ x_i) >= p_i @ x_j
 
     The critical value e* is guaranteed to equal one of the T^2 efficiency
@@ -40,7 +45,7 @@ def compute_aei(
     with zero floating-point error in ~2*log2(T) GARP checks.
 
     Interpretation:
-    - AEI = 1.0: Perfectly consistent (satisfies GARP)
+    - AEI = 1.0: Perfectly consistent under the selected axiom
     - AEI = 0.5: Consumer wastes ~50% of budget on inconsistent choices
     - AEI = 0.0: Completely irrational behavior
 
@@ -49,6 +54,8 @@ def compute_aei(
         tolerance: Convergence tolerance (used by "continuous" method)
         max_iterations: Max iterations (used by "continuous" method)
         method: "discrete" (exact, default) or "continuous" (legacy)
+        axiom: Budget axiom to use for the efficiency index: "garp"
+            (default), "sarp", or "warp".
 
     Returns:
         AEIResult with efficiency index and supporting data
@@ -63,15 +70,28 @@ def compute_aei(
         >>> print(f"AEI: {result.efficiency_index:.4f}")
     """
     start_time = time.perf_counter()
+    axiom = normalize_budget_axiom(axiom)
 
     # Try Rust backend for CCEI (binary search over T² ratios in Rust)
     from prefgraph._rust_backend import HAS_RUST, _rust_analyze_batch
-    if HAS_RUST and method == "discrete":
+    if HAS_RUST and method == "discrete" and axiom == "garp":
         try:
             import numpy as np
             p = np.ascontiguousarray(session.prices, dtype=np.float64)
             q = np.ascontiguousarray(session.quantities, dtype=np.float64)
-            results = _rust_analyze_batch([p], [q], True, False, False, False, False, False, False, tolerance)
+            results = _rust_analyze_batch(
+                [p],
+                [q],
+                True,
+                False,
+                False,
+                False,
+                False,
+                False,
+                False,
+                False,
+                tolerance,
+            )
             ccei = results[0]["ccei"]
             is_consistent = results[0]["is_garp"]
 
@@ -86,35 +106,39 @@ def compute_aei(
                 binary_search_iterations=0,
                 tolerance=tolerance,
                 computation_time_ms=computation_time,
+                axiom=axiom,
             )
         except Exception:
             pass  # Fall through to Python
 
     # Python fallback
-    from prefgraph.algorithms.garp import check_garp
+    is_consistent, axiom_result = _check_axiom_at_efficiency(
+        session, axiom, 1.0, tolerance=tolerance
+    )
 
-    garp_result = check_garp(session)
-
-    if garp_result.is_consistent:
+    if is_consistent:
         computation_time = (time.perf_counter() - start_time) * 1000
         return AEIResult(
             efficiency_index=1.0,
             is_perfectly_consistent=True,
-            garp_result_at_threshold=garp_result,
+            garp_result_at_threshold=axiom_result,
             binary_search_iterations=0,
             tolerance=tolerance,
             computation_time_ms=computation_time,
+            axiom=axiom,
         )
 
     if method == "discrete":
-        aei, iterations, last_result = _discrete_binary_search(session)
+        aei, iterations, last_result = _discrete_binary_search(session, axiom)
     else:
         aei, iterations, last_result = _continuous_binary_search(
-            session, tolerance, max_iterations
+            session, axiom, tolerance, max_iterations
         )
 
     if last_result is None:
-        _, last_result = _check_garp_at_efficiency(session, 0.0, tolerance=1e-10)
+        _, last_result = _check_axiom_at_efficiency(
+            session, axiom, 0.0, tolerance=1e-10
+        )
 
     computation_time = (time.perf_counter() - start_time) * 1000
 
@@ -125,11 +149,13 @@ def compute_aei(
         binary_search_iterations=iterations,
         tolerance=tolerance,
         computation_time_ms=computation_time,
+        axiom=axiom,
     )
 
 
 def _discrete_binary_search(
     session: ConsumerSession,
+    axiom: str,
 ) -> tuple[float, int, GARPResult | None]:
     """
     Find exact CCEI by binary search over discrete efficiency ratios.
@@ -165,14 +191,16 @@ def _discrete_binary_search(
         mid = (lo + hi) // 2
         e = float(candidates[mid])
 
-        is_consistent, garp_at_e = _check_garp_at_efficiency(
-            session, e, tolerance=1e-10
+        is_consistent, result_at_e = _check_axiom_at_breakpoint(
+            session,
+            axiom,
+            e,
         )
         iterations += 1
 
         if is_consistent:
             best_e = e
-            best_result = garp_at_e
+            best_result = result_at_e
             # Try higher e (lower index in descending array)
             hi = mid - 1
         else:
@@ -184,6 +212,7 @@ def _discrete_binary_search(
 
 def _continuous_binary_search(
     session: ConsumerSession,
+    axiom: str,
     tolerance: float,
     max_iterations: int,
 ) -> tuple[float, int, GARPResult | None]:
@@ -197,20 +226,95 @@ def _continuous_binary_search(
     while (e_high - e_low > tolerance) and (iterations < max_iterations):
         e_mid = (e_low + e_high) / 2
 
-        is_consistent, garp_at_e = _check_garp_at_efficiency(
-            session, e_mid, tolerance=1e-10
+        is_consistent, result_at_e = _check_axiom_at_efficiency(
+            session, axiom, e_mid, tolerance=1e-10
         )
 
         if is_consistent:
             e_low = e_mid
             last_consistent_e = e_mid
-            last_consistent_result = garp_at_e
+            last_consistent_result = result_at_e
         else:
             e_high = e_mid
 
         iterations += 1
 
     return last_consistent_e, iterations, last_consistent_result
+
+
+def _check_axiom_at_breakpoint(
+    session: ConsumerSession,
+    axiom: str,
+    efficiency: float,
+) -> tuple[bool, GARPResult]:
+    """Check whether the CCEI supremum reaches a discrete breakpoint."""
+    is_consistent, result_at_e = _check_axiom_at_efficiency(
+        session,
+        axiom,
+        efficiency,
+        tolerance=1e-10,
+    )
+    if is_consistent or efficiency <= 0.0:
+        return is_consistent, result_at_e
+
+    # For SARP-style weak cycles, the supremum can occur at a breakpoint even
+    # when the axiom fails exactly at equality. Probe the one-sided limit from
+    # below to recover the Afriat/CCEI supremum.
+    probe_e = float(np.nextafter(efficiency, 0.0))
+    if probe_e == efficiency:
+        probe_e = max(0.0, efficiency - np.finfo(float).eps)
+
+    probe_consistent, probe_result = _check_axiom_at_efficiency(
+        session,
+        axiom,
+        probe_e,
+        tolerance=0.0,
+    )
+    if probe_consistent:
+        return True, probe_result
+
+    return False, result_at_e
+
+
+def _check_axiom_at_efficiency(
+    session: ConsumerSession,
+    axiom: str,
+    efficiency: float,
+    tolerance: float = 1e-10,
+) -> tuple[bool, GARPResult]:
+    """Check a budget axiom at e and adapt it to AEIResult's stored result."""
+    result = check_budget_axiom_at_efficiency(
+        session,
+        axiom=axiom,
+        efficiency=efficiency,
+        tolerance=tolerance,
+    )
+    return result.is_consistent, _axiom_check_to_garp_result(result)
+
+
+def _axiom_check_to_garp_result(result: BudgetAxiomCheck) -> GARPResult:
+    """Store an axiom-at-e check in the existing AEIResult result slot."""
+    violations: list[Cycle]
+    if result.axiom == "warp":
+        violations = [
+            (int(i), int(j), int(i))
+            for i, j in result.violations  # type: ignore[misc]
+        ]
+    else:
+        violations = result.violations  # type: ignore[assignment]
+
+    transitive_closure = result.transitive_closure
+    if transitive_closure is None:
+        transitive_closure = result.direct_revealed_preference
+
+    return GARPResult(
+        is_consistent=result.is_consistent,
+        violations=violations,
+        direct_revealed_preference=result.direct_revealed_preference,
+        transitive_closure=transitive_closure,
+        strict_revealed_preference=result.strict_revealed_preference,
+        computation_time_ms=0.0,
+    )
 
 
 def _check_garp_at_efficiency(
@@ -232,43 +336,12 @@ def _check_garp_at_efficiency(
     Returns:
         Tuple of (is_consistent, GARPResult)
     """
-    E = session.expenditure_matrix
-    own_exp = session.own_expenditures
-
-    # Modified revealed preference with efficiency deflation
-    # R_e[i,j] = (e * p_i @ x_i >= p_i @ x_j)
-    R_e = (efficiency * own_exp[:, np.newaxis]) >= E - tolerance
-
-    # P_e[i,j] = (e * p_i @ x_i > p_i @ x_j)
-    P_e = (efficiency * own_exp[:, np.newaxis]) > E + tolerance
-    np.fill_diagonal(P_e, False)
-
-    # Transitive closure
-    R_e_star = floyd_warshall_transitive_closure(R_e)
-
-    # GARP violation check
-    violation_matrix = R_e_star & P_e.T
-    is_consistent = not np.any(violation_matrix)
-
-    # Find violations if any (simplified for efficiency)
-    violations: list[Cycle] = []
-    if not is_consistent:
-        # Just find the first violation pair for the result
-        violation_pairs = np.argwhere(violation_matrix)
-        if len(violation_pairs) > 0:
-            i, j = int(violation_pairs[0, 0]), int(violation_pairs[0, 1])
-            violations = [(i, j, i)]  # Simplified cycle representation
-
-    result = GARPResult(
-        is_consistent=is_consistent,
-        violations=violations,
-        direct_revealed_preference=R_e,
-        transitive_closure=R_e_star,
-        strict_revealed_preference=P_e,
-        computation_time_ms=0.0,  # Not tracked for internal calls
+    return _check_axiom_at_efficiency(
+        session,
+        axiom="garp",
+        efficiency=efficiency,
+        tolerance=tolerance,
     )
-
-    return is_consistent, result
 
 
 def compute_varian_index(

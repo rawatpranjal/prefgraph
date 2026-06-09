@@ -8,7 +8,7 @@ import numpy as np
 from numpy.typing import NDArray
 
 from prefgraph.core.session import ConsumerSession
-from prefgraph.core.result import MPIResult, HoutmanMaksResult
+from prefgraph.core.result import MPIResult, MPIBoundsResult, HoutmanMaksResult
 from prefgraph.core.types import Cycle
 
 # Hyperparameter: ILP vs greedy threshold for Houtman-Maks.
@@ -178,6 +178,250 @@ def compute_mpi(
         total_expenditure=total_expenditure,
         computation_time_ms=computation_time,
     )
+
+
+_RatioEdge = tuple[int, float, float]
+
+
+def compute_mpi_bounds(
+    session: ConsumerSession,
+    tolerance: float = 1e-10,
+    convergence_tolerance: float = 1e-10,
+    max_iterations: int = 100,
+) -> MPIBoundsResult:
+    """
+    Compute minimum and maximum Money Pump Index values.
+
+    This follows the cost/time graph construction used for the efficiently
+    computable MPI extremes: the minimum MPI is the minimum cost-to-budget
+    cycle ratio over revealed-preference violations, and the maximum MPI is
+    obtained by applying the same routine to negated savings.
+
+    Args:
+        session: ConsumerSession with prices and quantities
+        tolerance: Numerical tolerance for revealed-preference edges
+        convergence_tolerance: Binary-search tolerance for the cycle ratio
+        max_iterations: Maximum binary-search iterations
+
+    Returns:
+        MPIBoundsResult with minimum_mpi and maximum_mpi.
+    """
+    start_time = time.perf_counter()
+
+    prices = session.prices
+    quantities = session.quantities
+    expenditures = session.own_expenditures
+    total_expenditure = float(expenditures.sum())
+
+    positive_budget = expenditures > tolerance
+    if np.count_nonzero(positive_budget) < 2:
+        computation_time = (time.perf_counter() - start_time) * 1000
+        return MPIBoundsResult(
+            minimum_mpi=0.0,
+            maximum_mpi=0.0,
+            total_expenditure=total_expenditure,
+            computation_time_ms=computation_time,
+        )
+
+    prices = prices[positive_budget]
+    quantities = quantities[positive_budget]
+    expenditures = expenditures[positive_budget]
+    expenditure_matrix = prices @ quantities.T
+
+    min_graph = _build_mpi_ratio_graph(
+        expenditure_matrix,
+        quantities,
+        expenditures,
+        bound="minimum",
+        tolerance=tolerance,
+    )
+    max_graph = _build_mpi_ratio_graph(
+        expenditure_matrix,
+        quantities,
+        expenditures,
+        bound="maximum",
+        tolerance=tolerance,
+    )
+
+    minimum_mpi = _minimum_cost_time_ratio(
+        min_graph,
+        low=0.0,
+        high=1.0,
+        convergence_tolerance=convergence_tolerance,
+        max_iterations=max_iterations,
+        tolerance=tolerance,
+    )
+    maximum_ratio = _minimum_cost_time_ratio(
+        max_graph,
+        low=-1.0,
+        high=0.0,
+        convergence_tolerance=convergence_tolerance,
+        max_iterations=max_iterations,
+        tolerance=tolerance,
+    )
+    maximum_mpi = -maximum_ratio
+
+    minimum_mpi = float(np.clip(minimum_mpi, 0.0, 1.0))
+    maximum_mpi = float(np.clip(maximum_mpi, 0.0, 1.0))
+
+    if maximum_mpi <= tolerance:
+        minimum_mpi = 0.0
+        maximum_mpi = 0.0
+    elif minimum_mpi > maximum_mpi:
+        minimum_mpi = maximum_mpi
+
+    computation_time = (time.perf_counter() - start_time) * 1000
+    return MPIBoundsResult(
+        minimum_mpi=minimum_mpi,
+        maximum_mpi=maximum_mpi,
+        total_expenditure=total_expenditure,
+        computation_time_ms=computation_time,
+    )
+
+
+def _build_mpi_ratio_graph(
+    expenditure_matrix: NDArray[np.float64],
+    quantities: NDArray[np.float64],
+    own_expenditures: NDArray[np.float64],
+    bound: str,
+    tolerance: float,
+) -> list[list[_RatioEdge]]:
+    """Build the cost/time graph used for MPI extrema."""
+    n_obs = expenditure_matrix.shape[0]
+    graph: list[list[_RatioEdge]] = [[] for _ in range(n_obs)]
+
+    for i in range(n_obs):
+        budget = float(own_expenditures[i])
+        if budget <= tolerance:
+            continue
+        for j in range(n_obs):
+            if i == j:
+                continue
+            if expenditure_matrix[i, j] > budget + tolerance:
+                continue
+            same_bundle = np.allclose(
+                quantities[i],
+                quantities[j],
+                rtol=tolerance,
+                atol=tolerance,
+            )
+            if bound == "minimum" and same_bundle:
+                continue
+            if bound == "minimum":
+                cost = budget - float(expenditure_matrix[i, j])
+            else:
+                cost = float(expenditure_matrix[i, j]) - budget
+            graph[i].append((j, cost, budget))
+
+    return graph
+
+
+def _minimum_cost_time_ratio(
+    graph: list[list[_RatioEdge]],
+    low: float,
+    high: float,
+    convergence_tolerance: float,
+    max_iterations: int,
+    tolerance: float,
+) -> float:
+    """Binary search the minimum cycle cost/time ratio."""
+    if not _has_cycle(graph):
+        return 0.0
+
+    lo = float(low)
+    hi = float(high)
+    for _ in range(max_iterations):
+        if abs(hi - lo) <= convergence_tolerance:
+            break
+        mid = (lo + hi) / 2.0
+        reweighted = _reweight_graph(graph, mid)
+        has_negative_cycle, distances = _bellman_ford_negative_cycle(
+            reweighted, tolerance
+        )
+        if has_negative_cycle:
+            hi = mid
+            continue
+
+        zero_graph = _zero_residual_graph(reweighted, distances, tolerance)
+        if _has_cycle(zero_graph):
+            return mid
+        lo = mid
+
+    return (lo + hi) / 2.0
+
+
+def _reweight_graph(
+    graph: list[list[_RatioEdge]],
+    ratio: float,
+) -> list[list[_RatioEdge]]:
+    """Apply cost <- cost - ratio * time to every edge."""
+    return [
+        [(target, cost - ratio * budget, budget) for target, cost, budget in edges]
+        for edges in graph
+    ]
+
+
+def _bellman_ford_negative_cycle(
+    graph: list[list[_RatioEdge]],
+    tolerance: float,
+) -> tuple[bool, NDArray[np.float64]]:
+    """Detect any negative cycle using a super-source initialization."""
+    n_obs = len(graph)
+    distances = np.zeros(n_obs, dtype=np.float64)
+
+    for _ in range(max(0, n_obs - 1)):
+        changed = False
+        for i, edges in enumerate(graph):
+            for j, cost, _ in edges:
+                candidate = distances[i] + cost
+                if candidate < distances[j] - tolerance:
+                    distances[j] = candidate
+                    changed = True
+        if not changed:
+            break
+
+    for i, edges in enumerate(graph):
+        for j, cost, _ in edges:
+            if distances[i] + cost < distances[j] - tolerance:
+                return True, distances
+
+    return False, distances
+
+
+def _zero_residual_graph(
+    graph: list[list[_RatioEdge]],
+    distances: NDArray[np.float64],
+    tolerance: float,
+) -> list[list[_RatioEdge]]:
+    """Build the graph of zero reduced-cost edges."""
+    residual: list[list[_RatioEdge]] = [[] for _ in graph]
+    for i, edges in enumerate(graph):
+        for j, cost, budget in edges:
+            reduced_cost = cost + distances[i] - distances[j]
+            if abs(reduced_cost) <= max(tolerance, 1e-9):
+                residual[i].append((j, 0.0, budget))
+    return residual
+
+
+def _has_cycle(graph: list[list[_RatioEdge]]) -> bool:
+    """Return True if a directed graph contains a cycle."""
+    n_obs = len(graph)
+    indegree = [0] * n_obs
+    for edges in graph:
+        for j, _, _ in edges:
+            indegree[j] += 1
+
+    stack = [i for i, degree in enumerate(indegree) if degree == 0]
+    visited = 0
+    while stack:
+        node = stack.pop()
+        visited += 1
+        for j, _, _ in graph[node]:
+            indegree[j] -= 1
+            if indegree[j] == 0:
+                stack.append(j)
+
+    return visited < n_obs
 
 
 def _karp_mpi(

@@ -16,6 +16,10 @@ from prefgraph.core.result import (
 )
 from prefgraph.core.types import Cycle
 from prefgraph.core.exceptions import ComputationalLimitError
+from prefgraph.algorithms._budget_axioms import (
+    check_budget_axiom_at_efficiency,
+    validate_efficiency_level,
+)
 from prefgraph.graph.transitive_closure import floyd_warshall_transitive_closure
 from prefgraph._kernels import bfs_find_path_numba, find_violation_pairs_numba
 
@@ -23,6 +27,7 @@ from prefgraph._kernels import bfs_find_path_numba, find_violation_pairs_numba
 def check_garp(
     session: ConsumerSession,
     tolerance: float = 1e-10,
+    efficiency: float = 1.0,
 ) -> GARPResult:
     """
     Check if consumer data satisfies GARP using Warshall's algorithm.
@@ -50,6 +55,8 @@ def check_garp(
     Args:
         session: ConsumerSession with prices and quantities
         tolerance: Numerical tolerance for floating-point comparisons
+        efficiency: Afriat-style budget efficiency level in [0, 1]. The default
+            1.0 checks exact GARP.
 
     Returns:
         GARPResult with consistency flag, violation cycles, and matrices
@@ -66,6 +73,24 @@ def check_garp(
         True
     """
     start_time = time.perf_counter()
+    efficiency = validate_efficiency_level(efficiency)
+
+    if efficiency != 1.0:
+        axiom_result = check_budget_axiom_at_efficiency(
+            session,
+            axiom="garp",
+            efficiency=efficiency,
+            tolerance=tolerance,
+        )
+        computation_time = (time.perf_counter() - start_time) * 1000
+        return GARPResult(
+            is_consistent=axiom_result.is_consistent,
+            violations=axiom_result.violations,  # type: ignore[arg-type]
+            direct_revealed_preference=axiom_result.direct_revealed_preference,
+            transitive_closure=axiom_result.transitive_closure,
+            strict_revealed_preference=axiom_result.strict_revealed_preference,
+            computation_time_ms=computation_time,
+        )
 
     # Rust backend uses garp_check_with_closure (Varian 1982, O(T³)
     # Floyd-Warshall) because we need R* for violation cycle extraction.
@@ -274,6 +299,7 @@ def _reconstruct_path_bfs(
 def check_warp(
     session: ConsumerSession,
     tolerance: float = 1e-10,
+    efficiency: float = 1.0,
 ) -> WARPResult:
     """
     Check if consumer data satisfies WARP (Weak Axiom of Revealed Preference).
@@ -284,6 +310,8 @@ def check_warp(
     Args:
         session: ConsumerSession with prices and quantities
         tolerance: Numerical tolerance for comparisons
+        efficiency: Afriat-style budget efficiency level in [0, 1]. The default
+            1.0 checks exact WARP.
 
     Returns:
         WARPResult with is_consistent flag and list of violating pairs
@@ -299,6 +327,21 @@ def check_warp(
         True
     """
     start_time = time.perf_counter()
+    efficiency = validate_efficiency_level(efficiency)
+
+    if efficiency != 1.0:
+        axiom_result = check_budget_axiom_at_efficiency(
+            session,
+            axiom="warp",
+            efficiency=efficiency,
+            tolerance=tolerance,
+        )
+        computation_time = (time.perf_counter() - start_time) * 1000
+        return WARPResult(
+            is_consistent=axiom_result.is_consistent,
+            violations=axiom_result.violations,  # type: ignore[arg-type]
+            computation_time_ms=computation_time,
+        )
 
     E = session.expenditure_matrix
     own_exp = session.own_expenditures

@@ -126,7 +126,11 @@ Efficiency Functions
 
 .. autofunction:: prefgraph.compute_integrity_score
 
+.. autofunction:: prefgraph.compute_ccei
+
 .. autofunction:: prefgraph.compute_confusion_metric
+
+.. autofunction:: prefgraph.compute_mpi_bounds
 
 .. autofunction:: prefgraph.compute_minimal_outlier_fraction
 

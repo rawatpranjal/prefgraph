@@ -18,6 +18,7 @@ from numpy.typing import NDArray
 from prefgraph.core.session import ConsumerSession
 from prefgraph.core.result import DifferentiableResult, SARPResult
 from prefgraph.core.types import Cycle
+from prefgraph.algorithms._budget_axioms import check_budget_axiom_at_efficiency
 from prefgraph.graph.transitive_closure import floyd_warshall_transitive_closure
 from prefgraph._kernels import bfs_find_path_numba
 
@@ -196,6 +197,7 @@ def _reconstruct_path_bfs(
 def check_sarp(
     session: ConsumerSession,
     tolerance: float = 1e-10,
+    efficiency: float = 1.0,
 ) -> SARPResult:
     """
     Check if consumer data satisfies SARP (Strict Axiom of Revealed Preference).
@@ -206,15 +208,24 @@ def check_sarp(
     Args:
         session: ConsumerSession with prices and quantities
         tolerance: Numerical tolerance for comparisons
+        efficiency: Afriat-style budget efficiency level in [0, 1]. The default
+            1.0 checks exact SARP.
 
     Returns:
         SARPResult with is_consistent flag and list of violation cycles
     """
-    result = check_differentiable(session, tolerance)
+    start_time = time.perf_counter()
+    result = check_budget_axiom_at_efficiency(
+        session,
+        axiom="sarp",
+        efficiency=efficiency,
+        tolerance=tolerance,
+    )
+    computation_time = (time.perf_counter() - start_time) * 1000
     return SARPResult(
-        is_consistent=result.satisfies_sarp,
-        violations=result.sarp_violations,
-        computation_time_ms=result.computation_time_ms,
+        is_consistent=result.is_consistent,
+        violations=result.violations,
+        computation_time_ms=computation_time,
     )
 
 

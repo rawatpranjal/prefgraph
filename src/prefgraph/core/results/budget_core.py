@@ -14,6 +14,7 @@ __all__ = [
     "GARPResult",
     "AEIResult",
     "MPIResult",
+    "MPIBoundsResult",
     "UtilityRecoveryResult",
     "ConsistencyResult",
     "IntegrityResult",
@@ -141,6 +142,7 @@ class AEIResult(ResultDisplayMixin, ResultPlotMixin):
         binary_search_iterations: Number of iterations in binary search
         tolerance: Convergence tolerance used
         computation_time_ms: Time taken in milliseconds
+        axiom: Budget axiom used for the efficiency index
     """
 
     efficiency_index: float
@@ -149,6 +151,7 @@ class AEIResult(ResultDisplayMixin, ResultPlotMixin):
     binary_search_iterations: int
     tolerance: float
     computation_time_ms: float
+    axiom: str = "garp"
 
     @property
     def waste_fraction(self) -> float:
@@ -183,6 +186,7 @@ class AEIResult(ResultDisplayMixin, ResultPlotMixin):
         # Metrics
         lines.append(m._format_section("Metrics"))
         lines.append(m._format_metric("Efficiency Index (AEI)", self.efficiency_index))
+        lines.append(m._format_metric("Axiom", self.axiom.upper()))
         lines.append(m._format_metric("Waste Fraction", self.waste_fraction))
         lines.append(m._format_metric("Perfectly Consistent", self.is_perfectly_consistent))
         lines.append(m._format_metric("Binary Search Iterations", self.binary_search_iterations))
@@ -204,6 +208,7 @@ class AEIResult(ResultDisplayMixin, ResultPlotMixin):
             "efficiency_index": self.efficiency_index,
             "is_perfectly_consistent": self.is_perfectly_consistent,
             "waste_fraction": self.waste_fraction,
+            "axiom": self.axiom,
             "binary_search_iterations": self.binary_search_iterations,
             "tolerance": self.tolerance,
             "computation_time_ms": self.computation_time_ms,
@@ -330,6 +335,90 @@ class MPIResult(ResultDisplayMixin, ResultPlotMixin):
         indicator = "[+]" if self.is_consistent else "[-]"
         status = "0.0000" if self.is_consistent else f"{self.mpi_value:.4f}"
         return f"MPI: {indicator} {status}"
+
+
+@dataclass(frozen=True)
+class MPIBoundsResult(ResultDisplayMixin, ResultPlotMixin):
+    """
+    Result of minimum and maximum Money Pump Index computation.
+
+    These are the efficiently computable extreme MPI values proposed as
+    alternatives to mean/median MPI. They summarize the least and most severe
+    money-pump cycles in the revealed-preference graph.
+
+    Attributes:
+        minimum_mpi: Minimum MPI over detected violation cycles
+        maximum_mpi: Maximum MPI over detected violation cycles
+        total_expenditure: Sum of all expenditures in the session
+        computation_time_ms: Time taken in milliseconds
+    """
+
+    minimum_mpi: float
+    maximum_mpi: float
+    total_expenditure: float
+    computation_time_ms: float
+
+    @property
+    def is_consistent(self) -> bool:
+        """True if no money-pump cycle exists."""
+        return self.minimum_mpi == 0.0 and self.maximum_mpi == 0.0
+
+    def score(self) -> float:
+        """Return 1 - maximum_mpi so higher is better."""
+        return max(0.0, 1.0 - min(1.0, self.maximum_mpi))
+
+    def summary(self) -> str:
+        """Return human-readable summary report."""
+        m = ResultSummaryMixin
+        lines = [m._format_header("MONEY PUMP BOUNDS REPORT")]
+
+        status = "NO EXPLOITABILITY" if self.is_consistent else "EXPLOITABILITY FOUND"
+        lines.append(f"\nStatus: {status}")
+        lines.append(m._format_section("Metrics"))
+        lines.append(m._format_metric("Minimum MPI", self.minimum_mpi))
+        lines.append(m._format_metric("Maximum MPI", self.maximum_mpi))
+        lines.append(m._format_metric("Total Expenditure", self.total_expenditure))
+
+        lines.append(m._format_section("Interpretation"))
+        if self.is_consistent:
+            lines.append("  No revealed money-pump cycle detected.")
+        else:
+            lines.append(
+                "  The least severe detected cycle extracts "
+                f"{self.minimum_mpi * 100:.1f}% of expenditure."
+            )
+            lines.append(
+                "  The most severe detected cycle extracts "
+                f"{self.maximum_mpi * 100:.1f}% of expenditure."
+            )
+
+        lines.append(m._format_footer(self.computation_time_ms))
+        return "\n".join(lines)
+
+    def to_dict(self) -> dict[str, Any]:
+        """Return dictionary representation for serialization."""
+        return {
+            "minimum_mpi": self.minimum_mpi,
+            "maximum_mpi": self.maximum_mpi,
+            "is_consistent": self.is_consistent,
+            "total_expenditure": self.total_expenditure,
+            "computation_time_ms": self.computation_time_ms,
+            "score": self.score(),
+        }
+
+    def __repr__(self) -> str:
+        """Compact string representation with [+]/[-] indicator."""
+        indicator = "[+]" if self.is_consistent else "[-]"
+        return (
+            f"MPIBoundsResult: {indicator} "
+            f"min={self.minimum_mpi:.4f}, max={self.maximum_mpi:.4f} "
+            f"({self.computation_time_ms:.2f}ms)"
+        )
+
+    def short_summary(self) -> str:
+        """Return one-liner with [+]/[-] indicator."""
+        indicator = "[+]" if self.is_consistent else "[-]"
+        return f"MPI bounds: {indicator} min={self.minimum_mpi:.4f}, max={self.maximum_mpi:.4f}"
 
 
 @dataclass(frozen=True)
