@@ -145,22 +145,49 @@ Algorithm 2. Both backends now agree with an independent supremum oracle to abou
 parity test was made real (it forces the pure-Python path), and `tests/test_ccei_supremum.py` adds
 a brute-force oracle property test that would have caught the original bug.
 
-## Parked findings (confirmed, deferred for sequenced follow-up)
+## Triaged findings (metric-correctness audit, paper-grounded; fixes pending)
 
-These were surfaced by the metric-correctness audit and are recorded so nothing is lost. None are
-fixed yet.
+A read-only triage traced each parked finding to its paper definition. The unifying theme is one
+anti-pattern. In every case a fast approximation is wired in as the default while the correct
+routine already sits unused in the same module, so each fix routes the default to the existing
+exact path. None are fixed yet.
 
-The Rust and pure-Python MPI values diverge on some users, because Rust uses Karp's max-mean cycle
-and the Python fallback uses cycle enumeration. The parity test now marks this `xfail`. The
-pure-Python budget Houtman-Maks can return zero removals on GARP-inconsistent data, which is
-impossible and a residual of the earlier HM fix. The menu Houtman-Maks counts items not in cycles
-in Rust but observations kept in Python, so the two backends report different quantities under the
-same name. Several pure-Python fallback fields return placeholders (`max_scc` is 0, `vei_exact` is
-1.0, `is_warp_la` is False, various SCC fields default) instead of computing, so a no-Rust install
-reports confident wrong values. The greedy Houtman-Maks path uses `find_sccs(R_star)` and
-over-removes by roughly a factor of two at large T, where the public API switches from the exact
-ILP to greedy. Smaller items include a VEI docstring and objective mismatch and a quasilinear
-default cycle-length truncation.
+**MPI computes the wrong objective (HIGH).** The Money Pump Index is the minimum cycle ratio of
+summed savings to summed budgets (Smeulders and Spieksma 2013 Theorem 2; Megiddo 1979). The Rust
+path computes Karp's minimum cycle mean, which divides by the number of edges, not the summed
+budgets, so the shipped `mpi_value` is wrong on heterogeneous-budget cycles and can exceed the true
+maximum money-pump fraction. The correct routine is already in the repo as
+`compute_mpi_bounds().maximum_mpi`. This subsumes the earlier backend-divergence finding, which was
+a symptom.
+
+**Houtman-Maks is mis-implemented for menus and over-removes at large T (HIGH and MED).** The
+canonical HM is the largest subset of observations consistent with the axiom (Demuynck and Rehbeck
+2023 Definition 3; Smeulders et al. 2014; Heufer and Hjertstrand 2015), never items. The Rust menu
+HM counts items with an ad-hoc heuristic, so every shipped menu HM value is the wrong quantity. The
+pure-Python menu HM still uses the pre-v0.5.8 relation and a last-writer-wins edge-to-observation
+map and returns an invalid HM, a subset that still violates SARP. The budget greedy runs
+feedback-vertex-set on the transitive closure, which is a complete bidirectional digraph, so it
+keeps one observation per component and over-removes by 1.5 to 3 times above the exact ILP at large
+T. The clean fix is the exact ILP over observations (Demuynck and Rehbeck 2023 Corollary 2) for
+both budget and menu, with greedy demoted to a documented bound. The budget pure-Python
+zero-removal finding is already resolved on the current code; the residual lives in the menu path.
+
+**Pure-Python fallback reports confident wrong values (HIGH).** The fallback sets 10 of 30 budget
+fields and 6 of 13 menu fields and lets the rest inherit plausible defaults, violating the
+dataclass's own rule that uncomputed fields are None. The worst are `is_warp_la` False (flags every
+Python-backend user a violator, and the `compute_warp_la` flag is silently ignored), `vei_exact`
+1.0 (reads as perfectly efficient), and `max_scc` 0 (structurally impossible). The triage found no
+genuinely Rust-only fields, so the fix computes the cheap ones and returns None for anything left.
+
+**VEI is mislabeled and mis-specified (MED).** The code minimizes the sum of efficiencies, the
+docstring says the opposite, and the constraints do not encode GARP(e) restoration, so the output
+is an ad-hoc per-observation index, not Varian's VEI. The exact routine exists as Rust
+`compute_vei_exact`. The Engine also reports `vei_exact_mean` 1.0 against a Rust unit test expecting
+0.9375, so the exact path may be mis-wired.
+
+**Quasilinear default truncates cycle search (MED).** `check_quasilinearity` defaults
+`max_cycle_length=3`, so violations that first appear in longer cycles are missed. The exhaustive
+Bellman-Ford variant already exists and should be the default.
 
 ## Verification
 
