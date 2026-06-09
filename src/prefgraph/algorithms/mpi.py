@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import time
-from typing import cast
+from typing import Any, cast
 
 import numpy as np
 from numpy.typing import NDArray
@@ -90,10 +90,27 @@ def compute_mpi(
             computation_time_ms=computation_time,
         )
 
-    # Headline value: the exact maximum money-pump fraction (min cost-to-budget
-    # cycle ratio). Backend-independent so both backends agree on the per-user
-    # value; the Engine batch path uses the equivalent Rust routine.
-    mpi_val = compute_mpi_bounds(session, tolerance=tolerance).maximum_mpi
+    # Headline value: the exact maximum money-pump fraction (minimum
+    # cost-to-budget cycle ratio). Use the fast Rust routine when available (it
+    # computes the same value after the objective fix) and fall back to the
+    # Python min-cycle-ratio otherwise. Both agree to binary-search precision.
+    from prefgraph._rust_backend import HAS_RUST, _rust_analyze_batch
+
+    mpi_val: float | None = None
+    if HAS_RUST:
+        try:
+            p = np.ascontiguousarray(session.prices, dtype=np.float64)
+            q = np.ascontiguousarray(session.quantities, dtype=np.float64)
+            # Args match engine.py _analyze_chunk_rust: (prices, quantities, ccei,
+            # mpi, harp, hm, utility, vei, vei_exact, network, tolerance).
+            results = cast(Any, _rust_analyze_batch)(
+                [p], [q], False, True, False, False, False, False, False, False, tolerance
+            )
+            mpi_val = float(results[0]["mpi"])
+        except Exception:
+            mpi_val = None
+    if mpi_val is None:
+        mpi_val = compute_mpi_bounds(session, tolerance=tolerance).maximum_mpi
 
     # Per-cycle breakdown (ratio-of-sums per GARP violation cycle) for
     # worst_cycle and cycle_costs. These are a subset of all cycles, so the
