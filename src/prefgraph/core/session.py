@@ -18,7 +18,7 @@ from __future__ import annotations
 
 import warnings
 from dataclasses import dataclass, field
-from typing import Any, Literal
+from typing import Any, Literal, TYPE_CHECKING, cast
 
 import numpy as np
 from numpy.typing import NDArray
@@ -30,6 +30,16 @@ from prefgraph.core.exceptions import (
     NaNInfError,
     ValueRangeError,
 )
+
+if TYPE_CHECKING:
+    # Deferred to avoid a circular import: core.summary imports from core.session.
+    from prefgraph.core.summary import (
+        BehavioralSummary,
+        RiskChoiceSummary,
+        MenuChoiceSummary,
+        StochasticChoiceSummary,
+        ProductionSummary,
+    )
 
 
 @dataclass
@@ -194,32 +204,36 @@ class BehaviorLog:
 
     def _validate(self) -> None:
         """Validate cost and action matrix dimensions and values."""
-        if self.cost_vectors.shape != self.action_vectors.shape:
+        # __post_init__ resolves both arrays to non-None ndarrays before
+        # calling _validate; narrow for the type checker without runtime effect.
+        cost_vectors = cast(NDArray[np.float64], self.cost_vectors)
+        action_vectors = cast(NDArray[np.float64], self.action_vectors)
+        if cost_vectors.shape != action_vectors.shape:
             raise DimensionError(
-                f"cost_vectors shape {self.cost_vectors.shape} does not match "
-                f"action_vectors shape {self.action_vectors.shape}. "
+                f"cost_vectors shape {cost_vectors.shape} does not match "
+                f"action_vectors shape {action_vectors.shape}. "
                 f"Both arrays must have shape (T, N) where T=observations and N=features. "
                 f"Hint: Check that your price and quantity data have the same dimensions."
             )
-        if self.cost_vectors.ndim != 2:
+        if cost_vectors.ndim != 2:
             raise DimensionError(
-                f"cost_vectors must be a 2D array (T x N), got {self.cost_vectors.ndim}D "
-                f"with shape {self.cost_vectors.shape}. "
+                f"cost_vectors must be a 2D array (T x N), got {cost_vectors.ndim}D "
+                f"with shape {cost_vectors.shape}. "
                 f"Hint: Use .reshape(-1, N) to convert 1D arrays, "
                 f"or prefgraph.analyze(df, ...) for DataFrames."
             )
-        if self.cost_vectors.shape[0] < 1:
+        if cost_vectors.shape[0] < 1:
             raise InsufficientDataError(
                 "Must have at least one observation. "
                 "Hint: Check that your data is not empty after preprocessing."
             )
-        if self.cost_vectors.shape[1] < 1:
+        if cost_vectors.shape[1] < 1:
             raise InsufficientDataError(
                 "Must have at least one feature/good. "
                 "Hint: Check that your data has at least one column."
             )
-        if np.any(self.cost_vectors <= 0):
-            invalid_positions = np.argwhere(self.cost_vectors <= 0)
+        if np.any(cost_vectors <= 0):
+            invalid_positions = np.argwhere(cost_vectors <= 0)
             pos_preview = invalid_positions[:5].tolist()
             pos_msg = str(pos_preview) + ("..." if len(invalid_positions) > 5 else "")
             raise ValueRangeError(
@@ -227,8 +241,8 @@ class BehaviorLog:
                 f"All costs must be strictly positive (> 0) for revealed preference analysis. "
                 f"Hint: Check for missing data encoded as 0, or filter out zero-cost observations."
             )
-        if np.any(self.action_vectors < 0):
-            invalid_positions = np.argwhere(self.action_vectors < 0)
+        if np.any(action_vectors < 0):
+            invalid_positions = np.argwhere(action_vectors < 0)
             pos_preview = invalid_positions[:5].tolist()
             pos_msg = str(pos_preview) + ("..." if len(invalid_positions) > 5 else "")
             raise ValueRangeError(
@@ -239,7 +253,9 @@ class BehaviorLog:
 
     def _compute_expenditure_matrix(self) -> None:
         """Pre-compute spend matrix S[i,j] = cost_i @ action_j."""
-        self._expenditure_matrix = self.cost_vectors @ self.action_vectors.T
+        cost_vectors = cast(NDArray[np.float64], self.cost_vectors)
+        action_vectors = cast(NDArray[np.float64], self.action_vectors)
+        self._expenditure_matrix = cost_vectors @ action_vectors.T
 
     @property
     def spend_matrix(self) -> NDArray[np.float64]:
@@ -253,7 +269,9 @@ class BehaviorLog:
         """
         if self._expenditure_matrix is None:
             self._compute_expenditure_matrix()
-        return self._expenditure_matrix.copy()  # type: ignore
+        matrix = cast(NDArray[np.float64], self._expenditure_matrix)
+        result: NDArray[np.float64] = matrix.copy()
+        return result
 
     @property
     def total_spend(self) -> NDArray[np.float64]:
@@ -264,21 +282,26 @@ class BehaviorLog:
         """
         if self._expenditure_matrix is None:
             self._compute_expenditure_matrix()
-        return np.diag(self._expenditure_matrix).copy()  # type: ignore
+        matrix = cast(NDArray[np.float64], self._expenditure_matrix)
+        result: NDArray[np.float64] = np.diag(matrix).copy()
+        return result
 
     @property
     def num_records(self) -> int:
         """Number of observations/records T."""
-        return self.cost_vectors.shape[0]
+        return cast(int, cast(NDArray[np.float64], self.cost_vectors).shape[0])
 
     @property
     def num_features(self) -> int:
         """Number of features/goods/actions N."""
-        return self.cost_vectors.shape[1]
+        return cast(int, cast(NDArray[np.float64], self.cost_vectors).shape[1])
 
     def to_engine_tuple(self) -> tuple[NDArray[np.float64], NDArray[np.float64]]:
         """Convert to ``(prices, quantities)`` tuple for ``Engine.analyze_arrays()``."""
-        return (self.cost_vectors, self.action_vectors)
+        return (
+            cast(NDArray[np.float64], self.cost_vectors),
+            cast(NDArray[np.float64], self.action_vectors),
+        )
 
     # Legacy property aliases for backward compatibility
     @property
@@ -418,13 +441,15 @@ class BehaviorLog:
             List of BehaviorLog instances, one per window
         """
         logs = []
+        cost_vectors = cast(NDArray[np.float64], self.cost_vectors)
+        action_vectors = cast(NDArray[np.float64], self.action_vectors)
         for i in range(0, self.num_records, window_size):
             end = min(i + window_size, self.num_records)
             if end - i >= 2:  # Need at least 2 observations
                 logs.append(
                     BehaviorLog(
-                        cost_vectors=self.cost_vectors[i:end],
-                        action_vectors=self.action_vectors[i:end],
+                        cost_vectors=cost_vectors[i:end],
+                        action_vectors=action_vectors[i:end],
                         user_id=f"{self.user_id}_window_{i // window_size}"
                         if self.user_id
                         else None,
@@ -569,12 +594,15 @@ class RiskChoiceLog:
     @property
     def num_outcomes(self) -> int:
         """Maximum number of outcomes per lottery K."""
-        return self.risky_outcomes.shape[1]
+        return cast(int, self.risky_outcomes.shape[1])
 
     @property
     def expected_values(self) -> NDArray[np.float64]:
         """Expected value of each risky lottery."""
-        return np.sum(self.risky_outcomes * self.risky_probabilities, axis=1)
+        return cast(
+            NDArray[np.float64],
+            np.sum(self.risky_outcomes * self.risky_probabilities, axis=1),
+        )
 
     @property
     def risk_neutral_choices(self) -> NDArray[np.bool_]:
@@ -701,12 +729,12 @@ class SpatialSession:
     @property
     def num_items(self) -> int:
         """Number of items M."""
-        return self.item_features.shape[0]
+        return cast(int, self.item_features.shape[0])
 
     @property
     def num_dimensions(self) -> int:
         """Number of feature dimensions D."""
-        return self.item_features.shape[1]
+        return cast(int, self.item_features.shape[1])
 
     @property
     def num_observations(self) -> int:
@@ -1094,7 +1122,8 @@ class StochasticChoiceLog:
         """Get probability of choosing item from menu at menu_idx."""
         if menu_idx >= len(self.menus):
             raise IndexError(f"Menu index {menu_idx} out of range.")
-        total = self.total_observations_per_menu[menu_idx]
+        # __post_init__ populates this list when not supplied, so it is non-None.
+        total = cast(list[int], self.total_observations_per_menu)[menu_idx]
         if total == 0:
             return 0.0
         return self.choice_frequencies[menu_idx].get(item, 0) / total
@@ -1285,27 +1314,27 @@ class ProductionLog:
     @property
     def num_observations(self) -> int:
         """Number of observations T."""
-        return self.input_prices.shape[0]
+        return cast(int, self.input_prices.shape[0])
 
     @property
     def num_inputs(self) -> int:
         """Number of inputs N_inputs."""
-        return self.input_prices.shape[1]
+        return cast(int, self.input_prices.shape[1])
 
     @property
     def num_outputs(self) -> int:
         """Number of outputs N_outputs."""
-        return self.output_prices.shape[1]
+        return cast(int, self.output_prices.shape[1])
 
     @property
     def total_cost(self) -> NDArray[np.float64]:
         """Total input cost at each observation."""
-        return np.diag(self._cost_matrix)
+        return np.diag(cast(NDArray[np.float64], self._cost_matrix))
 
     @property
     def total_revenue(self) -> NDArray[np.float64]:
         """Total output revenue at each observation."""
-        return np.diag(self._revenue_matrix)
+        return np.diag(cast(NDArray[np.float64], self._revenue_matrix))
 
     @property
     def profit(self) -> NDArray[np.float64]:
@@ -1315,12 +1344,12 @@ class ProductionLog:
     @property
     def cost_matrix(self) -> NDArray[np.float64]:
         """T x T matrix where C[i,j] = cost of using inputs j at prices i."""
-        return self._cost_matrix
+        return cast(NDArray[np.float64], self._cost_matrix)
 
     @property
     def revenue_matrix(self) -> NDArray[np.float64]:
         """T x T matrix where R[i,j] = revenue from outputs j at prices i."""
-        return self._revenue_matrix
+        return cast(NDArray[np.float64], self._revenue_matrix)
 
     def summary(self) -> "ProductionSummary":
         """Run comprehensive analysis and return unified summary.

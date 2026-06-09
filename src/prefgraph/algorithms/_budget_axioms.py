@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import cast
 
 import numpy as np
 from numpy.typing import NDArray
@@ -69,7 +70,7 @@ def check_budget_axiom_at_efficiency(
 
     if normalized == "warp":
         violation_matrix = weak & strict.T
-        violations = [
+        violations: list[Cycle] = [
             (int(i), int(j)) for i, j in np.argwhere(violation_matrix) if i < j
         ]
         return BudgetAxiomCheck(
@@ -99,7 +100,9 @@ def check_budget_axiom_at_efficiency(
     np.fill_diagonal(violation_matrix, False)
 
     # SARP rules out mutual revealed preference between distinct chosen bundles.
-    quantities = session.quantities
+    # ConsumerSession.__post_init__ always sets quantities to a non-None array,
+    # so the Optional in the field type cannot occur here.
+    quantities = cast(NDArray[np.float64], session.quantities)
     same_bundle = np.isclose(
         quantities[:, np.newaxis, :],
         quantities[np.newaxis, :, :],

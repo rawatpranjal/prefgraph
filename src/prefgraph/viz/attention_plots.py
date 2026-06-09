@@ -9,6 +9,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any
 
 import numpy as np
+from numpy.typing import NDArray
 
 if TYPE_CHECKING:
     from prefgraph.core.result import AttentionResult, RandomAttentionResult
@@ -75,7 +76,6 @@ def plot_attention_decay(
 
     elif hasattr(result, "attention_filter") and result.attention_filter is not None:
         # Alternative: plot attention filter function
-        filter_data = result.attention_filter
         ax.text(
             0.5,
             0.5,
@@ -124,8 +124,8 @@ def plot_consideration_sizes(
     else:
         fig = ax.get_figure()
 
-    # Try to extract consideration set sizes
-    sizes = None
+    # Try to extract consideration set sizes (later rebound to an ndarray).
+    sizes: list[int] | NDArray[Any] | None = None
 
     if hasattr(result, "consideration_sets") and result.consideration_sets is not None:
         # Extract sizes from consideration sets
@@ -299,8 +299,8 @@ def plot_attention_bounds(
         width = 0.35
 
         # Plot bounds as error bars
-        midpoints = [(l + u) / 2 for l, u in zip(lowers, uppers)]
-        errors = [(m - l, u - m) for l, m, u in zip(lowers, midpoints, uppers)]
+        midpoints = [(lo + u) / 2 for lo, u in zip(lowers, uppers)]
+        errors = [(m - lo, u - m) for lo, m, u in zip(lowers, midpoints, uppers)]
         errors = np.array(errors).T
 
         ax.bar(

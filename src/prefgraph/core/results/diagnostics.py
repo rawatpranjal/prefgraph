@@ -637,7 +637,7 @@ class BradleyTerryResult(ResultDisplayMixin, ResultPlotMixin):
         s_j = self.scores[item_j]
         exp_i = np.exp(s_i - max(s_i, s_j))
         exp_j = np.exp(s_j - max(s_i, s_j))
-        return exp_i / (exp_i + exp_j)
+        return float(exp_i / (exp_i + exp_j))
 
     def score(self) -> float:
         """Return scikit-learn style score in [0, 1]. Higher is better.

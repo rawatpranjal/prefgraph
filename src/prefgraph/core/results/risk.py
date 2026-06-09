@@ -182,7 +182,7 @@ class ExpectedUtilityResult(ResultDisplayMixin, ResultPlotMixin):
 
     def summary(self) -> str:
         """Return formatted summary of the Expected Utility test result."""
-        m = _formatting()
+        m = ResultSummaryMixin
         lines = [m._format_header("EXPECTED UTILITY TEST RESULT")]
 
         # Status
@@ -252,7 +252,7 @@ class RankDependentUtilityResult(ResultDisplayMixin, ResultPlotMixin):
 
     def summary(self) -> str:
         """Return formatted summary of the RDU test result."""
-        m = _formatting()
+        m = ResultSummaryMixin
         lines = [m._format_header("RANK-DEPENDENT UTILITY TEST RESULT")]
 
         # Status

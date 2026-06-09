@@ -9,6 +9,7 @@ Supports two methods:
 from __future__ import annotations
 
 import time
+from typing import Any, Callable, cast
 
 import numpy as np
 
@@ -81,7 +82,9 @@ def compute_aei(
 
             p = np.ascontiguousarray(session.prices, dtype=np.float64)
             q = np.ascontiguousarray(session.quantities, dtype=np.float64)
-            results = _rust_analyze_batch(
+            # Guarded by HAS_RUST above, so the callable is never None here.
+            analyze_batch = cast("Callable[..., Any]", _rust_analyze_batch)
+            results = analyze_batch(
                 [p],
                 [q],
                 True,
@@ -299,10 +302,7 @@ def _axiom_check_to_garp_result(result: BudgetAxiomCheck) -> GARPResult:
     """Store an axiom-at-e check in the existing AEIResult result slot."""
     violations: list[Cycle]
     if result.axiom == "warp":
-        violations = [
-            (int(i), int(j), int(i))
-            for i, j in result.violations  # type: ignore[misc]
-        ]
+        violations = [(int(i), int(j), int(i)) for i, j in result.violations]
     else:
         violations = result.violations  # type: ignore[assignment]
 

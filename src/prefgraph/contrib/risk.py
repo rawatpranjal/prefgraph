@@ -578,20 +578,9 @@ def _fosd_dominates(
     if n != len(outcomes_b):
         return False
 
-    # Create combined outcome list with CDF values
-    sorted_a_idx = np.argsort(outcomes_a)
-    sorted_b_idx = np.argsort(outcomes_b)
-
-    cdf_a = np.cumsum(probabilities[sorted_a_idx])
-    cdf_b = np.cumsum(probabilities[sorted_b_idx])
-
     # For each outcome level, check CDF inequality
     # A dominates B if CDF_A(x) <= CDF_B(x) everywhere
     # We check at the sorted outcome points
-
-    # Simple check: A dominates B if outcomes are pointwise >= with probability-weighted average
-    ev_a = np.sum(probabilities * outcomes_a)
-    ev_b = np.sum(probabilities * outcomes_b)
 
     # More lenient check for FOSD
     all_outcomes = np.sort(np.unique(np.concatenate([outcomes_a, outcomes_b])))
@@ -835,8 +824,6 @@ def _check_risk_attitude_consistency(
     # Collect constraints
     A_ub = []  # Inequality constraints: A_ub @ x <= b_ub
     b_ub = []
-    A_eq = []  # Equality constraints (for linear utility if needed)
-    b_eq = []
 
     # 1. Choice constraints: E[u(chosen)] >= E[u(rejected)]
     # Rewritten as: E[u(rejected)] - E[u(chosen)] <= 0
@@ -990,7 +977,6 @@ def _detect_probability_weighting(lottery_choices: list[LotteryChoice]) -> str:
 
     for choice in lottery_choices:
         outcomes = np.asarray(choice.outcomes, dtype=np.float64)
-        probs = np.asarray(choice.probabilities, dtype=np.float64)
         chosen_idx = choice.chosen if isinstance(choice.chosen, int) else 0
 
         chosen_outcomes = outcomes[chosen_idx]

@@ -12,20 +12,34 @@ Use this to:
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
 from prefgraph.core.mixins import ResultSummaryMixin
 from prefgraph.algorithms.garp import validate_consistency
 from prefgraph.algorithms.aei import compute_integrity_score
 from prefgraph.algorithms.mpi import compute_confusion_metric
-from prefgraph.algorithms.bronars import compute_test_power
+
+# bronars/gross_substitutes/differentiable/acyclical_p/gapp are deprecation
+# shims that re-export their names via a dynamic setattr loop, which mypy
+# cannot follow statically (the names exist at runtime).
+from prefgraph.algorithms.bronars import (  # type: ignore[attr-defined]
+    compute_test_power,
+)
 from prefgraph.algorithms.harp import validate_proportional_scaling
 from prefgraph.algorithms.vei import compute_granular_integrity
 from prefgraph.algorithms.quasilinear import test_income_invariance
-from prefgraph.algorithms.gross_substitutes import test_cross_price_effect
-from prefgraph.algorithms.differentiable import validate_smooth_preferences
-from prefgraph.algorithms.acyclical_p import validate_strict_consistency
-from prefgraph.algorithms.gapp import validate_price_preferences
+from prefgraph.algorithms.gross_substitutes import (  # type: ignore[attr-defined]
+    test_cross_price_effect,
+)
+from prefgraph.algorithms.differentiable import (  # type: ignore[attr-defined]
+    validate_smooth_preferences,
+)
+from prefgraph.algorithms.acyclical_p import (  # type: ignore[attr-defined]
+    validate_strict_consistency,
+)
+from prefgraph.algorithms.gapp import (  # type: ignore[attr-defined]
+    validate_price_preferences,
+)
 from prefgraph.algorithms.abstract_choice import (
     validate_menu_warp,
     validate_menu_sarp,
@@ -434,8 +448,11 @@ class BehavioralAuditor:
             >>> if result.power_index < 0.5:
             ...     print("Warning: GARP test has low power for this data")
         """
-        return compute_test_power(
-            log, n_simulations=n_simulations, tolerance=self.precision
+        return cast(
+            "TestPowerResult",
+            compute_test_power(
+                log, n_simulations=n_simulations, tolerance=self.precision
+            ),
         )
 
     def validate_proportional_scaling(
@@ -526,8 +543,11 @@ class BehavioralAuditor:
             >>> result = auditor.test_cross_price_effect(user_log, 0, 1)
             >>> print(f"Goods 0 and 1 are {result.relationship}")
         """
-        return test_cross_price_effect(
-            log, good_g=good_g, good_h=good_h, tolerance=self.precision
+        return cast(
+            "CrossPriceResult",
+            test_cross_price_effect(
+                log, good_g=good_g, good_h=good_h, tolerance=self.precision
+            ),
         )
 
     # =========================================================================
@@ -553,7 +573,10 @@ class BehavioralAuditor:
             >>> if result.is_differentiable:
             ...     print("Preferences are smooth - can compute price elasticities")
         """
-        return validate_smooth_preferences(log, tolerance=self.precision)
+        return cast(
+            "SmoothPreferencesResult",
+            validate_smooth_preferences(log, tolerance=self.precision),
+        )
 
     def validate_strict_consistency(self, log: BehaviorLog) -> StrictConsistencyResult:
         """
@@ -574,7 +597,10 @@ class BehavioralAuditor:
             >>> if result.strict_violations_only:
             ...     print("GARP fails but only due to indifference")
         """
-        return validate_strict_consistency(log, tolerance=self.precision)
+        return cast(
+            "StrictConsistencyResult",
+            validate_strict_consistency(log, tolerance=self.precision),
+        )
 
     def validate_price_preferences(self, log: BehaviorLog) -> PricePreferencesResult:
         """
@@ -595,7 +621,10 @@ class BehavioralAuditor:
             >>> if result.prefers_lower_prices:
             ...     print("User consistently seeks lower prices")
         """
-        return validate_price_preferences(log, tolerance=self.precision)
+        return cast(
+            "PricePreferencesResult",
+            validate_price_preferences(log, tolerance=self.precision),
+        )
 
     # =========================================================================
     # MENU-BASED CHOICE ANALYSIS (Abstract Choice Theory)

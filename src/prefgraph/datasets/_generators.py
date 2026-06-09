@@ -24,7 +24,7 @@ Example::
 
 from __future__ import annotations
 
-from typing import Union
+from typing import Union, cast
 
 import numpy as np
 
@@ -101,35 +101,41 @@ def generate_random_budgets(
     form_code = _FORM_MAP.get(functional_form, 0)
 
     if _HAS_RUST_GEN:
-        return _rust_gen_budgets(
+        return cast(
+            "list[tuple[np.ndarray, np.ndarray]]",
+            _rust_gen_budgets(
+                n_users,
+                obs_min,
+                obs_max,
+                n_goods,
+                form_code,
+                elasticity,
+                rationality,
+                noise_scale,
+                price_range[0],
+                price_range[1],
+                budget_range[0],
+                budget_range[1],
+                seed,
+            ),
+        )
+
+    # NumPy fallback
+    return cast(
+        "list[tuple[np.ndarray, np.ndarray]]",
+        _fallback_gen_budgets(
             n_users,
             obs_min,
             obs_max,
             n_goods,
-            form_code,
+            functional_form,
             elasticity,
             rationality,
             noise_scale,
-            price_range[0],
-            price_range[1],
-            budget_range[0],
-            budget_range[1],
+            price_range,
+            budget_range,
             seed,
-        )
-
-    # NumPy fallback
-    return _fallback_gen_budgets(
-        n_users,
-        obs_min,
-        obs_max,
-        n_goods,
-        functional_form,
-        elasticity,
-        rationality,
-        noise_scale,
-        price_range,
-        budget_range,
-        seed,
+        ),
     )
 
 
@@ -167,31 +173,37 @@ def generate_random_menus(
     model_code = _CHOICE_MAP.get(choice_model, 0)
 
     if _HAS_RUST_GEN:
-        return _rust_gen_menus(
+        return cast(
+            "list[tuple[list[list[int]], list[int], int]]",
+            _rust_gen_menus(
+                n_users,
+                obs_min,
+                obs_max,
+                n_items,
+                ms_min,
+                ms_max,
+                model_code,
+                temperature,
+                rationality,
+                seed,
+            ),
+        )
+
+    # NumPy fallback
+    return cast(
+        "list[tuple[list[list[int]], list[int], int]]",
+        _fallback_gen_menus(
             n_users,
             obs_min,
             obs_max,
             n_items,
             ms_min,
             ms_max,
-            model_code,
+            choice_model,
             temperature,
             rationality,
             seed,
-        )
-
-    # NumPy fallback
-    return _fallback_gen_menus(
-        n_users,
-        obs_min,
-        obs_max,
-        n_items,
-        ms_min,
-        ms_max,
-        choice_model,
-        temperature,
-        rationality,
-        seed,
+        ),
     )
 
 
@@ -227,29 +239,35 @@ def generate_random_production(
     form_code = _FORM_MAP.get(functional_form, 0)
 
     if _HAS_RUST_GEN:
-        return _rust_gen_production(
+        return cast(
+            "list[tuple[np.ndarray, np.ndarray]]",
+            _rust_gen_production(
+                n_users,
+                obs_min,
+                obs_max,
+                n_inputs,
+                n_outputs,
+                form_code,
+                rationality,
+                noise_scale,
+                seed,
+            ),
+        )
+
+    # NumPy fallback
+    return cast(
+        "list[tuple[np.ndarray, np.ndarray]]",
+        _fallback_gen_production(
             n_users,
             obs_min,
             obs_max,
             n_inputs,
             n_outputs,
-            form_code,
+            functional_form,
             rationality,
             noise_scale,
             seed,
-        )
-
-    # NumPy fallback
-    return _fallback_gen_production(
-        n_users,
-        obs_min,
-        obs_max,
-        n_inputs,
-        n_outputs,
-        functional_form,
-        rationality,
-        noise_scale,
-        seed,
+        ),
     )
 
 
@@ -281,7 +299,24 @@ def generate_random_intertemporal(
     d_min, d_max = _normalize_float_range(discount_factor)
 
     if _HAS_RUST_GEN:
-        return _rust_gen_intertemporal(
+        return cast(
+            "list[tuple[np.ndarray, np.ndarray]]",
+            _rust_gen_intertemporal(
+                n_users,
+                obs_min,
+                obs_max,
+                n_periods,
+                d_min,
+                d_max,
+                rationality,
+                seed,
+            ),
+        )
+
+    # NumPy fallback
+    return cast(
+        "list[tuple[np.ndarray, np.ndarray]]",
+        _fallback_gen_intertemporal(
             n_users,
             obs_min,
             obs_max,
@@ -290,18 +325,7 @@ def generate_random_intertemporal(
             d_max,
             rationality,
             seed,
-        )
-
-    # NumPy fallback
-    return _fallback_gen_intertemporal(
-        n_users,
-        obs_min,
-        obs_max,
-        n_periods,
-        d_min,
-        d_max,
-        rationality,
-        seed,
+        ),
     )
 
 

@@ -68,23 +68,17 @@ jobs:
         run: pytest
 
       # Lint and type checks run once (ubuntu/3.12) since they are platform and
-      # interpreter independent. They are advisory: the codebase currently has
-      # pre-existing ruff (134), formatting (84 files) and mypy (773) findings,
-      # so these are reported via `continue-on-error` rather than blocking every
-      # PR. Flip `continue-on-error` to false once the backlog is cleared.
-      - name: Ruff lint (advisory)
+      # interpreter independent. They are now enforced gates and block on failure.
+      - name: Ruff lint
         if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.12'
-        continue-on-error: true
         run: ruff check src/
 
-      - name: Ruff format check (advisory)
+      - name: Ruff format check
         if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.12'
-        continue-on-error: true
         run: ruff format --check src/
 
-      - name: Mypy (advisory)
+      - name: Mypy
         if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.12'
-        continue-on-error: true
         run: mypy src/
 
       # Rust core tests, once per OS (gated to 3.12 so ubuntu does not run it 4x).

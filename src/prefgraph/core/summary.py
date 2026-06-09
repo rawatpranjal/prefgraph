@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import time
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 
 import numpy as np
 
@@ -486,7 +486,12 @@ class BehavioralSummary(ResultDisplayMixin):
 
         # Import algorithms here to avoid circular imports
         from prefgraph.algorithms.garp import validate_consistency, check_warp
-        from prefgraph.algorithms.differentiable import validate_sarp
+
+        # validate_sarp is re-exported at runtime via the deprecation shim's
+        # dynamic setattr loop, which mypy cannot follow statically.
+        from prefgraph.algorithms.differentiable import (  # type: ignore[attr-defined]
+            validate_sarp,
+        )
         from prefgraph.algorithms.aei import compute_integrity_score
         from prefgraph.algorithms.mpi import (
             compute_confusion_metric,
@@ -521,7 +526,11 @@ class BehavioralSummary(ResultDisplayMixin):
         # Power analysis (optional, computationally expensive)
         optimal_efficiency_result = None
         if include_power:
-            from prefgraph.algorithms.power_analysis import compute_optimal_efficiency
+            # compute_optimal_efficiency is re-exported at runtime via the
+            # deprecation shim's dynamic setattr loop (mypy cannot follow it).
+            from prefgraph.algorithms.power_analysis import (  # type: ignore[attr-defined]
+                compute_optimal_efficiency,
+            )
 
             optimal_efficiency_result = compute_optimal_efficiency(
                 log, n_simulations=200, n_efficiency_levels=10
@@ -536,8 +545,10 @@ class BehavioralSummary(ResultDisplayMixin):
                 "max": float(np.max(arr)),
             }
 
-        price_stats = _array_stats(log.cost_vectors)
-        quantity_stats = _array_stats(log.action_vectors)
+        # cost_vectors/action_vectors are always set to non-None arrays in
+        # ConsumerSession.__post_init__, so the Optional cannot occur here.
+        price_stats = _array_stats(cast("np.ndarray", log.cost_vectors))
+        quantity_stats = _array_stats(cast("np.ndarray", log.action_vectors))
         expenditure_stats = _array_stats(log.total_spend)
 
         T = log.num_observations
@@ -1100,7 +1111,9 @@ class RiskChoiceSummary(ResultDisplayMixin):
         """
         start_time = time.perf_counter()
 
-        from prefgraph.algorithms.risk import (
+        # Names re-exported at runtime via the deprecation shim's dynamic
+        # setattr loop, which mypy cannot follow statically.
+        from prefgraph.algorithms.risk import (  # type: ignore[attr-defined]
             compute_risk_profile,
             check_expected_utility_axioms,
         )
@@ -1392,7 +1405,9 @@ class StochasticChoiceSummary(ResultDisplayMixin):
         """
         start_time = time.perf_counter()
 
-        from prefgraph.algorithms.stochastic import (
+        # Names re-exported at runtime via the deprecation shim's dynamic
+        # setattr loop, which mypy cannot follow statically.
+        from prefgraph.algorithms.stochastic import (  # type: ignore[attr-defined]
             test_rum_consistency,
             test_regularity,
             test_stochastic_transitivity,

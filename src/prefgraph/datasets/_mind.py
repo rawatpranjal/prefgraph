@@ -478,7 +478,8 @@ def compute_mind_targets(
             if test_log is None or len(test_log.choices) == 0:
                 category_entropy_scores.append(0.0)
                 continue
-            cats: dict[int, int] = {}
+            # cats type already declared in the if-branch above; reuse it here.
+            cats = {}
             for c in test_log.choices:
                 cats[c] = cats.get(c, 0) + 1
             total = sum(cats.values())

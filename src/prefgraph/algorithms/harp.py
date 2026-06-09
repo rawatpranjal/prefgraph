@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import time
+from typing import cast
 
 import numpy as np
 from numpy.typing import NDArray
@@ -132,7 +133,12 @@ def _floyd_warshall_max_log_product(
     """
     log_ratios_c = np.ascontiguousarray(log_ratios, dtype=np.float64)
     adjacency_c = np.ascontiguousarray(adjacency, dtype=np.bool_)
-    return floyd_warshall_max_log_numba(log_ratios_c, adjacency_c)
+    # numba-jitted kernel is untyped (returns Any); the kernel returns a float64
+    # matrix by construction, so annotate the contract here.
+    return cast(
+        "NDArray[np.float64]",
+        floyd_warshall_max_log_numba(log_ratios_c, adjacency_c),
+    )
 
 
 def _find_harp_violations(

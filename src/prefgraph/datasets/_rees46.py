@@ -16,7 +16,9 @@ License: CC0 (Public Domain)
 from __future__ import annotations
 
 import os
+from collections.abc import Hashable
 from pathlib import Path
+from typing import cast
 
 import numpy as np
 import pandas as pd
@@ -35,7 +37,7 @@ MAX_USERS = 10_000  # Default cap on number of users returned
 _USE_COLS = ["event_type", "product_id", "user_id", "user_session"]
 
 # Dtype spec for memory-efficient CSV reading
-_DTYPES = {
+_DTYPES: dict[Hashable, str] = {
     "event_type": "category",
     "product_id": "int64",
     "user_id": "int64",
@@ -147,7 +149,12 @@ def _extract_menu_choices(
         & (session_df["menu_size"] <= max_menu_size)
     ]
 
-    return session_df[["user_id", "user_session", "menu", "choice", "menu_size"]]
+    # pandas boolean-mask indexing is typed as Any by pandas-stubs; the column
+    # selection yields a DataFrame at runtime.
+    return cast(
+        "pd.DataFrame",
+        session_df[["user_id", "user_session", "menu", "choice", "menu_size"]],
+    )
 
 
 def load_rees46(
@@ -239,7 +246,7 @@ def get_rees46_summary(user_logs: dict[str, MenuChoiceLog]) -> dict:
         return {"n_users": 0}
 
     sessions_per_user = [len(log.choices) for log in user_logs.values()]
-    menu_sizes = []
+    menu_sizes: list[int] = []
     for log in user_logs.values():
         menu_sizes.extend(len(m) for m in log.menus)
 

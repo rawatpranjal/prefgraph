@@ -217,7 +217,6 @@ def check_euclidean_rationality_exact(
     """
     start_time = time.perf_counter()
 
-    T = session.num_observations
     D = session.item_features.shape[1]  # Dimension of feature space
 
     # Build pairs: for each choice set, pair the chosen with each unchosen

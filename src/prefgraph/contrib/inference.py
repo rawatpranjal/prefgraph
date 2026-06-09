@@ -388,8 +388,6 @@ def compute_standard_error(
         >>> result = compute_standard_error(log, metric="aei")
         >>> print(f"SE: {result['standard_error']:.4f}")
     """
-    start_time = time.perf_counter()
-
     if method == "bootstrap":
         ci_result = compute_bootstrap_ci(
             log, metric=metric, n_bootstrap=n_samples, random_state=random_state

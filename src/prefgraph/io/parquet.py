@@ -11,7 +11,7 @@ from __future__ import annotations
 
 from collections import defaultdict
 from pathlib import Path
-from typing import Any, Iterator
+from typing import Any, Iterator, cast
 
 import numpy as np
 from numpy.typing import NDArray
@@ -105,7 +105,9 @@ class ParquetUserIterator:
             self._read_cols = [user_col] + cost_cols + action_cols
         else:
             self.format = "long"
-            self.item_col = item_col
+            # In this branch item_col is guaranteed non-None: has_wide is False
+            # and the earlier checks ensure at least one format was provided.
+            self.item_col = cast(str, item_col)
             self.cost_col = cost_col or "price"
             self.action_col = action_col or "quantity"
             self.time_col = time_col or "time"

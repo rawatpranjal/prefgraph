@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 
 import numpy as np
 from numpy.typing import NDArray
@@ -56,15 +56,20 @@ class ViolationGraph:
         """Build NetworkX directed graph from preference matrices."""
         import networkx as nx
 
-        G = nx.DiGraph()
+        G: nx.DiGraph = nx.DiGraph()
         T = self.session.num_observations
+
+        # quantities/prices are Optional on the session dataclass but always populated
+        # after __post_init__; narrow to non-Optional for indexing (no runtime effect).
+        quantities = cast("NDArray[np.float64]", self.session.quantities)
+        prices = cast("NDArray[np.float64]", self.session.prices)
 
         # Add nodes with attributes
         for i in range(T):
             G.add_node(
                 i,
-                bundle=self.session.quantities[i].tolist(),
-                prices=self.session.prices[i].tolist(),
+                bundle=quantities[i].tolist(),
+                prices=prices[i].tolist(),
                 expenditure=float(self.session.own_expenditures[i]),
                 label=f"Obs {i}",
             )
@@ -105,7 +110,12 @@ class ViolationGraph:
         """
         import networkx as nx
 
-        return nx.to_numpy_array(self.graph, dtype=bool)
+        # networkx stubs type `dtype` too narrowly; numpy/networkx accept the bool
+        # builtin at runtime, so the call-overload error is a third-party stub gap.
+        return cast(
+            "NDArray[np.bool_]",
+            nx.to_numpy_array(self.graph, dtype=bool),  # type: ignore[call-overload]
+        )
 
     def find_all_cycles(self) -> list[list[int]]:
         """
@@ -296,7 +306,7 @@ class ViolationGraph:
                 }
             )
 
-        violation_nodes = set()
+        violation_nodes: set[int] = set()
         for cycle in self.garp_result.violations:
             violation_nodes.update(cycle)
 

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import time
+from typing import cast
 
 import numpy as np
 from numpy.typing import NDArray
@@ -168,7 +169,9 @@ def compute_vei(
         if result.success:
             success = True
             status = result.message
-            e_vector = result.x
+            # On success scipy guarantees ``x`` is populated; the stub types it
+            # as ``ndarray | None`` so narrow it here without runtime effect.
+            e_vector = cast(NDArray[np.float64], result.x)
         else:
             raise SolverError(
                 f"LP solver failed to compute VEI. Status: {result.status}, "
@@ -278,7 +281,11 @@ def compute_vei_l2(
     e0 = np.ones(T) * 0.9  # Initial guess
 
     try:
-        result = minimize(
+        # scipy-stubs models `minimize`'s fun/jac as Concatenate[_Float1D, *Any]
+        # callables and constraints as a strict TypedDict. Idiomatic SLSQP usage
+        # with single-argument callables and plain "ineq" dicts is correct at
+        # runtime but does not satisfy those overloads (third-party stub gap).
+        result = minimize(  # type: ignore[call-overload]
             objective,
             e0,
             method="SLSQP",

@@ -16,7 +16,7 @@ Usage:
 from __future__ import annotations
 
 from dataclasses import dataclass, fields, replace
-from typing import Any, Optional
+from typing import Any, Callable, Optional, cast
 
 import numpy as np
 
@@ -119,7 +119,8 @@ class EngineResult:
         if self.is_harp is True:
             lines.append("  HARP:  yes (homothetic)")
         if self.hm_total is not None and self.hm_total > 0:
-            frac = self.hm_consistent / self.hm_total
+            # hm_consistent is always set alongside hm_total (see analysis path).
+            frac = cast(int, self.hm_consistent) / self.hm_total
             lines.append(
                 f"  HM:    {self.hm_consistent}/{self.hm_total} ({frac:.0%} consistent)"
             )
@@ -502,7 +503,11 @@ class Engine:
                 "Install with: pip install rpt-python"
             )
         tol = tolerance if tolerance is not None else self.tolerance
-        return _rust_build_preference_graph(
+        # Guarded by HAS_RUST above, so the callable is never None here.
+        build_preference_graph = cast(
+            "Callable[..., dict[str, Any]]", _rust_build_preference_graph
+        )
+        return build_preference_graph(
             np.ascontiguousarray(prices, dtype=np.float64),
             np.ascontiguousarray(quantities, dtype=np.float64),
             tol,
@@ -517,7 +522,9 @@ class Engine:
         prices_list = [np.ascontiguousarray(p, dtype=np.float64) for p, _ in chunk]
         quantities_list = [np.ascontiguousarray(q, dtype=np.float64) for _, q in chunk]
 
-        raw_results = _rust_analyze_batch(
+        # The rust backend is selected only when HAS_RUST, so this is non-None.
+        analyze_batch = cast("Callable[..., Any]", _rust_analyze_batch)
+        raw_results = analyze_batch(
             prices_list,
             quantities_list,
             flags.get("ccei", False),
@@ -907,7 +914,9 @@ class Engine:
         action_cols: list[str],
     ) -> Any:
         """Full Rust pipeline: Parquet I/O + Rayon analysis, no Python overhead."""
-        raw_results = _rust_analyze_parquet_file(
+        # Only reached when HAS_PARQUET_RUST is True, so this is non-None.
+        analyze_parquet_file = cast("Callable[..., Any]", _rust_analyze_parquet_file)
+        raw_results = analyze_parquet_file(
             path,
             user_col,
             cost_cols,

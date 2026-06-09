@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import time
-from typing import Callable
+from typing import Callable, cast
 
 import numpy as np
 from numpy.typing import NDArray
@@ -56,8 +56,10 @@ def recover_utility(
     start_time = time.perf_counter()
 
     T = session.num_observations
-    P = session.prices
-    Q = session.quantities
+    # prices/quantities are Optional on the dataclass but always populated by
+    # ConsumerSession.__post_init__, so this is a cast (not a runtime guard).
+    P = cast("NDArray[np.float64]", session.prices)
+    Q = cast("NDArray[np.float64]", session.quantities)
 
     # Number of variables: U_1, ..., U_T, lambda_1, ..., lambda_T
     n_vars = 2 * T
@@ -105,7 +107,10 @@ def recover_utility(
 
     # Solve LP using HiGHS solver
     try:
-        result = linprog(
+        # scipy-stubs types `method` as a Literal of solver names, but linprog
+        # accepts an arbitrary runtime string; passing our `solver: str` param
+        # is valid scipy usage the stub cannot express.
+        result = linprog(  # type: ignore[call-overload]
             c,
             A_ub=A_ub,
             b_ub=b_ub,
@@ -236,10 +241,13 @@ def construct_afriat_utility(
             "This may indicate a numerical issue. Try adjusting tolerance."
         )
 
-    U = utility_result.utility_values
-    lambdas = utility_result.lagrange_multipliers
-    P = session.prices
-    Q = session.quantities
+    # Non-None is guaranteed by the success/None checks above; the explicit
+    # annotations let the nested closure see concrete arrays (mypy does not
+    # carry flow narrowing into nested function scopes).
+    U: NDArray[np.float64] = utility_result.utility_values
+    lambdas: NDArray[np.float64] = utility_result.lagrange_multipliers
+    P = cast("NDArray[np.float64]", session.prices)
+    Q = cast("NDArray[np.float64]", session.quantities)
     T = len(U)
 
     def afriat_utility(x: NDArray[np.float64]) -> float:
@@ -261,7 +269,9 @@ def construct_afriat_utility(
             val = U[k] + lambdas[k] * (P[k] @ (x - Q[k]))
             values.append(val)
 
-        return min(values)
+        # min over numpy scalars yields a numpy float; the declared float
+        # return type covers it (np.float64 subclasses float).
+        return cast(float, min(values))
 
     return afriat_utility
 
@@ -315,7 +325,10 @@ def predict_demand(
         # Start from equal allocation
         x0 = np.full(n_goods, budget / (n_goods * np.mean(new_prices)))
 
-        result = minimize(
+        # scipy-stubs types `constraints` as the _ConstraintDict TypedDict, but
+        # a plain {"type": ..., "fun": ...} dict is valid scipy input the stub
+        # overloads cannot match.
+        result = minimize(  # type: ignore[call-overload]
             neg_utility,
             x0,
             method="SLSQP",
@@ -324,7 +337,7 @@ def predict_demand(
         )
 
         if result.success:
-            return result.x
+            return cast("NDArray[np.float64]", result.x)
         return None
 
     else:

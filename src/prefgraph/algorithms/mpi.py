@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import time
+from typing import Any, cast
 
 import numpy as np
 from numpy.typing import NDArray
@@ -92,7 +93,9 @@ def compute_mpi(
             # Previously missing network=False, so tolerance landed in position 10
             # (the bool network slot), causing TypeError in Rust PyO3 binding and
             # silently falling through to the Python fallback.
-            results = _rust_analyze_batch(
+            # _rust_analyze_batch is `Callable | None` at module scope; inside the
+            # HAS_RUST guard it is always the callable, so cast away the None.
+            results = cast(Any, _rust_analyze_batch)(
                 [p],
                 [q],
                 False,
@@ -165,7 +168,8 @@ def compute_mpi(
 
     E = session.expenditure_matrix
 
-    cycle_costs: list[tuple[Cycle, float]] = []
+    # cycle_costs already declared above (Rust branch); reuse the same declared type.
+    cycle_costs = []
     for cycle in garp_result.violations:
         mpi_cycle = _compute_cycle_mpi(cycle, E)
         if mpi_cycle > 0:
@@ -224,8 +228,10 @@ def compute_mpi_bounds(
     """
     start_time = time.perf_counter()
 
-    prices = session.prices
-    quantities = session.quantities
+    # prices/quantities are Optional on the dataclass but always populated after
+    # __post_init__; narrow to non-Optional for indexing below (no runtime effect).
+    prices = cast("NDArray[np.float64]", session.prices)
+    quantities = cast("NDArray[np.float64]", session.quantities)
     expenditures = session.own_expenditures
     total_expenditure = float(expenditures.sum())
 
@@ -726,7 +732,10 @@ def _houtman_maks_ilp(
         result = milp(
             c,
             constraints=constraints,
-            integrality=integrality,
+            # scipy's milp accepts a float ndarray for integrality at runtime (it
+            # casts internally); the stub only permits integer arrays. Third-party
+            # stub strictness, values here are exactly 0.0/1.0.
+            integrality=integrality,  # type: ignore[arg-type]
             bounds=bounds,
         )
 
@@ -778,7 +787,6 @@ def _houtman_maks_greedy(
     from prefgraph.graph.scc import find_sccs, greedy_feedback_vertex_set
     from prefgraph.graph.transitive_closure import floyd_warshall_transitive_closure
 
-    T = session.num_observations
     E = session.expenditure_matrix
     own_exp = session.own_expenditures
 

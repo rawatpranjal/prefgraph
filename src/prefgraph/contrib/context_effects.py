@@ -211,7 +211,6 @@ def detect_compromise_effect(
     num_menus_tested = 0
 
     all_items = sorted(log.all_items)
-    n_items = len(all_items)
 
     # Build menu index
     menu_to_idx = {}
