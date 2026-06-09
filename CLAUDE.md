@@ -139,14 +139,16 @@ ruff format src/
 python3 case_studies/dunnhumby/run_all.py --quick   # 100 households sample
 python3 case_studies/dunnhumby/run_all.py           # Full 2,222 households
 
-# Rust rebuild (maturin is the build backend)
-pip install -e .                        # Recompiles Rust automatically
+# Rust rebuild (maturin is the single build backend)
+pip install -e .                        # Recompiles Rust via maturin
 maturin develop --release               # Direct maturin (faster iteration)
 ```
 
-The Rust binding crate is at `rust/crates/rpt-python/` (not repo root).
-`pip install .` compiles Rust via maturin; `HAS_RUST` fallback in `_rust_backend.py`
-still works if the Rust toolchain is unavailable.
+Maturin is the only build backend (`[build-system]` build-backend = "maturin").
+There is no setuptools-rust parallel path. The Rust binding crate is at
+`rust/crates/rpt-python/` (not repo root). `pip install .` and `pip install -e .`
+both compile Rust via maturin; the `HAS_RUST` fallback in `_rust_backend.py` still
+works if the Rust toolchain is unavailable.
 
 ## Applications
 - to showcase the powerful rust engine batch processing

@@ -336,3 +336,175 @@ class TestRiskReviewerCases:
         )
         result = compute_risk_profile(log)
         assert result.consistency_score < 1.0
+
+
+# =============================================================================
+# Bug-coverage regression cases (audit-flagged, previously uncovered)
+# =============================================================================
+
+
+class TestHoutmanMaksGreedyTransitiveClosure:
+    """Regression for bug (3): the greedy Houtman-Maks decomposition must run
+    the SCC step on R_star (the transitive closure of revealed preference),
+    not on R (the direct relation).
+
+    The guarantee a Houtman-Maks heuristic must satisfy is feasibility: after
+    removing the chosen observations, the surviving subset is itself
+    GARP-consistent, and on inconsistent data at least one observation is
+    removed. A regression that runs the SCC step on R and fails to group
+    transitively-linked observations would skip removals and leave the
+    remaining subset inconsistent. This exercises ``method="greedy"`` directly
+    so the greedy path is tested rather than the exact ILP used for small T.
+    """
+
+    def test_greedy_yields_consistent_remainder(self):
+        from prefgraph import compute_houtman_maks_index, validate_consistency
+
+        # 3-observation budget log with a transitive GARP violation. Varied
+        # prices create strict revealed-preference edges that form a cycle.
+        p = np.array(
+            [[1.1588, 1.3826], [0.6910, 1.5892], [0.9201, 0.7859]]
+        )
+        q = np.array(
+            [[6.0711, 27.1108], [27.4690, 8.5543], [24.0283, 9.2515]]
+        )
+        log = BehaviorLog(prices=p, quantities=q)
+
+        assert validate_consistency(log).is_consistent is False
+
+        hm = compute_houtman_maks_index(log, method="greedy")
+        # Greedy must detect the violation and remove at least one observation.
+        assert hm.num_removed >= 1
+        assert 0.0 < hm.fraction <= 1.0
+
+        # Core Houtman-Maks guarantee: the surviving subset satisfies GARP.
+        keep = [
+            i for i in range(p.shape[0]) if i not in set(hm.removed_observations)
+        ]
+        survivor = BehaviorLog(prices=p[keep], quantities=q[keep])
+        assert validate_consistency(survivor).is_consistent is True
+
+
+class TestProductionGarpStrictCondition:
+    """Regression for bug (4): production GARP must declare a violation on
+    ``R_star[i, j] and P[j, i]`` (a strict reverse profit edge), not on
+    ``R_star[i, j] and R_star[j, i]`` (a mere mutual-reachability cycle).
+
+    Two firms that are mutually *weakly* as profitable as each other but never
+    strictly so represent a profit tie, which is profit-maximizing consistent.
+    The old cycle-only condition falsely rejected such ties.
+    """
+
+    def test_profit_tie_is_consistent(self):
+        from prefgraph.algorithms.production import test_profit_maximization
+        from prefgraph.core.session import ProductionLog
+
+        # Flat input and output prices make cross-profits symmetric. The two
+        # firms earn equal profit (2 each) and neither is ever strictly more
+        # profitable, so R is mutual but P is empty -> no GARP violation.
+        log = ProductionLog(
+            input_prices=np.array([[1.0], [1.0]]),
+            input_quantities=np.array([[1.0], [2.0]]),
+            output_prices=np.array([[1.0], [1.0]]),
+            output_quantities=np.array([[3.0], [4.0]]),
+        )
+        res = test_profit_maximization(log)
+        # Old R_star[j,i] cycle condition returned False here.
+        assert res.is_profit_maximizing is True
+        assert res.num_violations == 0
+
+    def test_strict_profit_cycle_still_rejected(self):
+        from prefgraph.algorithms.production import test_profit_maximization
+        from prefgraph.core.session import ProductionLog
+
+        # Crossing output bundles at crossing prices: each firm's bundle is
+        # strictly more profitable at its own prices, a genuine strict cycle.
+        log = ProductionLog(
+            input_prices=np.array([[1.0, 1.0], [1.0, 1.0]]),
+            input_quantities=np.array([[1.0, 1.0], [1.0, 1.0]]),
+            output_prices=np.array([[1.5, 1.0], [1.0, 1.5]]),
+            output_quantities=np.array([[4.0, 3.0], [3.0, 4.0]]),
+        )
+        res = test_profit_maximization(log)
+        assert res.is_profit_maximizing is False
+        assert res.num_violations > 0
+
+
+class TestDatasetLoadersBaseInstall:
+    """Regression for bug (8): importing ``prefgraph.datasets`` must not require
+    pandas.
+
+    The retailrocket, rees46, taobao, and tenrec loaders import pandas at
+    module top level, so the package ``__init__`` wraps them in lazy functions.
+    With pandas unavailable (a base install), importing the package and binding
+    those loader names must still succeed and must not eagerly import the
+    offending submodules. The check runs in a subprocess so the pandas block
+    does not leak into the rest of the test session.
+    """
+
+    def test_datasets_import_without_pandas(self):
+        import subprocess
+        import sys
+        import textwrap
+
+        script = textwrap.dedent(
+            r"""
+            import sys, importlib.abc, importlib.machinery
+            for _m in list(sys.modules):
+                if _m == "pandas" or _m.startswith("pandas."):
+                    del sys.modules[_m]
+
+            class _Block(importlib.abc.MetaPathFinder, importlib.abc.Loader):
+                # Return a spec so probes via find_spec succeed (polars does
+                # this for its own lazy pandas detection), but make any real
+                # `import pandas` fail, exactly as on a base install.
+                def find_spec(self, name, path, target=None):
+                    if name == "pandas" or name.startswith("pandas."):
+                        return importlib.machinery.ModuleSpec(name, self)
+                    return None
+
+                def create_module(self, spec):
+                    return None
+
+                def exec_module(self, module):
+                    raise ModuleNotFoundError("No module named 'pandas'")
+
+            sys.meta_path.insert(0, _Block())
+
+            try:
+                import pandas  # noqa: F401
+                raise SystemExit("pandas was not blocked")
+            except ModuleNotFoundError:
+                pass
+
+            import prefgraph  # noqa: F401
+            import prefgraph.datasets  # noqa: F401
+            from prefgraph.datasets import (  # noqa: F401
+                load_retailrocket,
+                load_rees46,
+                load_taobao,
+                load_tenrec,
+            )
+
+            for _mod in (
+                "prefgraph.datasets._retailrocket",
+                "prefgraph.datasets._rees46",
+                "prefgraph.datasets._taobao",
+                "prefgraph.datasets._tenrec",
+            ):
+                assert _mod not in sys.modules, f"eagerly imported {_mod}"
+
+            print("BASE_INSTALL_OK")
+            """
+        )
+
+        proc = subprocess.run(
+            [sys.executable, "-c", script],
+            capture_output=True,
+            text=True,
+        )
+        assert proc.returncode == 0, (
+            "datasets import crashed on a simulated base install (no pandas):\n"
+            f"STDOUT:\n{proc.stdout}\nSTDERR:\n{proc.stderr}"
+        )
+        assert "BASE_INSTALL_OK" in proc.stdout

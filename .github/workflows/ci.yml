@@ -1,0 +1,170 @@
+name: CI
+
+# Gates pull requests (and pushes to main) with the existing test suite.
+# Complements the other workflows, which do NOT run tests on PRs:
+#   docs.yml         -> Sphinx build on push + PR
+#   release.yml      -> wheels on v* tags (PyO3/maturin-action)
+#   test-install.yml -> manual PyPI smoke test
+#
+# Three jobs:
+#   test              -> full pytest + cargo test across the support matrix (the real gate)
+#   fallback          -> pure-Python path (HAS_RUST == False), no compiled extension
+#   build-from-source -> `pip install .` source build + a tiny end-to-end smoke
+
+on:
+  pull_request:
+    branches: [ main ]
+  push:
+    branches: [ main ]
+
+permissions:
+  contents: read
+
+# Cancel superseded runs on the same ref to save CI minutes.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # Main gate: build the Rust extension and run the full Python + Rust suites.
+  # Cost-aware matrix: every Python on ubuntu, plus macOS and Windows only on
+  # 3.12 (the `include` entries add one job each rather than fanning out).
+  # ---------------------------------------------------------------------------
+  test:
+    name: test (${{ matrix.os }}, py${{ matrix.python-version }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest]
+        python-version: ["3.10", "3.11", "3.12", "3.13"]
+        include:
+          - os: macos-latest
+            python-version: "3.12"
+          - os: windows-latest
+            python-version: "3.12"
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      # maturin (the sole build backend) compiles prefgraph._rust_core during
+      # pip install. GitHub-hosted runners ship clang/libclang; the manylinux
+      # container in release.yml needs `dnf install clang-devel`, these do not.
+      - uses: dtolnay/rust-toolchain@stable
+
+      - name: Install prefgraph (builds Rust extension) + test deps
+        # pandas and pyarrow are imported by the test suite (test_analyze.py,
+        # test_generators.py, the parquet tests) but are not in the `dev`
+        # extra, so the `parquet` extra (pandas + pyarrow) is added here.
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev,parquet]"
+
+      - name: Pytest (coverage configured in pyproject addopts)
+        run: pytest
+
+      # Lint and type checks run once (ubuntu/3.12) since they are platform and
+      # interpreter independent. They are advisory: the codebase currently has
+      # pre-existing ruff (134), formatting (84 files) and mypy (773) findings,
+      # so these are reported via `continue-on-error` rather than blocking every
+      # PR. Flip `continue-on-error` to false once the backlog is cleared.
+      - name: Ruff lint (advisory)
+        if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.12'
+        continue-on-error: true
+        run: ruff check src/
+
+      - name: Ruff format check (advisory)
+        if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.12'
+        continue-on-error: true
+        run: ruff format --check src/
+
+      - name: Mypy (advisory)
+        if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.12'
+        continue-on-error: true
+        run: mypy src/
+
+      # Rust core tests, once per OS (gated to 3.12 so ubuntu does not run it 4x).
+      - name: Cargo test (rpt-core)
+        if: matrix.python-version == '3.12'
+        working-directory: rust/crates/rpt-core
+        run: cargo test
+
+  # ---------------------------------------------------------------------------
+  # Pure-Python fallback: exercise the HAS_RUST == False code path, which is
+  # never hit anywhere else (maturin always compiles the extension).
+  #
+  # Mechanism: maturin is the only build backend, so a normal install always
+  # builds _rust_core. PREFGRAPH_NO_RUST=1 makes prefgraph._rust_backend skip
+  # the extension import and select the pure-Python implementation regardless,
+  # which is exactly what an end user without a working Rust build would get.
+  # ---------------------------------------------------------------------------
+  fallback:
+    name: fallback (pure Python, no Rust)
+    runs-on: ubuntu-latest
+    env:
+      PREFGRAPH_NO_RUST: "1"
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - name: Install prefgraph (datasets extra pulls pandas for the df tests)
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev,datasets]"
+
+      - name: Assert the pure-Python fallback is active
+        run: python -c "from prefgraph._rust_backend import HAS_RUST; assert HAS_RUST is False, 'expected pure-Python fallback'"
+
+      - name: Run the fallback-supported test subset
+        # The Python fallback supports GARP, CCEI, MPI, HM, HARP and utility
+        # recovery (budget choice), but not menu-batch analysis or SARP-based
+        # CCEI, which require Rust. Those two cases are carved out below; the
+        # Rust-only tests (backend parity, parquet) self-skip via skipif.
+        run: |
+          pytest tests/ \
+            --ignore=tests/test_engine_highT_menu.py \
+            --deselect "tests/evals/test_revpref_native_coverage.py::test_ccei_can_target_warp_sarp_or_garp"
+
+  # ---------------------------------------------------------------------------
+  # Source build: the documented `pip install .` path (non-editable, no extras),
+  # then a minimal end-to-end import + Engine run to prove the wheel works.
+  # ---------------------------------------------------------------------------
+  build-from-source:
+    name: build-from-source (pip install .)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - name: pip install . (clean checkout)
+        run: |
+          python -m pip install --upgrade pip
+          pip install .
+
+      - name: Smoke test (import, load_demo, Engine analyze_arrays)
+        # Run from a neutral directory so we import the installed package,
+        # not the local src/ source tree.
+        working-directory: ${{ runner.temp }}
+        run: |
+          python -c "
+          import prefgraph
+          from prefgraph import Engine, load_demo
+          data = load_demo(n_users=5)
+          results = Engine(['ccei']).analyze_arrays(data)
+          assert len(results) == 5, results
+          print('prefgraph', prefgraph.__version__, '- ccei[0] =', results[0].to_dict()['ccei'])
+          "
