@@ -104,7 +104,17 @@ def compute_mpi(
             # Args match engine.py _analyze_chunk_rust: (prices, quantities, ccei,
             # mpi, harp, hm, utility, vei, vei_exact, network, tolerance).
             results = cast(Any, _rust_analyze_batch)(
-                [p], [q], False, True, False, False, False, False, False, False, tolerance
+                [p],
+                [q],
+                False,
+                True,
+                False,
+                False,
+                False,
+                False,
+                False,
+                False,
+                tolerance,
             )
             mpi_val = float(results[0]["mpi"])
         except Exception:
