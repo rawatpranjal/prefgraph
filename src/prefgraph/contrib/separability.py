@@ -298,7 +298,6 @@ def _solve_separability_sequential(
         Tuple of (is_separable, U, V, lambdas, mus) or (False, None, None, None, None)
     """
     T = P_a.shape[0]
-    epsilon = 1e-6
 
     # Step 1: Initialize μ_k = 1 for all k
     mus = np.ones(T)
@@ -542,7 +541,6 @@ def _solve_separability_nonlinear(
     epsilon = 1e-6
 
     # Variables: U_1...U_T, V_1...V_T, λ_1...λ_T, μ_1...μ_T
-    n_vars = 4 * T
 
     def objective(x: NDArray[np.float64]) -> float:
         """Sum of Lagrange multipliers (minimization target)."""

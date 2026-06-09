@@ -1,6 +1,9 @@
 """Deprecated: moved to prefgraph.contrib.spatial."""
 
+import sys as _sys
 import warnings as _warnings
+
+import prefgraph.contrib.spatial as _mod
 
 _warnings.warn(
     "prefgraph.algorithms.spatial has moved to prefgraph.contrib.spatial. "
@@ -8,8 +11,6 @@ _warnings.warn(
     DeprecationWarning,
     stacklevel=2,
 )
-import prefgraph.contrib.spatial as _mod
-import sys as _sys
 
 _self = _sys.modules[__name__]
 for _name in dir(_mod):

@@ -6,9 +6,11 @@ to result dataclasses, following the statsmodels pattern.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+import importlib.util
+from typing import TYPE_CHECKING, Any, cast
 
 if TYPE_CHECKING:
+    from prefgraph.core.result import GARPResult
     from prefgraph.core.session import BehaviorLog
 
 
@@ -158,9 +160,7 @@ class ResultPlotMixin:
             ImportError: If matplotlib is not installed
             NotImplementedError: If no plot is available for this result type
         """
-        try:
-            import matplotlib.pyplot as plt
-        except ImportError:
+        if importlib.util.find_spec("matplotlib") is None:
             raise ImportError(
                 "Plotting requires matplotlib. Install with: pip install prefgraph[viz]"
             )
@@ -305,4 +305,7 @@ class ResultPlotMixin:
 
         from prefgraph.graph.violation_graph import ViolationGraph
 
-        return ViolationGraph(session, self)
+        # After the hasattr guard above, ``self`` is a GARP-related result that
+        # carries the preference matrices ViolationGraph needs. The mixin itself
+        # is untyped, so narrow it for the type checker without runtime effect.
+        return ViolationGraph(session, cast("GARPResult", self))

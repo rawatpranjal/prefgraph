@@ -2,9 +2,10 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 
 import numpy as np
+from numpy.typing import NDArray
 
 if TYPE_CHECKING:
     from prefgraph.core.session import ConsumerSession
@@ -53,16 +54,23 @@ def plot_budget_sets(
     g0, g1 = goods
     T = session.num_observations
 
+    # quantities/prices are Optional on the dataclass but always set after
+    # ConsumerSession.__post_init__; narrow them once for the whole function.
+    quantities = cast("NDArray[np.float64]", session.quantities)
+    prices = cast("NDArray[np.float64]", session.prices)
+
     # Color map for different observations
-    colors = plt.cm.tab10(np.linspace(0, 1, min(T, 10)))
+    # matplotlib registers named colormaps dynamically, so its stubs do not
+    # declare `tab10` as an attribute even though it exists at runtime.
+    colors = plt.cm.tab10(np.linspace(0, 1, min(T, 10)))  # type: ignore[attr-defined]
 
     # Find plot limits
-    max_q0 = session.quantities[:, g0].max() * 1.5
-    max_q1 = session.quantities[:, g1].max() * 1.5
+    max_q0 = quantities[:, g0].max() * 1.5
+    max_q1 = quantities[:, g1].max() * 1.5
 
     for t in range(T):
-        p0 = session.prices[t, g0]
-        p1 = session.prices[t, g1]
+        p0 = prices[t, g0]
+        p1 = prices[t, g1]
         budget = session.own_expenditures[t]
 
         # Budget line: p0 * x0 + p1 * x1 = budget
@@ -89,8 +97,8 @@ def plot_budget_sets(
 
         # Plot chosen bundle
         ax.scatter(
-            session.quantities[t, g0],
-            session.quantities[t, g1],
+            quantities[t, g0],
+            quantities[t, g1],
             color=color,
             s=100,
             zorder=5,
@@ -101,7 +109,7 @@ def plot_budget_sets(
         # Annotate the point
         ax.annotate(
             f"t={t}",
-            (session.quantities[t, g0], session.quantities[t, g1]),
+            (quantities[t, g0], quantities[t, g1]),
             textcoords="offset points",
             xytext=(5, 5),
             fontsize=9,
@@ -367,8 +375,11 @@ def plot_ccei_sensitivity(
         from prefgraph.core.session import BehaviorLog
 
         filtered_session = BehaviorLog(
-            cost_vectors=session.prices[current_mask],
-            action_vectors=session.quantities[current_mask],
+            # prices/quantities are always set after __post_init__; narrow.
+            cost_vectors=cast("NDArray[np.float64]", session.prices)[current_mask],
+            action_vectors=cast("NDArray[np.float64]", session.quantities)[
+                current_mask
+            ],
         )
 
         if filtered_session.num_observations < 2:
@@ -421,7 +432,13 @@ def plot_power_analysis(
     """
     import matplotlib.pyplot as plt
     from prefgraph.algorithms.aei import compute_integrity_score
-    from prefgraph.algorithms.bronars import compute_test_power
+
+    # prefgraph.algorithms.bronars is a deprecation shim that re-exports names
+    # from prefgraph.contrib.bronars via runtime setattr, so mypy cannot see
+    # compute_test_power statically even though it exists at runtime.
+    from prefgraph.algorithms.bronars import (  # type: ignore[attr-defined]
+        compute_test_power,
+    )
 
     if ax is None:
         fig, ax = plt.subplots(figsize=figsize)
@@ -588,10 +605,13 @@ def plot_budget_intersections(
     T = session.num_observations
 
     # Compute intersection matrix: can bundle j be afforded at budget i?
+    # prices/quantities are always set after __post_init__; narrow.
+    prices = cast("NDArray[np.float64]", session.prices)
+    quantities = cast("NDArray[np.float64]", session.quantities)
     intersection_matrix = np.zeros((T, T))
     for i in range(T):
         for j in range(T):
-            cost_j_at_i = np.dot(session.prices[i], session.quantities[j])
+            cost_j_at_i = np.dot(prices[i], quantities[j])
             budget_i = session.own_expenditures[i]
             if cost_j_at_i <= budget_i * 1.0001:  # Small tolerance
                 intersection_matrix[i, j] = 1

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, cast
 
 import numpy as np
 from numpy.typing import NDArray
@@ -63,7 +63,7 @@ class IntegrabilityResult(ResultDisplayMixin, ResultPlotMixin):
     @property
     def num_goods(self) -> int:
         """Number of goods N."""
-        return self.slutsky_matrix.shape[0]
+        return cast(int, self.slutsky_matrix.shape[0])
 
     @property
     def num_symmetry_violations(self) -> int:
@@ -305,7 +305,7 @@ class AdditivityResult(ResultDisplayMixin, ResultPlotMixin):
     @property
     def num_goods(self) -> int:
         """Number of goods N."""
-        return self.cross_effects_matrix.shape[0]
+        return cast(int, self.cross_effects_matrix.shape[0])
 
     @property
     def num_groups(self) -> int:
@@ -412,7 +412,7 @@ class CompensatedDemandResult(ResultDisplayMixin, ResultPlotMixin):
     @property
     def num_goods(self) -> int:
         """Number of goods N."""
-        return self.substitution_effects.shape[0]
+        return cast(int, self.substitution_effects.shape[0])
 
     @property
     def num_violations(self) -> int:

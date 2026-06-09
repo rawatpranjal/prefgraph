@@ -247,7 +247,7 @@ from prefgraph.algorithms.utility import (
 )
 
 # Risk profiling (already tech-friendly)
-from prefgraph.algorithms.risk import (
+from prefgraph.algorithms.risk import (  # type: ignore[attr-defined]  # dynamic deprecation shim re-exports via setattr
     compute_risk_profile,
     check_expected_utility_axioms,
     classify_risk_type,
@@ -261,7 +261,7 @@ from prefgraph.algorithms.risk import (
 )
 
 # Preference anchor / embedding analysis
-from prefgraph.algorithms.spatial import (
+from prefgraph.algorithms.spatial import (  # type: ignore[attr-defined]  # dynamic deprecation shim re-exports via setattr
     find_preference_anchor,
     validate_embedding_consistency,
     compute_signal_strength,
@@ -273,7 +273,7 @@ from prefgraph.algorithms.spatial import (
 )
 
 # Feature independence / separability
-from prefgraph.algorithms.separability import (
+from prefgraph.algorithms.separability import (  # type: ignore[attr-defined]  # dynamic deprecation shim re-exports via setattr
     test_feature_independence,
     discover_independent_groups,
     compute_cross_impact,
@@ -287,7 +287,7 @@ from prefgraph.algorithms.separability import (
 # =============================================================================
 
 # Test power (Bronars)
-from prefgraph.algorithms.bronars import (
+from prefgraph.algorithms.bronars import (  # type: ignore[attr-defined]  # dynamic deprecation shim re-exports via setattr
     compute_test_power,
     compute_test_power_fast,
     compute_bronars_power,  # Legacy
@@ -295,7 +295,7 @@ from prefgraph.algorithms.bronars import (
 )
 
 # Power analysis (Beatty & Crawford 2011, Selten)
-from prefgraph.algorithms.power_analysis import (
+from prefgraph.algorithms.power_analysis import (  # type: ignore[attr-defined]  # dynamic deprecation shim re-exports via setattr
     # Selten's predictive success
     compute_selten_measure,
     compute_power_metric,  # Tech-friendly alias
@@ -338,7 +338,7 @@ from prefgraph.algorithms.quasilinear import (
 )
 
 # Cross-price effects (Gross substitutes)
-from prefgraph.algorithms.gross_substitutes import (
+from prefgraph.algorithms.gross_substitutes import (  # type: ignore[attr-defined]  # dynamic deprecation shim re-exports via setattr
     test_cross_price_effect,
     compute_cross_price_matrix,
     check_gross_substitutes,  # Legacy
@@ -351,7 +351,7 @@ from prefgraph.algorithms.gross_substitutes import (
 # =============================================================================
 
 # Smooth preferences (Differentiable rationality)
-from prefgraph.algorithms.differentiable import (
+from prefgraph.algorithms.differentiable import (  # type: ignore[attr-defined]  # dynamic deprecation shim re-exports via setattr
     validate_smooth_preferences,
     validate_sarp,
     check_differentiable,  # Legacy
@@ -359,13 +359,13 @@ from prefgraph.algorithms.differentiable import (
 )
 
 # Strict consistency (Acyclical P)
-from prefgraph.algorithms.acyclical_p import (
+from prefgraph.algorithms.acyclical_p import (  # type: ignore[attr-defined]  # dynamic deprecation shim re-exports via setattr
     validate_strict_consistency,
     check_acyclical_p,  # Legacy
 )
 
 # Price preferences (GAPP)
-from prefgraph.algorithms.gapp import (
+from prefgraph.algorithms.gapp import (  # type: ignore[attr-defined]  # dynamic deprecation shim re-exports via setattr
     validate_price_preferences,
     check_gapp,  # Legacy
 )
@@ -397,7 +397,7 @@ from prefgraph.algorithms.abstract_choice import (
 # =============================================================================
 
 # Integrability conditions (Ch 6.4-6.5)
-from prefgraph.algorithms.integrability import (
+from prefgraph.algorithms.integrability import (  # type: ignore[attr-defined]  # dynamic deprecation shim re-exports via setattr
     test_integrability,
     compute_slutsky_matrix,
     check_slutsky_symmetry,
@@ -406,7 +406,7 @@ from prefgraph.algorithms.integrability import (
 )
 
 # Welfare analysis (Ch 7.3-7.4)
-from prefgraph.algorithms.welfare import (
+from prefgraph.algorithms.welfare import (  # type: ignore[attr-defined]  # dynamic deprecation shim re-exports via setattr
     analyze_welfare_change,
     compute_compensating_variation,
     compute_equivalent_variation,
@@ -418,7 +418,7 @@ from prefgraph.algorithms.welfare import (
 )
 
 # Additive separability (Ch 9.3)
-from prefgraph.algorithms.additive import (
+from prefgraph.algorithms.additive import (  # type: ignore[attr-defined]  # dynamic deprecation shim re-exports via setattr
     test_additive_separability,
     identify_additive_groups,
     check_no_cross_effects,
@@ -426,7 +426,7 @@ from prefgraph.algorithms.additive import (
 )
 
 # Compensated demand (Ch 10.3) - extended gross_substitutes
-from prefgraph.algorithms.gross_substitutes import (
+from prefgraph.algorithms.gross_substitutes import (  # type: ignore[attr-defined]  # dynamic deprecation shim re-exports via setattr
     decompose_price_effects,
     compute_hicksian_demand,
     check_compensated_law_of_demand,
@@ -435,7 +435,7 @@ from prefgraph.algorithms.gross_substitutes import (
 )
 
 # General metric spaces (Ch 11.3-11.4) - extended spatial
-from prefgraph.algorithms.spatial import (
+from prefgraph.algorithms.spatial import (  # type: ignore[attr-defined]  # dynamic deprecation shim re-exports via setattr
     find_ideal_point_general,
     determine_best_metric,
     test_metric_rationality,
@@ -444,7 +444,7 @@ from prefgraph.algorithms.spatial import (
 )
 
 # Stochastic choice (Ch 13)
-from prefgraph.algorithms.stochastic import (
+from prefgraph.algorithms.stochastic import (  # type: ignore[attr-defined]  # dynamic deprecation shim re-exports via setattr
     fit_random_utility_model,
     test_mcfadden_axioms,
     estimate_choice_probabilities,
@@ -497,7 +497,7 @@ from prefgraph.algorithms.production import (
 # =============================================================================
 
 # Ranking and pairwise comparison
-from prefgraph.algorithms.ranking import (
+from prefgraph.algorithms.ranking import (  # type: ignore[attr-defined]  # dynamic deprecation shim re-exports via setattr
     fit_bradley_terry,
     predict_pairwise_probability,
     aggregate_rankings,
@@ -511,7 +511,7 @@ from prefgraph.algorithms.ranking import (
 )
 
 # Context effects (decoy, compromise)
-from prefgraph.algorithms.context_effects import (
+from prefgraph.algorithms.context_effects import (  # type: ignore[attr-defined]  # dynamic deprecation shim re-exports via setattr
     detect_decoy_effect,
     detect_compromise_effect,
     test_context_effects,
@@ -521,7 +521,7 @@ from prefgraph.algorithms.context_effects import (
 )
 
 # Statistical inference
-from prefgraph.algorithms.inference import (
+from prefgraph.algorithms.inference import (  # type: ignore[attr-defined]  # dynamic deprecation shim re-exports via setattr
     compute_bootstrap_ci,
     compute_predictive_success,
     compute_standard_error,
@@ -531,7 +531,7 @@ from prefgraph.algorithms.inference import (
 )
 
 # Intertemporal choice
-from prefgraph.algorithms.intertemporal import (
+from prefgraph.algorithms.intertemporal import (  # type: ignore[attr-defined]  # dynamic deprecation shim re-exports via setattr
     test_exponential_discounting,
     test_quasi_hyperbolic,
     recover_discount_factor,
@@ -543,7 +543,7 @@ from prefgraph.algorithms.intertemporal import (
 )
 
 # Extended stochastic choice
-from prefgraph.algorithms.stochastic import (
+from prefgraph.algorithms.stochastic import (  # type: ignore[attr-defined]  # dynamic deprecation shim re-exports via setattr
     test_stochastic_transitivity,
     test_additive_perturbed_utility,
     # Legacy aliases
@@ -558,7 +558,7 @@ from prefgraph.algorithms.garp import (
 )
 
 # Extended welfare
-from prefgraph.algorithms.welfare import (
+from prefgraph.algorithms.welfare import (  # type: ignore[attr-defined]  # dynamic deprecation shim re-exports via setattr
     compute_e_bounds,
     compute_population_welfare_bounds,
 )
@@ -708,6 +708,8 @@ __all__ = [
     "compute_generalized_predictive_success",
     "compute_bayesian_credibility",
     "compute_rationality_posterior",
+    "compute_optimal_efficiency",
+    "compute_optimal_predictive_efficiency",
     # Proportional scaling (NEW)
     "validate_proportional_scaling",
     # Granular integrity (NEW)
@@ -823,6 +825,8 @@ __all__ = [
     "check_congruence",
     "compute_abstract_efficiency",
     "recover_ordinal_utility",
+    "menu_sarp_check",
+    "menu_warp_check",
     # ==========================================================================
     # CHAMBERS & ECHENIQUE (2016) - NEW ALGORITHMS
     # ==========================================================================
@@ -998,6 +1002,7 @@ __all__ = [
     "RelativeAreaResult",
     "SmoothedHitRateResult",
     "BayesianCredibilityResult",
+    "OptimalEfficiencyResult",
     # Convenience
     "get_integrity_score",
 ]

@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
+from typing import cast
 
 import numpy as np
 
@@ -179,7 +180,12 @@ def load_dunnhumby(
                     action_vectors=qty_matrix,
                     user_id=uid,
                 )
-                period_map[uid] = (f"household_{hh_key}", str(int(period_val)))
+                # period_map is a dict here: it is initialized to {} under the
+                # same `group_col is not None` guard that gates this branch.
+                cast("dict[str, tuple[str, str]]", period_map)[uid] = (
+                    f"household_{hh_key}",
+                    str(int(period_val)),
+                )
         else:
             # All weeks together
             qty_pivot = (

@@ -150,7 +150,7 @@ class AbstractSARPResult(ResultDisplayMixin, ResultPlotMixin):
     @property
     def num_items(self) -> int:
         """Number of items in the analysis."""
-        return self.revealed_preference_matrix.shape[0]
+        return int(self.revealed_preference_matrix.shape[0])
 
     def score(self) -> float:
         """Return scikit-learn style score in [0, 1]. Higher is better.
@@ -529,7 +529,7 @@ class OrdinalUtilityResult(ResultDisplayMixin, ResultPlotMixin):
 
     def to_dict(self) -> dict[str, Any]:
         """Return dictionary representation for serialization."""
-        result = {
+        result: dict[str, Any] = {
             "success": self.success,
             "num_items": self.num_items,
             "is_complete": self.is_complete,

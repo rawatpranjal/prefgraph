@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import time
+from typing import Any, Callable, cast
 
 import numpy as np
 from numpy.typing import NDArray
@@ -13,6 +14,7 @@ from prefgraph.core.result import (
     WARPResult,
     SwapsIndexResult,
     ObservationContributionResult,
+    MinimumCostIndexResult,
 )
 from prefgraph.core.types import Cycle
 from prefgraph.core.exceptions import ComputationalLimitError
@@ -87,7 +89,11 @@ def check_garp(
             is_consistent=axiom_result.is_consistent,
             violations=axiom_result.violations,  # type: ignore[arg-type]
             direct_revealed_preference=axiom_result.direct_revealed_preference,
-            transitive_closure=axiom_result.transitive_closure,
+            # axiom="garp" always populates transitive_closure (only the WARP
+            # branch leaves it None), so narrow away the Optional here.
+            transitive_closure=cast(
+                "NDArray[np.bool_]", axiom_result.transitive_closure
+            ),
             strict_revealed_preference=axiom_result.strict_revealed_preference,
             computation_time_ms=computation_time,
         )
@@ -100,7 +106,10 @@ def check_garp(
 
     if HAS_RUST:
         try:
-            g = _rust_build_preference_graph(
+            # _rust_build_preference_graph is Optional[Callable] for the
+            # HAS_RUST=False fallback; under this guard it is always set.
+            build_graph = cast("Callable[..., Any]", _rust_build_preference_graph)
+            g = build_graph(
                 np.ascontiguousarray(session.prices, dtype=np.float64),
                 np.ascontiguousarray(session.quantities, dtype=np.float64),
                 tolerance,
@@ -139,7 +148,9 @@ def check_garp(
     violation_matrix = R_star & P.T
     is_consistent = not np.any(violation_matrix)
 
-    violations: list[Cycle] = []
+    # `violations` is already declared as list[Cycle] in the HAS_RUST branch above;
+    # re-annotating here would be a redefinition, so just reassign.
+    violations = []
     if not is_consistent:
         violations = _find_violation_cycles(R, P, R_star, violation_matrix)
 
@@ -615,9 +626,10 @@ def compute_observation_contributions(
             mask = np.ones(T, dtype=bool)
             mask[i] = False
 
-            # Only do expensive computation if observation is in cycles
-            subset_prices = session.prices[mask]
-            subset_quantities = session.quantities[mask]
+            # Only do expensive computation if observation is in cycles.
+            # prices/quantities are always set after __post_init__; narrow.
+            subset_prices = cast(NDArray[np.float64], session.prices)[mask]
+            subset_quantities = cast(NDArray[np.float64], session.quantities)[mask]
 
             if len(subset_prices) > 1:
                 subset_session = ConsumerSession(
@@ -704,13 +716,13 @@ def compute_minimum_cost_index(
         minimum cost of revealed preference violations.
         Review of Economics and Statistics, 98(3), 524-534.
     """
-    from prefgraph.core.result import MinimumCostIndexResult
-
     start_time = time.perf_counter()
 
     T = session.num_records
-    P = session.cost_vectors  # prices
-    Q = session.action_vectors  # quantities
+    # cost_vectors/action_vectors are Optional on the dataclass but always set
+    # after __post_init__ (see ConsumerSession); narrow as session.py does.
+    P = cast(NDArray[np.float64], session.cost_vectors)  # prices
+    Q = cast(NDArray[np.float64], session.action_vectors)  # quantities
 
     # Own expenditures
     own_exp = np.sum(P * Q, axis=1)  # T-vector

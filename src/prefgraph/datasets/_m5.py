@@ -181,8 +181,6 @@ def _build_store_panel(
 ) -> BehaviorPanel:
     """Build panel with one user per store, departments as goods."""
 
-    week_index = {w: i for i, w in enumerate(weeks_sorted)}
-
     # Aggregate: total units and mean price per store-dept-week
     agg = (
         sales_long.groupby(["store_id", "dept_id", "wm_yr_wk"])

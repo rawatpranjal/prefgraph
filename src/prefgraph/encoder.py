@@ -12,7 +12,7 @@ Use this to:
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Callable
+from typing import TYPE_CHECKING, Callable, cast
 
 import numpy as np
 from numpy.typing import NDArray
@@ -139,7 +139,10 @@ class PreferenceEncoder:
             >>> X_train = np.column_stack([other_features, features])
         """
         self._check_fitted()
-        return self._result.utility_values.copy()
+        assert self._result is not None  # guaranteed by _check_fitted
+        assert self._result.utility_values is not None  # set on successful fit
+        # numpy-stubs type ndarray.copy() as Any, hence the cast.
+        return cast("NDArray[np.float64]", self._result.utility_values.copy())
 
     def extract_marginal_weights(self) -> NDArray[np.float64]:
         """
@@ -155,7 +158,10 @@ class PreferenceEncoder:
             ValueError: If not fitted
         """
         self._check_fitted()
-        return self._result.lagrange_multipliers.copy()
+        assert self._result is not None  # guaranteed by _check_fitted
+        assert self._result.lagrange_multipliers is not None  # set on successful fit
+        # numpy-stubs type ndarray.copy() as Any, hence the cast.
+        return cast("NDArray[np.float64]", self._result.lagrange_multipliers.copy())
 
     def get_value_function(self) -> Callable[[NDArray], float]:
         """
@@ -177,6 +183,8 @@ class PreferenceEncoder:
             >>> value = value_fn(np.array([5.0, 3.0]))
         """
         self._check_fitted()
+        # Both are set together by fit(); _check_fitted guarantees non-None.
+        assert self._log is not None and self._result is not None
         return build_value_function(self._log, self._result)
 
     def predict_choice(
@@ -208,6 +216,8 @@ class PreferenceEncoder:
             >>> predicted_action = encoder.predict_choice(new_costs, 100.0)
         """
         self._check_fitted()
+        # Both are set together by fit(); _check_fitted guarantees non-None.
+        assert self._log is not None and self._result is not None
         return predict_choice(
             self._log,
             self._result,
@@ -229,6 +239,7 @@ class PreferenceEncoder:
             ValueError: If not fitted
         """
         self._check_fitted()
+        assert self._result is not None  # guaranteed by _check_fitted
         return self._result
 
     @property
@@ -243,6 +254,7 @@ class PreferenceEncoder:
         """Get the mean marginal weight across observations."""
         if not self._is_fitted:
             return None
+        assert self._result is not None  # set whenever the encoder is fitted
         return self._result.mean_marginal_utility
 
     def transform(self, logs: list[BehaviorLog] | BehaviorLog) -> NDArray[np.float64]:

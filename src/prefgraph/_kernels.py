@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import numpy as np
 from numba import njit, prange
+from numpy.typing import NDArray
 
 
 # =============================================================================
@@ -19,7 +20,7 @@ from numba import njit, prange
 
 
 @njit(cache=True, parallel=True)
-def floyd_warshall_tc_numba(adjacency: np.ndarray) -> np.ndarray:
+def floyd_warshall_tc_numba(adjacency: NDArray[np.bool_]) -> NDArray[np.bool_]:
     """
     Compute transitive closure using parallel Floyd-Warshall algorithm.
 
@@ -35,7 +36,7 @@ def floyd_warshall_tc_numba(adjacency: np.ndarray) -> np.ndarray:
         T x T boolean transitive closure matrix
     """
     T = adjacency.shape[0]
-    closure = adjacency.copy()
+    closure: NDArray[np.bool_] = adjacency.copy()
 
     # Ensure reflexivity
     for i in range(T):
@@ -59,14 +60,14 @@ def floyd_warshall_tc_numba(adjacency: np.ndarray) -> np.ndarray:
 
 
 @njit(cache=True)
-def floyd_warshall_tc_serial(adjacency: np.ndarray) -> np.ndarray:
+def floyd_warshall_tc_serial(adjacency: NDArray[np.bool_]) -> NDArray[np.bool_]:
     """
     Serial Floyd-Warshall for small matrices (T < 500).
 
     Faster than parallel version for small inputs due to no threading overhead.
     """
     T = adjacency.shape[0]
-    closure = adjacency.copy()
+    closure: NDArray[np.bool_] = adjacency.copy()
 
     for i in range(T):
         closure[i, i] = True
@@ -477,7 +478,7 @@ def karp_min_mean_cycle_numba(
 def compute_cycle2_sums_numba(
     S: np.ndarray,
     tolerance: float,
-) -> tuple[np.ndarray, np.ndarray, np.int64]:
+) -> tuple[np.ndarray, np.ndarray, int]:
     """
     Compute sums for all 2-cycles and find violations.
 
@@ -514,7 +515,7 @@ def compute_cycle2_sums_numba(
 def compute_cycle3_sums_numba(
     S: np.ndarray,
     tolerance: float,
-) -> tuple[np.ndarray, np.ndarray, np.int64]:
+) -> tuple[np.ndarray, np.ndarray, int]:
     """
     Compute sums for all 3-cycles and find violations.
 
@@ -563,7 +564,7 @@ def check_gross_substitutes_numba(
     prices: np.ndarray,
     quantities: np.ndarray,
     tolerance: float,
-) -> tuple[np.ndarray, np.ndarray, np.int64]:
+) -> tuple[np.ndarray, np.ndarray, int]:
     """
     Check gross substitutes property for all observation pairs.
 
@@ -651,7 +652,7 @@ def compute_random_expenditures_batch_numba(
 def check_garp_fast_numba(
     expenditure_matrix: np.ndarray,
     tolerance: float,
-) -> np.bool_:
+) -> bool:
     """
     Fast GARP consistency check without cycle reconstruction.
 

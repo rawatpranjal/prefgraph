@@ -1,6 +1,9 @@
 """Deprecated: moved to prefgraph.contrib.welfare."""
 
+import sys as _sys
 import warnings as _warnings
+
+import prefgraph.contrib.welfare as _mod
 
 _warnings.warn(
     "prefgraph.algorithms.welfare has moved to prefgraph.contrib.welfare. "
@@ -8,8 +11,6 @@ _warnings.warn(
     DeprecationWarning,
     stacklevel=2,
 )
-import prefgraph.contrib.welfare as _mod
-import sys as _sys
 
 _self = _sys.modules[__name__]
 for _name in dir(_mod):

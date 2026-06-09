@@ -296,7 +296,6 @@ def compute_slutsky_matrix_stone_geary(
         Stone (1954), "Linear Expenditure Systems"
         Geary (1950), "A Note on 'A Constant-Utility Index'"
     """
-    T = log.num_records
     N = log.num_features
     P = log.cost_vectors
     Q = log.action_vectors
@@ -676,7 +675,6 @@ def test_slutsky_nsd_formal(
 
     # Bootstrap distribution of max eigenvalue
     T = log.num_records
-    N = log.num_features
     P = log.cost_vectors
     Q = log.action_vectors
 

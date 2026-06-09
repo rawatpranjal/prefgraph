@@ -34,6 +34,7 @@ from prefgraph.core.exceptions import SolverError
 
 if TYPE_CHECKING:
     from prefgraph.core.session import StochasticChoiceLog, MenuChoiceLog
+    from prefgraph.core.result import StochasticTransitivityResult
 
 
 def fit_random_utility_model(
@@ -71,8 +72,6 @@ def fit_random_utility_model(
         McFadden, D. (1974). "Conditional Logit Analysis of Qualitative Choice Behavior"
     """
     start_time = time.perf_counter()
-
-    n_menus = log.num_menus
 
     # Estimate item utilities
     if model_type == "logit":
@@ -662,7 +661,6 @@ def _test_rum_exact(
     from scipy.optimize import linprog
 
     all_items = sorted(log.all_items)
-    n_items = len(all_items)
 
     # Generate all possible orderings
     orderings = list(permutations(all_items))

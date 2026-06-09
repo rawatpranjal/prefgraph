@@ -142,10 +142,10 @@ def load_hm(
         for uid, cnt in chunk["customer_id"].value_counts().items():
             user_counts[uid] = user_counts.get(uid, 0) + cnt
 
-    sorted_groups = sorted(group_counts, key=group_counts.get, reverse=True)
+    sorted_groups = sorted(group_counts, key=group_counts.__getitem__, reverse=True)
     top_groups = sorted_groups[:top_k_groups]
 
-    sorted_users = sorted(user_counts, key=user_counts.get, reverse=True)
+    sorted_users = sorted(user_counts, key=user_counts.__getitem__, reverse=True)
     target_users = set(sorted_users[:max_users])
 
     # --- Pass 2: chunked load of filtered data ---

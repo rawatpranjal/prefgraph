@@ -10,10 +10,14 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 
 from prefgraph.core.panel import BehaviorPanel
 from prefgraph.core.session import BehaviorLog
+
+if TYPE_CHECKING:
+    import pandas as pd
 
 # --- Constants ---
 

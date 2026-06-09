@@ -322,7 +322,7 @@ rust/crates/rpt-core/src/
 ├── intertemporal.rs                        ← Intertemporal
 ├── graph.rs, closure.rs, scc.rs            ← Infrastructure
 ├── lp.rs, houtman_maks.rs                 ← Shared (LP, FVS)
-└── 57 tests
+└── 78 tests
 ```
 
 ### Production Data Flow

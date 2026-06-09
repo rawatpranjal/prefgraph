@@ -431,7 +431,6 @@ def decompose_price_effects(
     """
     start_time = time.perf_counter()
 
-    T = session.num_observations
     N = session.num_goods
     P = session.prices
     Q = session.quantities

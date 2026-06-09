@@ -32,7 +32,7 @@ from __future__ import annotations
 import time
 import warnings
 from dataclasses import dataclass, field
-from typing import Any
+from typing import Any, cast
 
 import numpy as np
 from numpy.typing import NDArray
@@ -159,11 +159,16 @@ class LancasterLog:
 
     def _validate(self) -> None:
         """Validate input dimensions and values."""
+        # Non-None references (all set in __post_init__ before _validate runs).
+        cost_vectors = cast("NDArray[np.float64]", self.cost_vectors)
+        action_vectors = cast("NDArray[np.float64]", self.action_vectors)
+        attribute_matrix = cast("NDArray[np.float64]", self.attribute_matrix)
+
         # Check for NaN/Inf in all arrays
         for name, arr in [
-            ("cost_vectors", self.cost_vectors),
-            ("action_vectors", self.action_vectors),
-            ("attribute_matrix", self.attribute_matrix),
+            ("cost_vectors", cost_vectors),
+            ("action_vectors", action_vectors),
+            ("attribute_matrix", attribute_matrix),
         ]:
             if not np.all(np.isfinite(arr)):
                 invalid_count = int(np.sum(~np.isfinite(arr)))
@@ -174,37 +179,37 @@ class LancasterLog:
                 )
 
         # Check cost_vectors shape
-        if self.cost_vectors.ndim != 2:
+        if cost_vectors.ndim != 2:
             raise DimensionError(
-                f"cost_vectors must be 2D (T x N), got {self.cost_vectors.ndim}D "
-                f"with shape {self.cost_vectors.shape}."
+                f"cost_vectors must be 2D (T x N), got {cost_vectors.ndim}D "
+                f"with shape {cost_vectors.shape}."
             )
 
-        T, N = self.cost_vectors.shape
+        T, N = cost_vectors.shape
 
         # Check action_vectors shape
-        if self.action_vectors.shape != self.cost_vectors.shape:
+        if action_vectors.shape != cost_vectors.shape:
             raise DimensionError(
-                f"action_vectors shape {self.action_vectors.shape} must match "
-                f"cost_vectors shape {self.cost_vectors.shape}. "
+                f"action_vectors shape {action_vectors.shape} must match "
+                f"cost_vectors shape {cost_vectors.shape}. "
                 f"Hint: Both matrices must have the same T observations and N products."
             )
 
         # Check attribute_matrix shape
-        if self.attribute_matrix.ndim != 2:
+        if attribute_matrix.ndim != 2:
             raise DimensionError(
-                f"attribute_matrix must be 2D (N x K), got {self.attribute_matrix.ndim}D "
-                f"with shape {self.attribute_matrix.shape}."
+                f"attribute_matrix must be 2D (N x K), got {attribute_matrix.ndim}D "
+                f"with shape {attribute_matrix.shape}."
             )
 
-        if self.attribute_matrix.shape[0] != N:
+        if attribute_matrix.shape[0] != N:
             raise DimensionError(
-                f"attribute_matrix rows ({self.attribute_matrix.shape[0]}) must match "
+                f"attribute_matrix rows ({attribute_matrix.shape[0]}) must match "
                 f"number of products N ({N}). "
                 f"The attribute matrix should have one row per product."
             )
 
-        K = self.attribute_matrix.shape[1]
+        K = attribute_matrix.shape[1]
 
         # Minimum size requirements
         if T < 1:
@@ -224,24 +229,24 @@ class LancasterLog:
             )
 
         # Value checks
-        if np.any(self.cost_vectors <= 0):
-            invalid_positions = np.argwhere(self.cost_vectors <= 0)
+        if np.any(cost_vectors <= 0):
+            invalid_positions = np.argwhere(cost_vectors <= 0)
             pos_preview = invalid_positions[:5].tolist()
             raise ValueRangeError(
                 f"Found {len(invalid_positions)} non-positive costs at positions: "
                 f"{pos_preview}{'...' if len(invalid_positions) > 5 else ''}. "
                 f"All costs/prices must be strictly positive."
             )
-        if np.any(self.action_vectors < 0):
-            invalid_positions = np.argwhere(self.action_vectors < 0)
+        if np.any(action_vectors < 0):
+            invalid_positions = np.argwhere(action_vectors < 0)
             pos_preview = invalid_positions[:5].tolist()
             raise ValueRangeError(
                 f"Found {len(invalid_positions)} negative actions at positions: "
                 f"{pos_preview}{'...' if len(invalid_positions) > 5 else ''}. "
                 f"All actions/quantities must be non-negative."
             )
-        if np.any(self.attribute_matrix < 0):
-            invalid_positions = np.argwhere(self.attribute_matrix < 0)
+        if np.any(attribute_matrix < 0):
+            invalid_positions = np.argwhere(attribute_matrix < 0)
             pos_preview = invalid_positions[:5].tolist()
             raise ValueRangeError(
                 f"Found {len(invalid_positions)} negative attribute values at positions: "
@@ -250,7 +255,7 @@ class LancasterLog:
             )
 
         # Check for zero rows in A (products with no characteristics)
-        zero_rows = np.where(self.attribute_matrix.sum(axis=1) == 0)[0]
+        zero_rows = np.where(attribute_matrix.sum(axis=1) == 0)[0]
         if len(zero_rows) > 0:
             raise ValueRangeError(
                 f"Products {zero_rows.tolist()} have no characteristics (all zeros in A). "
@@ -259,7 +264,7 @@ class LancasterLog:
             )
 
         # Check for zero columns in A (unused characteristics) - warn only
-        zero_cols = np.where(self.attribute_matrix.sum(axis=0) == 0)[0]
+        zero_cols = np.where(attribute_matrix.sum(axis=0) == 0)[0]
         if len(zero_cols) > 0:
             warnings.warn(
                 f"Characteristics {zero_cols.tolist()} are not present in any product. "
@@ -269,7 +274,7 @@ class LancasterLog:
             )
 
         # Rank check (warning, not error)
-        rank = np.linalg.matrix_rank(self.attribute_matrix)
+        rank = np.linalg.matrix_rank(attribute_matrix)
         if rank < K:
             warnings.warn(
                 f"Attribute matrix is rank-deficient (rank={rank}, K={K}). "
@@ -288,7 +293,8 @@ class LancasterLog:
         object.__setattr__(
             self,
             "_characteristics_quantities",
-            self.action_vectors @ self.attribute_matrix,
+            cast("NDArray[np.float64]", self.action_vectors)
+            @ cast("NDArray[np.float64]", self.attribute_matrix),
         )
 
         # Step 2: Compute shadow prices via NNLS for each observation
@@ -302,7 +308,10 @@ class LancasterLog:
             # scipy.optimize.nnls(A, b) solves min||Ax - b||^2 s.t. x >= 0
             # We have: product price p_n = sum_k A[n,k] * pi_k
             # In matrix form: p = A @ pi (p is N-vec, A is N x K, pi is K-vec)
-            pi, residual = nnls(self.attribute_matrix, self.cost_vectors[t])
+            pi, residual = nnls(
+                cast("NDArray[np.float64]", self.attribute_matrix),
+                cast("NDArray[np.float64]", self.cost_vectors)[t],
+            )
             shadow_prices[t] = pi
             nnls_residuals[t] = residual
 
@@ -312,17 +321,17 @@ class LancasterLog:
     @property
     def characteristics_quantities(self) -> NDArray[np.float64]:
         """T x K matrix of characteristics consumed: Z = X @ A."""
-        return self._characteristics_quantities
+        return cast("NDArray[np.float64]", self._characteristics_quantities)
 
     @property
     def shadow_prices(self) -> NDArray[np.float64]:
         """T x K matrix of implied characteristic prices via NNLS."""
-        return self._shadow_prices
+        return cast("NDArray[np.float64]", self._shadow_prices)
 
     @property
     def nnls_residuals(self) -> NDArray[np.float64]:
         """T-length array of NNLS fit residuals per observation."""
-        return self._nnls_residuals
+        return cast("NDArray[np.float64]", self._nnls_residuals)
 
     @property
     def behavior_log(self) -> BehaviorLog:
@@ -336,7 +345,7 @@ class LancasterLog:
         if self._behavior_log is None:
             # Ensure all shadow prices are strictly positive for BehaviorLog
             # NNLS can produce zeros, which would fail BehaviorLog validation
-            shadow_prices = self._shadow_prices.copy()
+            shadow_prices = cast("NDArray[np.float64]", self._shadow_prices).copy()
             min_positive = (
                 shadow_prices[shadow_prices > 0].min()
                 if np.any(shadow_prices > 0)
@@ -360,22 +369,22 @@ class LancasterLog:
                     },
                 ),
             )
-        return self._behavior_log
+        return cast("BehaviorLog", self._behavior_log)
 
     @property
     def num_observations(self) -> int:
         """Number of observations T."""
-        return self.cost_vectors.shape[0]
+        return cast("int", cast("NDArray[np.float64]", self.cost_vectors).shape[0])
 
     @property
     def num_products(self) -> int:
         """Number of products N."""
-        return self.cost_vectors.shape[1]
+        return cast("int", cast("NDArray[np.float64]", self.cost_vectors).shape[1])
 
     @property
     def num_characteristics(self) -> int:
         """Number of characteristics K."""
-        return self.attribute_matrix.shape[1]
+        return cast("int", cast("NDArray[np.float64]", self.attribute_matrix).shape[1])
 
     # Tech-friendly aliases
     @property
@@ -416,34 +425,39 @@ class LancasterLog:
 
         K = self.num_characteristics
 
+        # Non-None references (all set in __post_init__, immutable thereafter).
+        shadow_prices = cast("NDArray[np.float64]", self._shadow_prices)
+        char_quantities = cast("NDArray[np.float64]", self._characteristics_quantities)
+        nnls_residuals = cast("NDArray[np.float64]", self._nnls_residuals)
+        cost_vectors = cast("NDArray[np.float64]", self.cost_vectors)
+        attribute_matrix = cast("NDArray[np.float64]", self.attribute_matrix)
+
         # Shadow price statistics
-        mean_prices = np.mean(self._shadow_prices, axis=0)
-        std_prices = np.std(self._shadow_prices, axis=0)
+        mean_prices = np.mean(shadow_prices, axis=0)
+        std_prices = np.std(shadow_prices, axis=0)
 
         # Coefficient of variation (handle zero means)
         with np.errstate(divide="ignore", invalid="ignore"):
             cv_prices = np.where(mean_prices > 1e-10, std_prices / mean_prices, 0.0)
 
         # Spend on each characteristic: sum_t (pi[t,k] * z[t,k])
-        characteristic_spend = np.sum(
-            self._shadow_prices * self._characteristics_quantities, axis=0
-        )
+        characteristic_spend = np.sum(shadow_prices * char_quantities, axis=0)
         total_spend = characteristic_spend.sum()
         spend_shares = (
             characteristic_spend / total_spend if total_spend > 0 else np.zeros(K)
         )
 
         # Residual analysis
-        mean_residual = float(np.mean(self._nnls_residuals))
-        max_residual = float(np.max(self._nnls_residuals))
+        mean_residual = float(np.mean(nnls_residuals))
+        max_residual = float(np.max(nnls_residuals))
 
         # Flag observations with high relative residual
-        total_prices = self.cost_vectors.sum(axis=1)
-        relative_residuals = self._nnls_residuals / np.maximum(total_prices, 1e-10)
+        total_prices = cost_vectors.sum(axis=1)
+        relative_residuals = nnls_residuals / np.maximum(total_prices, 1e-10)
         problematic = np.where(relative_residuals > residual_threshold)[0].tolist()
 
         # Matrix diagnostics
-        rank = int(np.linalg.matrix_rank(self.attribute_matrix))
+        rank = int(np.linalg.matrix_rank(attribute_matrix))
         is_well_specified = rank == K and K <= self.num_products
 
         # Get characteristic names from metadata if available

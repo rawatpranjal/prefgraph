@@ -24,8 +24,9 @@ Economics Names (Legacy Aliases):
 from __future__ import annotations
 
 import time
+from collections.abc import Callable
 from itertools import permutations
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, cast
 
 import numpy as np
 from numpy.typing import NDArray
@@ -373,7 +374,7 @@ def _identify_default_option(
 
 def test_attention_filter(
     log: "MenuChoiceLog",
-    filter_function: callable,
+    filter_function: Callable[..., Any],
 ) -> dict:
     """
     Test if choices are rational given a specific attention filter.
@@ -834,7 +835,7 @@ def fit_random_attention_model(
     """
     start_time = time.perf_counter()
 
-    n_obs = sum(log.total_observations_per_menu)
+    n_obs = sum(cast("list[int]", log.total_observations_per_menu))
     all_items = sorted(log.all_items)
     n_items = len(all_items)
 
@@ -922,7 +923,7 @@ def _is_ram_compatible(
     # For each menu, check RAM constraints
     for m_idx in range(log.num_menus):
         menu = log.menus[m_idx]
-        total = log.total_observations_per_menu[m_idx]
+        total = cast("list[int]", log.total_observations_per_menu)[m_idx]
 
         if total == 0:
             continue
@@ -961,7 +962,6 @@ def _check_ram_feasibility_lp(
     """Check RAM feasibility using linear programming."""
     all_items = sorted(log.all_items)
     n_items = len(all_items)
-    rank = {item: i for i, item in enumerate(preference)}
     item_to_idx = {item: i for i, item in enumerate(all_items)}
 
     # Decision variables: attention probabilities mu_i for each item
@@ -995,11 +995,11 @@ def _check_ram_feasibility_lp(
     if len(A_ub) == 0:
         return True  # No constraints to violate
 
-    A_ub = np.array(A_ub)
-    b_ub = np.array(b_ub)
+    A_ub_mat = np.array(A_ub)
+    b_ub_vec = np.array(b_ub)
 
     try:
-        result = linprog(c, A_ub=A_ub, b_ub=b_ub, bounds=bounds, method="highs")
+        result = linprog(c, A_ub=A_ub_mat, b_ub=b_ub_vec, bounds=bounds, method="highs")
         return result.success
     except Exception as e:
         from prefgraph.core.exceptions import SolverError
@@ -1017,7 +1017,6 @@ def _estimate_ram_attention(
     """Estimate attention probabilities under RAM."""
     all_items = sorted(log.all_items)
     n_items = len(all_items)
-    rank = {item: i for i, item in enumerate(preference)}
 
     # Simple estimation: use choice frequencies as attention proxy
     choice_counts = np.zeros(n_items)
@@ -1026,7 +1025,7 @@ def _estimate_ram_attention(
     for m_idx in range(log.num_menus):
         menu = log.menus[m_idx]
         freqs = log.choice_frequencies[m_idx]
-        total = log.total_observations_per_menu[m_idx]
+        total = cast("list[int]", log.total_observations_per_menu)[m_idx]
 
         for item in menu:
             idx = all_items.index(item)
@@ -1069,7 +1068,7 @@ def _compute_ram_test_statistic(
 
     for m_idx in range(log.num_menus):
         menu = list(log.menus[m_idx])
-        total = log.total_observations_per_menu[m_idx]
+        total = cast("list[int]", log.total_observations_per_menu)[m_idx]
 
         if total == 0:
             continue
@@ -1108,7 +1107,6 @@ def _bootstrap_ram_pvalue(
         return 0.5  # No bootstrap, return neutral p-value
 
     all_items = sorted(log.all_items)
-    n_items = len(all_items)
 
     # Generate bootstrap samples and compute test statistics
     bootstrap_stats = []

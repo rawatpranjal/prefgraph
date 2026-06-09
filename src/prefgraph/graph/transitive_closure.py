@@ -7,6 +7,8 @@ or single-SCC graphs. Produces EXACT same results as full Floyd-Warshall.
 
 from __future__ import annotations
 
+from typing import cast
+
 import numpy as np
 from numpy.typing import NDArray
 
@@ -56,7 +58,9 @@ def floyd_warshall_transitive_closure(
     T = adjacency_c.shape[0]
 
     if T < _SCC_THRESHOLD:
-        return floyd_warshall_tc_serial(adjacency_c)
+        # numba kernels are seen as `Any` by mypy (no stubs); narrow to the
+        # concrete bool array type they actually return.
+        return cast("NDArray[np.bool_]", floyd_warshall_tc_serial(adjacency_c))
 
     return scc_transitive_closure(adjacency_c)
 
@@ -93,12 +97,12 @@ def scc_transitive_closure(
     # Single SCC - fall back to full Floyd-Warshall
     if n_components == 1:
         if T < _PARALLEL_THRESHOLD:
-            return floyd_warshall_tc_serial(adjacency)
+            return cast("NDArray[np.bool_]", floyd_warshall_tc_serial(adjacency))
         else:
-            return floyd_warshall_tc_numba(adjacency)
+            return cast("NDArray[np.bool_]", floyd_warshall_tc_numba(adjacency))
 
     # Initialize closure with original edges + self-loops
-    closure = adjacency.copy()
+    closure: NDArray[np.bool_] = adjacency.copy()
     np.fill_diagonal(closure, True)
 
     # Group nodes by SCC
@@ -157,9 +161,9 @@ def _floyd_warshall_direct(
     adjacency_c = np.ascontiguousarray(adjacency, dtype=np.bool_)
     T = adjacency_c.shape[0]
     if T < _PARALLEL_THRESHOLD:
-        return floyd_warshall_tc_serial(adjacency_c)
+        return cast("NDArray[np.bool_]", floyd_warshall_tc_serial(adjacency_c))
     else:
-        return floyd_warshall_tc_numba(adjacency_c)
+        return cast("NDArray[np.bool_]", floyd_warshall_tc_numba(adjacency_c))
 
 
 def floyd_warshall_with_path_reconstruction(

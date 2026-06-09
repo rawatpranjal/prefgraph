@@ -861,7 +861,6 @@ def test_present_bias(
     def compute_patience(choice: DatedChoice) -> float:
         """Compute patience score for a choice."""
         t_chosen = choice.dates[choice.chosen]
-        c_chosen = choice.amounts[choice.chosen]
 
         # Find the alternative with different timing
         patience_scores = []
@@ -869,7 +868,6 @@ def test_present_bias(
             if j == choice.chosen:
                 continue
             t_alt = choice.dates[j]
-            c_alt = choice.amounts[j]
 
             if t_chosen > t_alt:
                 # Chose to wait

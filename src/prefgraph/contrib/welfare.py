@@ -1113,7 +1113,6 @@ def compute_e_bounds(
     for t in range(T):
         p_t = P[t]
         q_t = Q[t]
-        exp_t = np.dot(p_t, q_t)
 
         # Check if this bundle is affordable at new prices for some budget
         # Use expansion path reasoning from Blundell et al.
@@ -1121,8 +1120,6 @@ def compute_e_bounds(
         # If bundle q_t was chosen at p_t, then for any price p where
         # p @ q_t <= p_t @ q_t (bundle is cheaper), the demand at p
         # with budget p @ q_t must give utility >= u(q_t)
-
-        new_cost_of_t = np.dot(new_prices, q_t)
 
         # This bundle provides a reference point for bounding
         # Lower bound: if new prices are lower, demand could be higher

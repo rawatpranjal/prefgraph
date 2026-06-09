@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
+from typing import cast
 
 import numpy as np
 import pandas as pd
@@ -86,7 +87,10 @@ def _build_sessions(
         events["visitorid"].astype(str) + "_" + events["session_id"].astype(str)
     )
 
-    return events.drop(columns=["prev_time", "gap", "new_session"])
+    # pandas is untyped here (no pandas-stubs); .drop returns Any.
+    return cast(
+        "pd.DataFrame", events.drop(columns=["prev_time", "gap", "new_session"])
+    )
 
 
 def _extract_menu_choices(
@@ -220,7 +224,7 @@ def get_retailrocket_summary(user_logs: dict[str, MenuChoiceLog]) -> dict:
         return {"n_users": 0}
 
     sessions_per_user = [len(log.choices) for log in user_logs.values()]
-    menu_sizes = []
+    menu_sizes: list[int] = []
     for log in user_logs.values():
         menu_sizes.extend(len(m) for m in log.menus)
 

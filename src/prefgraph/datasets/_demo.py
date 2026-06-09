@@ -13,7 +13,12 @@ Usage:
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 import numpy as np
+
+if TYPE_CHECKING:
+    from prefgraph.core.panel import BehaviorPanel
 
 
 def load_demo(
@@ -22,7 +27,7 @@ def load_demo(
     n_goods: int = 5,
     seed: int = 42,
     return_panel: bool = False,
-) -> list[tuple[np.ndarray, np.ndarray]]:
+) -> list[tuple[np.ndarray, np.ndarray]] | BehaviorPanel:
     """Load a synthetic demo dataset (offline, zero setup).
 
     Generates deterministic budget data with a mix of rational and
@@ -51,7 +56,6 @@ def load_demo(
 
     n_rational = int(n_users * 0.4)
     n_noisy = int(n_users * 0.4)
-    n_irrational = n_users - n_rational - n_noisy
 
     users: list[tuple[np.ndarray, np.ndarray]] = []
 
