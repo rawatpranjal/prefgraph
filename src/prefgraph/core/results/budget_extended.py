@@ -321,24 +321,26 @@ class BronarsPowerResult(ResultDisplayMixin, ResultPlotMixin):
     """
     Result of Bronars' Power Index computation.
 
-    Bronars' Power Index measures the statistical power of the GARP test.
-    It answers: "If this user passed GARP, is that meaningful?"
+    Bronars' Power Index measures the statistical power of a revealed
+    preference axiom test. It answers: "If this user passed, is that meaningful?"
 
     The test simulates random behavior on the observed budget constraints
-    and checks what fraction of random behaviors violate GARP. High power
-    means passing GARP is statistically significant.
+    and checks what fraction of random behaviors violate the selected axiom.
+    High power means passing the axiom is statistically significant.
 
     Attributes:
-        power_index: Fraction of random simulations that violate GARP (0-1)
+        power_index: Fraction of random simulations that violate the axiom (0-1)
             - 1.0 = All random behaviors violate (high power, test is informative)
             - 0.5 = Half violate (moderate power)
             - 0.0 = No randoms violate (no power, test uninformative)
         is_significant: True if power_index > 0.5 (test has discriminatory power)
         n_simulations: Number of random simulations performed
-        n_violations: Number of simulations that violated GARP
+        n_violations: Number of simulations that violated the selected axiom
         mean_integrity_random: Average integrity score (AEI) across random simulations
         simulation_integrity_values: Array of AEI values for each simulation
         computation_time_ms: Time taken in milliseconds
+        axiom: Budget axiom tested: "garp", "sarp", or "warp"
+        efficiency: Afriat-style budget efficiency level tested
     """
 
     power_index: float
@@ -348,10 +350,12 @@ class BronarsPowerResult(ResultDisplayMixin, ResultPlotMixin):
     mean_integrity_random: float
     simulation_integrity_values: NDArray[np.float64] | None
     computation_time_ms: float
+    axiom: str = "garp"
+    efficiency: float = 1.0
 
     @property
     def violation_rate(self) -> float:
-        """Fraction of random simulations that violated GARP."""
+        """Fraction of random simulations that violated the selected axiom."""
         return self.n_violations / self.n_simulations if self.n_simulations > 0 else 0.0
 
     @property
@@ -362,7 +366,7 @@ class BronarsPowerResult(ResultDisplayMixin, ResultPlotMixin):
     def score(self) -> float:
         """Return scikit-learn style score in [0, 1]. Higher is better.
 
-        Returns the power index (fraction of random behaviors that violate GARP).
+        Returns the power index (fraction of random behaviors that violate).
         """
         return self.power_index
 
@@ -382,6 +386,8 @@ class BronarsPowerResult(ResultDisplayMixin, ResultPlotMixin):
 
         # Metrics
         lines.append(m._format_section("Metrics"))
+        lines.append(m._format_metric("Axiom", self.axiom.upper()))
+        lines.append(m._format_metric("Efficiency", self.efficiency))
         lines.append(m._format_metric("Power Index", self.power_index))
         lines.append(m._format_metric("Is Significant", self.is_significant))
         lines.append(m._format_metric("Simulations", self.n_simulations))
@@ -393,11 +399,14 @@ class BronarsPowerResult(ResultDisplayMixin, ResultPlotMixin):
         lines.append(m._format_section("Interpretation"))
         lines.append(f"  {m._format_interpretation(self.power_index, 'power')}")
         pct = self.power_index * 100
-        lines.append(f"  {pct:.1f}% of random behaviors violate GARP on these budgets.")
+        lines.append(
+            f"  {pct:.1f}% of random behaviors violate {self.axiom.upper()} "
+            "on these budgets."
+        )
         if self.is_significant:
-            lines.append("  Passing GARP is statistically meaningful.")
+            lines.append(f"  Passing {self.axiom.upper()} is statistically meaningful.")
         else:
-            lines.append("  Passing GARP may not indicate true rationality.")
+            lines.append(f"  Passing {self.axiom.upper()} may not indicate true rationality.")
 
         lines.append(m._format_footer(self.computation_time_ms))
         return "\n".join(lines)
@@ -406,6 +415,8 @@ class BronarsPowerResult(ResultDisplayMixin, ResultPlotMixin):
         """Return dictionary representation for serialization."""
         result = {
             "power_index": self.power_index,
+            "axiom": self.axiom,
+            "efficiency": self.efficiency,
             "is_significant": self.is_significant,
             "n_simulations": self.n_simulations,
             "n_violations": self.n_violations,

@@ -1,8 +1,8 @@
 """Core algorithms for revealed preference analysis."""
 
 from prefgraph.algorithms.garp import check_garp
-from prefgraph.algorithms.aei import compute_aei
-from prefgraph.algorithms.mpi import compute_mpi
+from prefgraph.algorithms.aei import compute_aei, compute_ccei
+from prefgraph.algorithms.mpi import compute_mpi, compute_mpi_bounds
 from prefgraph.algorithms.utility import recover_utility, construct_afriat_utility
 from prefgraph.algorithms.risk import (
     compute_risk_profile,
@@ -72,7 +72,9 @@ __all__ = [
     # Core consistency
     "check_garp",
     "compute_aei",
+    "compute_ccei",
     "compute_mpi",
+    "compute_mpi_bounds",
     "recover_utility",
     "construct_afriat_utility",
     # Risk analysis

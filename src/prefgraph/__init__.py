@@ -122,6 +122,7 @@ from prefgraph.core.result import (
     GARPResult,
     AEIResult,
     MPIResult,
+    MPIBoundsResult,
     UtilityRecoveryResult,
     IdealPointResult,
     SeparabilityResult,
@@ -222,6 +223,7 @@ from prefgraph.algorithms.garp import (
 from prefgraph.algorithms.aei import (
     compute_integrity_score,
     compute_aei,  # Legacy
+    compute_ccei,
     compute_varian_index,
 )
 
@@ -230,6 +232,7 @@ from prefgraph.algorithms.mpi import (
     compute_confusion_metric,
     compute_minimal_outlier_fraction,
     compute_mpi,  # Legacy
+    compute_mpi_bounds,
     compute_houtman_maks_index,  # Legacy
 )
 
@@ -735,6 +738,7 @@ __all__ = [
     "GARPResult",
     "AEIResult",
     "MPIResult",
+    "MPIBoundsResult",
     "UtilityRecoveryResult",
     "IdealPointResult",
     "SeparabilityResult",
@@ -749,8 +753,10 @@ __all__ = [
     "check_garp",
     "check_warp",
     "compute_aei",
+    "compute_ccei",
     "compute_varian_index",
     "compute_mpi",
+    "compute_mpi_bounds",
     "compute_houtman_maks_index",
     "recover_utility",
     "construct_afriat_utility",

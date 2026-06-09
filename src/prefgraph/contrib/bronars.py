@@ -1,4 +1,4 @@
-"""Bronars' Power Index for statistical significance of GARP tests."""
+"""Bronars' Power Index for statistical significance of budget axiom tests."""
 
 from __future__ import annotations
 
@@ -9,6 +9,11 @@ from numpy.typing import NDArray
 
 from prefgraph.core.session import ConsumerSession
 from prefgraph.core.result import BronarsPowerResult
+from prefgraph.algorithms._budget_axioms import (
+    check_budget_axiom_at_efficiency,
+    normalize_budget_axiom,
+    validate_efficiency_level,
+)
 
 
 def compute_bronars_power(
@@ -17,30 +22,36 @@ def compute_bronars_power(
     tolerance: float = 1e-10,
     random_seed: int | None = None,
     store_simulation_values: bool = True,
+    axiom: str = "garp",
+    efficiency: float = 1.0,
 ) -> BronarsPowerResult:
     """
-    Compute Bronars' Power Index for statistical significance of GARP test.
+    Compute Bronars' Power Index for statistical significance of an axiom test.
 
-    Bronars' Power Index measures the discriminatory power of the GARP test
-    for the given price configuration. It answers: "If a user passed GARP,
-    is that result statistically meaningful?"
+    Bronars' Power Index measures the discriminatory power of the selected test
+    for the given price configuration. It answers: "If a user passed the
+    selected axiom, is that result statistically meaningful?"
 
     The algorithm simulates random behavior on the observed budget constraints:
     1. For each observation, generate random quantities that exhaust the budget
-    2. Check if the random behavior violates GARP
-    3. Power = fraction of random behaviors that violate GARP
+    2. Check if the random behavior violates the selected axiom
+    3. Power = fraction of random behaviors that violate the selected axiom
 
     Interpretation:
-    - Power > 0.7: High power, passing GARP is statistically significant
+    - Power > 0.7: High power, passing the axiom is statistically significant
     - Power 0.5-0.7: Moderate power, interpret with caution
-    - Power < 0.5: Low power, even random behavior would likely pass GARP
+    - Power < 0.5: Low power, even random behavior would likely pass the axiom
 
     Args:
         session: ConsumerSession with prices and quantities
         n_simulations: Number of random behavior simulations (default: 1000)
-        tolerance: Numerical tolerance for GARP detection
+        tolerance: Numerical tolerance for axiom detection
         random_seed: Optional seed for reproducibility
         store_simulation_values: If True, store individual AEI values (default: True)
+        axiom: Budget axiom tested against random behavior: "garp" (default),
+            "sarp", or "warp".
+        efficiency: Afriat-style budget efficiency level in [0, 1]. The default
+            1.0 tests the exact axiom.
 
     Returns:
         BronarsPowerResult with power index and simulation details
@@ -61,12 +72,13 @@ def compute_bronars_power(
         maximization. Econometrica, 55(3), 693-698.
     """
     start_time = time.perf_counter()
+    axiom = normalize_budget_axiom(axiom)
+    efficiency = validate_efficiency_level(efficiency)
 
     if random_seed is not None:
         np.random.seed(random_seed)
 
     # Import here to avoid circular imports
-    from prefgraph.algorithms.garp import check_garp
     from prefgraph.algorithms.aei import compute_aei
 
     prices = session.prices
@@ -85,15 +97,25 @@ def compute_bronars_power(
             quantities=random_quantities,
         )
 
-        # Check GARP
-        garp_result = check_garp(random_session, tolerance)
+        # Check selected axiom
+        axiom_result = check_budget_axiom_at_efficiency(
+            random_session,
+            axiom=axiom,
+            efficiency=efficiency,
+            tolerance=tolerance,
+        )
 
-        if not garp_result.is_consistent:
+        if not axiom_result.is_consistent:
             n_violations += 1
 
         # Compute AEI for detailed analysis
         if store_simulation_values:
-            aei_result = compute_aei(random_session, tolerance=1e-4, max_iterations=20)
+            aei_result = compute_aei(
+                random_session,
+                tolerance=1e-4,
+                max_iterations=20,
+                axiom=axiom,
+            )
             aei_values[sim] = aei_result.efficiency_index
 
     power_index = n_violations / n_simulations
@@ -114,6 +136,8 @@ def compute_bronars_power(
         mean_integrity_random=mean_aei,
         simulation_integrity_values=aei_values,
         computation_time_ms=computation_time,
+        axiom=axiom,
+        efficiency=efficiency,
     )
 
 
@@ -158,28 +182,34 @@ def compute_bronars_power_fast(
     n_simulations: int = 1000,
     tolerance: float = 1e-10,
     random_seed: int | None = None,
+    axiom: str = "garp",
+    efficiency: float = 1.0,
 ) -> BronarsPowerResult:
     """
-    Fast version of Bronars' Power Index (binary GARP only, no AEI).
+    Fast version of Bronars' Power Index (binary pass/fail only, no AEI).
 
-    This version only checks binary GARP pass/fail for each simulation,
+    This version only checks binary axiom pass/fail for each simulation,
     which is faster but doesn't provide mean_integrity_random.
 
     Args:
         session: ConsumerSession with prices and quantities
         n_simulations: Number of random behavior simulations (default: 1000)
-        tolerance: Numerical tolerance for GARP detection
+        tolerance: Numerical tolerance for axiom detection
         random_seed: Optional seed for reproducibility
+        axiom: Budget axiom tested against random behavior: "garp" (default),
+            "sarp", or "warp".
+        efficiency: Afriat-style budget efficiency level in [0, 1]. The default
+            1.0 tests the exact axiom.
 
     Returns:
         BronarsPowerResult with power index (mean_integrity_random will be 0.0)
     """
     start_time = time.perf_counter()
+    axiom = normalize_budget_axiom(axiom)
+    efficiency = validate_efficiency_level(efficiency)
 
     if random_seed is not None:
         np.random.seed(random_seed)
-
-    from prefgraph.algorithms.garp import check_garp
 
     prices = session.prices
     expenditures = session.own_expenditures
@@ -189,9 +219,14 @@ def compute_bronars_power_fast(
     for _ in range(n_simulations):
         random_quantities = _generate_random_bundles(prices, expenditures)
         random_session = ConsumerSession(prices=prices, quantities=random_quantities)
-        garp_result = check_garp(random_session, tolerance)
+        axiom_result = check_budget_axiom_at_efficiency(
+            random_session,
+            axiom=axiom,
+            efficiency=efficiency,
+            tolerance=tolerance,
+        )
 
-        if not garp_result.is_consistent:
+        if not axiom_result.is_consistent:
             n_violations += 1
 
     power_index = n_violations / n_simulations
@@ -205,6 +240,8 @@ def compute_bronars_power_fast(
         mean_integrity_random=0.0,
         simulation_integrity_values=None,
         computation_time_ms=computation_time,
+        axiom=axiom,
+        efficiency=efficiency,
     )
 
 
