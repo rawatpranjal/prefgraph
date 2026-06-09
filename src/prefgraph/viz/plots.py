@@ -365,6 +365,7 @@ def plot_ccei_sensitivity(
 
         # Create filtered session
         from prefgraph.core.session import BehaviorLog
+
         filtered_session = BehaviorLog(
             cost_vectors=session.prices[current_mask],
             action_vectors=session.quantities[current_mask],

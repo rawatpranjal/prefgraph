@@ -220,7 +220,7 @@ def render_result_html(result: Any) -> str:
 <div class="prefgraph-result">
     <div class="header {css_class}">
         {display_name}
-        <span class="status-indicator {'pass' if 'pass' in css_class else 'fail' if 'fail' in css_class else ''}">{indicator} {status_text}</span>
+        <span class="status-indicator {"pass" if "pass" in css_class else "fail" if "fail" in css_class else ""}">{indicator} {status_text}</span>
     </div>
     <div class="content">
         {metrics_html}
@@ -276,7 +276,13 @@ def render_summary_table_html(results: list[tuple[str, Any]]) -> str:
         else:
             time_str = "N/A"
 
-        status_class = "pass" if "pass" in css_class.lower() else "fail" if "fail" in css_class.lower() else ""
+        status_class = (
+            "pass"
+            if "pass" in css_class.lower()
+            else "fail"
+            if "fail" in css_class.lower()
+            else ""
+        )
 
         rows_html += f"""
         <tr>
@@ -365,7 +371,7 @@ def render_behavioral_summary_html(
 <div class="prefgraph-result" style="max-width: 700px;">
     <div class="header {overall_css}">
         Behavioral Summary
-        <span class="status-indicator {'pass' if all_passed else 'fail'}">{overall_status}</span>
+        <span class="status-indicator {"pass" if all_passed else "fail"}">{overall_status}</span>
     </div>
     <div class="content">
         <div style="margin-bottom: 16px;">
@@ -404,8 +410,7 @@ def _get_value_class(label: str, value: Any) -> str:
     if isinstance(value, (int, float)):
         # For efficiency/score metrics (higher is better)
         if any(
-            term in label_lower
-            for term in ["efficiency", "score", "index", "power"]
+            term in label_lower for term in ["efficiency", "score", "index", "power"]
         ):
             if "waste" in label_lower or "mpi" in label_lower:
                 # Lower is better for these

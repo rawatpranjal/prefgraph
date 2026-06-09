@@ -42,8 +42,8 @@ from prefgraph.core.session import MenuChoiceLog
 
 # --- Constants ---
 
-MIN_MENU_SIZE = 2    # Minimum items watched in a day to form a valid menu
-MAX_MENU_SIZE = 50   # Cap menu size; dense dataset can produce very large daily menus
+MIN_MENU_SIZE = 2  # Minimum items watched in a day to form a valid menu
+MAX_MENU_SIZE = 50  # Cap menu size; dense dataset can produce very large daily menus
 MIN_SESSIONS_PER_USER = 5  # User must have at least this many qualifying days
 
 
@@ -65,10 +65,12 @@ def _find_data_dir(data_dir: str | Path | None) -> Path:
     if env:
         candidates.append(Path(env) / "kuairec")
 
-    candidates.extend([
-        Path.home() / ".prefgraph" / "data" / "kuairec",
-        Path(__file__).resolve().parents[3] / "datasets" / "kuairec",
-    ])
+    candidates.extend(
+        [
+            Path.home() / ".prefgraph" / "data" / "kuairec",
+            Path(__file__).resolve().parents[3] / "datasets" / "kuairec",
+        ]
+    )
 
     for d in candidates:
         if d.is_dir() and (d / "big_matrix.csv").exists():
@@ -168,12 +170,14 @@ def load_kuairec(
         )
 
     # Cast types for safety
-    df = df.select([
-        pl.col("user_id").cast(pl.Int64),
-        pl.col("video_id").cast(pl.Int64),
-        pl.col("watch_ratio").cast(pl.Float64),
-        pl.col("date").cast(pl.Utf8),  # Keep as string date for grouping
-    ])
+    df = df.select(
+        [
+            pl.col("user_id").cast(pl.Int64),
+            pl.col("video_id").cast(pl.Int64),
+            pl.col("watch_ratio").cast(pl.Float64),
+            pl.col("date").cast(pl.Utf8),  # Keep as string date for grouping
+        ]
+    )
 
     # -------------------------------------------------------------------------
     # Step 2: Group by (user_id, date) to form daily menus.
@@ -193,17 +197,19 @@ def load_kuairec(
     df = df.sort(["user_id", "date", "video_id"])
 
     # Group: collect (video_ids, watch_ratios) per (user, date)
-    grouped = df.group_by(["user_id", "date"]).agg([
-        pl.col("video_id").alias("video_ids"),
-        pl.col("watch_ratio").alias("watch_ratios"),
-    ])
+    grouped = df.group_by(["user_id", "date"]).agg(
+        [
+            pl.col("video_id").alias("video_ids"),
+            pl.col("watch_ratio").alias("watch_ratios"),
+        ]
+    )
 
     # Convert to Python lists for MenuChoiceLog construction
     # (polars list columns → Python objects)
     records: list[dict] = []
     for row in grouped.iter_rows(named=True):
-        vids = row["video_ids"]        # list[int]
-        ratios = row["watch_ratios"]   # list[float]
+        vids = row["video_ids"]  # list[int]
+        ratios = row["watch_ratios"]  # list[float]
 
         menu_size = len(vids)
         if menu_size < MIN_MENU_SIZE or menu_size > MAX_MENU_SIZE:
@@ -213,28 +219,32 @@ def load_kuairec(
         best_idx = int(np.argmax(ratios))
         choice_vid = vids[best_idx]
 
-        records.append({
-            "user_id": row["user_id"],
-            "date": row["date"],
-            "menu": frozenset(vids),
-            "choice": choice_vid,
-        })
+        records.append(
+            {
+                "user_id": row["user_id"],
+                "date": row["date"],
+                "menu": frozenset(vids),
+                "choice": choice_vid,
+            }
+        )
 
     total_sessions = len(records)
-    print(f"  Qualifying daily sessions (menu size {MIN_MENU_SIZE}-{MAX_MENU_SIZE}): {total_sessions:,}")
+    print(
+        f"  Qualifying daily sessions (menu size {MIN_MENU_SIZE}-{MAX_MENU_SIZE}): {total_sessions:,}"
+    )
 
     # -------------------------------------------------------------------------
     # Step 3: Group records by user_id, apply min_sessions filter.
     # -------------------------------------------------------------------------
     from collections import defaultdict
+
     user_records: dict[int, list[dict]] = defaultdict(list)
     for rec in records:
         user_records[rec["user_id"]].append(rec)
 
     # Keep only users with at least min_sessions qualifying days
     qualifying: dict[int, list[dict]] = {
-        uid: recs for uid, recs in user_records.items()
-        if len(recs) >= min_sessions
+        uid: recs for uid, recs in user_records.items() if len(recs) >= min_sessions
     }
 
     # Sort descending by session count for deterministic top-k slicing

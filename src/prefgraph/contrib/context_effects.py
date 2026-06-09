@@ -137,7 +137,9 @@ def detect_decoy_effect(
                     # Track vulnerability
                     if competitor not in vulnerabilities:
                         vulnerabilities[competitor] = 0.0
-                    vulnerabilities[competitor] = max(vulnerabilities[competitor], boost)
+                    vulnerabilities[competitor] = max(
+                        vulnerabilities[competitor], boost
+                    )
 
     # Compute average magnitude
     magnitude = total_boost / len(decoy_triples) if decoy_triples else 0.0
@@ -236,11 +238,17 @@ def detect_compromise_effect(
                     idx_b = item_to_idx.get(item_b, 0)
                     idx_c = item_to_idx.get(item_c, 0)
 
-                    if idx_a >= len(attribute_vectors) or idx_c >= len(attribute_vectors):
+                    if idx_a >= len(attribute_vectors) or idx_c >= len(
+                        attribute_vectors
+                    ):
                         continue
 
                     attrs_a = attribute_vectors[idx_a]
-                    attrs_b = attribute_vectors[idx_b] if idx_b < len(attribute_vectors) else None
+                    attrs_b = (
+                        attribute_vectors[idx_b]
+                        if idx_b < len(attribute_vectors)
+                        else None
+                    )
                     attrs_c = attribute_vectors[idx_c]
 
                     if attrs_b is None:
@@ -248,8 +256,8 @@ def detect_compromise_effect(
 
                     # Check if B is between A and C on all attributes
                     is_middle = all(
-                        (attrs_a[k] <= attrs_b[k] <= attrs_c[k]) or
-                        (attrs_c[k] <= attrs_b[k] <= attrs_a[k])
+                        (attrs_a[k] <= attrs_b[k] <= attrs_c[k])
+                        or (attrs_c[k] <= attrs_b[k] <= attrs_a[k])
                         for k in range(len(attrs_a))
                     )
 
@@ -301,8 +309,10 @@ def detect_compromise_effect(
         )
 
     # Compute average magnitude
-    magnitude = total_boost / len(extreme_pairs) if extreme_pairs else (
-        total_boost / len(compromise_items) if compromise_items else 0.0
+    magnitude = (
+        total_boost / len(extreme_pairs)
+        if extreme_pairs
+        else (total_boost / len(compromise_items) if compromise_items else 0.0)
     )
     has_compromise_effect = len(compromise_items) > 0 or len(extreme_pairs) > 0
 

@@ -82,6 +82,7 @@ def compute_mpi(
     # which gives the max-mean-weight money-pump cycle.
     # --------------------------------------------------------------------------
     from prefgraph._rust_backend import HAS_RUST, _rust_analyze_batch
+
     if HAS_RUST:
         try:
             p = np.ascontiguousarray(session.prices, dtype=np.float64)
@@ -91,7 +92,19 @@ def compute_mpi(
             # Previously missing network=False, so tolerance landed in position 10
             # (the bool network slot), causing TypeError in Rust PyO3 binding and
             # silently falling through to the Python fallback.
-            results = _rust_analyze_batch([p], [q], False, True, False, False, False, False, False, False, tolerance)
+            results = _rust_analyze_batch(
+                [p],
+                [q],
+                False,
+                True,
+                False,
+                False,
+                False,
+                False,
+                False,
+                False,
+                tolerance,
+            )
             mpi_val = results[0]["mpi"]
 
             # Trust mpi_val directly from Rust. Do NOT gate on results["is_garp"]:
@@ -103,6 +116,7 @@ def compute_mpi(
 
             # Get violation cycles from Python for the cycle_costs breakdown.
             from prefgraph.algorithms.garp import check_garp
+
             garp_result = check_garp(session, tolerance)
             E = session.expenditure_matrix
             cycle_costs: list[tuple[Cycle, float]] = []
@@ -111,7 +125,9 @@ def compute_mpi(
                 if mc > 0:
                     cycle_costs.append((cycle, mc))
 
-            worst_cycle = max(cycle_costs, key=lambda x: x[1])[0] if cycle_costs else None
+            worst_cycle = (
+                max(cycle_costs, key=lambda x: x[1])[0] if cycle_costs else None
+            )
             if cycle_costs:
                 max_cycle_mpi = max(cost for _, cost in cycle_costs)
                 if mpi_val > max_cycle_mpi and worst_cycle is not None:
@@ -683,11 +699,11 @@ def _houtman_maks_ilp(
             if i == j:
                 continue
 
-            A[idx, T + i] = 1.0          # U_i
-            A[idx, T + j] = -1.0         # -U_j
+            A[idx, T + i] = 1.0  # U_i
+            A[idx, T + j] = -1.0  # -U_j
             A[idx, 2 * T + j] = -(E[j, i] - own_exp[j])  # -lambda_j * coeff
-            A[idx, i] = M                # M * z_i
-            A[idx, j] = M                # M * z_j
+            A[idx, i] = M  # M * z_i
+            A[idx, j] = M  # M * z_j
             b[idx] = 2.0 * M
             idx += 1
 
@@ -695,10 +711,10 @@ def _houtman_maks_ilp(
 
     lb = np.zeros(n_vars)
     ub = np.full(n_vars, M)
-    ub[:T] = 1.0        # z_i in [0, 1]
-    ub[T:2*T] = U_max   # U_i in [0, U_max]
-    ub[2*T:] = lambda_ub # lambda_i in [lambda_lb, lambda_ub]
-    lb[2*T:] = lambda_lb
+    ub[:T] = 1.0  # z_i in [0, 1]
+    ub[T : 2 * T] = U_max  # U_i in [0, U_max]
+    ub[2 * T :] = lambda_ub  # lambda_i in [lambda_lb, lambda_ub]
+    lb[2 * T :] = lambda_lb
 
     bounds = Bounds(lb, ub)
 
@@ -708,7 +724,10 @@ def _houtman_maks_ilp(
 
     try:
         result = milp(
-            c, constraints=constraints, integrality=integrality, bounds=bounds,
+            c,
+            constraints=constraints,
+            integrality=integrality,
+            bounds=bounds,
         )
 
         if result.success:

@@ -1,12 +1,11 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, asdict
+from dataclasses import dataclass
 from typing import Any
 
 import numpy as np
 from numpy.typing import NDArray
 
-from prefgraph.core.types import Cycle
 from prefgraph.core.mixins import ResultSummaryMixin
 from prefgraph.core.display import ResultDisplayMixin, ResultPlotMixin
 
@@ -71,8 +70,9 @@ class IdealPointResult(ResultDisplayMixin, ResultPlotMixin):
         lines = [m._format_header("IDEAL POINT ESTIMATION REPORT")]
 
         # Status
-        status = m._format_status(self.is_euclidean_rational,
-                                  "EUCLIDEAN RATIONAL", "VIOLATIONS FOUND")
+        status = m._format_status(
+            self.is_euclidean_rational, "EUCLIDEAN RATIONAL", "VIOLATIONS FOUND"
+        )
         lines.append(f"\nStatus: {status}")
 
         # Metrics
@@ -80,7 +80,9 @@ class IdealPointResult(ResultDisplayMixin, ResultPlotMixin):
         lines.append(m._format_metric("Euclidean Rational", self.is_euclidean_rational))
         lines.append(m._format_metric("Explained Variance", self.explained_variance))
         lines.append(m._format_metric("Number of Violations", self.num_violations))
-        lines.append(m._format_metric("Mean Distance to Chosen", self.mean_distance_to_chosen))
+        lines.append(
+            m._format_metric("Mean Distance to Chosen", self.mean_distance_to_chosen)
+        )
         lines.append(m._format_metric("Dimensions", self.num_dimensions))
 
         # Ideal point coordinates
@@ -94,8 +96,12 @@ class IdealPointResult(ResultDisplayMixin, ResultPlotMixin):
             lines.append("  All choices consistent with Euclidean preferences.")
             lines.append("  User consistently prefers items closer to ideal point.")
         else:
-            lines.append(f"  {self.num_violations} choices inconsistent with Euclidean model.")
-            lines.append(f"  Model explains {self.explained_variance*100:.1f}% of choice variance.")
+            lines.append(
+                f"  {self.num_violations} choices inconsistent with Euclidean model."
+            )
+            lines.append(
+                f"  Model explains {self.explained_variance * 100:.1f}% of choice variance."
+            )
 
         lines.append(m._format_footer(self.computation_time_ms))
         return "\n".join(lines)
@@ -117,7 +123,11 @@ class IdealPointResult(ResultDisplayMixin, ResultPlotMixin):
     def __repr__(self) -> str:
         """Compact string representation with [+]/[-] indicator."""
         indicator = "[+]" if self.is_euclidean_rational else "[-]"
-        status = "RATIONAL" if self.is_euclidean_rational else f"{self.num_violations} violations"
+        status = (
+            "RATIONAL"
+            if self.is_euclidean_rational
+            else f"{self.num_violations} violations"
+        )
         return f"IdealPointResult: {indicator} {status} (dims={self.num_dimensions}, var={self.explained_variance:.4f})"
 
     def short_summary(self) -> str:
@@ -179,15 +189,23 @@ class SeparabilityResult(ResultDisplayMixin, ResultPlotMixin):
         # Metrics
         lines.append(m._format_section("Metrics"))
         lines.append(m._format_metric("Is Separable", self.is_separable))
-        lines.append(m._format_metric("Cross-Effect Strength", self.cross_effect_strength))
-        lines.append(m._format_metric("Can Price Independently", self.can_price_independently))
+        lines.append(
+            m._format_metric("Cross-Effect Strength", self.cross_effect_strength)
+        )
+        lines.append(
+            m._format_metric("Can Price Independently", self.can_price_independently)
+        )
 
         # Group details
         lines.append(m._format_section("Group Details"))
         lines.append(m._format_metric("Group A Indices", str(self.group_a_indices)))
-        lines.append(m._format_metric("Group A Consistency", self.within_group_a_consistency))
+        lines.append(
+            m._format_metric("Group A Consistency", self.within_group_a_consistency)
+        )
         lines.append(m._format_metric("Group B Indices", str(self.group_b_indices)))
-        lines.append(m._format_metric("Group B Consistency", self.within_group_b_consistency))
+        lines.append(
+            m._format_metric("Group B Consistency", self.within_group_b_consistency)
+        )
 
         # Recommendation
         lines.append(m._format_section("Recommendation"))
@@ -196,7 +214,9 @@ class SeparabilityResult(ResultDisplayMixin, ResultPlotMixin):
         # Interpretation
         lines.append(m._format_section("Interpretation"))
         if self.is_separable:
-            lines.append("  Goods can be grouped independently for pricing/optimization.")
+            lines.append(
+                "  Goods can be grouped independently for pricing/optimization."
+            )
             lines.append("  Cross-price effects are negligible between groups.")
         else:
             lines.append("  Significant cross-effects exist between groups.")

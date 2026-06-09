@@ -36,7 +36,6 @@ _PRICE_TIERS: list[tuple[list[str], float]] = [
     (["champagne", "specialty wine"], 12.00),
     (["red wine", "white wine"], 10.00),
     (["beer", "cooler"], 8.00),
-
     # Protein (meat, seafood, poultry)
     (["seafood counter"], 8.00),
     (["packaged seafood", "canned meat seafood"], 5.50),
@@ -45,7 +44,6 @@ _PRICE_TIERS: list[tuple[list[str], float]] = [
     (["hot dog", "bacon", "sausage"], 5.00),
     (["lunch meat"], 4.50),
     (["frozen meat"], 6.00),
-
     # Health / personal care / baby
     (["vitamin", "supplement"], 8.00),
     (["baby food", "formula"], 5.00),
@@ -64,11 +62,9 @@ _PRICE_TIERS: list[tuple[list[str], float]] = [
     (["eye ear care"], 5.50),
     (["beauty"], 6.00),
     (["digestion"], 6.00),
-
     # Cheese
     (["specialty cheese"], 6.00),
     (["packaged cheese", "other cream", "cheese"], 5.00),
-
     # Dairy / eggs
     (["ice cream"], 4.50),
     (["cream"], 3.50),
@@ -78,7 +74,6 @@ _PRICE_TIERS: list[tuple[list[str], float]] = [
     (["soy lactosefree"], 3.50),
     (["egg"], 3.00),
     (["pudding"], 3.00),
-
     # Frozen meals / pizza / appetizers
     (["frozen pizza"], 5.00),
     (["frozen meal"], 4.50),
@@ -89,17 +84,14 @@ _PRICE_TIERS: list[tuple[list[str], float]] = [
     (["frozen juice"], 3.00),
     (["frozen produce"], 3.00),
     (["frozen dessert"], 4.00),
-
     # Bakery / bread
     (["bakery dessert"], 4.00),
     (["bread"], 3.00),
     (["bun", "roll", "tortilla", "flat bread"], 3.00),
     (["breakfast bar", "pastri"], 3.50),
     (["breakfast bakery"], 3.00),
-
     # Bulk bins (before produce/snacks so "bulk" catches these first)
     (["bulk"], 3.00),
-
     # Fresh produce
     (["fresh fruit"], 2.50),
     (["fresh vegetable"], 2.00),
@@ -107,10 +99,8 @@ _PRICE_TIERS: list[tuple[list[str], float]] = [
     (["fresh pasta"], 3.00),
     (["fresh dip", "tapenade"], 3.50),
     (["packaged produce", "packaged vegetable", "packaged fruit"], 3.00),
-
     # Pantry condiments (before beverages so "honey/syrup" beats "nectar")
     (["honey", "syrup"], 3.50),
-
     # Beverages -- specific multi-word matches before generic "energy"/"sport"
     (["energy granola"], 3.00),
     (["energy sport"], 3.00),
@@ -121,7 +111,6 @@ _PRICE_TIERS: list[tuple[list[str], float]] = [
     (["coffee"], 4.00),
     (["tea"], 3.00),
     (["cocoa", "drink mix"], 3.00),
-
     # Snacks
     (["chip", "pretzel"], 3.50),
     (["popcorn", "jerky"], 3.50),
@@ -133,7 +122,6 @@ _PRICE_TIERS: list[tuple[list[str], float]] = [
     (["fruit vegetable snack"], 3.00),
     (["nut", "seed", "dried fruit"], 3.50),
     (["granola"], 3.50),
-
     # Pantry staples
     (["canned meal", "bean"], 2.00),
     (["canned jarred vegetable"], 2.00),
@@ -158,13 +146,11 @@ _PRICE_TIERS: list[tuple[list[str], float]] = [
     (["cereal"], 3.50),
     (["instant food"], 2.50),
     (["tofu", "meat alternative"], 3.50),
-
     # International foods
     (["latino"], 2.50),
     (["asian"], 2.50),
     (["indian"], 2.50),
     (["kosher"], 3.00),
-
     # Household
     (["cleaning product"], 4.00),
     (["dish detergent"], 3.50),
@@ -176,12 +162,10 @@ _PRICE_TIERS: list[tuple[list[str], float]] = [
     (["plate", "bowl", "cup", "flatware"], 3.00),
     (["kitchen supplie"], 3.00),
     (["more household"], 3.50),
-
     # Pets
     (["dog food", "dog care"], 5.00),
     (["cat food", "cat care"], 5.00),
     (["pet"], 5.00),
-
     # Catch-all for "refrigerated", "other", "missing", etc.
     (["refrigerated"], 3.00),
     (["other"], 3.00),
@@ -210,10 +194,12 @@ def _find_data_dir(data_dir: str | Path | None) -> Path:
     if env:
         candidates.append(Path(env) / "instacart")
 
-    candidates.extend([
-        Path.home() / ".prefgraph" / "data" / "instacart",
-        Path(__file__).resolve().parents[3] / "datasets" / "instacart" / "data",
-    ])
+    candidates.extend(
+        [
+            Path.home() / ".prefgraph" / "data" / "instacart",
+            Path(__file__).resolve().parents[3] / "datasets" / "instacart" / "data",
+        ]
+    )
 
     for d in candidates:
         if d.is_dir() and (d / "orders.csv").exists():
@@ -275,8 +261,7 @@ def load_instacart(
 
     # Build heuristic price lookup: aisle_id -> $/unit
     aisle_price_map = {
-        row["aisle_id"]: _aisle_price(row["aisle"])
-        for _, row in aisles.iterrows()
+        row["aisle_id"]: _aisle_price(row["aisle"]) for _, row in aisles.iterrows()
     }
 
     # Merge to get aisle_id per order-product
@@ -287,8 +272,7 @@ def load_instacart(
 
     # Count items per aisle per order
     aisle_counts = (
-        order_products
-        .groupby(["order_id", "aisle_id"])
+        order_products.groupby(["order_id", "aisle_id"])
         .size()
         .reset_index(name="quantity")
     )

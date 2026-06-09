@@ -11,7 +11,6 @@ from __future__ import annotations
 import os
 from pathlib import Path
 
-import numpy as np
 
 from prefgraph.core.panel import BehaviorPanel
 from prefgraph.core.session import BehaviorLog
@@ -34,14 +33,20 @@ def _find_data_dir(data_dir: str | Path | None) -> Path:
     if env:
         candidates.append(Path(env) / "uci_retail")
 
-    candidates.extend([
-        Path.home() / ".prefgraph" / "data" / "uci_retail",
-        Path(__file__).resolve().parents[3] / "datasets" / "uci_retail" / "data",
-    ])
+    candidates.extend(
+        [
+            Path.home() / ".prefgraph" / "data" / "uci_retail",
+            Path(__file__).resolve().parents[3] / "datasets" / "uci_retail" / "data",
+        ]
+    )
 
     for d in candidates:
         if d.is_dir():
-            for fname in ["online_retail.xlsx", "Online Retail.xlsx", "online_retail.csv"]:
+            for fname in [
+                "online_retail.xlsx",
+                "Online Retail.xlsx",
+                "online_retail.csv",
+            ]:
                 if (d / fname).exists():
                     return d
 
@@ -104,8 +109,7 @@ def load_uci_retail(
 
     # Filter prices and quantities
     df = df[
-        (df["UnitPrice"].between(MIN_UNIT_PRICE, MAX_UNIT_PRICE)) &
-        (df["Quantity"] > 0)
+        (df["UnitPrice"].between(MIN_UNIT_PRICE, MAX_UNIT_PRICE)) & (df["Quantity"] > 0)
     ]
 
     # Create monthly period
@@ -124,7 +128,9 @@ def load_uci_retail(
     # Build price oracle
     periods = sorted(df["period"].unique())
     price_pivot = df.pivot_table(
-        values="UnitPrice", index="period", columns="StockCode",
+        values="UnitPrice",
+        index="period",
+        columns="StockCode",
         aggfunc="median",
     ).reindex(index=periods, columns=products)
     price_pivot = price_pivot.ffill().bfill().fillna(price_pivot.median())
@@ -142,10 +148,16 @@ def load_uci_retail(
     for cid in customer_ids:
         cust_data = grouped.get_group(cid)
 
-        qty_pivot = cust_data.pivot_table(
-            values="Quantity", index="period", columns="StockCode",
-            aggfunc="sum",
-        ).reindex(columns=products).fillna(0)
+        qty_pivot = (
+            cust_data.pivot_table(
+                values="Quantity",
+                index="period",
+                columns="StockCode",
+                aggfunc="sum",
+            )
+            .reindex(columns=products)
+            .fillna(0)
+        )
 
         active_periods = qty_pivot[qty_pivot.sum(axis=1) > 0].index.tolist()
         if len(active_periods) < min_transactions:

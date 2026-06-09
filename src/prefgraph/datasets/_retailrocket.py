@@ -42,10 +42,12 @@ def _find_data_dir(data_dir: str | Path | None) -> Path:
     if env:
         candidates.append(Path(env) / "retailrocket")
 
-    candidates.extend([
-        Path.home() / ".prefgraph" / "data" / "retailrocket",
-        Path(__file__).resolve().parents[3] / "datasets" / "retailrocket" / "data",
-    ])
+    candidates.extend(
+        [
+            Path.home() / ".prefgraph" / "data" / "retailrocket",
+            Path(__file__).resolve().parents[3] / "datasets" / "retailrocket" / "data",
+        ]
+    )
 
     for d in candidates:
         if d.is_dir() and (d / "events.csv").exists():
@@ -119,13 +121,15 @@ def _extract_menu_choices(
             continue
 
         visitor = session["visitorid"].iloc[0]
-        records.append({
-            "visitorid": visitor,
-            "session_key": session_key,
-            "menu": frozenset(menu),
-            "choice": choice,
-            "menu_size": len(menu),
-        })
+        records.append(
+            {
+                "visitorid": visitor,
+                "session_key": session_key,
+                "menu": frozenset(menu),
+                "choice": choice,
+                "menu_size": len(menu),
+            }
+        )
 
     return pd.DataFrame(records)
 
@@ -170,9 +174,11 @@ def load_retailrocket(
     events = _build_sessions(events, session_gap_minutes)
 
     # Extract menu-choice pairs
-    print(f"  Extracting menu-choice pairs...")
+    print("  Extracting menu-choice pairs...")
     choices_df = _extract_menu_choices(events)
-    print(f"  Valid sessions (1 purchase, menu size >= {MIN_MENU_SIZE}): {len(choices_df):,}")
+    print(
+        f"  Valid sessions (1 purchase, menu size >= {MIN_MENU_SIZE}): {len(choices_df):,}"
+    )
 
     # Filter users with enough sessions
     user_counts = choices_df["visitorid"].value_counts()

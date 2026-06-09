@@ -30,7 +30,6 @@ References:
 from __future__ import annotations
 
 import time
-import warnings
 
 import numpy as np
 from numpy.typing import NDArray
@@ -292,12 +291,14 @@ def check_euclidean_rationality_exact(
                 for k, lamb in enumerate(lambdas):
                     if lamb > tolerance:
                         y_k, n_k, t, chosen, unchosen = pairs[k]
-                        contributing_pairs.append({
-                            "choice_set": t,
-                            "chosen": chosen,
-                            "unchosen": unchosen,
-                            "weight": lamb,
-                        })
+                        contributing_pairs.append(
+                            {
+                                "choice_set": t,
+                                "chosen": chosen,
+                                "unchosen": unchosen,
+                                "weight": lamb,
+                            }
+                        )
 
                 return {
                     "is_euclidean_rational": False,
@@ -620,15 +621,17 @@ def find_ideal_point_general(
                     # Hinge loss
                     margin = chosen_dist - other_dist
                     if margin > 0:
-                        total_loss += margin ** 2
+                        total_loss += margin**2
 
         return total_loss
 
     # Optimize with bounds
     result = minimize(
-        objective, x0, method=method,
+        objective,
+        x0,
+        method=method,
         bounds=scipy_bounds,
-        options={"maxiter": max_iterations}
+        options={"maxiter": max_iterations},
     )
 
     ideal_point = result.x

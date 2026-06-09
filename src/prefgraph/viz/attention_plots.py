@@ -130,7 +130,10 @@ def plot_consideration_sizes(
     if hasattr(result, "consideration_sets") and result.consideration_sets is not None:
         # Extract sizes from consideration sets
         sizes = [len(cs) for cs in result.consideration_sets if cs is not None]
-    elif hasattr(result, "estimated_set_sizes") and result.estimated_set_sizes is not None:
+    elif (
+        hasattr(result, "estimated_set_sizes")
+        and result.estimated_set_sizes is not None
+    ):
         sizes = list(result.estimated_set_sizes)
 
     if sizes is not None and len(sizes) > 0:
@@ -212,9 +215,14 @@ def plot_attention_heatmap(
     # Try to extract attention matrix
     attention_matrix = None
 
-    if hasattr(result, "attention_probabilities") and result.attention_probabilities is not None:
+    if (
+        hasattr(result, "attention_probabilities")
+        and result.attention_probabilities is not None
+    ):
         attention_matrix = np.array(result.attention_probabilities)
-    elif hasattr(result, "consideration_sets") and result.consideration_sets is not None:
+    elif (
+        hasattr(result, "consideration_sets") and result.consideration_sets is not None
+    ):
         # Convert consideration sets to binary matrix
         sets = result.consideration_sets
         if sets and len(sets) > 0:
@@ -295,8 +303,17 @@ def plot_attention_bounds(
         errors = [(m - l, u - m) for l, m, u in zip(lowers, midpoints, uppers)]
         errors = np.array(errors).T
 
-        ax.bar(x, midpoints, width, yerr=errors, color="steelblue", alpha=0.7,
-               capsize=5, edgecolor="black", label="Attention bounds")
+        ax.bar(
+            x,
+            midpoints,
+            width,
+            yerr=errors,
+            color="steelblue",
+            alpha=0.7,
+            capsize=5,
+            edgecolor="black",
+            label="Attention bounds",
+        )
 
         # Add labels
         ax.set_xlabel("Alternative")

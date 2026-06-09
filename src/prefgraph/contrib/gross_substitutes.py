@@ -253,7 +253,9 @@ def compute_substitution_matrix(
                 confidence_matrix[g, h] = 1.0
             elif g < h:
                 result = check_gross_substitutes(session, g, h, price_change_threshold)
-                code = _RELATIONSHIP_CODES.get(result.relationship, _RELATIONSHIP_CODES["inconclusive"])
+                code = _RELATIONSHIP_CODES.get(
+                    result.relationship, _RELATIONSHIP_CODES["inconclusive"]
+                )
                 relationship_codes[g, h] = code
                 relationship_codes[h, g] = code
                 confidence_matrix[g, h] = result.confidence_score
@@ -323,7 +325,9 @@ def check_law_of_demand(
             mask = np.ones(N, dtype=bool)
             mask[good] = False
             if np.any(mask):
-                other_changes = np.abs(P[j, mask] - P[i, mask]) / np.maximum(P[i, mask], tolerance)
+                other_changes = np.abs(P[j, mask] - P[i, mask]) / np.maximum(
+                    P[i, mask], tolerance
+                )
                 if np.max(other_changes) > rel_change * 0.5:
                     continue
 
@@ -463,7 +467,9 @@ def decompose_price_effects(
             avg_price_j = np.mean(P[:, j])
             avg_qty_i = np.mean(Q[:, i])
             if avg_qty_i > tolerance:
-                cross_price_elasticities[i, j] = total_effects[i, j] * avg_price_j / avg_qty_i
+                cross_price_elasticities[i, j] = (
+                    total_effects[i, j] * avg_price_j / avg_qty_i
+                )
 
     # Check compensated law of demand
     # Substitution effects should be negative semi-definite
@@ -552,9 +558,9 @@ def compute_hicksian_demand(
     if not success or utility_fn is None:
         # Fall back to approximation method
         result = _compute_hicksian_demand_approximation(session, target_utility)
-        result['success'] = False
-        result['utility_function'] = None
-        result['hicksian_demand_fn'] = None
+        result["success"] = False
+        result["utility_function"] = None
+        result["hicksian_demand_fn"] = None
         return result
 
     # Compute utility at each observation
@@ -605,7 +611,9 @@ def compute_hicksian_demand(
 
             if h_plus is not None and h_minus is not None:
                 for i in range(N):
-                    hicksian_derivatives[i, j] = (h_plus[i] - h_minus[i]) / (2 * epsilon)
+                    hicksian_derivatives[i, j] = (h_plus[i] - h_minus[i]) / (
+                        2 * epsilon
+                    )
 
     return {
         "success": True,

@@ -53,10 +53,12 @@ def _find_data_dir(data_dir: str | Path | None) -> Path:
     if env:
         candidates.append(Path(env) / "rees46")
 
-    candidates.extend([
-        Path.home() / ".prefgraph" / "data" / "rees46",
-        Path(__file__).resolve().parents[3] / "datasets" / "rees46" / "data",
-    ])
+    candidates.extend(
+        [
+            Path.home() / ".prefgraph" / "data" / "rees46",
+            Path(__file__).resolve().parents[3] / "datasets" / "rees46" / "data",
+        ]
+    )
 
     for d in candidates:
         if d.is_dir():
@@ -123,9 +125,7 @@ def _extract_menu_choices(
 
     # Build menu (set of viewed items) per session
     viewed_per_session = (
-        views.groupby("user_session")["product_id"]
-        .apply(frozenset)
-        .rename("viewed")
+        views.groupby("user_session")["product_id"].apply(frozenset).rename("viewed")
     )
 
     # Merge: session -> (viewed set, purchased item, user_id)

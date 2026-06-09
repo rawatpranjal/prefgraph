@@ -70,9 +70,7 @@ def check_budget_axiom_at_efficiency(
     if normalized == "warp":
         violation_matrix = weak & strict.T
         violations = [
-            (int(i), int(j))
-            for i, j in np.argwhere(violation_matrix)
-            if i < j
+            (int(i), int(j)) for i, j in np.argwhere(violation_matrix) if i < j
         ]
         return BudgetAxiomCheck(
             axiom=normalized,

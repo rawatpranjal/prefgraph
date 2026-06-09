@@ -16,7 +16,6 @@ from __future__ import annotations
 import os
 from pathlib import Path
 
-import numpy as np
 import pandas as pd
 
 from prefgraph.core.session import MenuChoiceLog
@@ -29,10 +28,12 @@ def _find_data_dir(data_dir: str | Path | None) -> Path:
     env = os.environ.get("PYREVEALED_DATA_DIR") or os.environ.get("PREFGRAPH_DATA_DIR")
     if env:
         candidates.append(Path(env) / "instacart")
-    candidates.extend([
-        Path.home() / ".prefgraph" / "data" / "instacart",
-        Path.home() / ".pyrevealed" / "data" / "instacart",
-    ])
+    candidates.extend(
+        [
+            Path.home() / ".prefgraph" / "data" / "instacart",
+            Path.home() / ".pyrevealed" / "data" / "instacart",
+        ]
+    )
     for d in candidates:
         if d.is_dir() and (d / "orders.csv").exists():
             return d
@@ -82,9 +83,15 @@ def load_instacart_menu(
 
     # For each user, find their most active department (most reorder events)
     reorders = op[op["reordered"] == 1]
-    user_dept_counts = reorders.groupby(["user_id", "department_id"]).size().reset_index(name="count")
-    user_best_dept = user_dept_counts.sort_values("count", ascending=False).drop_duplicates("user_id")
-    user_dept_map = dict(zip(user_best_dept["user_id"], user_best_dept["department_id"]))
+    user_dept_counts = (
+        reorders.groupby(["user_id", "department_id"]).size().reset_index(name="count")
+    )
+    user_best_dept = user_dept_counts.sort_values(
+        "count", ascending=False
+    ).drop_duplicates("user_id")
+    user_dept_map = dict(
+        zip(user_best_dept["user_id"], user_best_dept["department_id"])
+    )
 
     # Build menu-choice sequences
     user_logs: dict[str, MenuChoiceLog] = {}
@@ -100,15 +107,19 @@ def load_instacart_menu(
         menus: list[frozenset] = []
         choices: list[int] = []
 
-        for order_num, group in user_dept.sort_values("order_number").groupby("order_number"):
+        for order_num, group in user_dept.sort_values("order_number").groupby(
+            "order_number"
+        ):
             products_this_order = set(group["product_id"].tolist())
             # First pick = product with lowest add_to_cart_order
             first_pick = group.iloc[0]["product_id"]
 
             # Valid observation: known set is big enough AND first pick is a reorder
-            if (len(known_products) >= min_menu_size
-                    and len(known_products) <= max_menu_size
-                    and first_pick in known_products):
+            if (
+                len(known_products) >= min_menu_size
+                and len(known_products) <= max_menu_size
+                and first_pick in known_products
+            ):
                 menus.append(frozenset(known_products))
                 choices.append(first_pick)
 

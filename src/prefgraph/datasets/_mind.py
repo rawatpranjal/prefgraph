@@ -55,8 +55,8 @@ from prefgraph.core.session import MenuChoiceLog
 
 # --- Constants ---
 
-MIN_MENU_SIZE = 2       # Minimum articles in an impression to form a valid menu
-MAX_MENU_SIZE = 200     # MIND impressions can be very large; cap to avoid degenerate menus
+MIN_MENU_SIZE = 2  # Minimum articles in an impression to form a valid menu
+MAX_MENU_SIZE = 200  # MIND impressions can be very large; cap to avoid degenerate menus
 MIN_SESSIONS_PER_USER = 5  # User must have at least this many 1-click impressions
 
 
@@ -78,10 +78,12 @@ def _find_data_dir(data_dir: str | Path | None, split: str = "train") -> Path:
     if env:
         candidates.append(Path(env) / "mind")
 
-    candidates.extend([
-        Path.home() / ".prefgraph" / "data" / "mind",
-        Path(__file__).resolve().parents[3] / "datasets" / "mind",
-    ])
+    candidates.extend(
+        [
+            Path.home() / ".prefgraph" / "data" / "mind",
+            Path(__file__).resolve().parents[3] / "datasets" / "mind",
+        ]
+    )
 
     for d in candidates:
         behaviors_file = d / split / "behaviors.tsv"
@@ -123,7 +125,7 @@ def _parse_impressions(impressions_str: str) -> tuple[list[str], str | None]:
         # Split on LAST hyphen to handle article IDs that might contain hyphens
         last_dash = token.rfind("-")
         article_id = token[:last_dash]
-        label = token[last_dash + 1:]
+        label = token[last_dash + 1 :]
 
         article_ids.append(article_id)
         if label == "1":
@@ -154,7 +156,7 @@ def _load_behaviors(behaviors_file: Path, max_users: int | None) -> pl.DataFrame
         separator="\t",
         has_header=False,
         new_columns=["impression_id", "user_id", "time", "history", "impressions"],
-        infer_schema_length=0,          # treat all as Utf8 first; we cast later
+        infer_schema_length=0,  # treat all as Utf8 first; we cast later
         null_values=[""],
     )
 
@@ -168,11 +170,7 @@ def _load_behaviors(behaviors_file: Path, max_users: int | None) -> pl.DataFrame
         if unique_users > max_users:
             # Take impressions only from the first max_users unique user IDs
             top_users = (
-                df.select("user_id")
-                .unique()
-                .head(max_users)
-                ["user_id"]
-                .to_list()
+                df.select("user_id").unique().head(max_users)["user_id"].to_list()
             )
             df = df.filter(pl.col("user_id").is_in(top_users))
             print(f"  Pre-filtered to {max_users} users ({len(df):,} rows)")
@@ -254,15 +252,19 @@ def load_mind(
         if menu_size < MIN_MENU_SIZE or menu_size > MAX_MENU_SIZE:
             continue
 
-        records.append({
-            "user_id": str(user_id),
-            "menu": frozenset(article_ids),   # frozenset of article ID strings
-            "choice": clicked,                 # single article ID string
-        })
+        records.append(
+            {
+                "user_id": str(user_id),
+                "menu": frozenset(article_ids),  # frozenset of article ID strings
+                "choice": clicked,  # single article ID string
+            }
+        )
 
     total_sessions = len(records)
-    print(f"  Qualifying impressions (exactly 1 click, "
-          f"menu size {MIN_MENU_SIZE}-{MAX_MENU_SIZE}): {total_sessions:,}")
+    print(
+        f"  Qualifying impressions (exactly 1 click, "
+        f"menu size {MIN_MENU_SIZE}-{MAX_MENU_SIZE}): {total_sessions:,}"
+    )
 
     # -------------------------------------------------------------------------
     # Step 3: Group by user_id, apply min_sessions filter.
@@ -272,8 +274,7 @@ def load_mind(
         user_records[rec["user_id"]].append(rec)
 
     qualifying: dict[str, list[dict]] = {
-        uid: recs for uid, recs in user_records.items()
-        if len(recs) >= min_sessions
+        uid: recs for uid, recs in user_records.items() if len(recs) >= min_sessions
     }
 
     # Sort descending by session count for deterministic top-k
@@ -423,15 +424,24 @@ def compute_mind_targets(
             news_tsv,
             separator="\t",
             has_header=False,
-            new_columns=["news_id", "category", "subcategory", "title",
-                         "abstract", "url", "title_entities", "abstract_entities"],
+            new_columns=[
+                "news_id",
+                "category",
+                "subcategory",
+                "title",
+                "abstract",
+                "url",
+                "title_entities",
+                "abstract_entities",
+            ],
             infer_schema_length=0,
         )
         # Build article_id → category mapping (article IDs are like "N12345")
         news_id_col = news_df["news_id"].to_list()
         category_col = news_df["category"].to_list()
         article_to_category: dict[str, str] = {
-            nid: cat for nid, cat in zip(news_id_col, category_col)
+            nid: cat
+            for nid, cat in zip(news_id_col, category_col)
             if nid is not None and cat is not None
         }
         print(f"  Loaded {len(article_to_category):,} article-category mappings")

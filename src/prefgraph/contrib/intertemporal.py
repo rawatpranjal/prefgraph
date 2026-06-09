@@ -24,11 +24,9 @@ from __future__ import annotations
 
 import time
 from dataclasses import dataclass
-from typing import TYPE_CHECKING
 
 import numpy as np
 from numpy.typing import NDArray
-from scipy.optimize import linprog, minimize_scalar
 
 from prefgraph.core.display import ResultDisplayMixin, ResultPlotMixin
 from prefgraph.core.mixins import ResultSummaryMixin
@@ -50,6 +48,7 @@ class DatedChoice:
         chosen: Index of the chosen (amount, date) pair
         budget: Total budget constraint (optional)
     """
+
     amounts: NDArray[np.float64]  # Consumption amounts
     dates: NDArray[np.int64]  # Time periods
     chosen: int  # Index of chosen option
@@ -73,6 +72,7 @@ class ExponentialDiscountingResult(ResultDisplayMixin, ResultPlotMixin):
         num_observations: Number of choices analyzed
         computation_time_ms: Time taken in milliseconds
     """
+
     is_consistent: bool
     violations: list[tuple[int, int]]
     delta_lower: float
@@ -158,6 +158,7 @@ class QuasiHyperbolicResult(ResultDisplayMixin, ResultPlotMixin):
         num_observations: Number of choices analyzed
         computation_time_ms: Time taken in milliseconds
     """
+
     is_consistent: bool
     beta_lower: float
     beta_upper: float
@@ -181,8 +182,16 @@ class QuasiHyperbolicResult(ResultDisplayMixin, ResultPlotMixin):
         lines.append(f"\nStatus: {status}")
 
         lines.append(m._format_section("Parameters"))
-        lines.append(m._format_metric("Beta Range", f"[{self.beta_lower:.3f}, {self.beta_upper:.3f}]"))
-        lines.append(m._format_metric("Delta Range", f"[{self.delta_lower:.3f}, {self.delta_upper:.3f}]"))
+        lines.append(
+            m._format_metric(
+                "Beta Range", f"[{self.beta_lower:.3f}, {self.beta_upper:.3f}]"
+            )
+        )
+        lines.append(
+            m._format_metric(
+                "Delta Range", f"[{self.delta_lower:.3f}, {self.delta_upper:.3f}]"
+            )
+        )
         lines.append(m._format_metric("Present Bias Detected", self.has_present_bias))
 
         lines.append(m._format_section("Interpretation"))
@@ -211,7 +220,7 @@ class QuasiHyperbolicResult(ResultDisplayMixin, ResultPlotMixin):
     def __repr__(self) -> str:
         indicator = "[+]" if self.is_consistent else "[-]"
         bias = "present-biased" if self.has_present_bias else "no bias"
-        return f"QuasiHyperbolicResult: {indicator} {bias}, beta~{(self.beta_lower+self.beta_upper)/2:.2f}"
+        return f"QuasiHyperbolicResult: {indicator} {bias}, beta~{(self.beta_lower + self.beta_upper) / 2:.2f}"
 
 
 @dataclass(frozen=True)
@@ -228,6 +237,7 @@ class DiscountFactorBounds(ResultDisplayMixin, ResultPlotMixin):
         num_binding_constraints: Number of choices that restrict bounds
         computation_time_ms: Time taken in milliseconds
     """
+
     delta_lower: float
     delta_upper: float
     is_identified: bool
@@ -256,8 +266,12 @@ class DiscountFactorBounds(ResultDisplayMixin, ResultPlotMixin):
         lines.append(m._format_metric("Is Identified", self.is_identified))
 
         lines.append(m._format_section("Implied Interest Rate"))
-        lines.append(m._format_metric("Lower Bound", f"{self.implied_interest_rate_lower:.2%}"))
-        lines.append(m._format_metric("Upper Bound", f"{self.implied_interest_rate_upper:.2%}"))
+        lines.append(
+            m._format_metric("Lower Bound", f"{self.implied_interest_rate_lower:.2%}")
+        )
+        lines.append(
+            m._format_metric("Upper Bound", f"{self.implied_interest_rate_upper:.2%}")
+        )
 
         lines.append(m._format_footer(self.computation_time_ms))
         return "\n".join(lines)
@@ -584,35 +598,41 @@ def _collect_quasi_hyperbolic_constraints(
 
             if t_chosen == 0 and t_rej > 0:
                 # Chose immediate over future: c_chosen >= beta * delta^t_rej * c_rej
-                constraints.append({
-                    "type": "immediate_vs_future",
-                    "c_chosen": c_chosen,
-                    "t_chosen": t_chosen,
-                    "c_rejected": c_rej,
-                    "t_rejected": t_rej,
-                    "choice_idx": i,
-                })
+                constraints.append(
+                    {
+                        "type": "immediate_vs_future",
+                        "c_chosen": c_chosen,
+                        "t_chosen": t_chosen,
+                        "c_rejected": c_rej,
+                        "t_rejected": t_rej,
+                        "choice_idx": i,
+                    }
+                )
             elif t_chosen > 0 and t_rej == 0:
                 # Chose future over immediate: beta * delta^t_chosen * c_chosen >= c_rej
-                constraints.append({
-                    "type": "future_vs_immediate",
-                    "c_chosen": c_chosen,
-                    "t_chosen": t_chosen,
-                    "c_rejected": c_rej,
-                    "t_rejected": t_rej,
-                    "choice_idx": i,
-                })
+                constraints.append(
+                    {
+                        "type": "future_vs_immediate",
+                        "c_chosen": c_chosen,
+                        "t_chosen": t_chosen,
+                        "c_rejected": c_rej,
+                        "t_rejected": t_rej,
+                        "choice_idx": i,
+                    }
+                )
             elif t_chosen > 0 and t_rej > 0:
                 # Both in future: delta^t_chosen * c_chosen >= delta^t_rej * c_rej
                 # This simplifies to: delta^(t_chosen - t_rej) >= c_rej / c_chosen
-                constraints.append({
-                    "type": "future_vs_future",
-                    "c_chosen": c_chosen,
-                    "t_chosen": t_chosen,
-                    "c_rejected": c_rej,
-                    "t_rejected": t_rej,
-                    "choice_idx": i,
-                })
+                constraints.append(
+                    {
+                        "type": "future_vs_future",
+                        "c_chosen": c_chosen,
+                        "t_chosen": t_chosen,
+                        "c_rejected": c_rej,
+                        "t_rejected": t_rej,
+                        "choice_idx": i,
+                    }
+                )
 
     return constraints
 
@@ -710,7 +730,9 @@ def _find_quasi_hyperbolic_violations(
             # Check if any beta makes these consistent
             is_consistent = False
             for beta in np.linspace(0.01, 1.0, 10):
-                dl, du = _compute_delta_bounds_for_beta(all_constraints, beta, tolerance)
+                dl, du = _compute_delta_bounds_for_beta(
+                    all_constraints, beta, tolerance
+                )
                 if dl <= du + tolerance:
                     is_consistent = True
                     break
@@ -767,15 +789,10 @@ def recover_discount_factor(
         r_upper = float("inf")
 
     is_identified = (
-        delta_lower > 0.01 and
-        delta_upper < 0.99 and
-        delta_upper - delta_lower < 0.5
+        delta_lower > 0.01 and delta_upper < 0.99 and delta_upper - delta_lower < 0.5
     )
 
-    num_binding = sum(
-        1 for c in choices
-        if len(c.amounts) > 1
-    )
+    num_binding = sum(1 for c in choices if len(c.amounts) > 1)
 
     computation_time = (time.perf_counter() - start_time) * 1000
 

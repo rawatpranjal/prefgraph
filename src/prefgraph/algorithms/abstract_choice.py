@@ -88,7 +88,11 @@ def validate_menu_warp(log: MenuChoiceLog) -> AbstractWARPResult:
     revealed_set = set(revealed_pairs)
 
     for x, y in revealed_pairs:
-        if (y, x) in revealed_set and (x, y) not in violations and (y, x) not in violations:
+        if (
+            (y, x) in revealed_set
+            and (x, y) not in violations
+            and (y, x) not in violations
+        ):
             # Found a violation: x preferred to y AND y preferred to x
             violations.append((x, y))
 

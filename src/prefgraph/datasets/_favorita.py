@@ -30,14 +30,39 @@ from prefgraph.core.session import BehaviorLog
 
 # All 33 product families in the dataset.
 PRODUCT_FAMILIES = [
-    "AUTOMOTIVE", "BABY CARE", "BEAUTY", "BEVERAGES", "BOOKS",
-    "BREAD/BAKERY", "CELEBRATION", "CLEANING", "DAIRY", "DELI",
-    "EGGS", "FROZEN FOODS", "GROCERY I", "GROCERY II", "HARDWARE",
-    "HOME AND KITCHEN", "HOME APPLIANCES", "HOME CARE", "LADIESWEAR",
-    "LAWN AND GARDEN", "LINGERIE", "LIQUOR,WINE,BEER", "MAGAZINES",
-    "MEATS", "PERSONAL CARE", "PET SUPPLIES", "PLAYERS AND ELECTRONICS",
-    "POULTRY", "PREPARED FOODS", "PRODUCE", "SCHOOL AND OFFICE SUPPLIES",
-    "SEAFOOD", "STATIONERY",
+    "AUTOMOTIVE",
+    "BABY CARE",
+    "BEAUTY",
+    "BEVERAGES",
+    "BOOKS",
+    "BREAD/BAKERY",
+    "CELEBRATION",
+    "CLEANING",
+    "DAIRY",
+    "DELI",
+    "EGGS",
+    "FROZEN FOODS",
+    "GROCERY I",
+    "GROCERY II",
+    "HARDWARE",
+    "HOME AND KITCHEN",
+    "HOME APPLIANCES",
+    "HOME CARE",
+    "LADIESWEAR",
+    "LAWN AND GARDEN",
+    "LINGERIE",
+    "LIQUOR,WINE,BEER",
+    "MAGAZINES",
+    "MEATS",
+    "PERSONAL CARE",
+    "PET SUPPLIES",
+    "PLAYERS AND ELECTRONICS",
+    "POULTRY",
+    "PREPARED FOODS",
+    "PRODUCE",
+    "SCHOOL AND OFFICE SUPPLIES",
+    "SEAFOOD",
+    "STATIONERY",
 ]
 
 NUM_FAMILIES = len(PRODUCT_FAMILIES)
@@ -56,10 +81,12 @@ def _find_data_dir(data_dir: str | Path | None) -> Path:
     if env:
         candidates.append(Path(env) / "favorita")
 
-    candidates.extend([
-        Path.home() / ".prefgraph" / "data" / "favorita",
-        Path(__file__).resolve().parents[3] / "favorita" / "data",
-    ])
+    candidates.extend(
+        [
+            Path.home() / ".prefgraph" / "data" / "favorita",
+            Path(__file__).resolve().parents[3] / "favorita" / "data",
+        ]
+    )
 
     for d in candidates:
         if d.is_dir() and (d / "train.csv").exists():
@@ -210,8 +237,10 @@ def load_favorita(
             user_id=uid,
         )
 
-    print(f"  Built {len(logs)} BehaviorLog objects "
-          f"({NUM_FAMILIES} product families, {n_weeks} weeks available)")
+    print(
+        f"  Built {len(logs)} BehaviorLog objects "
+        f"({NUM_FAMILIES} product families, {n_weeks} weeks available)"
+    )
 
     return BehaviorPanel(
         _logs=logs,

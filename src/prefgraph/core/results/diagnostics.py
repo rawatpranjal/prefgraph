@@ -1,12 +1,11 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, asdict
+from dataclasses import dataclass
 from typing import Any
 
 import numpy as np
 from numpy.typing import NDArray
 
-from prefgraph.core.types import Cycle
 from prefgraph.core.mixins import ResultSummaryMixin
 from prefgraph.core.display import ResultDisplayMixin, ResultPlotMixin
 
@@ -102,15 +101,15 @@ class RegularityResult(ResultDisplayMixin, ResultPlotMixin):
 
         # Status
         status = m._format_status(
-            self.satisfies_regularity,
-            "REGULARITY SATISFIED",
-            "REGULARITY VIOLATED"
+            self.satisfies_regularity, "REGULARITY SATISFIED", "REGULARITY VIOLATED"
         )
         lines.append(f"\nStatus: {status}")
 
         # Metrics
         lines.append(m._format_section("Metrics"))
-        lines.append(m._format_metric("Satisfies Regularity", self.satisfies_regularity))
+        lines.append(
+            m._format_metric("Satisfies Regularity", self.satisfies_regularity)
+        )
         lines.append(m._format_metric("Violations", self.num_violations))
         lines.append(m._format_metric("Testable Pairs", self.num_testable_pairs))
         lines.append(m._format_metric("Violation Rate", f"{self.violation_rate:.2%}"))
@@ -139,14 +138,16 @@ class RegularityResult(ResultDisplayMixin, ResultPlotMixin):
         """Return dictionary representation for serialization."""
         violations_list = []
         for v in self.violations:
-            violations_list.append({
-                "item": v.item,
-                "subset_menu_idx": v.subset_menu_idx,
-                "superset_menu_idx": v.superset_menu_idx,
-                "prob_in_subset": v.prob_in_subset,
-                "prob_in_superset": v.prob_in_superset,
-                "magnitude": v.magnitude,
-            })
+            violations_list.append(
+                {
+                    "item": v.item,
+                    "subset_menu_idx": v.subset_menu_idx,
+                    "superset_menu_idx": v.superset_menu_idx,
+                    "prob_in_subset": v.prob_in_subset,
+                    "prob_in_superset": v.prob_in_superset,
+                    "magnitude": v.magnitude,
+                }
+            )
         return {
             "satisfies_regularity": self.satisfies_regularity,
             "num_violations": self.num_violations,
@@ -159,7 +160,11 @@ class RegularityResult(ResultDisplayMixin, ResultPlotMixin):
 
     def __repr__(self) -> str:
         """Compact string representation."""
-        status = "satisfied" if self.satisfies_regularity else f"{self.num_violations} violations"
+        status = (
+            "satisfied"
+            if self.satisfies_regularity
+            else f"{self.num_violations} violations"
+        )
         return f"RegularityResult({status}, rate={self.violation_rate:.2%})"
 
 
@@ -201,7 +206,9 @@ class AttentionOverloadResult(ResultDisplayMixin, ResultPlotMixin):
         """Menu size with highest quality (optimal menu size)."""
         if not self.menu_size_quality:
             return None
-        return max(self.menu_size_quality.keys(), key=lambda k: self.menu_size_quality[k])
+        return max(
+            self.menu_size_quality.keys(), key=lambda k: self.menu_size_quality[k]
+        )
 
     def score(self) -> float:
         """Return scikit-learn style score in [0, 1]. Higher is better.
@@ -222,9 +229,13 @@ class AttentionOverloadResult(ResultDisplayMixin, ResultPlotMixin):
         # Metrics
         lines.append(m._format_section("Metrics"))
         lines.append(m._format_metric("Has Overload", self.has_overload))
-        lines.append(m._format_metric("Overload Severity", f"{self.overload_severity:.2%}"))
+        lines.append(
+            m._format_metric("Overload Severity", f"{self.overload_severity:.2%}")
+        )
         if self.critical_menu_size is not None:
-            lines.append(m._format_metric("Critical Menu Size", self.critical_menu_size))
+            lines.append(
+                m._format_metric("Critical Menu Size", self.critical_menu_size)
+            )
         lines.append(m._format_metric("Regression Slope", self.regression_slope))
         lines.append(m._format_metric("P-value", self.p_value))
         lines.append(m._format_metric("Observations", self.num_observations))
@@ -241,7 +252,9 @@ class AttentionOverloadResult(ResultDisplayMixin, ResultPlotMixin):
         if self.has_overload:
             lines.append("  Choice quality declines with larger menus.")
             if self.critical_menu_size:
-                lines.append(f"  Recommend menus smaller than {self.critical_menu_size} items.")
+                lines.append(
+                    f"  Recommend menus smaller than {self.critical_menu_size} items."
+                )
         else:
             lines.append("  No significant quality decline with menu size.")
             lines.append("  Choice quality remains stable across menu sizes.")
@@ -266,8 +279,10 @@ class AttentionOverloadResult(ResultDisplayMixin, ResultPlotMixin):
     def __repr__(self) -> str:
         """Compact string representation."""
         if self.has_overload:
-            return f"AttentionOverloadResult(overload, critical={self.critical_menu_size})"
-        return f"AttentionOverloadResult(no overload)"
+            return (
+                f"AttentionOverloadResult(overload, critical={self.critical_menu_size})"
+            )
+        return "AttentionOverloadResult(no overload)"
 
 
 @dataclass(frozen=True)
@@ -309,13 +324,17 @@ class SwapsIndexResult(ResultDisplayMixin, ResultPlotMixin):
         lines = [m._format_header("SWAPS INDEX REPORT")]
 
         # Status
-        status = "CONSISTENT" if self.is_consistent else f"{self.swaps_count} SWAPS NEEDED"
+        status = (
+            "CONSISTENT" if self.is_consistent else f"{self.swaps_count} SWAPS NEEDED"
+        )
         lines.append(f"\nStatus: {status}")
 
         # Metrics
         lines.append(m._format_section("Metrics"))
         lines.append(m._format_metric("Swaps Count", self.swaps_count))
-        lines.append(m._format_metric("Swaps Normalized", f"{self.swaps_normalized:.2%}"))
+        lines.append(
+            m._format_metric("Swaps Normalized", f"{self.swaps_normalized:.2%}")
+        )
         lines.append(m._format_metric("Max Possible Swaps", self.max_possible_swaps))
         lines.append(m._format_metric("Is Consistent", self.is_consistent))
         lines.append(m._format_metric("Method", self.method))
@@ -324,7 +343,7 @@ class SwapsIndexResult(ResultDisplayMixin, ResultPlotMixin):
         if self.swap_pairs:
             lines.append(m._format_section("Swap Pairs"))
             for i, (obs_i, obs_j) in enumerate(self.swap_pairs[:5]):
-                lines.append(f"  Swap {i+1}: obs {obs_i} <-> obs {obs_j}")
+                lines.append(f"  Swap {i + 1}: obs {obs_i} <-> obs {obs_j}")
             if len(self.swap_pairs) > 5:
                 lines.append(f"  ... and {len(self.swap_pairs) - 5} more")
 
@@ -333,8 +352,12 @@ class SwapsIndexResult(ResultDisplayMixin, ResultPlotMixin):
         if self.is_consistent:
             lines.append("  Data is consistent - no preference swaps needed.")
         else:
-            lines.append(f"  Need {self.swaps_count} preference flip(s) for consistency.")
-            lines.append(f"  This represents {self.swaps_normalized:.1%} of max possible.")
+            lines.append(
+                f"  Need {self.swaps_count} preference flip(s) for consistency."
+            )
+            lines.append(
+                f"  This represents {self.swaps_normalized:.1%} of max possible."
+            )
 
         lines.append(m._format_footer(self.computation_time_ms))
         return "\n".join(lines)
@@ -430,8 +453,10 @@ class ObservationContributionResult(ResultDisplayMixin, ResultPlotMixin):
             for obs_idx, contrib in self.worst_observations[:5]:
                 impact = self.removal_impact.get(obs_idx, 0.0)
                 cycles = self.cycle_participation.get(obs_idx, 0)
-                lines.append(f"  Obs {obs_idx}: contribution={contrib:.3f}, "
-                           f"cycles={cycles}, removal_impact={impact:.3f}")
+                lines.append(
+                    f"  Obs {obs_idx}: contribution={contrib:.3f}, "
+                    f"cycles={cycles}, removal_impact={impact:.3f}"
+                )
 
         # Interpretation
         lines.append(m._format_section("Interpretation"))
@@ -439,8 +464,10 @@ class ObservationContributionResult(ResultDisplayMixin, ResultPlotMixin):
             lines.append("  All observations are consistent.")
         else:
             worst_idx, worst_contrib = self.worst_observations[0]
-            lines.append(f"  Observation {worst_idx} is responsible for "
-                       f"{worst_contrib:.1%} of inconsistency.")
+            lines.append(
+                f"  Observation {worst_idx} is responsible for "
+                f"{worst_contrib:.1%} of inconsistency."
+            )
             impact = self.removal_impact.get(worst_idx, 0.0)
             if impact > 0:
                 lines.append(f"  Removing it would improve AEI by {impact:.3f}.")
@@ -514,7 +541,9 @@ class StatusQuoBiasResult(ResultDisplayMixin, ResultPlotMixin):
         # Metrics
         lines.append(m._format_section("Metrics"))
         lines.append(m._format_metric("Has Status Quo Bias", self.has_status_quo_bias))
-        lines.append(m._format_metric("Default Advantage", f"{self.default_advantage:.2%}"))
+        lines.append(
+            m._format_metric("Default Advantage", f"{self.default_advantage:.2%}")
+        )
         lines.append(m._format_metric("P-value", self.p_value))
         lines.append(m._format_metric("Menus with Defaults", self.num_defaults))
         lines.append(m._format_metric("Observations", self.num_observations))
@@ -530,7 +559,9 @@ class StatusQuoBiasResult(ResultDisplayMixin, ResultPlotMixin):
         lines.append(m._format_section("Interpretation"))
         if self.has_status_quo_bias:
             lines.append("  Default options are chosen more than preference predicts.")
-            lines.append(f"  Defaults have ~{self.default_advantage:.0%} probability boost.")
+            lines.append(
+                f"  Defaults have ~{self.default_advantage:.0%} probability boost."
+            )
         else:
             lines.append("  No significant status quo bias detected.")
             lines.append("  Choices appear preference-driven, not default-driven.")
@@ -724,8 +755,12 @@ class RankingComparisonResult(ResultDisplayMixin, ResultPlotMixin):
         # Metrics
         lines.append(m._format_section("Similarity Metrics"))
         lines.append(m._format_metric("Kendall Tau", f"{self.kendall_tau:.4f}"))
-        lines.append(m._format_metric("Spearman Footrule", f"{self.spearman_footrule:.4f}"))
-        lines.append(m._format_metric("Rank-Biased Overlap", f"{self.rank_biased_overlap:.4f}"))
+        lines.append(
+            m._format_metric("Spearman Footrule", f"{self.spearman_footrule:.4f}")
+        )
+        lines.append(
+            m._format_metric("Rank-Biased Overlap", f"{self.rank_biased_overlap:.4f}")
+        )
         lines.append(m._format_metric("RBO Parameter (p)", f"{self.rbo_parameter:.2f}"))
 
         # Size info
@@ -952,7 +987,9 @@ class MinimumCostIndexResult(ResultDisplayMixin, ResultPlotMixin):
         lines.append(m._format_section("Metrics"))
         lines.append(m._format_metric("MCI (Absolute)", f"{self.mci_value:.4f}"))
         lines.append(m._format_metric("MCI (Normalized)", f"{self.mci_normalized:.4f}"))
-        lines.append(m._format_metric("Total Expenditure", f"{self.total_expenditure:.2f}"))
+        lines.append(
+            m._format_metric("Total Expenditure", f"{self.total_expenditure:.2f}")
+        )
         lines.append(m._format_metric("Cycles Broken", self.cycles_broken))
         lines.append(m._format_metric("Observations Adjusted", self.num_adjustments))
 
@@ -1137,12 +1174,16 @@ class CompromiseEffectResult(ResultDisplayMixin, ResultPlotMixin):
         lines = [m._format_header("COMPROMISE EFFECT ANALYSIS REPORT")]
 
         # Status
-        status = "COMPROMISE EFFECT DETECTED" if self.has_compromise_effect else "NO EFFECT"
+        status = (
+            "COMPROMISE EFFECT DETECTED" if self.has_compromise_effect else "NO EFFECT"
+        )
         lines.append(f"\nStatus: {status}")
 
         # Metrics
         lines.append(m._format_section("Metrics"))
-        lines.append(m._format_metric("Has Compromise Effect", self.has_compromise_effect))
+        lines.append(
+            m._format_metric("Has Compromise Effect", self.has_compromise_effect)
+        )
         lines.append(m._format_metric("Compromise Items", len(self.compromise_items)))
         lines.append(m._format_metric("Average Magnitude", f"{self.magnitude:.2%}"))
         lines.append(m._format_metric("Menus Tested", self.num_menus_tested))
@@ -1230,7 +1271,9 @@ class BootstrapCIResult(ResultDisplayMixin, ResultPlotMixin):
 
         # Status
         pct = int(self.confidence_level * 100)
-        lines.append(f"\n{pct}% Confidence Interval: [{self.ci_lower:.4f}, {self.ci_upper:.4f}]")
+        lines.append(
+            f"\n{pct}% Confidence Interval: [{self.ci_lower:.4f}, {self.ci_upper:.4f}]"
+        )
 
         # Metrics
         lines.append(m._format_section("Metrics"))
@@ -1310,9 +1353,13 @@ class PredictiveSuccessResult(ResultDisplayMixin, ResultPlotMixin):
 
         # Metrics
         lines.append(m._format_section("Metrics"))
-        lines.append(m._format_metric("Predictive Success", f"{self.predictive_success:.4f}"))
+        lines.append(
+            m._format_metric("Predictive Success", f"{self.predictive_success:.4f}")
+        )
         lines.append(m._format_metric("Hit Rate", f"{self.hit_rate:.4f}"))
-        lines.append(m._format_metric("False Alarm Rate", f"{self.false_alarm_rate:.4f}"))
+        lines.append(
+            m._format_metric("False Alarm Rate", f"{self.false_alarm_rate:.4f}")
+        )
         lines.append(m._format_metric("Predictions Made", self.num_predictions))
 
         # Interpretation
@@ -1340,5 +1387,6 @@ class PredictiveSuccessResult(ResultDisplayMixin, ResultPlotMixin):
 
     def __repr__(self) -> str:
         """Compact string representation."""
-        return f"PredictiveSuccessResult({self.model_name}: {self.predictive_success:.3f})"
-
+        return (
+            f"PredictiveSuccessResult({self.model_name}: {self.predictive_success:.3f})"
+        )

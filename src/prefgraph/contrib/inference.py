@@ -23,7 +23,6 @@ import time
 from typing import TYPE_CHECKING, Callable
 
 import numpy as np
-from numpy.typing import NDArray
 
 if TYPE_CHECKING:
     from prefgraph.core.session import BehaviorLog
@@ -138,6 +137,7 @@ def _get_metric_function(metric: str) -> Callable[["BehaviorLog"], float]:
     metric_lower = metric.lower()
 
     if metric_lower in ("aei", "afriat", "ccei", "integrity"):
+
         def aei_score(log: "BehaviorLog") -> float:
             result = compute_aei(log)
             return result.efficiency_index
@@ -145,6 +145,7 @@ def _get_metric_function(metric: str) -> Callable[["BehaviorLog"], float]:
         return aei_score
 
     elif metric_lower in ("mpi", "money_pump", "confusion"):
+
         def mpi_score(log: "BehaviorLog") -> float:
             result = compute_mpi(log)
             return result.mpi_value
@@ -152,6 +153,7 @@ def _get_metric_function(metric: str) -> Callable[["BehaviorLog"], float]:
         return mpi_score
 
     elif metric_lower in ("hmi", "houtman_maks", "efficiency"):
+
         def hmi_score(log: "BehaviorLog") -> float:
             result = compute_houtman_maks_index(log)
             return result.fraction
@@ -159,6 +161,7 @@ def _get_metric_function(metric: str) -> Callable[["BehaviorLog"], float]:
         return hmi_score
 
     elif metric_lower in ("swaps", "swaps_index"):
+
         def swaps_score(log: "BehaviorLog") -> float:
             result = compute_swaps_index(log)
             return result.swaps_normalized
@@ -167,8 +170,7 @@ def _get_metric_function(metric: str) -> Callable[["BehaviorLog"], float]:
 
     else:
         raise ValueError(
-            f"Unknown metric: {metric}. "
-            "Use 'aei', 'mpi', 'hmi', or 'swaps'."
+            f"Unknown metric: {metric}. Use 'aei', 'mpi', 'hmi', or 'swaps'."
         )
 
 
@@ -294,7 +296,9 @@ def compute_predictive_success(
                     # Does model predict training bundle would be chosen?
                     if utility_values is not None:
                         # Utility model: predict based on utility values
-                        predicted = utility_values[train_idx] <= utility_values[test_idx]
+                        predicted = (
+                            utility_values[train_idx] <= utility_values[test_idx]
+                        )
                     else:
                         # GARP model: predict based on revealed preference
                         # If test bundle revealed preferred, prediction is "not chosen"
@@ -311,9 +315,15 @@ def compute_predictive_success(
             # For GARP: check if actual choice is consistent with training data
             if model.lower() in ("garp", "warp"):
                 # Create combined log to check consistency
-                combined_P = np.vstack([train_log.cost_vectors, test_prices.reshape(1, -1)])
-                combined_Q = np.vstack([train_log.action_vectors, test_quantities.reshape(1, -1)])
-                combined_log = BehaviorLog(cost_vectors=combined_P, action_vectors=combined_Q)
+                combined_P = np.vstack(
+                    [train_log.cost_vectors, test_prices.reshape(1, -1)]
+                )
+                combined_Q = np.vstack(
+                    [train_log.action_vectors, test_quantities.reshape(1, -1)]
+                )
+                combined_log = BehaviorLog(
+                    cost_vectors=combined_P, action_vectors=combined_Q
+                )
 
                 result = check_garp(combined_log)
                 hit = result.is_consistent

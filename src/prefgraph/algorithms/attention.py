@@ -41,7 +41,6 @@ from prefgraph.core.result import (
 from prefgraph.core.exceptions import (
     ComputationalLimitError,
     StatisticalError,
-    DataValidationError,
 )
 
 if TYPE_CHECKING:
@@ -92,6 +91,7 @@ def test_attention_rationality(
 
     # First check standard SARP consistency
     from prefgraph.algorithms.abstract_choice import validate_menu_sarp
+
     sarp_result = validate_menu_sarp(log)
 
     if sarp_result.is_consistent:
@@ -130,8 +130,7 @@ def test_attention_rationality(
 
     # Inattention rate
     inattention_obs = [
-        t for t in range(n_obs)
-        if len(consideration_sets[t]) < len(log.menus[t])
+        t for t in range(n_obs) if len(consideration_sets[t]) < len(log.menus[t])
     ]
     inattention_rate = len(inattention_obs) / n_obs if n_obs > 0 else 0.0
 
@@ -1000,7 +999,7 @@ def _check_ram_feasibility_lp(
     b_ub = np.array(b_ub)
 
     try:
-        result = linprog(c, A_ub=A_ub, b_ub=b_ub, bounds=bounds, method='highs')
+        result = linprog(c, A_ub=A_ub, b_ub=b_ub, bounds=bounds, method="highs")
         return result.success
     except Exception as e:
         from prefgraph.core.exceptions import SolverError
@@ -1256,9 +1255,11 @@ def test_attention_overload(
                     consistent_count += 1
                 else:
                     # Check if this observation participates in violations
-                    is_violated = any(
-                        t in cycle for cycle in sarp_result.violations
-                    ) if hasattr(sarp_result, 'violations') else False
+                    is_violated = (
+                        any(t in cycle for cycle in sarp_result.violations)
+                        if hasattr(sarp_result, "violations")
+                        else False
+                    )
                     if not is_violated:
                         consistent_count += 1
             menu_size_quality[size] = consistent_count / len(obs_indices)
@@ -1469,6 +1470,7 @@ def test_status_quo_bias(
             z_stat = (actual_rate - expected_rate) / se
             # One-sided p-value (testing for positive bias)
             from scipy import stats
+
             try:
                 p_value = 1 - stats.norm.cdf(z_stat)
             except Exception as e:

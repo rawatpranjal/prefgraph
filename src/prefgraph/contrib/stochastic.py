@@ -84,9 +84,7 @@ def fit_random_utility_model(
         utilities, parameters = _fit_logit_model(log, max_iterations)
 
     # Compute predicted choice probabilities
-    choice_probabilities = _compute_choice_probabilities(
-        log, utilities, model_type
-    )
+    choice_probabilities = _compute_choice_probabilities(log, utilities, model_type)
 
     # Compute log-likelihood
     log_likelihood = _compute_log_likelihood(log, choice_probabilities)
@@ -466,9 +464,7 @@ def fit_from_deterministic(
     from prefgraph.core.session import StochasticChoiceLog
 
     # Convert to stochastic format
-    stochastic_log = StochasticChoiceLog.from_repeated_choices(
-        log.menus, log.choices
-    )
+    stochastic_log = StochasticChoiceLog.from_repeated_choices(log.menus, log.choices)
 
     return fit_random_utility_model(stochastic_log, model_type)
 
@@ -482,6 +478,7 @@ fit_rum = fit_random_utility_model
 
 check_iia = check_independence_irrelevant_alternatives
 """Legacy alias: use check_independence_irrelevant_alternatives instead."""
+
 
 def test_regularity(
     log: "StochasticChoiceLog",
@@ -545,14 +542,16 @@ def test_regularity(
 
                     if p_subset < p_superset - tolerance:
                         magnitude = p_superset - p_subset
-                        violations.append(RegularityViolation(
-                            item=item,
-                            subset_menu_idx=m1,
-                            superset_menu_idx=m2,
-                            prob_in_subset=p_subset,
-                            prob_in_superset=p_superset,
-                            magnitude=magnitude,
-                        ))
+                        violations.append(
+                            RegularityViolation(
+                                item=item,
+                                subset_menu_idx=m1,
+                                superset_menu_idx=m2,
+                                prob_in_subset=p_subset,
+                                prob_in_superset=p_superset,
+                                magnitude=magnitude,
+                            )
+                        )
 
     # Find worst violation
     worst_violation = None
@@ -715,7 +714,7 @@ def _test_rum_exact(
     c = np.zeros(n_orderings)
 
     try:
-        result = linprog(c, A_eq=A_eq, b_eq=b_eq, bounds=bounds, method='highs')
+        result = linprog(c, A_eq=A_eq, b_eq=b_eq, bounds=bounds, method="highs")
 
         if result.success:
             # Extract non-zero probabilities
@@ -816,19 +815,23 @@ def _compute_rum_distance(
     c[n_orderings:] = 1.0
 
     # Bounds
-    bounds = [(0.0, 1.0) for _ in range(n_orderings)] + [(0.0, None) for _ in range(2 * n_slack)]
+    bounds = [(0.0, 1.0) for _ in range(n_orderings)] + [
+        (0.0, None) for _ in range(2 * n_slack)
+    ]
 
     try:
-        result = linprog(c, A_eq=A_eq, b_eq=b_eq, bounds=bounds, method='highs')
+        result = linprog(c, A_eq=A_eq, b_eq=b_eq, bounds=bounds, method="highs")
         if result.success:
             distance = float(result.fun)
             # Identify which constraints are violated
             violations = []
-            slack_plus = result.x[n_orderings:n_orderings + n_slack]
-            slack_minus = result.x[n_orderings + n_slack:]
+            slack_plus = result.x[n_orderings : n_orderings + n_slack]
+            slack_minus = result.x[n_orderings + n_slack :]
             for i in range(n_slack):
                 if slack_plus[i] > tolerance or slack_minus[i] > tolerance:
-                    violations.append(f"Constraint {i}: slack+ = {slack_plus[i]:.4f}, slack- = {slack_minus[i]:.4f}")
+                    violations.append(
+                        f"Constraint {i}: slack+ = {slack_plus[i]:.4f}, slack- = {slack_minus[i]:.4f}"
+                    )
             return distance, violations
         else:
             raise SolverError(
@@ -910,7 +913,7 @@ def _test_rum_column_generation(
         bounds = [(0.0, 1.0) for _ in range(n_orderings)]
 
         try:
-            result = linprog(c, A_eq=A_eq, b_eq=b_eq, bounds=bounds, method='highs')
+            result = linprog(c, A_eq=A_eq, b_eq=b_eq, bounds=bounds, method="highs")
         except Exception as e:
             raise SolverError(
                 f"LP solver failed during RUM column generation at iteration {iteration + 1}. "

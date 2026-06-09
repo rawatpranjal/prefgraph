@@ -23,11 +23,21 @@ from prefgraph.core.session import BehaviorLog
 # --- Constants ---
 
 CATEGORIES = [
-    "Mobiles & Tablets", "Entertainment", "Computing", "Appliances",
-    "Men's Fashion", "Women's Fashion", "Kids & Baby",
-    "Superstore", "Beauty & Grooming", "Health & Sports",
-    "Home & Living", "Books", "School & Education",
-    "Soghaat", "Others",
+    "Mobiles & Tablets",
+    "Entertainment",
+    "Computing",
+    "Appliances",
+    "Men's Fashion",
+    "Women's Fashion",
+    "Kids & Baby",
+    "Superstore",
+    "Beauty & Grooming",
+    "Health & Sports",
+    "Home & Living",
+    "Books",
+    "School & Education",
+    "Soghaat",
+    "Others",
 ]
 
 CSV_FILENAME = "Pakistan Largest Ecommerce Dataset.csv"
@@ -47,10 +57,12 @@ def _find_data_dir(data_dir: str | Path | None) -> Path:
     if env:
         candidates.append(Path(env) / "pakistan")
 
-    candidates.extend([
-        Path.home() / ".prefgraph" / "data" / "pakistan",
-        Path(__file__).resolve().parents[3] / "pakistan" / "data",
-    ])
+    candidates.extend(
+        [
+            Path.home() / ".prefgraph" / "data" / "pakistan",
+            Path(__file__).resolve().parents[3] / "pakistan" / "data",
+        ]
+    )
 
     for d in candidates:
         if d.is_dir() and (d / CSV_FILENAME).exists():
@@ -107,9 +119,17 @@ def load_pakistan(
     df = pd.read_csv(
         data_path / CSV_FILENAME,
         usecols=[
-            "item_id", "status", "created_at", "price", "qty_ordered",
-            "grand_total", "category_name_1", "payment_method",
-            "Customer ID", "Year", "Month",
+            "item_id",
+            "status",
+            "created_at",
+            "price",
+            "qty_ordered",
+            "grand_total",
+            "category_name_1",
+            "payment_method",
+            "Customer ID",
+            "Year",
+            "Month",
         ],
         dtype={"Customer ID": str},
     )
@@ -129,10 +149,7 @@ def load_pakistan(
     df = df[(df["price"] > 0) & (df["qty_ordered"] > 0)]
 
     # Price sanity bounds
-    df = df[
-        (df["price"] >= MIN_UNIT_PRICE) &
-        (df["price"] <= MAX_UNIT_PRICE)
-    ]
+    df = df[(df["price"] >= MIN_UNIT_PRICE) & (df["price"] <= MAX_UNIT_PRICE)]
 
     # Non-null category
     df = df.dropna(subset=["category_name_1"])
@@ -154,13 +171,16 @@ def load_pakistan(
     df["Month"] = pd.to_numeric(df["Month"], errors="coerce")
     df = df.dropna(subset=["Year", "Month"])
     df["year_month"] = (
-        df["Year"].astype(int).astype(str) + "-" +
-        df["Month"].astype(int).astype(str).str.zfill(2)
+        df["Year"].astype(int).astype(str)
+        + "-"
+        + df["Month"].astype(int).astype(str).str.zfill(2)
     )
 
     # --- Build price oracle: median price per category per month ---
     price_oracle = df.pivot_table(
-        values="price", index="year_month", columns="category",
+        values="price",
+        index="year_month",
+        columns="category",
         aggfunc="median",
     ).reindex(columns=categories)
     price_oracle = price_oracle.ffill().bfill()
@@ -169,9 +189,7 @@ def load_pakistan(
     global_medians = df.groupby("category")["price"].median()
     for cat in categories:
         if cat in global_medians.index:
-            price_oracle[cat] = price_oracle[cat].fillna(
-                global_medians[cat]
-            )
+            price_oracle[cat] = price_oracle[cat].fillna(global_medians[cat])
     price_oracle = price_oracle.fillna(1.0)  # absolute fallback
 
     all_months = sorted(price_oracle.index)
@@ -179,11 +197,16 @@ def load_pakistan(
     price_grid = price_oracle.values  # (n_months, n_categories)
 
     # --- Aggregate quantity per customer-month-category ---
-    agg = df.groupby(
-        ["Customer ID", "year_month", "category"], observed=True,
-    ).agg(
-        total_qty=("qty_ordered", "sum"),
-    ).reset_index()
+    agg = (
+        df.groupby(
+            ["Customer ID", "year_month", "category"],
+            observed=True,
+        )
+        .agg(
+            total_qty=("qty_ordered", "sum"),
+        )
+        .reset_index()
+    )
 
     # --- Build per-customer BehaviorLogs ---
     logs: dict[str, BehaviorLog] = {}
@@ -199,15 +222,19 @@ def load_pakistan(
         cust_data = grouped.get_group(cust_id)
 
         # Pivot to quantity matrix (months x categories)
-        qty_pivot = cust_data.pivot_table(
-            values="total_qty", index="year_month", columns="category",
-            aggfunc="sum",
-        ).reindex(columns=categories).fillna(0)
+        qty_pivot = (
+            cust_data.pivot_table(
+                values="total_qty",
+                index="year_month",
+                columns="category",
+                aggfunc="sum",
+            )
+            .reindex(columns=categories)
+            .fillna(0)
+        )
 
         # Only keep months with at least one purchase
-        active_months = (
-            qty_pivot[qty_pivot.sum(axis=1) > 0].index.tolist()
-        )
+        active_months = qty_pivot[qty_pivot.sum(axis=1) > 0].index.tolist()
         if len(active_months) < min_months:
             continue
 

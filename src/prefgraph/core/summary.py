@@ -128,7 +128,7 @@ class BehavioralSummary(ResultDisplayMixin):
         sep = "-" * W
 
         def _indicator(passed: bool) -> str:
-            return f"[+] {'PASS' if passed else 'FAIL'}" if passed else f"[-] FAIL"
+            return f"[+] {'PASS' if passed else 'FAIL'}" if passed else "[-] FAIL"
 
         def _time_str(ms: float) -> str:
             return f"{ms:.2f} ms" if ms < 1000 else f"{ms / 1000:.2f} s"
@@ -142,24 +142,44 @@ class BehavioralSummary(ResultDisplayMixin):
 
         uid = self.user_id or "N/A"
         garp_str = "[+] PASS" if self.garp_result.is_consistent else "[-] FAIL"
-        warp_str = "[+] PASS" if (self.warp_result and self.warp_result.is_consistent) else (
-            "[-] FAIL" if self.warp_result else "N/A"
+        warp_str = (
+            "[+] PASS"
+            if (self.warp_result and self.warp_result.is_consistent)
+            else ("[-] FAIL" if self.warp_result else "N/A")
         )
-        sarp_str = "[+] PASS" if (self.sarp_result and self.sarp_result.is_consistent) else (
-            "[-] FAIL" if self.sarp_result else "N/A"
+        sarp_str = (
+            "[+] PASS"
+            if (self.sarp_result and self.sarp_result.is_consistent)
+            else ("[-] FAIL" if self.sarp_result else "N/A")
         )
 
         lines.append(m._format_two_column_row("User ID", uid, "GARP", garp_str, W))
-        lines.append(m._format_two_column_row("No. Observations", self.num_observations, "WARP", warp_str, W))
-        lines.append(m._format_two_column_row("No. Goods", self.num_goods, "SARP", sarp_str, W))
-        lines.append(m._format_two_column_row(
-            "Method", "Floyd-Warshall",
-            "AEI", f"{self.aei_result.efficiency_index:.4f}", W,
-        ))
-        lines.append(m._format_two_column_row(
-            "Computation Time", _time_str(self.computation_time_ms),
-            "MPI", f"{self.mpi_result.mpi_value:.4f}", W,
-        ))
+        lines.append(
+            m._format_two_column_row(
+                "No. Observations", self.num_observations, "WARP", warp_str, W
+            )
+        )
+        lines.append(
+            m._format_two_column_row("No. Goods", self.num_goods, "SARP", sarp_str, W)
+        )
+        lines.append(
+            m._format_two_column_row(
+                "Method",
+                "Floyd-Warshall",
+                "AEI",
+                f"{self.aei_result.efficiency_index:.4f}",
+                W,
+            )
+        )
+        lines.append(
+            m._format_two_column_row(
+                "Computation Time",
+                _time_str(self.computation_time_ms),
+                "MPI",
+                f"{self.mpi_result.mpi_value:.4f}",
+                W,
+            )
+        )
         lines.append("=" * W)
 
         # === Input Data Statistics ===
@@ -167,11 +187,16 @@ class BehavioralSummary(ResultDisplayMixin):
             lines.append("")
             lines.append("Input Data:")
             lines.append(sep)
-            lines.append(m._format_descriptive_table({
-                "Prices": self.price_stats,
-                "Quantities": self.quantity_stats,
-                "Expenditure": self.expenditure_stats,
-            }, W))
+            lines.append(
+                m._format_descriptive_table(
+                    {
+                        "Prices": self.price_stats,
+                        "Quantities": self.quantity_stats,
+                        "Expenditure": self.expenditure_stats,
+                    },
+                    W,
+                )
+            )
 
         # === Revealed Preference Graph ===
         if self.r_density is not None:
@@ -181,12 +206,28 @@ class BehavioralSummary(ResultDisplayMixin):
             lines.append("Revealed Preference Graph:")
             lines.append(sep)
             r_edges = int(round(self.r_density * T2))
-            p_edges = int(round(self.p_density * T2)) if self.p_density is not None else 0
-            rs_edges = int(round(self.r_star_density * T2)) if self.r_star_density is not None else 0
-            lines.append(m._format_matrix_density("R  (direct, p'x >= p'y)", r_edges, T2, W))
-            lines.append(m._format_matrix_density("P  (strict, p'x >  p'y)", p_edges, T2, W))
-            lines.append(m._format_matrix_density("R* (transitive closure)", rs_edges, T2, W))
-            vp = self.violation_pair_count if self.violation_pair_count is not None else 0
+            p_edges = (
+                int(round(self.p_density * T2)) if self.p_density is not None else 0
+            )
+            rs_edges = (
+                int(round(self.r_star_density * T2))
+                if self.r_star_density is not None
+                else 0
+            )
+            lines.append(
+                m._format_matrix_density("R  (direct, p'x >= p'y)", r_edges, T2, W)
+            )
+            lines.append(
+                m._format_matrix_density("P  (strict, p'x >  p'y)", p_edges, T2, W)
+            )
+            lines.append(
+                m._format_matrix_density("R* (transitive closure)", rs_edges, T2, W)
+            )
+            vp = (
+                self.violation_pair_count
+                if self.violation_pair_count is not None
+                else 0
+            )
             lines.append(m._format_metric("Violation pairs (R* & P')", vp, W - 4))
 
         # === Consistency Tests ===
@@ -194,18 +235,48 @@ class BehavioralSummary(ResultDisplayMixin):
         lines.append("Consistency Tests:")
         lines.append(sep)
         n_garp = self.garp_result.num_violations
-        garp_detail = f" ({n_garp} cycle{'s' if n_garp != 1 else ''})" if n_garp > 0 else ""
-        lines.append(m._format_metric("GARP", f"{_indicator(self.garp_result.is_consistent)}{garp_detail}", W - 4))
+        garp_detail = (
+            f" ({n_garp} cycle{'s' if n_garp != 1 else ''})" if n_garp > 0 else ""
+        )
+        lines.append(
+            m._format_metric(
+                "GARP",
+                f"{_indicator(self.garp_result.is_consistent)}{garp_detail}",
+                W - 4,
+            )
+        )
 
         if self.warp_result is not None:
             n_warp = self.warp_result.num_violations
-            warp_detail = f" ({n_warp} violation{'s' if n_warp != 1 else ''})" if n_warp > 0 else ""
-            lines.append(m._format_metric("WARP", f"{_indicator(self.warp_result.is_consistent)}{warp_detail}", W - 4))
+            warp_detail = (
+                f" ({n_warp} violation{'s' if n_warp != 1 else ''})"
+                if n_warp > 0
+                else ""
+            )
+            lines.append(
+                m._format_metric(
+                    "WARP",
+                    f"{_indicator(self.warp_result.is_consistent)}{warp_detail}",
+                    W - 4,
+                )
+            )
 
         if self.sarp_result is not None:
-            n_sarp = self.sarp_result.num_violations if hasattr(self.sarp_result, 'num_violations') else 0
-            sarp_detail = f" ({n_sarp} cycle{'s' if n_sarp != 1 else ''})" if n_sarp > 0 else ""
-            lines.append(m._format_metric("SARP", f"{_indicator(self.sarp_result.is_consistent)}{sarp_detail}", W - 4))
+            n_sarp = (
+                self.sarp_result.num_violations
+                if hasattr(self.sarp_result, "num_violations")
+                else 0
+            )
+            sarp_detail = (
+                f" ({n_sarp} cycle{'s' if n_sarp != 1 else ''})" if n_sarp > 0 else ""
+            )
+            lines.append(
+                m._format_metric(
+                    "SARP",
+                    f"{_indicator(self.sarp_result.is_consistent)}{sarp_detail}",
+                    W - 4,
+                )
+            )
 
         # === Goodness-of-Fit ===
         lines.append("")
@@ -214,8 +285,14 @@ class BehavioralSummary(ResultDisplayMixin):
 
         # AEI with sub-metrics
         aei = self.aei_result
-        lines.append(m._format_metric("Afriat Efficiency (AEI)", aei.efficiency_index, W - 4))
-        lines.append(m._format_metric("  Binary search iterations", aei.binary_search_iterations, W - 4))
+        lines.append(
+            m._format_metric("Afriat Efficiency (AEI)", aei.efficiency_index, W - 4)
+        )
+        lines.append(
+            m._format_metric(
+                "  Binary search iterations", aei.binary_search_iterations, W - 4
+            )
+        )
         waste = (1.0 - aei.efficiency_index) * 100
         lines.append(m._format_metric("  Budget waste", f"{waste:.2f}%", W - 4))
 
@@ -224,19 +301,30 @@ class BehavioralSummary(ResultDisplayMixin):
         lines.append(m._format_metric("Money Pump Index (MPI)", mpi.mpi_value, W - 4))
         lines.append(m._format_metric("  Violation cycles", mpi.num_cycles, W - 4))
         if mpi.worst_cycle is not None:
-            worst_cost = max(c for _, c in mpi.cycle_costs) if mpi.cycle_costs else mpi.mpi_value
-            lines.append(m._format_metric("  Worst cycle cost", f"{worst_cost:.4f}", W - 4))
-        lines.append(m._format_metric("  Total expenditure", f"${mpi.total_expenditure:,.2f}", W - 4))
+            worst_cost = (
+                max(c for _, c in mpi.cycle_costs) if mpi.cycle_costs else mpi.mpi_value
+            )
+            lines.append(
+                m._format_metric("  Worst cycle cost", f"{worst_cost:.4f}", W - 4)
+            )
+        lines.append(
+            m._format_metric(
+                "  Total expenditure", f"${mpi.total_expenditure:,.2f}", W - 4
+            )
+        )
 
         # Houtman-Maks
         if self.houtman_maks_result is not None:
             hm = self.houtman_maks_result
             hm_score = 1.0 - hm.fraction
             lines.append(m._format_metric("Houtman-Maks Index", hm_score, W - 4))
-            lines.append(m._format_metric(
-                "  Observations removed",
-                f"{hm.num_removed} / {self.num_observations}", W - 4,
-            ))
+            lines.append(
+                m._format_metric(
+                    "  Observations removed",
+                    f"{hm.num_removed} / {self.num_observations}",
+                    W - 4,
+                )
+            )
 
         # === Power Analysis ===
         if self.optimal_efficiency_result is not None:
@@ -246,20 +334,36 @@ class BehavioralSummary(ResultDisplayMixin):
             pr = self.optimal_efficiency_result
             bronars = 1.0 - pr.relative_areas[-1] if pr.relative_areas else 0.0
             lines.append(m._format_metric("Bronars Power", bronars, W - 4))
-            lines.append(m._format_metric("Optimal Efficiency (e*)", pr.optimal_efficiency, W - 4))
-            lines.append(m._format_metric("Optimal Measure (m*)", pr.optimal_measure, W - 4))
+            lines.append(
+                m._format_metric(
+                    "Optimal Efficiency (e*)", pr.optimal_efficiency, W - 4
+                )
+            )
+            lines.append(
+                m._format_metric("Optimal Measure (m*)", pr.optimal_measure, W - 4)
+            )
 
         # === Interpretation ===
         lines.append("")
         lines.append("Interpretation:")
         lines.append(sep)
-        lines.append(f"  {m._format_interpretation(aei.efficiency_index, 'efficiency')}")
+        lines.append(
+            f"  {m._format_interpretation(aei.efficiency_index, 'efficiency')}"
+        )
         if not self.garp_result.is_consistent:
-            lines.append(f"  ~{waste:.1f}% budget waste; an arbitrager could extract ~{mpi.mpi_value * 100:.1f}%.")
+            lines.append(
+                f"  ~{waste:.1f}% budget waste; an arbitrager could extract ~{mpi.mpi_value * 100:.1f}%."
+            )
             if self.houtman_maks_result is not None:
                 hm = self.houtman_maks_result
-                pct = 100.0 * hm.num_removed / self.num_observations if self.num_observations > 0 else 0
-                lines.append(f"  {hm.num_removed} observations ({pct:.1f}%) must be removed for full consistency.")
+                pct = (
+                    100.0 * hm.num_removed / self.num_observations
+                    if self.num_observations > 0
+                    else 0
+                )
+                lines.append(
+                    f"  {hm.num_removed} observations ({pct:.1f}%) must be removed for full consistency."
+                )
 
         # === Footer ===
         lines.append("=" * W)
@@ -318,7 +422,11 @@ class BehavioralSummary(ResultDisplayMixin):
             result["houtman_maks"] = self.houtman_maks_result.to_dict()
         if self.optimal_efficiency_result is not None:
             power_result = self.optimal_efficiency_result
-            bronars_power = 1.0 - power_result.relative_areas[-1] if power_result.relative_areas else 0.0
+            bronars_power = (
+                1.0 - power_result.relative_areas[-1]
+                if power_result.relative_areas
+                else 0.0
+            )
             result["power_analysis"] = {
                 "bronars_power": bronars_power,
                 "optimal_efficiency": power_result.optimal_efficiency,
@@ -380,7 +488,10 @@ class BehavioralSummary(ResultDisplayMixin):
         from prefgraph.algorithms.garp import validate_consistency, check_warp
         from prefgraph.algorithms.differentiable import validate_sarp
         from prefgraph.algorithms.aei import compute_integrity_score
-        from prefgraph.algorithms.mpi import compute_confusion_metric, compute_houtman_maks_index
+        from prefgraph.algorithms.mpi import (
+            compute_confusion_metric,
+            compute_houtman_maks_index,
+        )
 
         # Run required tests
         garp_result = validate_consistency(log)
@@ -411,6 +522,7 @@ class BehavioralSummary(ResultDisplayMixin):
         optimal_efficiency_result = None
         if include_power:
             from prefgraph.algorithms.power_analysis import compute_optimal_efficiency
+
             optimal_efficiency_result = compute_optimal_efficiency(
                 log, n_simulations=200, n_efficiency_levels=10
             )
@@ -522,18 +634,33 @@ class MenuChoiceSummary(ResultDisplayMixin):
         lines.append(" " * ((W - 19) // 2) + "MENU CHOICE SUMMARY")
         lines.append("=" * W)
 
-        lines.append(m._format_two_column_row(
-            "No. Observations", self.num_observations,
-            "WARP", _ind(self.warp_result.is_consistent), W,
-        ))
-        lines.append(m._format_two_column_row(
-            "No. Alternatives", self.num_alternatives,
-            "SARP", _ind(self.sarp_result.is_consistent), W,
-        ))
-        lines.append(m._format_two_column_row(
-            "Computation Time", _time_str(self.computation_time_ms),
-            "Congruence", _ind(self.congruence_result.is_rationalizable), W,
-        ))
+        lines.append(
+            m._format_two_column_row(
+                "No. Observations",
+                self.num_observations,
+                "WARP",
+                _ind(self.warp_result.is_consistent),
+                W,
+            )
+        )
+        lines.append(
+            m._format_two_column_row(
+                "No. Alternatives",
+                self.num_alternatives,
+                "SARP",
+                _ind(self.sarp_result.is_consistent),
+                W,
+            )
+        )
+        lines.append(
+            m._format_two_column_row(
+                "Computation Time",
+                _time_str(self.computation_time_ms),
+                "Congruence",
+                _ind(self.congruence_result.is_rationalizable),
+                W,
+            )
+        )
         lines.append("=" * W)
 
         # Input Data
@@ -541,38 +668,76 @@ class MenuChoiceSummary(ResultDisplayMixin):
             lines.append("")
             lines.append("Input Data:")
             lines.append(sep)
-            lines.append(m._format_descriptive_table({"Menu Size": self.menu_size_stats}, W))
+            lines.append(
+                m._format_descriptive_table({"Menu Size": self.menu_size_stats}, W)
+            )
             lines.append("")
             if self.choice_diversity is not None:
                 items_chosen = int(round(self.choice_diversity * self.num_alternatives))
-                lines.append(m._format_metric(
-                    "Unique Items Chosen", f"{items_chosen} / {self.num_alternatives}", W - 4,
-                ))
-                lines.append(m._format_metric("Choice Diversity", self.choice_diversity, W - 4))
+                lines.append(
+                    m._format_metric(
+                        "Unique Items Chosen",
+                        f"{items_chosen} / {self.num_alternatives}",
+                        W - 4,
+                    )
+                )
+                lines.append(
+                    m._format_metric("Choice Diversity", self.choice_diversity, W - 4)
+                )
 
         # Consistency Tests with violation counts
         lines.append("")
         lines.append("Consistency Tests:")
         lines.append(sep)
-        n_warp = self.warp_result.num_violations if hasattr(self.warp_result, 'num_violations') else 0
-        warp_detail = f" ({n_warp} violation{'s' if n_warp != 1 else ''})" if n_warp > 0 else ""
-        lines.append(m._format_metric("WARP", f"{_ind(self.warp_result.is_consistent)}{warp_detail}", W - 4))
+        n_warp = (
+            self.warp_result.num_violations
+            if hasattr(self.warp_result, "num_violations")
+            else 0
+        )
+        warp_detail = (
+            f" ({n_warp} violation{'s' if n_warp != 1 else ''})" if n_warp > 0 else ""
+        )
+        lines.append(
+            m._format_metric(
+                "WARP", f"{_ind(self.warp_result.is_consistent)}{warp_detail}", W - 4
+            )
+        )
 
-        n_sarp = self.sarp_result.num_violations if hasattr(self.sarp_result, 'num_violations') else 0
-        sarp_detail = f" ({n_sarp} cycle{'s' if n_sarp != 1 else ''})" if n_sarp > 0 else ""
-        lines.append(m._format_metric("SARP", f"{_ind(self.sarp_result.is_consistent)}{sarp_detail}", W - 4))
-        lines.append(m._format_metric("Congruence", _ind(self.congruence_result.is_rationalizable), W - 4))
+        n_sarp = (
+            self.sarp_result.num_violations
+            if hasattr(self.sarp_result, "num_violations")
+            else 0
+        )
+        sarp_detail = (
+            f" ({n_sarp} cycle{'s' if n_sarp != 1 else ''})" if n_sarp > 0 else ""
+        )
+        lines.append(
+            m._format_metric(
+                "SARP", f"{_ind(self.sarp_result.is_consistent)}{sarp_detail}", W - 4
+            )
+        )
+        lines.append(
+            m._format_metric(
+                "Congruence", _ind(self.congruence_result.is_rationalizable), W - 4
+            )
+        )
 
         # Goodness-of-Fit
         lines.append("")
         lines.append("Goodness-of-Fit:")
         lines.append(sep)
-        lines.append(m._format_metric("Houtman-Maks Efficiency", self.efficiency_score, W - 4))
-        if hasattr(self.efficiency_result, 'removed_observations'):
+        lines.append(
+            m._format_metric("Houtman-Maks Efficiency", self.efficiency_score, W - 4)
+        )
+        if hasattr(self.efficiency_result, "removed_observations"):
             n_removed = len(self.efficiency_result.removed_observations)
-            lines.append(m._format_metric(
-                "  Observations removed", f"{n_removed} / {self.num_observations}", W - 4,
-            ))
+            lines.append(
+                m._format_metric(
+                    "  Observations removed",
+                    f"{n_removed} / {self.num_observations}",
+                    W - 4,
+                )
+            )
 
         # Preference Order
         if self.utility_result is not None and self.utility_result.success:
@@ -580,24 +745,36 @@ class MenuChoiceSummary(ResultDisplayMixin):
             lines.append("Recovered Preference Order:")
             lines.append(sep)
             if self.utility_result.preference_order:
-                order_str = " > ".join(str(i) for i in self.utility_result.preference_order[:10])
+                order_str = " > ".join(
+                    str(i) for i in self.utility_result.preference_order[:10]
+                )
                 lines.append(f"  {order_str}")
                 if len(self.utility_result.preference_order) > 10:
-                    lines.append(f"  ... ({len(self.utility_result.preference_order) - 10} more)")
+                    lines.append(
+                        f"  ... ({len(self.utility_result.preference_order) - 10} more)"
+                    )
 
         # Interpretation
         lines.append("")
         lines.append("Interpretation:")
         lines.append(sep)
         if self.congruence_result.is_rationalizable:
-            lines.append("  Choices are fully rationalizable by a complete preference ordering.")
+            lines.append(
+                "  Choices are fully rationalizable by a complete preference ordering."
+            )
         elif self.sarp_result.is_consistent:
-            lines.append("  Choices satisfy SARP but not Congruence (violates maximality).")
+            lines.append(
+                "  Choices satisfy SARP but not Congruence (violates maximality)."
+            )
         elif self.warp_result.is_consistent:
-            lines.append("  Choices satisfy WARP but not SARP (long preference cycles exist).")
+            lines.append(
+                "  Choices satisfy WARP but not SARP (long preference cycles exist)."
+            )
         else:
             lines.append("  Choices violate WARP - direct preference reversals found.")
-        lines.append(f"  Efficiency: {self.efficiency_score * 100:.1f}% of observations are consistent.")
+        lines.append(
+            f"  Efficiency: {self.efficiency_score * 100:.1f}% of observations are consistent."
+        )
 
         lines.append("=" * W)
 
@@ -649,8 +826,10 @@ class MenuChoiceSummary(ResultDisplayMixin):
         # Input data stats
         menu_sizes = np.array([len(m) for m in log.menus], dtype=np.float64)
         menu_size_stats = {
-            "mean": float(np.mean(menu_sizes)), "std": float(np.std(menu_sizes)),
-            "min": float(np.min(menu_sizes)), "max": float(np.max(menu_sizes)),
+            "mean": float(np.mean(menu_sizes)),
+            "std": float(np.std(menu_sizes)),
+            "min": float(np.min(menu_sizes)),
+            "max": float(np.max(menu_sizes)),
         }
         items_chosen = len(set(log.choices))
         n_alt = log.num_alternatives if log.num_alternatives > 0 else 1
@@ -745,22 +924,42 @@ class RiskChoiceSummary(ResultDisplayMixin):
         lines.append("=" * W)
 
         cat = self.risk_category.replace("_", " ").title()
-        lines.append(m._format_two_column_row(
-            "No. Observations", self.num_observations,
-            "Risk Category", cat, W,
-        ))
-        lines.append(m._format_two_column_row(
-            "Risk-Seeking Choices", self.num_risk_seeking_choices,
-            "Risk Aversion (rho)", f"{self.risk_aversion_coefficient:.4f}", W,
-        ))
-        lines.append(m._format_two_column_row(
-            "Risk-Averse Choices", self.num_risk_averse_choices,
-            "Consistency", f"{self.consistency_score:.4f}", W,
-        ))
-        lines.append(m._format_two_column_row(
-            "Computation Time", _time_str(self.computation_time_ms),
-            "EU Axioms", _ind(self.eu_axioms_satisfied), W,
-        ))
+        lines.append(
+            m._format_two_column_row(
+                "No. Observations",
+                self.num_observations,
+                "Risk Category",
+                cat,
+                W,
+            )
+        )
+        lines.append(
+            m._format_two_column_row(
+                "Risk-Seeking Choices",
+                self.num_risk_seeking_choices,
+                "Risk Aversion (rho)",
+                f"{self.risk_aversion_coefficient:.4f}",
+                W,
+            )
+        )
+        lines.append(
+            m._format_two_column_row(
+                "Risk-Averse Choices",
+                self.num_risk_averse_choices,
+                "Consistency",
+                f"{self.consistency_score:.4f}",
+                W,
+            )
+        )
+        lines.append(
+            m._format_two_column_row(
+                "Computation Time",
+                _time_str(self.computation_time_ms),
+                "EU Axioms",
+                _ind(self.eu_axioms_satisfied),
+                W,
+            )
+        )
         lines.append("=" * W)
 
         # Input Data
@@ -768,10 +967,15 @@ class RiskChoiceSummary(ResultDisplayMixin):
             lines.append("")
             lines.append("Input Data:")
             lines.append(sep)
-            lines.append(m._format_descriptive_table({
-                "Safe Values": self.safe_value_stats,
-                "Risky EV": self.risky_ev_stats,
-            }, W))
+            lines.append(
+                m._format_descriptive_table(
+                    {
+                        "Safe Values": self.safe_value_stats,
+                        "Risky EV": self.risky_ev_stats,
+                    },
+                    W,
+                )
+            )
 
         # Choice Distribution
         lines.append("")
@@ -781,19 +985,43 @@ class RiskChoiceSummary(ResultDisplayMixin):
         if total > 0:
             seek_pct = 100.0 * self.num_risk_seeking_choices / total
             averse_pct = 100.0 * self.num_risk_averse_choices / total
-            neutral = total - self.num_risk_seeking_choices - self.num_risk_averse_choices
+            neutral = (
+                total - self.num_risk_seeking_choices - self.num_risk_averse_choices
+            )
             neutral_pct = 100.0 * neutral / total
-            lines.append(m._format_metric("Risk-Seeking", f"{self.num_risk_seeking_choices} ({seek_pct:.1f}%)", W - 4))
-            lines.append(m._format_metric("Risk-Averse", f"{self.num_risk_averse_choices} ({averse_pct:.1f}%)", W - 4))
-            lines.append(m._format_metric("Risk-Neutral", f"{neutral} ({neutral_pct:.1f}%)", W - 4))
+            lines.append(
+                m._format_metric(
+                    "Risk-Seeking",
+                    f"{self.num_risk_seeking_choices} ({seek_pct:.1f}%)",
+                    W - 4,
+                )
+            )
+            lines.append(
+                m._format_metric(
+                    "Risk-Averse",
+                    f"{self.num_risk_averse_choices} ({averse_pct:.1f}%)",
+                    W - 4,
+                )
+            )
+            lines.append(
+                m._format_metric(
+                    "Risk-Neutral", f"{neutral} ({neutral_pct:.1f}%)", W - 4
+                )
+            )
 
         # Risk Profile
         lines.append("")
         lines.append("Risk Profile (CRRA):")
         lines.append(sep)
         lines.append(m._format_metric("Risk Category", cat, W - 4))
-        lines.append(m._format_metric("Risk Aversion (rho)", self.risk_aversion_coefficient, W - 4))
-        lines.append(m._format_metric("Consistency Score", self.consistency_score, W - 4))
+        lines.append(
+            m._format_metric(
+                "Risk Aversion (rho)", self.risk_aversion_coefficient, W - 4
+            )
+        )
+        lines.append(
+            m._format_metric("Consistency Score", self.consistency_score, W - 4)
+        )
 
         # EU Axioms
         lines.append("")
@@ -802,7 +1030,9 @@ class RiskChoiceSummary(ResultDisplayMixin):
         eu_str = "[+] SATISFIED" if self.eu_axioms_satisfied else "[-] VIOLATED"
         lines.append(m._format_metric("Status", eu_str, W - 4))
         if not self.eu_axioms_satisfied and self.eu_violations:
-            lines.append(m._format_metric("  Num. violations", len(self.eu_violations), W - 4))
+            lines.append(
+                m._format_metric("  Num. violations", len(self.eu_violations), W - 4)
+            )
             for v in self.eu_violations[:3]:
                 lines.append(f"    - {v}")
             if len(self.eu_violations) > 3:
@@ -815,12 +1045,16 @@ class RiskChoiceSummary(ResultDisplayMixin):
         if self.risk_category == "risk_averse":
             lines.append("  Decision-maker prefers certainty over gambles.")
             rho = max(self.risk_aversion_coefficient, 0.1)
-            lines.append(f"  Certainty premium: ~{(1 - 0.5 ** (1 / rho)) * 100:.0f}% less for certainty.")
+            lines.append(
+                f"  Certainty premium: ~{(1 - 0.5 ** (1 / rho)) * 100:.0f}% less for certainty."
+            )
         elif self.risk_category == "risk_seeking":
             lines.append("  Decision-maker prefers gambles over certainty.")
         else:
             lines.append("  Decision-maker approximately maximizes expected value.")
-        lines.append(f"  Model fit: {self.consistency_score * 100:.1f}% of choices consistent with CRRA profile.")
+        lines.append(
+            f"  Model fit: {self.consistency_score * 100:.1f}% of choices consistent with CRRA profile."
+        )
 
         lines.append("=" * W)
         return "\n".join(lines)
@@ -879,8 +1113,12 @@ class RiskChoiceSummary(ResultDisplayMixin):
 
         # Input data stats
         def _arr_stats(arr: np.ndarray) -> dict[str, float]:
-            return {"mean": float(np.mean(arr)), "std": float(np.std(arr)),
-                    "min": float(np.min(arr)), "max": float(np.max(arr))}
+            return {
+                "mean": float(np.mean(arr)),
+                "std": float(np.std(arr)),
+                "min": float(np.min(arr)),
+                "max": float(np.max(arr)),
+            }
 
         safe_value_stats = _arr_stats(log.safe_values)
         risky_evs = np.sum(log.risky_outcomes * log.risky_probabilities, axis=1)
@@ -978,22 +1216,42 @@ class StochasticChoiceSummary(ResultDisplayMixin):
         lines.append(" " * ((W - 25) // 2) + "STOCHASTIC CHOICE SUMMARY")
         lines.append("=" * W)
 
-        lines.append(m._format_two_column_row(
-            "No. Menus", self.num_menus,
-            "RUM Consistency", _ind(self.is_rum_consistent), W,
-        ))
-        lines.append(m._format_two_column_row(
-            "Unique Items", self.num_items,
-            "Regularity", _ind(self.satisfies_regularity), W,
-        ))
-        lines.append(m._format_two_column_row(
-            "Total Observations", self.total_observations,
-            "IIA", _ind(self.iia_satisfied), W,
-        ))
-        lines.append(m._format_two_column_row(
-            "Computation Time", _time_str(self.computation_time_ms),
-            "Transitivity", self.strongest_transitivity, W,
-        ))
+        lines.append(
+            m._format_two_column_row(
+                "No. Menus",
+                self.num_menus,
+                "RUM Consistency",
+                _ind(self.is_rum_consistent),
+                W,
+            )
+        )
+        lines.append(
+            m._format_two_column_row(
+                "Unique Items",
+                self.num_items,
+                "Regularity",
+                _ind(self.satisfies_regularity),
+                W,
+            )
+        )
+        lines.append(
+            m._format_two_column_row(
+                "Total Observations",
+                self.total_observations,
+                "IIA",
+                _ind(self.iia_satisfied),
+                W,
+            )
+        )
+        lines.append(
+            m._format_two_column_row(
+                "Computation Time",
+                _time_str(self.computation_time_ms),
+                "Transitivity",
+                self.strongest_transitivity,
+                W,
+            )
+        )
         lines.append("=" * W)
 
         # Input Data
@@ -1001,23 +1259,39 @@ class StochasticChoiceSummary(ResultDisplayMixin):
             lines.append("")
             lines.append("Input Data:")
             lines.append(sep)
-            stats_rows: dict[str, dict[str, float]] = {"Menu Size": self.menu_size_stats}
+            stats_rows: dict[str, dict[str, float]] = {
+                "Menu Size": self.menu_size_stats
+            }
             if self.obs_per_menu_stats is not None:
                 stats_rows["Obs per Menu"] = self.obs_per_menu_stats
             lines.append(m._format_descriptive_table(stats_rows, W))
             if self.mean_choice_entropy is not None:
                 lines.append("")
-                lines.append(m._format_metric("Mean Choice Entropy", f"{self.mean_choice_entropy:.4f}", W - 4))
+                lines.append(
+                    m._format_metric(
+                        "Mean Choice Entropy", f"{self.mean_choice_entropy:.4f}", W - 4
+                    )
+                )
 
         # Consistency Tests
         lines.append("")
         lines.append("Consistency Tests:")
         lines.append(sep)
-        lines.append(m._format_metric("RUM Consistency", _ind(self.is_rum_consistent), W - 4))
-        if hasattr(self.rum_result, 'distance_to_rum'):
-            lines.append(m._format_metric("  Distance to nearest RUM", self.rum_result.distance_to_rum, W - 4))
-        lines.append(m._format_metric("Regularity (Luce)", _ind(self.satisfies_regularity), W - 4))
-        if hasattr(self.regularity_result, 'num_violations'):
+        lines.append(
+            m._format_metric("RUM Consistency", _ind(self.is_rum_consistent), W - 4)
+        )
+        if hasattr(self.rum_result, "distance_to_rum"):
+            lines.append(
+                m._format_metric(
+                    "  Distance to nearest RUM", self.rum_result.distance_to_rum, W - 4
+                )
+            )
+        lines.append(
+            m._format_metric(
+                "Regularity (Luce)", _ind(self.satisfies_regularity), W - 4
+            )
+        )
+        if hasattr(self.regularity_result, "num_violations"):
             n_reg = self.regularity_result.num_violations
             if n_reg > 0:
                 lines.append(m._format_metric("  Regularity violations", n_reg, W - 4))
@@ -1031,16 +1305,24 @@ class StochasticChoiceSummary(ResultDisplayMixin):
         lines.append(m._format_metric("Weak (WST)", _ind(tr.satisfies_wst), W - 4))
         lines.append(m._format_metric("Moderate (MST)", _ind(tr.satisfies_mst), W - 4))
         lines.append(m._format_metric("Strong (SST)", _ind(tr.satisfies_sst), W - 4))
-        if hasattr(tr, 'num_triples_tested') and tr.num_triples_tested:
-            lines.append(m._format_metric("  Triples tested", tr.num_triples_tested, W - 4))
+        if hasattr(tr, "num_triples_tested") and tr.num_triples_tested:
+            lines.append(
+                m._format_metric("  Triples tested", tr.num_triples_tested, W - 4)
+            )
 
         # Model Fit
         if self.model_result is not None:
             lines.append("")
             lines.append("Model Fit:")
             lines.append(sep)
-            lines.append(m._format_metric("Model Type", self.model_result.model_type, W - 4))
-            lines.append(m._format_metric("Log-Likelihood", self.model_result.log_likelihood, W - 4))
+            lines.append(
+                m._format_metric("Model Type", self.model_result.model_type, W - 4)
+            )
+            lines.append(
+                m._format_metric(
+                    "Log-Likelihood", self.model_result.log_likelihood, W - 4
+                )
+            )
             lines.append(m._format_metric("AIC", self.model_result.aic, W - 4))
             lines.append(m._format_metric("BIC", self.model_result.bic, W - 4))
 
@@ -1050,11 +1332,15 @@ class StochasticChoiceSummary(ResultDisplayMixin):
         lines.append(sep)
         if self.is_rum_consistent:
             lines.append("  Choices can be rationalized by a random utility model.")
-            lines.append(f"  Strongest transitivity satisfied: {self.strongest_transitivity}")
+            lines.append(
+                f"  Strongest transitivity satisfied: {self.strongest_transitivity}"
+            )
         else:
             lines.append("  Choices cannot be explained by any random utility model.")
-            if hasattr(self.rum_result, 'distance_to_rum'):
-                lines.append(f"  Distance to nearest RUM: {self.rum_result.distance_to_rum:.4f}")
+            if hasattr(self.rum_result, "distance_to_rum"):
+                lines.append(
+                    f"  Distance to nearest RUM: {self.rum_result.distance_to_rum:.4f}"
+                )
 
         lines.append("=" * W)
         return "\n".join(lines)
@@ -1132,13 +1418,21 @@ class StochasticChoiceSummary(ResultDisplayMixin):
         # Input data stats
         menu_sizes = np.array([len(m) for m in log.menus], dtype=np.float64)
         menu_size_stats = {
-            "mean": float(np.mean(menu_sizes)), "std": float(np.std(menu_sizes)),
-            "min": float(np.min(menu_sizes)), "max": float(np.max(menu_sizes)),
+            "mean": float(np.mean(menu_sizes)),
+            "std": float(np.std(menu_sizes)),
+            "min": float(np.min(menu_sizes)),
+            "max": float(np.max(menu_sizes)),
         }
-        obs_arr = np.array(obs_per_menu, dtype=np.float64) if obs_per_menu else np.array([0.0])
+        obs_arr = (
+            np.array(obs_per_menu, dtype=np.float64)
+            if obs_per_menu
+            else np.array([0.0])
+        )
         obs_per_menu_stats = {
-            "mean": float(np.mean(obs_arr)), "std": float(np.std(obs_arr)),
-            "min": float(np.min(obs_arr)), "max": float(np.max(obs_arr)),
+            "mean": float(np.mean(obs_arr)),
+            "std": float(np.std(obs_arr)),
+            "min": float(np.min(obs_arr)),
+            "max": float(np.max(obs_arr)),
         }
         entropies = []
         for freq in log.choice_frequencies:
@@ -1241,22 +1535,42 @@ class ProductionSummary(ResultDisplayMixin):
         lines.append(" " * ((W - 18) // 2) + "PRODUCTION SUMMARY")
         lines.append("=" * W)
 
-        lines.append(m._format_two_column_row(
-            "No. Observations", self.num_observations,
-            "Profit Max", _ind(self.is_profit_maximizing), W,
-        ))
-        lines.append(m._format_two_column_row(
-            "No. Inputs", self.num_inputs,
-            "Cost Min", _ind(self.is_cost_minimizing), W,
-        ))
-        lines.append(m._format_two_column_row(
-            "No. Outputs", self.num_outputs,
-            "Returns to Scale", self.returns_to_scale.title(), W,
-        ))
-        lines.append(m._format_two_column_row(
-            "Computation Time", _time_str(self.computation_time_ms),
-            "Profit Efficiency", f"{self.profit_efficiency:.4f}", W,
-        ))
+        lines.append(
+            m._format_two_column_row(
+                "No. Observations",
+                self.num_observations,
+                "Profit Max",
+                _ind(self.is_profit_maximizing),
+                W,
+            )
+        )
+        lines.append(
+            m._format_two_column_row(
+                "No. Inputs",
+                self.num_inputs,
+                "Cost Min",
+                _ind(self.is_cost_minimizing),
+                W,
+            )
+        )
+        lines.append(
+            m._format_two_column_row(
+                "No. Outputs",
+                self.num_outputs,
+                "Returns to Scale",
+                self.returns_to_scale.title(),
+                W,
+            )
+        )
+        lines.append(
+            m._format_two_column_row(
+                "Computation Time",
+                _time_str(self.computation_time_ms),
+                "Profit Efficiency",
+                f"{self.profit_efficiency:.4f}",
+                W,
+            )
+        )
         lines.append("=" * W)
 
         # Input Data
@@ -1280,20 +1594,34 @@ class ProductionSummary(ResultDisplayMixin):
         pm_detail = ""
         if not self.is_profit_maximizing:
             pm_detail = f" ({self.profit_max_result.num_violations} violations)"
-        lines.append(m._format_metric("Profit Maximization", f"{_ind(self.is_profit_maximizing)}{pm_detail}", W - 4))
-        lines.append(m._format_metric("Cost Minimization", _ind(self.is_cost_minimizing), W - 4))
-        lines.append(m._format_metric("Returns to Scale", self.returns_to_scale.title(), W - 4))
+        lines.append(
+            m._format_metric(
+                "Profit Maximization",
+                f"{_ind(self.is_profit_maximizing)}{pm_detail}",
+                W - 4,
+            )
+        )
+        lines.append(
+            m._format_metric("Cost Minimization", _ind(self.is_cost_minimizing), W - 4)
+        )
+        lines.append(
+            m._format_metric("Returns to Scale", self.returns_to_scale.title(), W - 4)
+        )
 
         # Efficiency Metrics
         lines.append("")
         lines.append("Efficiency Metrics:")
         lines.append(sep)
-        lines.append(m._format_metric("Technical Efficiency", self.technical_efficiency, W - 4))
+        lines.append(
+            m._format_metric("Technical Efficiency", self.technical_efficiency, W - 4)
+        )
         lines.append(m._format_metric("Cost Efficiency", self.cost_efficiency, W - 4))
-        lines.append(m._format_metric("Profit Efficiency", self.profit_efficiency, W - 4))
+        lines.append(
+            m._format_metric("Profit Efficiency", self.profit_efficiency, W - 4)
+        )
 
         # Per-input efficiency
-        if hasattr(self.profit_max_result, 'input_efficiency_vector'):
+        if hasattr(self.profit_max_result, "input_efficiency_vector"):
             input_eff = self.profit_max_result.input_efficiency_vector
             if len(input_eff) > 0:
                 lines.append("")
@@ -1311,9 +1639,13 @@ class ProductionSummary(ResultDisplayMixin):
         if self.is_profit_maximizing:
             lines.append("  Firm behavior is consistent with profit maximization.")
         else:
-            lines.append(f"  Found {self.profit_max_result.num_violations} profit maximization violation(s).")
+            lines.append(
+                f"  Found {self.profit_max_result.num_violations} profit maximization violation(s)."
+            )
         lines.append(f"  Returns to scale: {self.returns_to_scale}.")
-        lines.append(f"  Operating at {self.profit_efficiency * 100:.1f}% of optimal profit efficiency.")
+        lines.append(
+            f"  Operating at {self.profit_efficiency * 100:.1f}% of optimal profit efficiency."
+        )
 
         lines.append("=" * W)
         return "\n".join(lines)
@@ -1372,8 +1704,12 @@ class ProductionSummary(ResultDisplayMixin):
 
         # Input data stats
         def _arr_stats(arr: np.ndarray) -> dict[str, float]:
-            return {"mean": float(np.mean(arr)), "std": float(np.std(arr)),
-                    "min": float(np.min(arr)), "max": float(np.max(arr))}
+            return {
+                "mean": float(np.mean(arr)),
+                "std": float(np.std(arr)),
+                "min": float(np.min(arr)),
+                "max": float(np.max(arr)),
+            }
 
         input_price_stats = _arr_stats(log.input_prices)
         output_price_stats = _arr_stats(log.output_prices)
@@ -1473,12 +1809,16 @@ class PanelSummary(ResultDisplayMixin):
         # WARP/SARP pass rates (if computed)
         warp_pass_rate = None
         if summaries[0].warp_result is not None:
-            warp_pass = sum(1 for s in summaries if s.warp_result and s.warp_result.is_consistent)
+            warp_pass = sum(
+                1 for s in summaries if s.warp_result and s.warp_result.is_consistent
+            )
             warp_pass_rate = warp_pass / n
 
         sarp_pass_rate = None
         if summaries[0].sarp_result is not None:
-            sarp_pass = sum(1 for s in summaries if s.sarp_result and s.sarp_result.is_consistent)
+            sarp_pass = sum(
+                1 for s in summaries if s.sarp_result and s.sarp_result.is_consistent
+            )
             sarp_pass_rate = sarp_pass / n
 
         # Houtman-Maks distribution
@@ -1514,20 +1854,24 @@ class PanelSummary(ResultDisplayMixin):
             period_stats = []
             for period in periods_set:
                 period_keys = [k for k, (_, p) in period_map.items() if p == period]
-                period_summaries = [user_summaries[k] for k in period_keys if k in user_summaries]
+                period_summaries = [
+                    user_summaries[k] for k in period_keys if k in user_summaries
+                ]
                 if not period_summaries:
                     continue
                 n_p = len(period_summaries)
                 p_garp = sum(1 for s in period_summaries if s.is_consistent)
                 p_aei = np.mean([s.efficiency_index for s in period_summaries])
                 p_mpi = np.mean([s.mpi_value for s in period_summaries])
-                period_stats.append({
-                    "period": period,
-                    "users": n_p,
-                    "garp_pass_rate": p_garp / n_p,
-                    "mean_aei": float(p_aei),
-                    "mean_mpi": float(p_mpi),
-                })
+                period_stats.append(
+                    {
+                        "period": period,
+                        "users": n_p,
+                        "garp_pass_rate": p_garp / n_p,
+                        "mean_aei": float(p_aei),
+                        "mean_mpi": float(p_mpi),
+                    }
+                )
 
         return cls(
             user_summaries=user_summaries,
@@ -1564,27 +1908,52 @@ class PanelSummary(ResultDisplayMixin):
         lines.append("=" * W)
 
         n_garp = int(round(self.garp_pass_rate * self.num_users))
-        lines.append(m._format_two_column_row(
-            "No. Users", f"{self.num_users:,}",
-            "GARP Pass Rate", f"{self.garp_pass_rate * 100:.1f}%", W,
-        ))
-        lines.append(m._format_two_column_row(
-            "Total Observations", f"{self.total_observations:,}",
-            "Mean AEI", f"{self.aei_distribution['mean']:.4f}", W,
-        ))
-        lines.append(m._format_two_column_row(
-            "No. Goods", self.num_goods,
-            "Mean MPI", f"{self.mpi_distribution['mean']:.4f}", W,
-        ))
-        lines.append(m._format_two_column_row(
-            "Obs/User (mean)", f"{self.obs_per_user_stats['mean']:.1f}",
-            "Computation Time", _time_str(self.computation_time_ms), W,
-        ))
+        lines.append(
+            m._format_two_column_row(
+                "No. Users",
+                f"{self.num_users:,}",
+                "GARP Pass Rate",
+                f"{self.garp_pass_rate * 100:.1f}%",
+                W,
+            )
+        )
+        lines.append(
+            m._format_two_column_row(
+                "Total Observations",
+                f"{self.total_observations:,}",
+                "Mean AEI",
+                f"{self.aei_distribution['mean']:.4f}",
+                W,
+            )
+        )
+        lines.append(
+            m._format_two_column_row(
+                "No. Goods",
+                self.num_goods,
+                "Mean MPI",
+                f"{self.mpi_distribution['mean']:.4f}",
+                W,
+            )
+        )
+        lines.append(
+            m._format_two_column_row(
+                "Obs/User (mean)",
+                f"{self.obs_per_user_stats['mean']:.1f}",
+                "Computation Time",
+                _time_str(self.computation_time_ms),
+                W,
+            )
+        )
         if self.num_periods > 0:
-            lines.append(m._format_two_column_row(
-                "No. Periods", self.num_periods,
-                "Entries (Users x Periods)", len(self.user_summaries), W,
-            ))
+            lines.append(
+                m._format_two_column_row(
+                    "No. Periods",
+                    self.num_periods,
+                    "Entries (Users x Periods)",
+                    len(self.user_summaries),
+                    W,
+                )
+            )
         lines.append("=" * W)
 
         # Consistency Rates
@@ -1592,19 +1961,31 @@ class PanelSummary(ResultDisplayMixin):
         lines.append("Consistency Rates:")
         lines.append(sep)
         n_garp = int(round(self.garp_pass_rate * self.num_users))
-        lines.append(m._format_metric(
-            "GARP", f"{self.garp_pass_rate * 100:.1f}% ({n_garp:,} / {self.num_users:,})", W - 4,
-        ))
+        lines.append(
+            m._format_metric(
+                "GARP",
+                f"{self.garp_pass_rate * 100:.1f}% ({n_garp:,} / {self.num_users:,})",
+                W - 4,
+            )
+        )
         if self.warp_pass_rate is not None:
             n_warp = int(round(self.warp_pass_rate * self.num_users))
-            lines.append(m._format_metric(
-                "WARP", f"{self.warp_pass_rate * 100:.1f}% ({n_warp:,} / {self.num_users:,})", W - 4,
-            ))
+            lines.append(
+                m._format_metric(
+                    "WARP",
+                    f"{self.warp_pass_rate * 100:.1f}% ({n_warp:,} / {self.num_users:,})",
+                    W - 4,
+                )
+            )
         if self.sarp_pass_rate is not None:
             n_sarp = int(round(self.sarp_pass_rate * self.num_users))
-            lines.append(m._format_metric(
-                "SARP", f"{self.sarp_pass_rate * 100:.1f}% ({n_sarp:,} / {self.num_users:,})", W - 4,
-            ))
+            lines.append(
+                m._format_metric(
+                    "SARP",
+                    f"{self.sarp_pass_rate * 100:.1f}% ({n_sarp:,} / {self.num_users:,})",
+                    W - 4,
+                )
+            )
 
         # Efficiency Distribution
         lines.append("")
@@ -1624,9 +2005,13 @@ class PanelSummary(ResultDisplayMixin):
             lines.append("Most Inconsistent (Bottom 5):")
             lines.append(sep)
             for i, (uid, aei, mpi, t) in enumerate(self.top_inconsistent):
-                lines.append(m._format_metric(
-                    f"  {i+1}. {uid}", f"AEI={aei:.3f}, MPI={mpi:.3f}, T={t}", W - 4,
-                ))
+                lines.append(
+                    m._format_metric(
+                        f"  {i + 1}. {uid}",
+                        f"AEI={aei:.3f}, MPI={mpi:.3f}, T={t}",
+                        W - 4,
+                    )
+                )
 
         # Temporal Breakdown (if period data available)
         if self.period_stats:

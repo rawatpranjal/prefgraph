@@ -41,10 +41,12 @@ def _find_data_dir(data_dir: str | Path | None) -> Path:
     if env:
         candidates.append(Path(env) / "taobao")
 
-    candidates.extend([
-        Path.home() / ".prefgraph" / "data" / "taobao",
-        Path(__file__).resolve().parents[3] / "datasets" / "taobao" / "data",
-    ])
+    candidates.extend(
+        [
+            Path.home() / ".prefgraph" / "data" / "taobao",
+            Path(__file__).resolve().parents[3] / "datasets" / "taobao" / "data",
+        ]
+    )
 
     for d in candidates:
         if d.is_dir() and (d / "UserBehavior.csv").exists():
@@ -158,9 +160,8 @@ def load_taobao(
 
         # Get purchased item per valid session
         valid_buys = buys_df[buys_df["session_id"].isin(valid_sessions)]
-        session_purchases = (
-            valid_buys.groupby("session_id")
-            .agg(user_id=("user_id", "first"), item_id=("item_id", "first"))
+        session_purchases = valid_buys.groupby("session_id").agg(
+            user_id=("user_id", "first"), item_id=("item_id", "first")
         )
 
         # Build menus from views in valid sessions (pre-buy not enforced here)
@@ -177,11 +178,13 @@ def load_taobao(
             menu = menu | {choice}
             if len(menu) < min_menu_size or len(menu) > max_menu_size:
                 continue
-            records.append({
-                "user_id": row["user_id"],
-                "menu": frozenset(menu),
-                "choice": choice,
-            })
+            records.append(
+                {
+                    "user_id": row["user_id"],
+                    "menu": frozenset(menu),
+                    "choice": choice,
+                }
+            )
 
     elif mode == "buy_window":
         if not window_seconds:
@@ -216,11 +219,13 @@ def load_taobao(
                     continue
                 if not (min_menu_size <= len(pre_items) <= max_menu_size):
                     continue
-                records.append({
-                    "user_id": int(uid),
-                    "menu": frozenset(pre_items),
-                    "choice": choice,
-                })
+                records.append(
+                    {
+                        "user_id": int(uid),
+                        "menu": frozenset(pre_items),
+                        "choice": choice,
+                    }
+                )
         print(f"  Buy-anchored windows built: {len(records):,}")
 
     else:
@@ -228,11 +233,14 @@ def load_taobao(
 
     # Group by user and filter by min_sessions
     from collections import defaultdict
+
     user_sessions = defaultdict(list)
     for r in records:
         user_sessions[r["user_id"]].append(r)
 
-    qualifying = {uid: sess for uid, sess in user_sessions.items() if len(sess) >= min_sessions}
+    qualifying = {
+        uid: sess for uid, sess in user_sessions.items() if len(sess) >= min_sessions
+    }
     # Sort by count desc for deterministic top-k
     qualifying = dict(sorted(qualifying.items(), key=lambda x: len(x[1]), reverse=True))
     if max_users is not None:

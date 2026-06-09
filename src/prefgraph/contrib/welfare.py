@@ -34,13 +34,11 @@ References:
 from __future__ import annotations
 
 import time
-import warnings
 from typing import TYPE_CHECKING, Callable
 
 import numpy as np
 from numpy.typing import NDArray
 from scipy.optimize import minimize, linprog
-from scipy.integrate import quad_vec
 
 from prefgraph.core.result import WelfareResult
 from prefgraph.core.exceptions import SolverError, OptimizationError
@@ -794,7 +792,9 @@ def analyze_welfare_change(
         cv = compute_cv_bounds(baseline_log, policy_log)
         ev = compute_ev_bounds(baseline_log, policy_log)
     else:
-        raise ValueError(f"Unknown method: {method}. Use 'exact', 'vartia', or 'bounds'.")
+        raise ValueError(
+            f"Unknown method: {method}. Use 'exact', 'vartia', or 'bounds'."
+        )
 
     # Determine welfare direction based on utility comparison
     if policy_utility > baseline_utility + tolerance:
@@ -866,7 +866,9 @@ def compute_compensating_variation(
     elif method == "bounds":
         return compute_cv_bounds(baseline_log, policy_log)
     else:
-        raise ValueError(f"Unknown method: {method}. Use 'exact', 'vartia', or 'bounds'.")
+        raise ValueError(
+            f"Unknown method: {method}. Use 'exact', 'vartia', or 'bounds'."
+        )
 
 
 def compute_equivalent_variation(
@@ -913,7 +915,9 @@ def compute_equivalent_variation(
     elif method == "bounds":
         return compute_ev_bounds(baseline_log, policy_log)
     else:
-        raise ValueError(f"Unknown method: {method}. Use 'exact', 'vartia', or 'bounds'.")
+        raise ValueError(
+            f"Unknown method: {method}. Use 'exact', 'vartia', or 'bounds'."
+        )
 
 
 def recover_cost_function(

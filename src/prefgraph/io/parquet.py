@@ -20,6 +20,7 @@ from numpy.typing import NDArray
 def _require_pyarrow() -> Any:
     try:
         import pyarrow
+
         return pyarrow
     except ImportError:
         raise ImportError(
@@ -108,8 +109,13 @@ class ParquetUserIterator:
             self.cost_col = cost_col or "price"
             self.action_col = action_col or "quantity"
             self.time_col = time_col or "time"
-            self._read_cols = [user_col, self.time_col, self.item_col,
-                               self.cost_col, self.action_col]
+            self._read_cols = [
+                user_col,
+                self.time_col,
+                self.item_col,
+                self.cost_col,
+                self.action_col,
+            ]
 
     def __iter__(self) -> Iterator[tuple[list[str], list[tuple[NDArray, NDArray]]]]:
         import pyarrow.parquet as pq
@@ -136,23 +142,23 @@ class ParquetUserIterator:
             # Compromise: finalize users when accumulator exceeds 2x chunk_size.
             if len(accum) >= self.chunk_size * 2:
                 # Finalize the oldest chunk_size users
-                to_finalize = accum_order[:self.chunk_size]
+                to_finalize = accum_order[: self.chunk_size]
                 for uid in to_finalize:
                     tup = self._finalize_user(uid, accum[uid])
                     if tup is not None:
                         ready_ids.append(uid)
                         ready_tuples.append(tup)
                     del accum[uid]
-                accum_order = accum_order[self.chunk_size:]
+                accum_order = accum_order[self.chunk_size :]
 
                 # Yield full chunks
                 while len(ready_ids) >= self.chunk_size:
                     yield (
-                        ready_ids[:self.chunk_size],
-                        ready_tuples[:self.chunk_size],
+                        ready_ids[: self.chunk_size],
+                        ready_tuples[: self.chunk_size],
                     )
-                    ready_ids = ready_ids[self.chunk_size:]
-                    ready_tuples = ready_tuples[self.chunk_size:]
+                    ready_ids = ready_ids[self.chunk_size :]
+                    ready_tuples = ready_tuples[self.chunk_size :]
 
         # Finalize remaining users in accumulator
         for uid in accum_order:
@@ -183,14 +189,15 @@ class ParquetUserIterator:
 
         if self.format == "wide":
             # Extract cost and action columns as numpy arrays
-            costs = np.column_stack([
-                table.column(c).to_numpy(zero_copy_only=False)
-                for c in self.cost_cols
-            ])  # (n_rows, K)
-            actions = np.column_stack([
-                table.column(c).to_numpy(zero_copy_only=False)
-                for c in self.action_cols
-            ])  # (n_rows, K)
+            costs = np.column_stack(
+                [table.column(c).to_numpy(zero_copy_only=False) for c in self.cost_cols]
+            )  # (n_rows, K)
+            actions = np.column_stack(
+                [
+                    table.column(c).to_numpy(zero_copy_only=False)
+                    for c in self.action_cols
+                ]
+            )  # (n_rows, K)
 
             for i, uid in enumerate(user_ids):
                 uid_str = str(uid)
@@ -208,7 +215,9 @@ class ParquetUserIterator:
                 uid_str = str(uid)
                 if uid_str not in accum:
                     accum_order.append(uid_str)
-                accum[uid_str].append((times[i], items[i], cost_vals[i], action_vals[i]))
+                accum[uid_str].append(
+                    (times[i], items[i], cost_vals[i], action_vals[i])
+                )
 
     def _finalize_user(
         self,

@@ -64,8 +64,9 @@ class ResultSummaryMixin:
         return f"  {label} {dots} {formatted_value}"
 
     @staticmethod
-    def _format_status(passed: bool, pass_text: str = "PASSED",
-                       fail_text: str = "FAILED") -> str:
+    def _format_status(
+        passed: bool, pass_text: str = "PASSED", fail_text: str = "FAILED"
+    ) -> str:
         """Format a pass/fail status indicator.
 
         Args:
@@ -190,14 +191,17 @@ class ResultSummaryMixin:
 
     @staticmethod
     def _format_two_column_row(
-        left_label: str, left_value: Any,
-        right_label: str, right_value: Any,
+        left_label: str,
+        left_value: Any,
+        right_label: str,
+        right_value: Any,
         width: int = 70,
     ) -> str:
         """Format a two-column label-value row (statsmodels-style header).
 
         Example: "User ID:          user_42    GARP:              [+] PASS"
         """
+
         def _fmt(v: Any) -> str:
             if isinstance(v, float):
                 return f"{v:.4f}" if abs(v) < 1000 else f"{v:,.2f}"
@@ -237,7 +241,10 @@ class ResultSummaryMixin:
 
     @staticmethod
     def _format_matrix_density(
-        name: str, matrix_sum: int, total: int, width: int = 70,
+        name: str,
+        matrix_sum: int,
+        total: int,
+        width: int = 70,
     ) -> str:
         """Format matrix density stats for a boolean matrix.
 

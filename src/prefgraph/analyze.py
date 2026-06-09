@@ -92,11 +92,15 @@ def _check_columns(
         if col_name is not None and col_name not in available:
             default_hint = (
                 f" (defaulting to '{col_name}' - set {param}= explicitly)"
-                if is_default else ""
+                if is_default
+                else ""
             )
             # Suggest close matches
-            close = [c for c in sorted(available)
-                     if col_name.lower() in c.lower() or c.lower() in col_name.lower()]
+            close = [
+                c
+                for c in sorted(available)
+                if col_name.lower() in c.lower() or c.lower() in col_name.lower()
+            ]
             suggestion = f" Similar: {close}." if close else ""
             raise ValueError(
                 f"Column '{col_name}'{default_hint} not found. "
@@ -204,6 +208,7 @@ def analyze(
         path = Path(df)
         if path.suffix == ".parquet" or path.is_dir():
             from prefgraph.engine import Engine
+
             engine = Engine(metrics=metrics or _DEFAULT_BUDGET_METRICS)
             result = engine.analyze_parquet(
                 path,
@@ -224,8 +229,7 @@ def analyze(
         import pandas as pd
     except ImportError:
         raise ImportError(
-            "pandas is required for analyze(). "
-            "Install with: pip install pandas"
+            "pandas is required for analyze(). Install with: pip install pandas"
         ) from None
 
     if not isinstance(df, pd.DataFrame):
@@ -234,7 +238,7 @@ def analyze(
             hint = " To convert a Series: pd.DataFrame(series)."
         elif isinstance(df, dict):
             hint = " To convert a dict: pd.DataFrame(your_dict)."
-        elif hasattr(df, 'shape'):  # numpy array
+        elif hasattr(df, "shape"):  # numpy array
             hint = " To convert a numpy array: pd.DataFrame(array, columns=[...])."
         raise TypeError(
             f"First argument must be a pandas DataFrame, got {type(df).__name__}.{hint}"
@@ -244,9 +248,7 @@ def analyze(
 
     # --- Validate output parameter ---
     if output not in ("dataframe", "objects"):
-        raise ValueError(
-            f"output must be 'dataframe' or 'objects', got '{output}'."
-        )
+        raise ValueError(f"output must be 'dataframe' or 'objects', got '{output}'.")
 
     # --- Resolve legacy aliases ---
     cost_col = cost_col or price_col
@@ -255,8 +257,12 @@ def analyze(
     action_cols = action_cols or qty_cols
 
     # --- Catch string-instead-of-list mistake ---
-    for param_name, param_val in [("cost_cols", cost_cols), ("action_cols", action_cols),
-                                   ("price_cols", price_cols), ("qty_cols", qty_cols)]:
+    for param_name, param_val in [
+        ("cost_cols", cost_cols),
+        ("action_cols", action_cols),
+        ("price_cols", price_cols),
+        ("qty_cols", qty_cols),
+    ]:
         if isinstance(param_val, str):
             raise TypeError(
                 f"{param_name} must be a list of column names, got a string '{param_val}'. "
@@ -279,31 +285,53 @@ def analyze(
     available = list(df.columns)
     if user_col not in available:
         # Try to suggest the closest match
-        close = [c for c in available if "user" in c.lower() or "id" in c.lower()
-                 or "customer" in c.lower() or "household" in c.lower()]
+        close = [
+            c
+            for c in available
+            if "user" in c.lower()
+            or "id" in c.lower()
+            or "customer" in c.lower()
+            or "household" in c.lower()
+        ]
         suggestion = f" Did you mean: {close}?" if close else ""
         raise ValueError(
             f"Column '{user_col}' not found in DataFrame. "
             f"Available columns: {available}.{suggestion}"
         )
-    _check_columns(df, fmt, user_col=user_col, item_col=item_col,
-                    cost_col=cost_col, action_col=action_col, time_col=time_col,
-                    cost_cols=cost_cols, action_cols=action_cols,
-                    menu_col=menu_col, choice_col=choice_col)
+    _check_columns(
+        df,
+        fmt,
+        user_col=user_col,
+        item_col=item_col,
+        cost_col=cost_col,
+        action_col=action_col,
+        time_col=time_col,
+        cost_cols=cost_cols,
+        action_cols=action_cols,
+        menu_col=menu_col,
+        choice_col=choice_col,
+    )
 
     # --- Dispatch by format ---
     if fmt == "wide":
         user_ids, results = _analyze_wide(
-            df, user_col=user_col,
-            cost_cols=cost_cols, action_cols=action_cols,
-            metrics=metrics, nan_policy=nan_policy,
+            df,
+            user_col=user_col,
+            cost_cols=cost_cols,
+            action_cols=action_cols,
+            metrics=metrics,
+            nan_policy=nan_policy,
         )
     elif fmt == "long":
         user_ids, results = _analyze_long(
-            df, user_col=user_col,
-            item_col=item_col, cost_col=cost_col,
-            action_col=action_col, time_col=time_col,
-            metrics=metrics, nan_policy=nan_policy,
+            df,
+            user_col=user_col,
+            item_col=item_col,
+            cost_col=cost_col,
+            action_col=action_col,
+            time_col=time_col,
+            metrics=metrics,
+            nan_policy=nan_policy,
         )
     else:  # menu
         if metrics is not None:
@@ -313,8 +341,10 @@ def analyze(
                 stacklevel=2,
             )
         user_ids, results = _analyze_menu(
-            df, user_col=user_col,
-            menu_col=menu_col, choice_col=choice_col,
+            df,
+            user_col=user_col,
+            menu_col=menu_col,
+            choice_col=choice_col,
         )
 
     # --- Return ---
@@ -322,6 +352,7 @@ def analyze(
         return list(zip(user_ids, results))
 
     from prefgraph.engine import results_to_dataframe
+
     return results_to_dataframe(results, user_ids=user_ids)
 
 
@@ -334,7 +365,9 @@ def _handle_nan(
     import numpy as np
 
     subset = df[data_cols]
-    has_problem = subset.isnull().any(axis=1) | subset.isin([np.inf, -np.inf]).any(axis=1)
+    has_problem = subset.isnull().any(axis=1) | subset.isin([np.inf, -np.inf]).any(
+        axis=1
+    )
 
     if not has_problem.any():
         return df
@@ -370,9 +403,13 @@ def _analyze_wide(
     from prefgraph.engine import Engine
 
     if cost_cols is None:
-        raise ValueError("Wide format requires cost_cols (list of column names for prices).")
+        raise ValueError(
+            "Wide format requires cost_cols (list of column names for prices)."
+        )
     if action_cols is None:
-        raise ValueError("Wide format requires action_cols (list of column names for quantities).")
+        raise ValueError(
+            "Wide format requires action_cols (list of column names for quantities)."
+        )
 
     df = _handle_nan(df, cost_cols + action_cols, nan_policy)
 
@@ -472,7 +509,7 @@ def _analyze_menu(
         panel = MenuChoicePanel.from_dataframe(
             df, user_col=user_col, menu_col=_menu, choice_col=_choice
         )
-    except TypeError as e:
+    except TypeError:
         raise TypeError(
             f"Menu choice data requires integer item indices. "
             f"If your items are strings, map them to integers first: "

@@ -24,7 +24,6 @@ References:
 from __future__ import annotations
 
 import time
-from typing import Callable
 
 import numpy as np
 from numpy.typing import NDArray
@@ -32,7 +31,12 @@ from scipy.optimize import linprog, minimize
 
 from prefgraph.core.session import ConsumerSession
 from prefgraph.core.result import SeparabilityResult
-from prefgraph.core.exceptions import DataValidationError, ValueRangeError, SolverError, OptimizationError
+from prefgraph.core.exceptions import (
+    DataValidationError,
+    ValueRangeError,
+    SolverError,
+    OptimizationError,
+)
 from prefgraph.algorithms.aei import compute_aei
 
 
@@ -321,7 +325,7 @@ def _solve_separability_sequential(
     lambdas = np.ones(T)
     U = np.zeros(T)
 
-    prev_obj = float('inf')
+    prev_obj = float("inf")
 
     for iteration in range(max_iterations):
         # Solve LP for U given current λ/μ ratios
@@ -356,7 +360,9 @@ def _solve_separability_sequential(
             mus = mus_new
 
     # Verify solution satisfies all constraints
-    is_valid = _verify_separability_solution(P_a, Q_a, P_b, Q_b, U, V, lambdas, mus, tolerance)
+    is_valid = _verify_separability_solution(
+        P_a, Q_a, P_b, Q_b, U, V, lambdas, mus, tolerance
+    )
 
     if is_valid:
         return True, U, V, lambdas, mus
@@ -540,16 +546,16 @@ def _solve_separability_nonlinear(
 
     def objective(x: NDArray[np.float64]) -> float:
         """Sum of Lagrange multipliers (minimization target)."""
-        lambdas = x[2*T:3*T]
-        mus = x[3*T:4*T]
+        lambdas = x[2 * T : 3 * T]
+        mus = x[3 * T : 4 * T]
         return np.sum(lambdas) + np.sum(mus)
 
     def constraint_violations(x: NDArray[np.float64]) -> float:
         """Total constraint violation (should be 0 if separable)."""
         U = x[:T]
-        V = x[T:2*T]
-        lambdas = x[2*T:3*T]
-        mus = x[3*T:4*T]
+        V = x[T : 2 * T]
+        lambdas = x[2 * T : 3 * T]
+        mus = x[3 * T : 4 * T]
 
         violations = 0.0
 
@@ -595,7 +601,12 @@ def _solve_separability_nonlinear(
     x0 = np.concatenate([U_init, V_init, lambda_init, mu_init])
 
     # Bounds: U, V >= 0, λ, μ > ε
-    bounds = [(0, None)] * T + [(0, None)] * T + [(epsilon, None)] * T + [(epsilon, None)] * T
+    bounds = (
+        [(0, None)] * T
+        + [(0, None)] * T
+        + [(epsilon, None)] * T
+        + [(epsilon, None)] * T
+    )
 
     # Constraint: violations = 0
     constraints = [{"type": "eq", "fun": constraint_violations}]
@@ -612,9 +623,9 @@ def _solve_separability_nonlinear(
 
         if result.success or constraint_violations(result.x) < tolerance:
             U = result.x[:T]
-            V = result.x[T:2*T]
-            lambdas = result.x[2*T:3*T]
-            mus = result.x[3*T:4*T]
+            V = result.x[T : 2 * T]
+            lambdas = result.x[2 * T : 3 * T]
+            mus = result.x[3 * T : 4 * T]
 
             # Verify solution
             is_valid = _verify_separability_solution(

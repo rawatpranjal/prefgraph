@@ -1,12 +1,9 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, asdict
+from dataclasses import dataclass
 from typing import Any
 
-import numpy as np
-from numpy.typing import NDArray
 
-from prefgraph.core.types import Cycle
 from prefgraph.core.mixins import ResultSummaryMixin
 from prefgraph.core.display import ResultDisplayMixin, ResultPlotMixin
 
@@ -211,7 +208,9 @@ class RelativeAreaResult(ResultDisplayMixin, ResultPlotMixin):
         lines.append(m._format_section("Metrics"))
         lines.append(m._format_metric("Relative Area (a)", f"{self.relative_area:.4f}"))
         lines.append(m._format_metric("Standard Error", f"{self.std_error:.4f}"))
-        lines.append(m._format_metric("95% CI", f"[{self.ci_lower:.4f}, {self.ci_upper:.4f}]"))
+        lines.append(
+            m._format_metric("95% CI", f"[{self.ci_lower:.4f}, {self.ci_upper:.4f}]")
+        )
         lines.append(m._format_metric("Bronars Power", f"{self.bronars_power:.4f}"))
         lines.append(m._format_metric("Simulations", self.n_simulations))
         lines.append(m._format_metric("Consistent Count", self.n_consistent))
@@ -321,7 +320,9 @@ class SmoothedHitRateResult(ResultDisplayMixin, ResultPlotMixin):
 
         # Metrics
         lines.append(m._format_section("Metrics"))
-        lines.append(m._format_metric("Smoothed Hit Rate (rd)", f"{self.smoothed_rate:.4f}"))
+        lines.append(
+            m._format_metric("Smoothed Hit Rate (rd)", f"{self.smoothed_rate:.4f}")
+        )
         lines.append(m._format_metric("Distance (d)", f"{self.distance:.4f}"))
         lines.append(m._format_metric("Max Distance", f"{self.max_distance:.4f}"))
         lines.append(m._format_metric("AEI", f"{self.aei:.4f}"))
@@ -355,7 +356,7 @@ class SmoothedHitRateResult(ResultDisplayMixin, ResultPlotMixin):
     def __repr__(self) -> str:
         """Compact string representation."""
         if self.is_consistent:
-            return f"SmoothedHitRateResult: [+] CONSISTENT (rd=1.0)"
+            return "SmoothedHitRateResult: [+] CONSISTENT (rd=1.0)"
         indicator = "[~]" if self.is_near_miss else "[-]"
         return f"SmoothedHitRateResult: {indicator} rd={self.smoothed_rate:.4f} (AEI={self.aei:.4f})"
 
@@ -439,8 +440,12 @@ class BayesianCredibilityResult(ResultDisplayMixin, ResultPlotMixin):
 
         # Likelihoods
         lines.append(m._format_section("Likelihoods"))
-        lines.append(m._format_metric("P(Pass | Rational)", f"{self.p_pass_given_rational:.4f}"))
-        lines.append(m._format_metric("P(Pass | Random)", f"{self.p_pass_given_random:.4f}"))
+        lines.append(
+            m._format_metric("P(Pass | Rational)", f"{self.p_pass_given_rational:.4f}")
+        )
+        lines.append(
+            m._format_metric("P(Pass | Random)", f"{self.p_pass_given_random:.4f}")
+        )
 
         # Interpretation
         lines.append(m._format_section("Interpretation"))
@@ -450,7 +455,9 @@ class BayesianCredibilityResult(ResultDisplayMixin, ResultPlotMixin):
             elif self.bayes_factor > 3:
                 lines.append("  Moderate evidence: data somewhat supports rationality.")
             else:
-                lines.append("  Weak evidence: passing GARP is not very informative here.")
+                lines.append(
+                    "  Weak evidence: passing GARP is not very informative here."
+                )
         else:
             lines.append("  Data violates GARP.")
             lines.append("  Under strict model, posterior = 0.")
@@ -561,9 +568,19 @@ class OptimalEfficiencyResult(ResultDisplayMixin, ResultPlotMixin):
 
         # Metrics
         lines.append(m._format_section("Optimal Values"))
-        lines.append(m._format_metric("Optimal Efficiency (e*)", f"{self.optimal_efficiency:.4f}"))
-        lines.append(m._format_metric("Optimal Measure (m*)", f"{self.optimal_measure:.4f}"))
-        lines.append(m._format_metric("Bronars Power at e*", f"{self.bronars_power_at_optimal:.4f}"))
+        lines.append(
+            m._format_metric(
+                "Optimal Efficiency (e*)", f"{self.optimal_efficiency:.4f}"
+            )
+        )
+        lines.append(
+            m._format_metric("Optimal Measure (m*)", f"{self.optimal_measure:.4f}")
+        )
+        lines.append(
+            m._format_metric(
+                "Bronars Power at e*", f"{self.bronars_power_at_optimal:.4f}"
+            )
+        )
 
         lines.append(m._format_section("Reference Values"))
         lines.append(m._format_metric("Afriat Efficiency Index", f"{self.aei:.4f}"))
@@ -585,7 +602,9 @@ class OptimalEfficiencyResult(ResultDisplayMixin, ResultPlotMixin):
         lines.append(f"  predictive success m={self.optimal_measure:.3f}.")
 
         if self.optimal_efficiency < self.aei - 0.05:
-            lines.append("  Note: e* < AEI suggests relaxing efficiency improves signal.")
+            lines.append(
+                "  Note: e* < AEI suggests relaxing efficiency improves signal."
+            )
         elif self.optimal_efficiency >= 0.99:
             lines.append("  Full efficiency (e=1) provides strongest signal.")
 

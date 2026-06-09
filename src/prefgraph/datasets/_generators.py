@@ -41,6 +41,7 @@ try:
         generate_random_production as _rust_gen_production,
         generate_random_intertemporal as _rust_gen_intertemporal,
     )
+
     _HAS_RUST_GEN = True
 except ImportError:
     _HAS_RUST_GEN = False
@@ -53,7 +54,9 @@ def _normalize_range(val: Union[int, tuple[int, int]]) -> tuple[int, int]:
     return (int(val), int(val))
 
 
-def _normalize_float_range(val: Union[float, tuple[float, float]]) -> tuple[float, float]:
+def _normalize_float_range(
+    val: Union[float, tuple[float, float]],
+) -> tuple[float, float]:
     """Convert float or (min, max) to a (min, max) tuple."""
     if isinstance(val, (list, tuple)):
         return (float(val[0]), float(val[1]))
@@ -99,18 +102,34 @@ def generate_random_budgets(
 
     if _HAS_RUST_GEN:
         return _rust_gen_budgets(
-            n_users, obs_min, obs_max, n_goods,
-            form_code, elasticity, rationality, noise_scale,
-            price_range[0], price_range[1],
-            budget_range[0], budget_range[1],
+            n_users,
+            obs_min,
+            obs_max,
+            n_goods,
+            form_code,
+            elasticity,
+            rationality,
+            noise_scale,
+            price_range[0],
+            price_range[1],
+            budget_range[0],
+            budget_range[1],
             seed,
         )
 
     # NumPy fallback
     return _fallback_gen_budgets(
-        n_users, obs_min, obs_max, n_goods,
-        functional_form, elasticity, rationality, noise_scale,
-        price_range, budget_range, seed,
+        n_users,
+        obs_min,
+        obs_max,
+        n_goods,
+        functional_form,
+        elasticity,
+        rationality,
+        noise_scale,
+        price_range,
+        budget_range,
+        seed,
     )
 
 
@@ -149,14 +168,30 @@ def generate_random_menus(
 
     if _HAS_RUST_GEN:
         return _rust_gen_menus(
-            n_users, obs_min, obs_max, n_items,
-            ms_min, ms_max, model_code, temperature, rationality, seed,
+            n_users,
+            obs_min,
+            obs_max,
+            n_items,
+            ms_min,
+            ms_max,
+            model_code,
+            temperature,
+            rationality,
+            seed,
         )
 
     # NumPy fallback
     return _fallback_gen_menus(
-        n_users, obs_min, obs_max, n_items,
-        ms_min, ms_max, choice_model, temperature, rationality, seed,
+        n_users,
+        obs_min,
+        obs_max,
+        n_items,
+        ms_min,
+        ms_max,
+        choice_model,
+        temperature,
+        rationality,
+        seed,
     )
 
 
@@ -193,14 +228,28 @@ def generate_random_production(
 
     if _HAS_RUST_GEN:
         return _rust_gen_production(
-            n_users, obs_min, obs_max, n_inputs, n_outputs,
-            form_code, rationality, noise_scale, seed,
+            n_users,
+            obs_min,
+            obs_max,
+            n_inputs,
+            n_outputs,
+            form_code,
+            rationality,
+            noise_scale,
+            seed,
         )
 
     # NumPy fallback
     return _fallback_gen_production(
-        n_users, obs_min, obs_max, n_inputs, n_outputs,
-        functional_form, rationality, noise_scale, seed,
+        n_users,
+        obs_min,
+        obs_max,
+        n_inputs,
+        n_outputs,
+        functional_form,
+        rationality,
+        noise_scale,
+        seed,
     )
 
 
@@ -233,14 +282,26 @@ def generate_random_intertemporal(
 
     if _HAS_RUST_GEN:
         return _rust_gen_intertemporal(
-            n_users, obs_min, obs_max, n_periods,
-            d_min, d_max, rationality, seed,
+            n_users,
+            obs_min,
+            obs_max,
+            n_periods,
+            d_min,
+            d_max,
+            rationality,
+            seed,
         )
 
     # NumPy fallback
     return _fallback_gen_intertemporal(
-        n_users, obs_min, obs_max, n_periods,
-        d_min, d_max, rationality, seed,
+        n_users,
+        obs_min,
+        obs_max,
+        n_periods,
+        d_min,
+        d_max,
+        rationality,
+        seed,
     )
 
 
@@ -250,9 +311,17 @@ def generate_random_intertemporal(
 
 
 def _fallback_gen_budgets(
-    n_users, obs_min, obs_max, n_goods,
-    functional_form, elasticity, rationality, noise_scale,
-    price_range, budget_range, seed,
+    n_users,
+    obs_min,
+    obs_max,
+    n_goods,
+    functional_form,
+    elasticity,
+    rationality,
+    noise_scale,
+    price_range,
+    budget_range,
+    seed,
 ):
     rng = np.random.default_rng(seed)
     results = []
@@ -288,8 +357,16 @@ def _fallback_gen_budgets(
 
 
 def _fallback_gen_menus(
-    n_users, obs_min, obs_max, n_items,
-    ms_min, ms_max, choice_model, temperature, rationality, seed,
+    n_users,
+    obs_min,
+    obs_max,
+    n_items,
+    ms_min,
+    ms_max,
+    choice_model,
+    temperature,
+    rationality,
+    seed,
 ):
     rng = np.random.default_rng(seed)
     results = []
@@ -325,8 +402,15 @@ def _fallback_gen_menus(
 
 
 def _fallback_gen_production(
-    n_users, obs_min, obs_max, n_inputs, n_outputs,
-    functional_form, rationality, noise_scale, seed,
+    n_users,
+    obs_min,
+    obs_max,
+    n_inputs,
+    n_outputs,
+    functional_form,
+    rationality,
+    noise_scale,
+    seed,
 ):
     rng = np.random.default_rng(seed)
     results = []
@@ -356,8 +440,12 @@ def _fallback_gen_production(
         if rationality < 1.0 and noise_scale > 0:
             mask = rng.random(t) >= rationality
             if mask.any():
-                input_q[mask] *= np.exp(rng.normal(0, noise_scale, size=(mask.sum(), n_inputs)))
-                output_q[mask] *= np.exp(rng.normal(0, noise_scale, size=(mask.sum(), n_outputs)))
+                input_q[mask] *= np.exp(
+                    rng.normal(0, noise_scale, size=(mask.sum(), n_inputs))
+                )
+                output_q[mask] *= np.exp(
+                    rng.normal(0, noise_scale, size=(mask.sum(), n_outputs))
+                )
 
         prices = np.hstack([input_prices, output_prices])
         quantities = np.hstack([np.maximum(input_q, 1e-6), np.maximum(output_q, 1e-6)])
@@ -366,8 +454,14 @@ def _fallback_gen_production(
 
 
 def _fallback_gen_intertemporal(
-    n_users, obs_min, obs_max, n_periods,
-    d_min, d_max, rationality, seed,
+    n_users,
+    obs_min,
+    obs_max,
+    n_periods,
+    d_min,
+    d_max,
+    rationality,
+    seed,
 ):
     rng = np.random.default_rng(seed)
     results = []
@@ -378,7 +472,7 @@ def _fallback_gen_intertemporal(
         prices = rng.uniform(0.5, 5.0, size=(t, n_periods))
         budgets = rng.uniform(10.0, 100.0, size=t)
 
-        discount_weights = np.array([delta ** p for p in range(n_periods)])
+        discount_weights = np.array([delta**p for p in range(n_periods)])
         weights = discount_weights[None, :] / prices
         weight_sum = weights.sum(axis=1, keepdims=True)
         quantities = weights * budgets[:, None] / weight_sum
@@ -387,7 +481,9 @@ def _fallback_gen_intertemporal(
         if rationality < 1.0:
             mask = rng.random(t) >= rationality
             if mask.any():
-                quantities[mask] *= np.exp(rng.normal(0, 0.3, size=(mask.sum(), n_periods)))
+                quantities[mask] *= np.exp(
+                    rng.normal(0, 0.3, size=(mask.sum(), n_periods))
+                )
                 quantities = np.maximum(quantities, 1e-6)
 
         results.append((prices, quantities))

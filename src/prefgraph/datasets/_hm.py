@@ -45,10 +45,12 @@ def _find_data_dir(data_dir: str | Path | None) -> Path:
     if env:
         candidates.append(Path(env) / "hm")
 
-    candidates.extend([
-        Path.home() / ".prefgraph" / "data" / "hm",
-        Path(__file__).resolve().parents[3] / "hm" / "data",
-    ])
+    candidates.extend(
+        [
+            Path.home() / ".prefgraph" / "data" / "hm",
+            Path(__file__).resolve().parents[3] / "hm" / "data",
+        ]
+    )
 
     for d in candidates:
         if d.is_dir() and (d / "transactions_train.csv").exists():
@@ -156,14 +158,21 @@ def load_hm(
         chunksize=CHUNKSIZE,
     ):
         chunk["product_group"] = chunk["article_id"].str[:2]
-        mask = (
-            chunk["customer_id"].isin(target_users)
-            & chunk["product_group"].isin(top_groups)
+        mask = chunk["customer_id"].isin(target_users) & chunk["product_group"].isin(
+            top_groups
         )
         if mask.any():
-            frames.append(chunk.loc[mask, [
-                "t_dat", "customer_id", "product_group", "price",
-            ]])
+            frames.append(
+                chunk.loc[
+                    mask,
+                    [
+                        "t_dat",
+                        "customer_id",
+                        "product_group",
+                        "price",
+                    ],
+                ]
+            )
 
     df = pd.concat(frames, ignore_index=True)
 
@@ -202,10 +211,14 @@ def load_hm(
     # (date, customer, article) rows which represent distinct purchased units, so
     # row counts are valid quantities, not transaction counts.
     # mean_price = customer's own average paid price for that group in that period.
-    agg = df.groupby(["customer_id", "period", "product_group"]).agg(
-        quantity=("price", "size"),
-        mean_price=("price", "mean"),
-    ).reset_index()
+    agg = (
+        df.groupby(["customer_id", "period", "product_group"])
+        .agg(
+            quantity=("price", "size"),
+            mean_price=("price", "mean"),
+        )
+        .reset_index()
+    )
 
     # --- Build per-customer BehaviorLogs ---
     # This loop is the bottleneck at scale: two pivot_table calls per user.
@@ -215,12 +228,16 @@ def load_hm(
 
     for cid, cust_data in agg.groupby("customer_id"):
         # Pivot quantity
-        qty_pivot = cust_data.pivot_table(
-            values="quantity",
-            index="period",
-            columns="product_group",
-            aggfunc="sum",
-        ).reindex(index=periods_sorted, columns=top_groups).fillna(0)
+        qty_pivot = (
+            cust_data.pivot_table(
+                values="quantity",
+                index="period",
+                columns="product_group",
+                aggfunc="sum",
+            )
+            .reindex(index=periods_sorted, columns=top_groups)
+            .fillna(0)
+        )
 
         # Pivot realized prices (NaN where customer didn't purchase)
         price_pivot = cust_data.pivot_table(

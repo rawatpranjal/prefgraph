@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, asdict
+from dataclasses import dataclass
 from typing import Any
 
 import numpy as np
@@ -99,8 +99,12 @@ class IntegrabilityResult(ResultDisplayMixin, ResultPlotMixin):
         lines.append(m._format_section("Slutsky Conditions"))
         lines.append(m._format_metric("Is Integrable", self.is_integrable))
         lines.append(m._format_metric("Symmetric", self.is_symmetric))
-        lines.append(m._format_metric("Negative Semi-Definite", self.is_negative_semidefinite))
-        lines.append(m._format_metric("Symmetry Violations", self.num_symmetry_violations))
+        lines.append(
+            m._format_metric("Negative Semi-Definite", self.is_negative_semidefinite)
+        )
+        lines.append(
+            m._format_metric("Symmetry Violations", self.num_symmetry_violations)
+        )
         lines.append(m._format_metric("Max Eigenvalue", self.max_eigenvalue))
         lines.append(m._format_metric("Symmetry Deviation", self.symmetry_deviation))
         lines.append(m._format_metric("Number of Goods", self.num_goods))
@@ -112,9 +116,13 @@ class IntegrabilityResult(ResultDisplayMixin, ResultPlotMixin):
             lines.append("  Both Slutsky symmetry and NSD conditions satisfied.")
         else:
             if not self.is_symmetric:
-                lines.append("  Slutsky symmetry violated - cross-price effects asymmetric.")
+                lines.append(
+                    "  Slutsky symmetry violated - cross-price effects asymmetric."
+                )
             if not self.is_negative_semidefinite:
-                lines.append(f"  Not NSD - max eigenvalue {self.max_eigenvalue:.4f} > 0.")
+                lines.append(
+                    f"  Not NSD - max eigenvalue {self.max_eigenvalue:.4f} > 0."
+                )
 
         lines.append(m._format_footer(self.computation_time_ms))
         return "\n".join(lines)
@@ -207,8 +215,12 @@ class WelfareResult(ResultDisplayMixin, ResultPlotMixin):
 
         # Welfare measures
         lines.append(m._format_section("Welfare Measures"))
-        lines.append(m._format_metric("Compensating Variation (CV)", self.compensating_variation))
-        lines.append(m._format_metric("Equivalent Variation (EV)", self.equivalent_variation))
+        lines.append(
+            m._format_metric("Compensating Variation (CV)", self.compensating_variation)
+        )
+        lines.append(
+            m._format_metric("Equivalent Variation (EV)", self.equivalent_variation)
+        )
         lines.append(m._format_metric("Mean Variation", self.mean_variation))
         lines.append(m._format_metric("Hicksian Surplus", self.hicksian_surplus))
 
@@ -216,19 +228,27 @@ class WelfareResult(ResultDisplayMixin, ResultPlotMixin):
         lines.append(m._format_section("Utility Comparison"))
         lines.append(m._format_metric("Baseline Utility", self.baseline_utility))
         lines.append(m._format_metric("Policy Utility", self.policy_utility))
-        lines.append(m._format_metric("Baseline Expenditure", self.baseline_expenditure))
+        lines.append(
+            m._format_metric("Baseline Expenditure", self.baseline_expenditure)
+        )
         lines.append(m._format_metric("Policy Expenditure", self.policy_expenditure))
 
         # Interpretation
         lines.append(m._format_section("Interpretation"))
         if self.welfare_improved:
             lines.append("  Consumer welfare improved under the policy.")
-            lines.append(f"  Equivalent to receiving ${abs(self.equivalent_variation):.2f}.")
+            lines.append(
+                f"  Equivalent to receiving ${abs(self.equivalent_variation):.2f}."
+            )
         elif self.welfare_worsened:
             lines.append("  Consumer welfare worsened under the policy.")
-            lines.append(f"  Would need ${abs(self.compensating_variation):.2f} to restore utility.")
+            lines.append(
+                f"  Would need ${abs(self.compensating_variation):.2f} to restore utility."
+            )
         else:
-            lines.append("  Welfare change is ambiguous (CV and EV have different signs).")
+            lines.append(
+                "  Welfare change is ambiguous (CV and EV have different signs)."
+            )
 
         lines.append(m._format_footer(self.computation_time_ms))
         return "\n".join(lines)
@@ -335,7 +355,9 @@ class AdditivityResult(ResultDisplayMixin, ResultPlotMixin):
             lines.append("  No significant cross-price effects between groups.")
         else:
             lines.append("  Utility is not additively separable.")
-            lines.append(f"  {self.num_violations} significant cross-effect(s) detected.")
+            lines.append(
+                f"  {self.num_violations} significant cross-effect(s) detected."
+            )
 
         lines.append(m._format_footer(self.computation_time_ms))
         return "\n".join(lines)
@@ -402,7 +424,9 @@ class CompensatedDemandResult(ResultDisplayMixin, ResultPlotMixin):
         """Average own-price elasticity across goods."""
         if not self.own_price_elasticities:
             return 0.0
-        return sum(self.own_price_elasticities.values()) / len(self.own_price_elasticities)
+        return sum(self.own_price_elasticities.values()) / len(
+            self.own_price_elasticities
+        )
 
     def score(self) -> float:
         """Return scikit-learn style score in [0, 1]. Higher is better.
@@ -417,13 +441,18 @@ class CompensatedDemandResult(ResultDisplayMixin, ResultPlotMixin):
         lines = [m._format_header("COMPENSATED DEMAND ANALYSIS REPORT")]
 
         # Status
-        status = m._format_status(self.satisfies_compensated_law,
-                                  "COMPENSATED LAW SATISFIED", "VIOLATIONS FOUND")
+        status = m._format_status(
+            self.satisfies_compensated_law,
+            "COMPENSATED LAW SATISFIED",
+            "VIOLATIONS FOUND",
+        )
         lines.append(f"\nStatus: {status}")
 
         # Metrics
         lines.append(m._format_section("Metrics"))
-        lines.append(m._format_metric("Compensated Law", self.satisfies_compensated_law))
+        lines.append(
+            m._format_metric("Compensated Law", self.satisfies_compensated_law)
+        )
         lines.append(m._format_metric("Number of Goods", self.num_goods))
         lines.append(m._format_metric("Violations", self.num_violations))
         lines.append(m._format_metric("Mean Own Elasticity", self.mean_own_elasticity))
@@ -434,7 +463,9 @@ class CompensatedDemandResult(ResultDisplayMixin, ResultPlotMixin):
             for good, elast in list(self.own_price_elasticities.items())[:5]:
                 lines.append(f"  Good {good}: {elast:.4f}")
             if len(self.own_price_elasticities) > 5:
-                lines.append(f"  ... ({len(self.own_price_elasticities) - 5} more goods)")
+                lines.append(
+                    f"  ... ({len(self.own_price_elasticities) - 5} more goods)"
+                )
 
         # Interpretation
         lines.append(m._format_section("Interpretation"))
@@ -522,7 +553,9 @@ class GeneralMetricResult(ResultDisplayMixin, ResultPlotMixin):
         lines = [m._format_header("GENERAL METRIC PREFERENCES REPORT")]
 
         # Status
-        status = m._format_status(self.is_rationalizable, "RATIONALIZABLE", "VIOLATIONS FOUND")
+        status = m._format_status(
+            self.is_rationalizable, "RATIONALIZABLE", "VIOLATIONS FOUND"
+        )
         lines.append(f"\nStatus: {status}")
 
         # Metrics
@@ -550,7 +583,9 @@ class GeneralMetricResult(ResultDisplayMixin, ResultPlotMixin):
         # Interpretation
         lines.append(m._format_section("Interpretation"))
         lines.append(f"  Best fit achieved with {self.best_metric} metric.")
-        lines.append(f"  Model explains {self.explained_variance*100:.1f}% of choice variance.")
+        lines.append(
+            f"  Model explains {self.explained_variance * 100:.1f}% of choice variance."
+        )
 
         lines.append(m._format_footer(self.computation_time_ms))
         return "\n".join(lines)
@@ -633,8 +668,9 @@ class StochasticChoiceResult(ResultDisplayMixin, ResultPlotMixin):
         lines = [m._format_header("STOCHASTIC CHOICE MODEL REPORT")]
 
         # Status
-        status = m._format_status(self.is_random_utility,
-                                  "RANDOM UTILITY MODEL FITS", "RUM VIOLATIONS")
+        status = m._format_status(
+            self.is_random_utility, "RANDOM UTILITY MODEL FITS", "RUM VIOLATIONS"
+        )
         lines.append(f"\nStatus: {status}")
         lines.append(f"Model Type: {self.model_type}")
 
@@ -644,7 +680,9 @@ class StochasticChoiceResult(ResultDisplayMixin, ResultPlotMixin):
         lines.append(m._format_metric("AIC", self.aic))
         lines.append(m._format_metric("BIC", self.bic))
         lines.append(m._format_metric("Satisfies IIA", self.satisfies_iia))
-        lines.append(m._format_metric("Regularity Violations", self.num_regularity_violations))
+        lines.append(
+            m._format_metric("Regularity Violations", self.num_regularity_violations)
+        )
 
         # Parameters
         if self.parameters:
@@ -661,7 +699,9 @@ class StochasticChoiceResult(ResultDisplayMixin, ResultPlotMixin):
             if not self.satisfies_iia:
                 lines.append("  IIA violated - choice probabilities context-dependent.")
             if self.regularity_violations:
-                lines.append(f"  {self.num_regularity_violations} regularity violation(s) detected.")
+                lines.append(
+                    f"  {self.num_regularity_violations} regularity violation(s) detected."
+                )
 
         lines.append(m._format_footer(self.computation_time_ms))
         return "\n".join(lines)
@@ -731,7 +771,9 @@ class AttentionResult(ResultDisplayMixin, ResultPlotMixin):
         """Average size of consideration sets."""
         if not self.consideration_sets:
             return 0.0
-        return sum(len(cs) for cs in self.consideration_sets) / len(self.consideration_sets)
+        return sum(len(cs) for cs in self.consideration_sets) / len(
+            self.consideration_sets
+        )
 
     @property
     def rationalizability_rate(self) -> float:
@@ -751,8 +793,9 @@ class AttentionResult(ResultDisplayMixin, ResultPlotMixin):
         lines = [m._format_header("LIMITED ATTENTION MODEL REPORT")]
 
         # Status
-        status = m._format_status(self.is_attention_rational,
-                                  "ATTENTION RATIONAL", "ATTENTION VIOLATIONS")
+        status = m._format_status(
+            self.is_attention_rational, "ATTENTION RATIONAL", "ATTENTION VIOLATIONS"
+        )
         lines.append(f"\nStatus: {status}")
 
         # Metrics
@@ -761,9 +804,17 @@ class AttentionResult(ResultDisplayMixin, ResultPlotMixin):
         lines.append(m._format_metric("Attention Parameter", self.attention_parameter))
         lines.append(m._format_metric("Inattention Rate", self.inattention_rate))
         lines.append(m._format_metric("Observations", self.num_observations))
-        lines.append(m._format_metric("Mean Consideration Size", self.mean_consideration_size))
-        lines.append(m._format_metric("Rationalizable Obs", len(self.rationalizable_observations)))
-        lines.append(m._format_metric("Rationalizability Rate", self.rationalizability_rate))
+        lines.append(
+            m._format_metric("Mean Consideration Size", self.mean_consideration_size)
+        )
+        lines.append(
+            m._format_metric(
+                "Rationalizable Obs", len(self.rationalizable_observations)
+            )
+        )
+        lines.append(
+            m._format_metric("Rationalizability Rate", self.rationalizability_rate)
+        )
         if self.default_option is not None:
             lines.append(m._format_metric("Default Option", self.default_option))
 
@@ -778,10 +829,14 @@ class AttentionResult(ResultDisplayMixin, ResultPlotMixin):
         lines.append(m._format_section("Interpretation"))
         if self.is_attention_rational:
             lines.append("  Behavior is rationalizable with limited attention.")
-            lines.append(f"  Consumer considers ~{self.mean_consideration_size:.1f} items on average.")
+            lines.append(
+                f"  Consumer considers ~{self.mean_consideration_size:.1f} items on average."
+            )
         else:
             lines.append("  Behavior cannot be explained by limited attention alone.")
-            lines.append(f"  {self.rationalizability_rate*100:.1f}% of observations rationalizable.")
+            lines.append(
+                f"  {self.rationalizability_rate * 100:.1f}% of observations rationalizable."
+            )
 
         lines.append(m._format_footer(self.computation_time_ms))
         return "\n".join(lines)
@@ -865,8 +920,9 @@ class ProductionGARPResult(ResultDisplayMixin, ResultPlotMixin):
         lines = [m._format_header("PRODUCTION GARP TEST REPORT")]
 
         # Status
-        status = m._format_status(self.is_profit_maximizing,
-                                  "PROFIT MAXIMIZING", "VIOLATIONS FOUND")
+        status = m._format_status(
+            self.is_profit_maximizing, "PROFIT MAXIMIZING", "VIOLATIONS FOUND"
+        )
         lines.append(f"\nStatus: {status}")
         lines.append(f"Returns to Scale: {self.returns_to_scale}")
 
@@ -876,7 +932,9 @@ class ProductionGARPResult(ResultDisplayMixin, ResultPlotMixin):
         lines.append(m._format_metric("Cost Minimizing", self.is_cost_minimizing))
         lines.append(m._format_metric("Profit Efficiency", self.profit_efficiency))
         lines.append(m._format_metric("Cost Efficiency", self.cost_efficiency_score))
-        lines.append(m._format_metric("Technical Efficiency", self.technical_efficiency))
+        lines.append(
+            m._format_metric("Technical Efficiency", self.technical_efficiency)
+        )
         lines.append(m._format_metric("Violations", self.num_violations))
 
         # Input/Output efficiencies
@@ -885,7 +943,9 @@ class ProductionGARPResult(ResultDisplayMixin, ResultPlotMixin):
             for i, eff in enumerate(self.input_efficiency_vector[:5]):
                 lines.append(f"  Input {i}: {eff:.4f}")
             if len(self.input_efficiency_vector) > 5:
-                lines.append(f"  ... ({len(self.input_efficiency_vector) - 5} more inputs)")
+                lines.append(
+                    f"  ... ({len(self.input_efficiency_vector) - 5} more inputs)"
+                )
 
         # Interpretation
         lines.append(m._format_section("Interpretation"))
@@ -893,8 +953,10 @@ class ProductionGARPResult(ResultDisplayMixin, ResultPlotMixin):
             lines.append("  Firm behavior is consistent with profit maximization.")
             lines.append(f"  Returns to scale: {self.returns_to_scale}.")
         else:
-            lines.append(f"  {self.num_violations} violation(s) of profit maximization.")
-            lines.append(f"  Profit efficiency is {self.profit_efficiency*100:.1f}%.")
+            lines.append(
+                f"  {self.num_violations} violation(s) of profit maximization."
+            )
+            lines.append(f"  Profit efficiency is {self.profit_efficiency * 100:.1f}%.")
 
         lines.append(m._format_footer(self.computation_time_ms))
         return "\n".join(lines)

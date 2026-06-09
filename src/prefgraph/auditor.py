@@ -153,7 +153,9 @@ class MenuAuditReport:
         lines = [m._format_header("MENU CHOICE AUDIT REPORT")]
 
         # Overall status
-        status = m._format_status(self.is_rationalizable, "RATIONALIZABLE", "INCONSISTENT")
+        status = m._format_status(
+            self.is_rationalizable, "RATIONALIZABLE", "INCONSISTENT"
+        )
         lines.append(f"\nOverall Status: {status}")
 
         # Core metrics
@@ -182,7 +184,9 @@ class MenuAuditReport:
         elif self.efficiency_score >= 0.8:
             lines.append("  Efficiency: Good - some observations may need review.")
         else:
-            lines.append(f"  Efficiency: Moderate - {(1-self.efficiency_score)*100:.1f}% observations inconsistent.")
+            lines.append(
+                f"  Efficiency: Moderate - {(1 - self.efficiency_score) * 100:.1f}% observations inconsistent."
+            )
 
         # Overall recommendation
         lines.append(m._format_section("Recommendation"))
