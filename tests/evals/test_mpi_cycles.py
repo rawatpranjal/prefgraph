@@ -130,9 +130,13 @@ class TestMPIMultipleCycles:
         result = compute_mpi(dense_violation_log)
 
         if result.mpi_value > 0 and result.cycle_costs:
-            # Worst cycle should have highest MPI
+            # The headline MPI is the exact maximum over all revealed-preference
+            # cycles (min cost-to-budget ratio), so it is at least the largest of
+            # the per-cycle breakdown values, and equals it when the worst cycle is
+            # among those tracked (here within binary-search precision).
             mpis = [cost for _, cost in result.cycle_costs]
-            assert result.mpi_value == max(mpis)
+            assert result.mpi_value >= max(mpis) - 1e-9
+            assert result.mpi_value == pytest.approx(max(mpis), abs=1e-9)
 
     def test_mpi_all_cycles_tracked(self):
         """EVAL: MPI cycle_costs should include all positive-MPI cycles."""

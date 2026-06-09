@@ -9,12 +9,13 @@ use rpt_core::garp::{garp_check, garp_check_with_closure};
 use rpt_core::graph::PreferenceGraph;
 use rpt_core::harp::harp_check;
 use rpt_core::houtman_maks::{houtman_maks, houtman_maks_exact};
-// 2026-03-29 performance audit: mpi_karp_v2 is the default (sparse predecessor
-// lists, 4.3x faster at T=500). mpi_karp (dense inner loop) kept as _legacy
-// for A/B benchmarking. Both produce identical results to 1e-12 tolerance.
-// If you suspect an MPI discrepancy, run bench_champion_vs_challenger.py to
-// compare both variants on the same data.
-use rpt_core::mpi::mpi_karp_v2 as mpi_karp;
+// 2026-06-09: switched from mpi_karp_v2 (wrong Karp min-mean objective) to
+// mpi_min_cycle_ratio (correct ratio-of-sums objective per Smeulders &
+// Spieksma 2013 Thm 2; Megiddo 1979). The Karp functions divide by edge count
+// rather than summed budgets, over-reporting MPI on heterogeneous-budget
+// cycles (e.g. 0.125 vs correct 1/9 ≈ 0.1111 for the task fixture).
+// Karp functions are kept in mpi.rs for A/B benchmarking only.
+use rpt_core::mpi::mpi_min_cycle_ratio as mpi_karp;
 use rpt_core::utility::recover_utility;
 use rpt_core::vei::{compute_vei as run_vei, compute_vei_exact as run_vei_exact};
 
@@ -761,10 +762,10 @@ pub fn analyze_parquet_file<'py>(
 // Champion vs Challenger benchmark comparison functions
 // ============================================================================
 
-use rpt_core::mpi::mpi_karp_v2;
+use rpt_core::mpi::{mpi_min_cycle_ratio, mpi_karp_v2};
 use rpt_core::closure::scc_transitive_closure_v2;
 
-/// Benchmark MPI: champion (dense inner loop) vs challenger (sparse predecessors).
+/// Benchmark MPI: champion (min-cycle-ratio, correct) vs challenger (Karp v2, legacy).
 ///
 /// Runs both on the same user data and returns:
 /// (mpi_champion, mpi_challenger, microseconds_champion, microseconds_challenger)
@@ -778,7 +779,7 @@ pub fn benchmark_mpi<'py>(
 ) -> PyResult<(f64, f64, u64, u64)> {
     let (p_flat, q_flat, t, k) = extract_user_data(&prices, &quantities);
 
-    // Champion: mpi_karp (dense)
+    // Champion: mpi_min_cycle_ratio (correct ratio-of-sums objective)
     let mut graph = PreferenceGraph::new(t);
     graph.parse_budget(&p_flat, &q_flat, t, k, tolerance);
     let g = garp_check(&mut graph);
@@ -786,11 +787,12 @@ pub fn benchmark_mpi<'py>(
         return Ok((0.0, 0.0, 0, 0));
     }
     let start = Instant::now();
-    let mpi_champ = rpt_core::mpi::mpi_karp(&graph);
+    let mpi_champ = mpi_min_cycle_ratio(&graph);
     let us_champ = start.elapsed().as_micros() as u64;
 
-    // Challenger: mpi_karp_v2 (sparse)
+    // Challenger: mpi_karp_v2 (deprecated, wrong objective - kept for A/B only)
     let start = Instant::now();
+    #[allow(deprecated)]
     let mpi_chall = mpi_karp_v2(&graph);
     let us_chall = start.elapsed().as_micros() as u64;
 

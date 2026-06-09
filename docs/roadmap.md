@@ -152,7 +152,7 @@ anti-pattern. In every case a fast approximation is wired in as the default whil
 routine already sits unused in the same module, so each fix routes the default to the existing
 exact path. None are fixed yet.
 
-**MPI computes the wrong objective (HIGH).** The Money Pump Index is the minimum cycle ratio of
+**MPI computes the wrong objective (HIGH, FIXED).** The Money Pump Index is the minimum cycle ratio of
 summed savings to summed budgets (Smeulders and Spieksma 2013 Theorem 2; Megiddo 1979). The Rust
 path computes Karp's minimum cycle mean, which divides by the number of edges, not the summed
 budgets, so the shipped `mpi_value` is wrong on heterogeneous-budget cycles and can exceed the true

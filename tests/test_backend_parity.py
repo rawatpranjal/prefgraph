@@ -6,8 +6,8 @@ results within known tolerance bounds for shared metrics (GARP, CCEI, MPI).
 Tolerance rationale:
 - GARP (bool): exact match - same Floyd-Warshall algorithm
 - CCEI (float): within 0.01 - same discrete binary search, minor float rounding
-- MPI (float): within 0.05 - Python uses cycle-enumeration, Rust uses Karp's
-  max-mean-weight cycle - different algorithms, same theoretical target
+- MPI (float): within 1e-6 - both backends compute the minimum cost-to-budget
+  cycle ratio (the correct money-pump index), so they agree tightly
 """
 
 import pytest
@@ -120,23 +120,18 @@ class TestCCEIParity:
 class TestMPIParity:
     def test_consistent_is_zero(self, consistent_data):
         py, rust = _run_both(consistent_data)
-        assert abs(py[0].mpi - rust[0].mpi) < 0.05
+        assert abs(py[0].mpi - rust[0].mpi) < 1e-6
         assert py[0].mpi == pytest.approx(0.0, abs=0.01)
 
     def test_violation(self, violation_data):
         py, rust = _run_both(violation_data)
-        assert abs(py[0].mpi - rust[0].mpi) < 0.05
+        assert abs(py[0].mpi - rust[0].mpi) < 1e-6
 
-    @pytest.mark.xfail(
-        reason="Known backend divergence (parked, P1): Rust uses Karp's max-mean "
-        "cycle while the Python fallback uses cycle-enumeration, so the MPI values "
-        "differ on some users beyond 0.05. The parity harness now genuinely "
-        "compares backends, which surfaces this. To be reconciled in a follow-up.",
-        strict=False,
-    )
     def test_random_close(self, random_users):
+        # Both backends now compute the same min-cycle-ratio MPI, so they agree
+        # tightly. The old Karp-vs-cycle-enumeration divergence is fixed.
         py, rust = _run_both(random_users)
         for i, (p, r) in enumerate(zip(py, rust)):
-            assert abs(p.mpi - r.mpi) < 0.05, (
-                f"User {i}: py_mpi={p.mpi:.4f}, rust_mpi={r.mpi:.4f}"
+            assert abs(p.mpi - r.mpi) < 1e-6, (
+                f"User {i}: py_mpi={p.mpi:.6f}, rust_mpi={r.mpi:.6f}"
             )

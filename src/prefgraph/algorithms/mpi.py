@@ -42,9 +42,9 @@ def compute_mpi(
     Args:
         session: ConsumerSession with prices and quantities
         tolerance: Numerical tolerance for GARP detection
-        method: "cycles" (default, fast - uses GARP violation cycles) or
-                "karp" (also runs Karp's O(T^3) max-mean-weight-cycle algorithm
-                for a theoretically tighter bound, but 2-5x slower)
+        method: Retained for backward compatibility. The headline MPI is now
+                always the exact maximum money-pump fraction (minimum
+                cost-to-budget cycle ratio) regardless of this value.
 
     Returns:
         MPIResult with MPI value, worst cycle, and all cycle costs
@@ -62,39 +62,47 @@ def compute_mpi(
     start_time = time.perf_counter()
 
     # --------------------------------------------------------------------------
-    # MPI via Rust backend - Karp's max-mean-weight cycle algorithm.
+    # The Money Pump Index is the maximum, over revealed-preference cycles, of
+    # the money-pump cost as a fraction of the cycle's total budget:
     #
-    # Echenique, Lee & Shum (2011) "The Money Pump as a Measure of Revealed
-    # Preference Violations", JPE 119(6), 1201-1223.
-    # papers/EcheniqueLeeShum2011_MoneyPump.pdf
+    #   MPI = max_cycle  sum_l (p^{k_l} . x^{k_l} - p^{k_l} . x^{k_{l+1}})
+    #                    / sum_l (p^{k_l} . x^{k_l})
     #
-    # Section 3.1, p.6: "The revealed preference relation on X is the binary
-    # relation R defined as x^k R x^l if p^k · x^k >= p^k · x^l. The strict
-    # revealed preference relation is the binary relation P defined as
-    # x^k P x^l if p^k · x^k > p^k · x^l."
-    #
-    # Eq. (2), p.7: "the money pump index MPI equals the money pump cost as
-    # a proportion of total expenditure":
-    #   MPI = sum_{l=1}^{n} p^{k_l} · (x^{k_l} - x^{k_{l+1}})
-    #         / sum_{l=1}^{n} p^{k_l} · x^{k_l}
-    #
-    # Smeulders et al. (2014), p.359, confirm Karp's (1978) O(nm) algorithm
-    # is the standard for finding the minimum cycle mean (MCM) in digraphs,
-    # which gives the max-mean-weight money-pump cycle.
+    # Echenique, Lee & Shum (2011) JPE 119(6) Eq. (2); Smeulders & Spieksma
+    # (2013) JPE 121(6) Theorem 2 show this maximum is the minimum cost-to-budget
+    # cycle ratio (Megiddo 1979), computed exactly by `compute_mpi_bounds`. The
+    # earlier code used Karp's minimum cycle MEAN (dividing by edge count, not
+    # summed budgets), which is a different objective and could report an MPI
+    # above the true maximum on heterogeneous-budget cycles.
     # --------------------------------------------------------------------------
+    from prefgraph.algorithms.garp import check_garp
+
+    garp_result = check_garp(session, tolerance)
+    total_expenditure = float(session.own_expenditures.sum())
+
+    if garp_result.is_consistent:
+        computation_time = (time.perf_counter() - start_time) * 1000
+        return MPIResult(
+            mpi_value=0.0,
+            worst_cycle=None,
+            cycle_costs=[],
+            total_expenditure=total_expenditure,
+            computation_time_ms=computation_time,
+        )
+
+    # Headline value: the exact maximum money-pump fraction (minimum
+    # cost-to-budget cycle ratio). Use the fast Rust routine when available (it
+    # computes the same value after the objective fix) and fall back to the
+    # Python min-cycle-ratio otherwise. Both agree to binary-search precision.
     from prefgraph._rust_backend import HAS_RUST, _rust_analyze_batch
 
+    mpi_val: float | None = None
     if HAS_RUST:
         try:
             p = np.ascontiguousarray(session.prices, dtype=np.float64)
             q = np.ascontiguousarray(session.quantities, dtype=np.float64)
-            # Args must match engine.py _analyze_chunk_rust call signature:
-            # (prices, quantities, ccei, mpi, harp, hm, utility, vei, vei_exact, network, tolerance)
-            # Previously missing network=False, so tolerance landed in position 10
-            # (the bool network slot), causing TypeError in Rust PyO3 binding and
-            # silently falling through to the Python fallback.
-            # _rust_analyze_batch is `Callable | None` at module scope; inside the
-            # HAS_RUST guard it is always the callable, so cast away the None.
+            # Args match engine.py _analyze_chunk_rust: (prices, quantities, ccei,
+            # mpi, harp, hm, utility, vei, vei_exact, network, tolerance).
             results = cast(Any, _rust_analyze_batch)(
                 [p],
                 [q],
@@ -108,91 +116,31 @@ def compute_mpi(
                 False,
                 tolerance,
             )
-            mpi_val = results[0]["mpi"]
-
-            # Trust mpi_val directly from Rust. Do NOT gate on results["is_garp"]:
-            # the Rust GARP check may use different tolerance or handle zero-quantity
-            # edge cases differently than Python's check_garp, causing a mismatch
-            # where Rust says is_garp=True on data that Python finds inconsistent.
-            # This produced a false early-exit returning mpi=0.0 on real violations.
-            total_expenditure = float(session.own_expenditures.sum())
-
-            # Get violation cycles from Python for the cycle_costs breakdown.
-            from prefgraph.algorithms.garp import check_garp
-
-            garp_result = check_garp(session, tolerance)
-            E = session.expenditure_matrix
-            cycle_costs: list[tuple[Cycle, float]] = []
-            for cycle in garp_result.violations:
-                mc = _compute_cycle_mpi(cycle, E)
-                if mc > 0:
-                    cycle_costs.append((cycle, mc))
-
-            worst_cycle = (
-                max(cycle_costs, key=lambda x: x[1])[0] if cycle_costs else None
-            )
-            if cycle_costs:
-                max_cycle_mpi = max(cost for _, cost in cycle_costs)
-                if mpi_val > max_cycle_mpi and worst_cycle is not None:
-                    cycle_costs.append((worst_cycle, mpi_val))
-                elif max_cycle_mpi > mpi_val:
-                    mpi_val = float(max_cycle_mpi)
-
-            computation_time = (time.perf_counter() - start_time) * 1000
-            return MPIResult(
-                mpi_value=mpi_val,
-                worst_cycle=worst_cycle,
-                cycle_costs=cycle_costs,
-                total_expenditure=total_expenditure,
-                computation_time_ms=computation_time,
-            )
+            mpi_val = float(results[0]["mpi"])
         except Exception:
-            pass  # Fall through to Python
+            mpi_val = None
+    if mpi_val is None:
+        mpi_val = compute_mpi_bounds(session, tolerance=tolerance).maximum_mpi
 
-    # Python fallback
-    from prefgraph.algorithms.garp import check_garp
-
-    garp_result = check_garp(session, tolerance)
-
-    total_expenditure = float(session.own_expenditures.sum())
-
-    if garp_result.is_consistent:
-        computation_time = (time.perf_counter() - start_time) * 1000
-        return MPIResult(
-            mpi_value=0.0,
-            worst_cycle=None,
-            cycle_costs=[],
-            total_expenditure=total_expenditure,
-            computation_time_ms=computation_time,
-        )
-
+    # Per-cycle breakdown (ratio-of-sums per GARP violation cycle) for
+    # worst_cycle and cycle_costs. These are a subset of all cycles, so the
+    # headline mpi_val can exceed the largest per-cycle value here.
     E = session.expenditure_matrix
-
-    # cycle_costs already declared above (Rust branch); reuse the same declared type.
-    cycle_costs = []
+    cycle_costs: list[tuple[Cycle, float]] = []
     for cycle in garp_result.violations:
-        mpi_cycle = _compute_cycle_mpi(cycle, E)
-        if mpi_cycle > 0:
-            cycle_costs.append((cycle, mpi_cycle))
+        mc = _compute_cycle_mpi(cycle, E)
+        if mc > 0:
+            cycle_costs.append((cycle, mc))
 
+    worst_cycle: Cycle | None = None
     if cycle_costs:
-        worst_cycle, max_mpi = max(cycle_costs, key=lambda x: x[1])
-    else:
-        max_mpi = _compute_simple_mpi(session, garp_result.violations)
-        worst_cycle = garp_result.violations[0] if garp_result.violations else None
-
-    if method == "karp":
-        own_exp = session.own_expenditures
-        R = garp_result.direct_revealed_preference
-        karp_val, karp_cycle = _karp_mpi(E, own_exp, R)
-        if karp_val > max_mpi and karp_cycle is not None:
-            max_mpi = karp_val
-            worst_cycle = karp_cycle
+        worst_cycle = max(cycle_costs, key=lambda x: x[1])[0]
+    elif garp_result.violations:
+        worst_cycle = garp_result.violations[0]
 
     computation_time = (time.perf_counter() - start_time) * 1000
-
     return MPIResult(
-        mpi_value=max_mpi,
+        mpi_value=mpi_val,
         worst_cycle=worst_cycle,
         cycle_costs=cycle_costs,
         total_expenditure=total_expenditure,
