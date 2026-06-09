@@ -172,7 +172,7 @@ T. The clean fix is the exact ILP over observations (Demuynck and Rehbeck 2023 C
 both budget and menu, with greedy demoted to a documented bound. The budget pure-Python
 zero-removal finding is already resolved on the current code; the residual lives in the menu path.
 
-**Pure-Python fallback reports confident wrong values (HIGH).** The fallback sets 10 of 30 budget
+**Pure-Python fallback reports confident wrong values (HIGH, FIXED except vei_exact).** The fallback sets 10 of 30 budget
 fields and 6 of 13 menu fields and lets the rest inherit plausible defaults, violating the
 dataclass's own rule that uncomputed fields are None. The worst are `is_warp_la` False (flags every
 Python-backend user a violator, and the `compute_warp_la` flag is silently ignored), `vei_exact`
