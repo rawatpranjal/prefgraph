@@ -33,8 +33,10 @@ def check_quasilinearity(
     Args:
         session: ConsumerSession with prices and quantities
         tolerance: Numerical tolerance for comparisons
-        max_cycle_length: Maximum cycle length to check (default: 3)
-            Higher values are more thorough but slower
+        max_cycle_length: Length up to which cycles are enumerated for the
+            human-readable violation breakdown. The is_quasilinear verdict is
+            always exhaustive (all cycle lengths via Bellman-Ford), so it never
+            misses a longer-cycle violation regardless of this value.
 
     Returns:
         QuasilinearityResult with is_quasilinear flag and violation details
@@ -110,10 +112,24 @@ def check_quasilinearity(
                         violations.append(cycle)
                         worst_violation = min(worst_violation, cycle_sum)
 
+    # The short-cycle enumeration above can miss violations that first appear in
+    # cycles longer than max_cycle_length, producing a false "quasilinear". Use
+    # the exhaustive all-lengths negative-cycle check (Bellman-Ford) for the
+    # authoritative verdict, and fold any violation it finds that the short
+    # enumeration missed into the human-readable breakdown.
+    exhaustive = check_quasilinearity_exhaustive(session, tolerance)
+    is_quasilinear = exhaustive.is_quasilinear
+    if not is_quasilinear:
+        for cyc, csum in exhaustive.cycle_sums.items():
+            if cyc not in cycle_sums:
+                violations.append(cyc)
+                cycle_sums[cyc] = csum
+                worst_violation = min(worst_violation, csum)
+
     computation_time = (time.perf_counter() - start_time) * 1000
 
     return QuasilinearityResult(
-        is_quasilinear=len(violations) == 0,
+        is_quasilinear=is_quasilinear,
         violations=violations,
         worst_violation_magnitude=worst_violation,
         cycle_sums=cycle_sums,
