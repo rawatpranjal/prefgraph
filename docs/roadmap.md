@@ -126,16 +126,41 @@ RTD rebuild so all pages show 0.6.0, since the source is already coherent.
 Any new algorithm or method. Any API tiering, reorg, experimental namespace, or
 deprecation-policy work. The 313-symbol surface is frozen as-is.
 
-## Parked findings (surfaced during hardening, deferred by the algorithm freeze)
+## CCEI supremum fix and the metric-correctness audit
 
-The greedy Houtman-Maks path in `mpi.py` uses `find_sccs(R_star)` (transitive closure) and is a
-conservative over-remover. On a three-observation transitive violation it removes two
-observations (fraction two thirds) where the exact ILP removes only one (fraction one third).
-The public API uses the exact ILP below the size threshold, so small-sample users are unaffected,
-but large-T greedy HM may understate the consistent fraction. Separately, the menu HM path in
-`src/prefgraph/algorithms/abstract_choice.py` (around line 359) still uses `find_sccs(R)`, which is
-inconsistent with the budget path. Both are algorithm-correctness questions for a future cycle,
-not touched here because algorithms are frozen. Surfaced by the v0.6 test-hardening workflow.
+A re-audit of the parallel work found that the CCEI/AEI supremum was computed incorrectly. The
+discrete efficiency search returned the next-lower breakpoint instead of the true supremum on
+roughly seven percent of datasets, with error up to 0.4, in both backends. The lineage is worth
+remembering. The original discrete implementation (March 2026) returned the next-lower breakpoint
+and a docstring over-claimed it was "exact." A golden test then hardcoded the buggy output (the
+comment literally read "land on the next-lower discrete ratio") and was never checked against the
+paper, so it looked verified. Two commits this session added and propagated a one-float-ULP probe
+that only worked when own-expenditure was about one, and the second declared it the "paper-backed
+supremum convention" while only patching the toy case. The backend parity test could not catch any
+of it because it compared Rust against Rust.
+
+The fix (this cycle) computes the index exactly as the upper breakpoint of the highest open
+interval on which the axiom holds, tested at interval midpoints, per Smeulders et al. (2014)
+Algorithm 2. Both backends now agree with an independent supremum oracle to about 1e-11. The
+parity test was made real (it forces the pure-Python path), and `tests/test_ccei_supremum.py` adds
+a brute-force oracle property test that would have caught the original bug.
+
+## Parked findings (confirmed, deferred for sequenced follow-up)
+
+These were surfaced by the metric-correctness audit and are recorded so nothing is lost. None are
+fixed yet.
+
+The Rust and pure-Python MPI values diverge on some users, because Rust uses Karp's max-mean cycle
+and the Python fallback uses cycle enumeration. The parity test now marks this `xfail`. The
+pure-Python budget Houtman-Maks can return zero removals on GARP-inconsistent data, which is
+impossible and a residual of the earlier HM fix. The menu Houtman-Maks counts items not in cycles
+in Rust but observations kept in Python, so the two backends report different quantities under the
+same name. Several pure-Python fallback fields return placeholders (`max_scc` is 0, `vei_exact` is
+1.0, `is_warp_la` is False, various SCC fields default) instead of computing, so a no-Rust install
+reports confident wrong values. The greedy Houtman-Maks path uses `find_sccs(R_star)` and
+over-removes by roughly a factor of two at large T, where the public API switches from the exact
+ILP to greedy. Smaller items include a VEI docstring and objective mismatch and a quasilinear
+default cycle-length truncation.
 
 ## Verification
 

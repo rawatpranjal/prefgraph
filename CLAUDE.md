@@ -4,7 +4,15 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Current Roadmap
 
-Active cycle is the v0.6 "Trust Release" hardening cycle. See [docs/roadmap.md](docs/roadmap.md). New algorithms are frozen and the API surface is locked for this cycle. Now horizon is CI enforcement and build unification on maturin. Next is the identification docs page and slimming the base install.
+Active cycle is the v0.6 "Trust Release" hardening cycle. See [docs/roadmap.md](docs/roadmap.md). New algorithms are frozen and the API surface is locked for this cycle. CI enforcement and the maturin build are done and gating. A metric-correctness audit then fixed the CCEI/AEI supremum and is sequencing the rest of the parked findings before the 0.6.0 release.
+
+## Learned Rules
+
+These encode hard lessons. Recognize the smell and do it the right way.
+
+- **Golden test values must come from the paper or an independent oracle, never from the code's own output.** A CCEI golden was hardcoded to `1/3` to match a buggy implementation, with the comment "land on the next-lower discrete ratio." That comment is the smell. Wrong is asserting whatever the function currently returns. Right is computing the expected value from the definition or a brute-force/bisection oracle, then asserting that. When you must change a golden value, prove the new one independently first and say why in the comment.
+- **Never label a metric "exact" or a fix "paper-backed" without an independent cross-check, and never let the author bless their own fix.** A one-ULP "supremum fix" was merged as the "paper-backed supremum convention" while only patching one case. Wrong is the writer declaring victory. Right is a separate adversarial check (brute-force oracle, second method, or a fresh agent) before the claim stands.
+- **Parity tests must force the fallback path.** `compute_aei`/`check_garp`/`compute_mpi` read `HAS_RUST` at call time and delegate to Rust, so a "Python vs Rust" test silently compared Rust vs Rust. Right is setting `HAS_RUST=False` (or `PREFGRAPH_NO_RUST=1` in a subprocess) for the Python side so the comparison is real.
 
 ## Writing Rules
 
