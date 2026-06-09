@@ -63,11 +63,8 @@ pub fn ccei_search(graph: &mut PreferenceGraph, tolerance: f64) -> CceiResult {
         let e = candidates[mid];
         iterations += 1;
 
-        // Rebuild R/P at this efficiency level: O(T²)
-        graph.build_r_at_efficiency(e, tolerance);
-
-        // O(T²) SCC-based GARP check - no transitive closure needed
-        if garp_check(graph).is_consistent {
+        // O(T²) SCC-based GARP check - no transitive closure needed.
+        if garp_consistent_at_efficiency(graph, e, tolerance) {
             best_e = e;
             if mid == 0 {
                 break;
@@ -87,6 +84,35 @@ pub fn ccei_search(graph: &mut PreferenceGraph, tolerance: f64) -> CceiResult {
         iterations,
         is_perfectly_consistent: false,
     }
+}
+
+fn garp_consistent_at_efficiency(
+    graph: &mut PreferenceGraph,
+    efficiency: f64,
+    tolerance: f64,
+) -> bool {
+    graph.build_r_at_efficiency(efficiency, tolerance);
+    if garp_check(graph).is_consistent {
+        return true;
+    }
+
+    // Afriat's index is a supremum. At a discrete breakpoint GARP may fail
+    // exactly at equality even though every e just below the breakpoint is
+    // feasible, so test the one-sided limit from below.
+    let probe = next_lower_positive(efficiency);
+    if probe == efficiency {
+        return false;
+    }
+
+    graph.build_r_at_efficiency(probe, 0.0);
+    garp_check(graph).is_consistent
+}
+
+fn next_lower_positive(value: f64) -> f64 {
+    if value <= 0.0 || !value.is_finite() {
+        return value;
+    }
+    f64::from_bits(value.to_bits() - 1)
 }
 
 #[cfg(test)]
@@ -136,5 +162,17 @@ mod tests {
             }
         }
         assert!(has_violation);
+    }
+
+    #[test]
+    fn test_ccei_uses_supremum_at_open_breakpoint() {
+        let prices = [1.0, 3.0, 3.0, 1.0, 0.4, 1.0];
+        let quantities = [2.0, 0.0, 1.0, 0.0, 0.0, 1.0];
+        let mut graph = PreferenceGraph::new(3);
+        graph.parse_budget(&prices, &quantities, 3, 2, 1e-10);
+
+        let result = ccei_search(&mut graph, 1e-10);
+
+        assert!((result.ccei - 0.4).abs() < 1e-12);
     }
 }

@@ -93,7 +93,7 @@ def test_budget_transitive_violation_ccei_mpi_hm():
 
     Violation: 0 R* 2 (via 1) and 2 P 0.
     Expected metrics:
-    - CCEI = 1/3  (highest e that breaks the path 0->1 with threshold 0.5)
+    - CCEI = 0.4  (supremum; the data are consistent just below this breakpoint)
     - MPI  = [(2-1) + (3-1) + (1-0.8)] / (2+3+1) = 3.2/6 = 0.533333...
     - HM   = 2/3  (remove one observation to break the cycle)
     """
@@ -105,8 +105,9 @@ def test_budget_transitive_violation_ccei_mpi_hm():
 
     assert r.is_garp is False
 
-    # CCEI should land on the next-lower discrete ratio (1/3)
-    assert r.ccei == pytest.approx(1.0 / 3.0, abs=1e-8)
+    # CCEI is a supremum: GARP fails exactly at e=0.4 by equality, but holds
+    # for the one-sided limit just below that breakpoint.
+    assert r.ccei == pytest.approx(0.4, abs=1e-8)
 
     # MPI depends on backend:
     # - Python (cycle enumeration) typically ~0.60 for cycle (0->1->2)

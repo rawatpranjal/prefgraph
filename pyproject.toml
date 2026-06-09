@@ -121,6 +121,9 @@ norecursedirs = ["src", "build", "dist", ".git", "references", "case_studies", "
 python_files = ["test_*.py", "*_test.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]
+markers = [
+    "slow: long-running performance and stress tests",
+]
 
 # Curated baseline: catch real type bugs without numpy-strict pedantry.
 # We deliberately do NOT enable disallow_untyped_defs or disallow_any_generics

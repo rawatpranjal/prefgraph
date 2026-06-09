@@ -120,10 +120,12 @@ jobs:
       - name: Run the fallback-supported test subset
         # The Python fallback supports GARP, CCEI, MPI, HM, HARP and utility
         # recovery (budget choice), but not menu-batch analysis or SARP-based
-        # CCEI, which require Rust. Those two cases are carved out below; the
-        # Rust-only tests (backend parity, parquet) self-skip via skipif.
+        # CCEI, which require Rust. Slow performance benchmarks are Rust-speed
+        # gates, not fallback functionality gates. The Rust-only tests (backend
+        # parity, parquet) self-skip via skipif.
         run: |
           pytest tests/ \
+            -m "not slow" \
             --ignore=tests/test_engine_highT_menu.py \
             --deselect "tests/evals/test_revpref_native_coverage.py::test_ccei_can_target_warp_sarp_or_garp"
 
