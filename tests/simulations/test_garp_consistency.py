@@ -25,8 +25,8 @@ from .generators import (
     generate_irrational_data,
     generate_garp_violation_cycle,
 )
-from src.prefgraph import ConsumerSession
-from src.prefgraph.algorithms.garp import check_garp, check_warp
+from prefgraph import ConsumerSession
+from prefgraph.algorithms.garp import check_garp, check_warp
 
 
 class SimulationResults:
@@ -163,7 +163,6 @@ def test_known_violation_cycles() -> SimulationResults:
 
     session = ConsumerSession(prices=prices, quantities=quantities)
     garp_result = check_garp(session)
-    warp_result = check_warp(session)
 
     # With equal prices and expenditures, this is NOT a violation (indifference)
     # Let me create a proper violation

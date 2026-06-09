@@ -21,9 +21,9 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from .generators import generate_rational_data, generate_irrational_data
-from src.prefgraph import ConsumerSession
-from src.prefgraph.algorithms.garp import check_garp
-from src.prefgraph.algorithms.utility import (
+from prefgraph import ConsumerSession
+from prefgraph.algorithms.garp import check_garp
+from prefgraph.algorithms.utility import (
     recover_utility,
     construct_afriat_utility,
 )
@@ -110,7 +110,7 @@ def test_recovery_failure_for_violations() -> SimulationResults:
             results.record(
                 f"recovery_fails_seed{seed}",
                 not utility_result.success,
-                f"Recovery succeeded for violated data!"
+                "Recovery succeeded for violated data!"
             )
 
     print(f"  (Tested {violations_tested} violation cases)")
@@ -147,12 +147,12 @@ def test_afriat_inequalities_satisfied() -> SimulationResults:
             max_violation = 0.0
 
             for k in range(n_obs):
-                for l in range(n_obs):
-                    if k == l:
+                for obs_l in range(n_obs):
+                    if k == obs_l:
                         continue
 
                     # U_k <= U_l + lambda_l * p_l @ (x_k - x_l)
-                    rhs = U[l] + lambdas[l] * (prices[l] @ (quantities[k] - quantities[l]))
+                    rhs = U[obs_l] + lambdas[obs_l] * (prices[obs_l] @ (quantities[k] - quantities[obs_l]))
                     violation = U[k] - rhs
 
                     if violation > 1e-6:  # Allow numerical tolerance
@@ -201,16 +201,16 @@ def test_utility_rationalizes_data() -> SimulationResults:
                 u_at_xk = u(quantities[k])
 
                 # Check against other observed bundles that are affordable
-                for l in range(n_obs):
-                    if l == k:
+                for obs_l in range(n_obs):
+                    if obs_l == k:
                         continue
 
-                    cost_l_at_k = prices[k] @ quantities[l]
+                    cost_l_at_k = prices[k] @ quantities[obs_l]
                     if cost_l_at_k <= budget_k + 1e-10:  # x_l affordable at k
-                        u_at_xl = u(quantities[l])
+                        u_at_xl = u(quantities[obs_l])
                         if u_at_xl > u_at_xk + 1e-6:  # x_l gives higher utility
                             all_rationalized = False
-                            print(f"    Violation: u(x_{l})={u_at_xl:.4f} > u(x_{k})={u_at_xk:.4f}")
+                            print(f"    Violation: u(x_{obs_l})={u_at_xl:.4f} > u(x_{k})={u_at_xk:.4f}")
 
             results.record(
                 f"rationalization_seed{seed}",

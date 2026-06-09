@@ -26,8 +26,8 @@ from .generators import (
     generate_sarp_violation_cycle,
     generate_random_menu_choices,
 )
-from src.prefgraph import MenuChoiceLog
-from src.prefgraph.algorithms.abstract_choice import (
+from prefgraph import MenuChoiceLog
+from prefgraph.algorithms.abstract_choice import (
     validate_menu_warp,
     validate_menu_sarp,
     validate_menu_consistency,
@@ -89,7 +89,7 @@ def test_warp_consistency() -> SimulationResults:
         results.record(
             f"rational_warp_items{n_items}_obs{n_obs}",
             result.is_consistent,
-            f"WARP violated for rational data!"
+            "WARP violated for rational data!"
         )
 
     # Test: Constructed WARP violation detected
@@ -138,7 +138,7 @@ def test_sarp_consistency() -> SimulationResults:
         results.record(
             f"rational_sarp_items{n_items}_obs{n_obs}",
             result.is_consistent,
-            f"SARP violated for rational data!"
+            "SARP violated for rational data!"
         )
 
     # Test: Constructed SARP cycles detected
