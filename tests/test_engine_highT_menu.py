@@ -47,8 +47,9 @@ def test_highT_consistent_menu_T3000():
 
     assert r.is_sarp is True
     assert r.is_warp is True
-    # For menus, HM counts items, not menu observations
-    assert r.hm_total == n_items and r.hm_consistent == n_items
+    # HM counts OBSERVATIONS (menu-choice pairs), not items.
+    # All T consistent observations should be kept.
+    assert r.hm_total == T and r.hm_consistent == T
 
 
 @pytest.mark.slow
@@ -83,6 +84,7 @@ def test_highT_menu_with_isolated_warp_reversal():
 
     assert r.is_warp is False
     assert r.is_sarp is False
-    # Because items {0,1} are isolated from the rest, removing exactly
-    # one of them suffices; HM should be n_items-1 exactly under item-count HM.
-    assert r.hm_total == n_items and r.hm_consistent == n_items - 1
+    # HM counts OBSERVATIONS. Items {0,1} are isolated from the rest so
+    # removing exactly one of the two reversal observations breaks the cycle.
+    # hm_consistent = T - 1 = 4999.
+    assert r.hm_total == T and r.hm_consistent == T - 1

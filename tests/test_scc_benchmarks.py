@@ -420,8 +420,14 @@ class TestAEIPerformance:
 class TestHoutmanMaksPerformance:
     """Benchmark Houtman-Maks with FVS optimization."""
 
-    def test_hm_t100_under_2s(self):
-        """Houtman-Maks T=100 completes in under 2 seconds."""
+    def test_hm_t100_exact_completes(self):
+        """Houtman-Maks T=100 uses the exact ILP and completes promptly.
+
+        At T=100 the index is the exact Demuynck-Rehbeck MILP, which takes a few
+        seconds. The old 2s budget reflected the fast greedy, which over-removed
+        almost everything (97 of 100 vs the exact 3). The bound is generous to
+        absorb slow CI runners; the point is that the exact path terminates.
+        """
         from prefgraph.algorithms.mpi import compute_houtman_maks_index
 
         np.random.seed(42)
@@ -435,7 +441,7 @@ class TestHoutmanMaksPerformance:
         elapsed = time.time() - start
 
         print(f"HM T=100: {elapsed:.3f}s, fraction={result.fraction:.3f}")
-        assert elapsed < 2.0
+        assert elapsed < 20.0
 
     @pytest.mark.slow
     def test_hm_t500_under_30s(self):

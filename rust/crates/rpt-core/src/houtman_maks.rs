@@ -404,14 +404,6 @@ mod tests {
         );
     }
 
-    #[test]
-    fn test_menu_houtman_maks() {
-        let menus = vec![vec![0, 1], vec![1, 2], vec![0, 2]];
-        let choices = [0, 1, 2];
-        let mut graph = PreferenceGraph::new(3);
-        graph.parse_menu(&menus, &choices, 3);
-        let (consistent, total) = houtman_maks(&mut graph);
-        assert!(consistent < total);
-        assert_eq!(total, 3);
-    }
+    // Note: menu_houtman_maks is now in menu.rs and counts OBSERVATIONS.
+    // Tests for the menu HM live in menu.rs.
 }

@@ -466,6 +466,7 @@ pub fn analyze_menu_batch<'py>(
     compute_network: bool,
 ) -> PyResult<Vec<Bound<'py, PyDict>>> {
     use rpt_core::menu::{menu_sarp_check, menu_warp_check, menu_houtman_maks};
+    // menu_houtman_maks now takes (menus, choices, n_items) - not PreferenceGraph.
     use rpt_core::attention::warp_la_check;
 
     let n_users = menus_list.len();
@@ -506,7 +507,8 @@ pub fn analyze_menu_batch<'py>(
 
                 let sarp = menu_sarp_check(graph);
                 let warp = menu_warp_check(graph);
-                let (hm_c, hm_t) = menu_houtman_maks(graph);
+                // HM counts OBSERVATIONS (not items): pass raw per-obs data.
+                let (hm_c, hm_t) = menu_houtman_maks(menus, choices, *n_items);
 
                 let is_warp_la = if compute_warp_la {
                     warp_la_check(graph).is_rationalizable
