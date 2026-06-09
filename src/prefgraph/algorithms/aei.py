@@ -1,8 +1,10 @@
 """Afriat Efficiency Index (AEI/CCEI) computation.
 
 Supports two methods:
-- "discrete" (default): Binary search over the T^2 critical efficiency ratios.
-  Finds the EXACT analytical CCEI with zero floating-point approximation error.
+- "discrete" (default): the CCEI is the supremum sup{e : axiom holds at e},
+  which is one of the T^2 critical efficiency ratios. Located exactly by a
+  binary search over the open intervals between consecutive ratios (Smeulders
+  et al. 2014, Algorithm 2), so the returned value is an exact breakpoint.
 - "continuous": Legacy binary search over [0,1] interval with tolerance.
 """
 
@@ -163,57 +165,55 @@ def _discrete_binary_search(
     session: ConsumerSession,
     axiom: str,
 ) -> tuple[float, int, GARPResult | None]:
-    """
-    Find exact CCEI by binary search over discrete efficiency ratios.
+    """Find the exact CCEI supremum over the discrete efficiency breakpoints.
 
-    The critical e* that breaks/restores GARP must equal one of the T^2
-    ratios E[i,j] / own_exp[i]. Binary searching over this sorted array
-    gives the exact answer in ~2*log2(T) iterations.
+    The critical value e* = sup{e : axiom holds at e} is one of the T^2 ratios
+    E[i,j] / own_exp[i]. Axiom-consistency only changes as e crosses one of
+    these breakpoints and is monotone in e (raising e only adds revealed-
+    preference edges), so the supremum is the upper breakpoint of the highest
+    open interval (c[k-1], c[k]) on which the axiom still holds. Each interval is
+    tested at its midpoint, where no ratio tie occurs, so the relations are
+    unambiguous (Smeulders et al. 2014, Algorithm 2). A sentinel boundary at 1.0
+    covers the top interval (c[n-1], 1).
     """
     E = session.expenditure_matrix
     own_exp = session.own_expenditures
 
-    # Compute all T^2 efficiency ratios: e at which R_e[i,j] flips
-    # R_e[i,j] = True iff e * own_exp[i] >= E[i,j]
-    # Critical e for (i,j): e = E[i,j] / own_exp[i]
+    # R_e[i,j] = True iff e * own_exp[i] >= E[i,j]; the relation flips at
+    # e = E[i,j] / own_exp[i]. Keep the breakpoints in (0, 1), sorted ascending.
     ratios = E / own_exp[:, np.newaxis]
-
-    # Filter to (0, 1) range, flatten, deduplicate, sort descending
     flat = ratios.ravel()
     mask = (flat > 0) & (flat < 1.0)
-    candidates = np.unique(flat[mask])
-    candidates = np.sort(candidates)[::-1]  # Descending: try high e first
+    candidates = np.unique(flat[mask])  # np.unique returns sorted ascending
+    n = len(candidates)
 
-    if len(candidates) == 0:
-        return 0.0, 0, None
-
-    # Binary search over sorted candidates
-    lo, hi = 0, len(candidates) - 1
+    lo, hi = 0, n  # sentinel index n -> boundary 1.0
     iterations = 0
-    best_e = 0.0
+    best_k = 0  # interval (0, c[0]) always holds: no edges active yet
     best_result: GARPResult | None = None
 
     while lo <= hi:
         mid = (lo + hi) // 2
-        e = float(candidates[mid])
-
-        is_consistent, result_at_e = _check_axiom_at_breakpoint(
-            session,
-            axiom,
-            e,
+        lower = 0.0 if mid == 0 else float(candidates[mid - 1])
+        upper = 1.0 if mid >= n else float(candidates[mid])
+        probe = 0.5 * (lower + upper)
+        # Exact comparison at the midpoint: it never coincides with a ratio.
+        is_consistent, result_at_probe = _check_axiom_at_efficiency(
+            session, axiom, probe, tolerance=0.0
         )
         iterations += 1
 
         if is_consistent:
-            best_e = e
-            best_result = result_at_e
-            # Try higher e (lower index in descending array)
-            hi = mid - 1
-        else:
-            # Need lower e (higher index in descending array)
+            best_k = mid
+            best_result = result_at_probe
             lo = mid + 1
+        else:
+            if mid == 0:
+                break
+            hi = mid - 1
 
-    return best_e, iterations, best_result
+    ccei = 1.0 if best_k >= n else float(candidates[best_k])
+    return ccei, iterations, best_result
 
 
 def _continuous_binary_search(
@@ -246,40 +246,6 @@ def _continuous_binary_search(
         iterations += 1
 
     return last_consistent_e, iterations, last_consistent_result
-
-
-def _check_axiom_at_breakpoint(
-    session: ConsumerSession,
-    axiom: str,
-    efficiency: float,
-) -> tuple[bool, GARPResult]:
-    """Check whether the CCEI supremum reaches a discrete breakpoint."""
-    is_consistent, result_at_e = _check_axiom_at_efficiency(
-        session,
-        axiom,
-        efficiency,
-        tolerance=1e-10,
-    )
-    if is_consistent or efficiency <= 0.0:
-        return is_consistent, result_at_e
-
-    # For SARP-style weak cycles, the supremum can occur at a breakpoint even
-    # when the axiom fails exactly at equality. Probe the one-sided limit from
-    # below to recover the Afriat/CCEI supremum.
-    probe_e = float(np.nextafter(efficiency, 0.0))
-    if probe_e == efficiency:
-        probe_e = max(0.0, efficiency - np.finfo(float).eps)
-
-    probe_consistent, probe_result = _check_axiom_at_efficiency(
-        session,
-        axiom,
-        probe_e,
-        tolerance=0.0,
-    )
-    if probe_consistent:
-        return True, probe_result
-
-    return False, result_at_e
 
 
 def _check_axiom_at_efficiency(

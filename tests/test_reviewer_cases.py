@@ -64,8 +64,17 @@ class TestBudgetReviewerCases:
         assert garp.is_consistent is False
         assert len(garp.violations) > 0  # Regression: was [] before fix
 
+        # Boundary case (verified against a continuous-bisection oracle and by
+        # hand): the only revealed-preference relation, x0 R x1, is an exact
+        # affordability tie at e=1 (p0*q1 = p0*q0 = 3). The data is therefore
+        # e-GARP-consistent for every e < 1, so the CCEI supremum is exactly 1.0
+        # even though GARP fails at e=1 (Smeulders et al. 2014). CCEI=1.0 does
+        # NOT imply perfect consistency: is_perfectly_consistent stays False and
+        # the violation is still reported above. (Before the supremum fix this
+        # returned the spurious lower breakpoint 0.8.)
         aei = compute_integrity_score(log)
-        assert 0 < aei.efficiency_index < 1
+        assert aei.efficiency_index == pytest.approx(1.0, abs=1e-9)
+        assert aei.is_perfectly_consistent is False
 
         mpi = compute_confusion_metric(log)
         assert mpi.mpi_value > 0
