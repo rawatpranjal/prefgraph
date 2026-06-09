@@ -69,9 +69,9 @@ dev = [
     "mypy>=1.0",
     "ruff>=0.1.0",
     # Type stubs so the mypy gate resolves third-party imports in CI's fresh install.
-    "scipy-stubs>=1.17",
-    "pandas-stubs>=2.2",
-    "types-networkx>=3.4",
+    "scipy-stubs>=1.17; python_version >= '3.11'",
+    "pandas-stubs>=2.2; python_version >= '3.11'",
+    "types-networkx>=3.4; python_version >= '3.11'",
 ]
 docs = [
     "sphinx>=7.0",
