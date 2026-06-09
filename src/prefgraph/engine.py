@@ -575,10 +575,11 @@ class Engine:
             )
             for r in raw_results
         ]
-        # Post-process VEI: if vei was requested but Rust returned the 1.0 default
-        # on GARP-violating data, compute in Python using compute_vei().
-        # The Rust backend may not implement VEI or may silently return 1.0
-        # (the EngineResult default) when it can't compute.
+        # Post-process VEI: Rust's LP relaxation (compute_vei) maximises Σe_i subject
+        # to lower-bound constraints, which returns all e_i=1.0 for any feasible input.
+        # This gives vei_mean=1.0 even when GARP is violated. Replace with Python's
+        # compute_vei (scipy LP, minimises Σ(1-e_i)) which correctly finds the
+        # efficiency-minimising vector. Also update vei_std/q25/q75 from the vector.
         if flags.get("vei"):
             from prefgraph.core.session import BehaviorLog as _BL
             from prefgraph.algorithms.vei import compute_vei as _compute_vei
@@ -589,8 +590,14 @@ class Engine:
                     try:
                         log = _BL(cost_vectors=prices, action_vectors=quantities)
                         vr = _compute_vei(log)
+                        ev = vr.efficiency_vector
                         er = replace(
-                            er, vei_mean=vr.mean_efficiency, vei_min=vr.min_efficiency
+                            er,
+                            vei_mean=vr.mean_efficiency,
+                            vei_min=vr.min_efficiency,
+                            vei_std=float(np.std(ev, ddof=0)),
+                            vei_q25=float(np.percentile(ev, 25)),
+                            vei_q75=float(np.percentile(ev, 75)),
                         )
                     except Exception:
                         pass
@@ -605,36 +612,56 @@ class Engine:
     ) -> list[EngineResult]:
         """Python fallback when Rust backend is unavailable (HAS_RUST=False).
 
-        Supports: GARP, CCEI, MPI, HM, HARP, utility.
-        Does NOT support: VEI (requires Rust LP solver).
-
-        Each metric matches the Rust Engine output. Algorithm references:
+        Supports all fields computed by the Rust Engine. Algorithm references:
         - GARP: Varian (1982), SCC + Floyd-Warshall
         - CCEI: Afriat (1967), binary search
         - MPI: Echenique, Lee & Shum (2011), Karp's max-mean cycle
         - HM: Houtman & Maks (1985), exact ILP for T<=100, greedy FVS otherwise
         - HARP: Varian (1983), FW on log-ratios (binary test only, no severity)
         - Utility: Afriat (1967), LP via scipy/HiGHS
+        - VEI: Varian (1990), per-observation LP
+        - SCC stats: find_sccs on GARP R matrix, mirrors Rust garp.max_scc_size
+        - Network stats: r_density/r_out_degree_std/degree_gini from R matrix;
+          ew_mean/ew_std/ew_skew from HARP log-ratio weights on R edges.
+          Formulas mirror Rust batch.rs compute_graph_stats exactly.
         """
         from prefgraph import BehaviorLog, check_garp, compute_aei, compute_mpi
         from prefgraph.algorithms.mpi import compute_houtman_maks_index
         from prefgraph.algorithms.harp import check_harp
         from prefgraph.algorithms.utility import recover_utility
+        from prefgraph.algorithms.vei import compute_vei
+        from prefgraph.graph.scc import find_sccs
 
         results = []
         for prices, quantities in chunk:
             log = BehaviorLog(cost_vectors=prices, action_vectors=quantities)
+            T = prices.shape[0]
 
             # GARP: always computed - it's the foundation for all other metrics.
             # Varian (1982): SCC decomposition + Floyd-Warshall transitive closure.
             garp = check_garp(log, self.tolerance)
+            R = garp.direct_revealed_preference  # T x T bool, GARP R matrix
+
+            # --- SCC stats (always computed, mirrors Rust garp.max_scc_size/n_components) ---
+            # Rust batch.rs: n_scc = garp.n_components; scc_mean_size = T / n_scc;
+            # max_scc = *scc_sizes.iter().max() (largest SCC node count).
+            n_scc_val, scc_labels = find_sccs(R)
+            if n_scc_val > 0:
+                scc_sizes = np.bincount(scc_labels, minlength=n_scc_val)
+                max_scc_val = int(np.max(scc_sizes))
+                scc_mean_size_val = float(T) / float(n_scc_val)
+            else:
+                max_scc_val = T
+                scc_mean_size_val = float(T)
+
+            # --- Per-metric variables (None = "not computed") ---
             ccei_val = 1.0
             mpi_val = 0.0
-            # None = "not computed" (distinct from 0 = "computed, zero removals").
-            hm_consistent = None
-            hm_total = None
-            is_harp = None
-            utility_success = None
+            hm_consistent: Optional[int] = None
+            hm_total: Optional[int] = None
+            is_harp: Optional[bool] = None
+            utility_success: Optional[bool] = None
+            harp_result_obj = None  # kept for ew_* computation if network also set
 
             # CCEI (Afriat Efficiency Index): only computed when GARP fails.
             # Consistent data has CCEI=1.0 by definition - no search needed.
@@ -654,19 +681,19 @@ class Engine:
             # Houtman & Maks (1985). NP-hard (Smeulders et al. 2014).
             # Uses exact ILP (Demuynck & Rehbeck 2023) for T<=100, greedy FVS above.
             if flags.get("hm"):
-                hm_total = prices.shape[0]
-                hm_result = compute_houtman_maks_index(log, self.tolerance)
-                hm_consistent = hm_total - len(hm_result.removed_observations)
+                hm_total = T
+                hm_res = compute_houtman_maks_index(log, self.tolerance)
+                hm_consistent = hm_total - len(hm_res.removed_observations)
 
             # HARP: binary test for homothetic preferences.
             # Varian (1983), C&E (2016) Theorem 4.2: (>=^H, >^H) is acyclic.
-            # No severity metric exists in the literature - only pass/fail.
+            # harp_severity is always 1.0 in BOTH backends - Varian (1983) defines no
+            # severity metric; confirmed in Rust rpt-core/harp.rs (max_cycle_product=1.0).
             if flags.get("harp"):
-                harp_result = check_harp(log, self.tolerance)
-                is_harp = harp_result.is_consistent
+                harp_result_obj = check_harp(log, self.tolerance)
+                is_harp = harp_result_obj.is_consistent
 
-            # Utility recovery: Afriat LP - find U_t, lambda_t satisfying
-            # Afriat's inequalities. Success = data is rationalizable.
+            # Utility recovery: Afriat LP.
             if flags.get("utility"):
                 try:
                     util_result = recover_utility(log)
@@ -674,29 +701,111 @@ class Engine:
                 except Exception:
                     utility_success = False
 
-            # VEI: per-observation efficiency - Varian (1990) "Goodness-of-fit
-            # in optimizing models", J. Econometrics 46(1-2), 125-140.
-            # papers/EcheniqueLeeShum2011_MoneyPump.pdf p.7 footnote 3:
-            #   "Varian modifies AEI by allowing e to vary across the different
-            #    price vectors, looking at a vector (e_k). Varian's measure is
-            #    the closest distance to the unit vector (e_k = 1) of a (e_k)
-            #    with no violations of GARP."
-            # Smeulders et al. (2014), Section 2.2:
-            #   "VI equals the vector e that is closest to one, for some given
-            #    norm, such that the data satisfies the revealed-preference
-            #    axiom under study."
-            # Mononen (2023), Section 2.2:
-            #   "Varian's index is the least average of adjustments required
-            #    to rationalize the data."
+            # --- Network / graph stats (mirrors Rust batch.rs compute_graph_stats) ---
+            # r_density, r_out_degree_std, degree_gini from GARP R matrix edges.
+            # ew_mean/ew_std/ew_skew from HARP log-ratio weights on those same edges -
+            # only when flags["harp"] is also set (Rust requires graph.has_weights which
+            # is set by harp_check; without it ew_* = 0.0 in Rust too).
+            r_density_val = 0.0
+            r_out_degree_std_val = 0.0
+            degree_gini_val = 0.0
+            ew_mean_val = 0.0
+            ew_std_val = 0.0
+            ew_skew_val = 0.0
+
+            if flags.get("network") and T >= 2:
+                # Build off-diagonal edge mask (i != j)
+                R_no_diag = R.copy()
+                np.fill_diagonal(R_no_diag, False)
+                out_deg = R_no_diag.sum(axis=1).astype(np.float64)
+                in_deg = R_no_diag.sum(axis=0).astype(np.float64)
+                r_edges = int(out_deg.sum())
+                n_possible = T * (T - 1)
+                r_density_val = r_edges / n_possible if n_possible > 0 else 0.0
+
+                # Out-degree std: population variance (ddof=0).
+                # Mirrors Rust: out_var = sum((d - out_mean)^2) / t
+                out_mean = r_edges / float(T)
+                r_out_degree_std_val = float(
+                    np.sqrt(np.mean((out_deg - out_mean) ** 2))
+                )
+
+                # Degree Gini: Gini coefficient of total_degree = out_deg + in_deg.
+                # Mirrors Rust formula:
+                #   (2 * sum((rank+1)*d) - (n+1)*sum(d)) / (n * sum(d))
+                # where degrees are sorted ascending (rank 0..n-1).
+                total_deg = out_deg + in_deg
+                deg_sum = float(total_deg.sum())
+                if deg_sum > 0.0:
+                    sorted_deg = np.sort(total_deg)
+                    n = float(T)
+                    weighted_sum = float(
+                        np.dot(np.arange(1.0, T + 1.0, dtype=np.float64), sorted_deg)
+                    )
+                    degree_gini_val = (2.0 * weighted_sum - (n + 1.0) * deg_sum) / (
+                        n * deg_sum
+                    )
+
+                # Edge-weight stats: log(own_exp[i] / E[i,j]) on GARP R edges.
+                # Only when HARP was also computed (Rust: graph.has_weights only after
+                # harp_check; ew_* = 0.0 if has_weights is False).
+                if flags.get("harp") and harp_result_obj is not None and r_edges > 0:
+                    log_r = harp_result_obj.log_ratio_matrix  # T x T
+                    weights = log_r[R_no_diag]  # 1-D: values on GARP R off-diag edges
+                    weights = weights[np.isfinite(weights)]
+                    if len(weights) > 0:
+                        ew_mean_val = float(np.mean(weights))
+                        ew_var = float(np.mean((weights - ew_mean_val) ** 2))
+                        ew_std_val = float(np.sqrt(ew_var))
+                        if ew_std_val > 1e-12:
+                            ew_skew_val = float(
+                                np.mean(((weights - ew_mean_val) / ew_std_val) ** 3)
+                            )
+
+            # --- VEI (Varian 1990): per-observation efficiency LP ---
+            # Varian (1990) "Goodness-of-fit in optimizing models",
+            # J. Econometrics 46(1-2), 125-140.
+            # Defaults are mathematically correct for GARP-consistent data
+            # (all e_i = 1.0, std = 0.0). Only call LP when GARP fails.
+            # Percentile formula mirrors Rust batch.rs percentile(): linear interpolation
+            # identical to numpy's default np.percentile method.
             vei_mean_val = 1.0
             vei_min_val = 1.0
+            vei_std_val = 0.0
+            vei_q25_val = 1.0
+            vei_q75_val = 1.0
+
             if flags.get("vei") and not garp.is_consistent:
                 try:
-                    from prefgraph.algorithms.vei import compute_vei
+                    vr = compute_vei(log)
+                    ev = vr.efficiency_vector
+                    vei_mean_val = vr.mean_efficiency
+                    vei_min_val = vr.min_efficiency
+                    vei_std_val = float(np.std(ev, ddof=0))
+                    vei_q25_val = float(np.percentile(ev, 25))
+                    vei_q75_val = float(np.percentile(ev, 75))
+                except Exception:
+                    pass  # keep defaults on solver failure
 
-                    vei_result = compute_vei(log)
-                    vei_mean_val = vei_result.mean_efficiency
-                    vei_min_val = vei_result.min_efficiency
+            # --- VEI exact ---
+            # Python has no separate compute_vei_exact; compute_vei (scipy LP) is the
+            # closest equivalent. vei and vei_exact may disagree with Rust's exact LP
+            # but both are correct per-observation indices.
+            vei_exact_mean_val = 1.0
+            vei_exact_min_val = 1.0
+            vei_exact_std_val = 0.0
+            vei_exact_q25_val = 1.0
+            vei_exact_q75_val = 1.0
+
+            if flags.get("vei_exact") and not garp.is_consistent:
+                try:
+                    vr_ex = compute_vei(log)
+                    ev_ex = vr_ex.efficiency_vector
+                    vei_exact_mean_val = vr_ex.mean_efficiency
+                    vei_exact_min_val = vr_ex.min_efficiency
+                    vei_exact_std_val = float(np.std(ev_ex, ddof=0))
+                    vei_exact_q25_val = float(np.percentile(ev_ex, 25))
+                    vei_exact_q75_val = float(np.percentile(ev_ex, 75))
                 except Exception:
                     pass  # keep defaults on solver failure
 
@@ -712,6 +821,24 @@ class Engine:
                     utility_success=utility_success,
                     vei_mean=vei_mean_val,
                     vei_min=vei_min_val,
+                    vei_std=vei_std_val,
+                    vei_q25=vei_q25_val,
+                    vei_q75=vei_q75_val,
+                    vei_exact_mean=vei_exact_mean_val,
+                    vei_exact_min=vei_exact_min_val,
+                    vei_exact_std=vei_exact_std_val,
+                    vei_exact_q25=vei_exact_q25_val,
+                    vei_exact_q75=vei_exact_q75_val,
+                    max_scc=max_scc_val,
+                    n_scc=n_scc_val,
+                    scc_mean_size=scc_mean_size_val,
+                    r_density=r_density_val,
+                    r_out_degree_std=r_out_degree_std_val,
+                    degree_gini=degree_gini_val,
+                    ew_mean=ew_mean_val,
+                    ew_std=ew_std_val,
+                    ew_skew=ew_skew_val,
+                    # harp_severity retains its default of 1.0 (never set here or in Rust)
                 )
             )
         return results
@@ -784,13 +911,16 @@ class Engine:
                     for r in raw
                 )
             else:
-                # Python fallback
+                # Python fallback for menu analysis.
+                # Computes all MenuResult fields that the Rust backend provides.
                 from prefgraph import MenuChoiceLog
                 from prefgraph.algorithms.abstract_choice import (
                     validate_menu_sarp,
                     validate_menu_warp,
                     compute_menu_efficiency,
                 )
+                from prefgraph.algorithms.attention import test_warp_la
+                from prefgraph.graph.scc import find_sccs
 
                 for menus, choices, n_items in chunk:
                     log = MenuChoiceLog(
@@ -800,14 +930,71 @@ class Engine:
                     sarp = validate_menu_sarp(log)
                     warp = validate_menu_warp(log)
                     hm = compute_menu_efficiency(log)
+
+                    # WARP-LA: gated on compute_warp_la flag, mirrors Rust batch.rs.
+                    is_warp_la_val = False
+                    if compute_warp_la:
+                        warpla_res = test_warp_la(log)
+                        is_warp_la_val = warpla_res.satisfies_warp_la
+
+                    # SCC stats on the item preference graph (R matrix from SARP).
+                    # Mirrors Rust: max_scc = sarp.max_scc_size, n_scc = sarp.n_components.
+                    R_menu = sarp.revealed_preference_matrix  # n_items x n_items
+                    n_items_graph = R_menu.shape[0]
+                    if n_items_graph > 0:
+                        n_scc_m, scc_labels_m = find_sccs(R_menu)
+                        if n_scc_m > 0:
+                            sz_m = np.bincount(scc_labels_m, minlength=n_scc_m)
+                            max_scc_m = int(np.max(sz_m))
+                        else:
+                            n_scc_m = 0
+                            max_scc_m = 0
+                    else:
+                        n_scc_m = 0
+                        max_scc_m = 0
+
+                    # Network stats: gated on "network" in self.metrics.
+                    # Mirrors Rust batch.rs compute_menu_graph_stats.
+                    r_density_m = 0.0
+                    pref_entropy_m = 0.0
+                    choice_diversity_m = 0.0
+
+                    if "network" in self.metrics and n_items_graph >= 2:
+                        R_nd = R_menu.copy()
+                        np.fill_diagonal(R_nd, False)
+                        out_deg_m = R_nd.sum(axis=1).astype(np.float64)
+                        r_edges_m = int(out_deg_m.sum())
+                        n_poss_m = n_items_graph * (n_items_graph - 1)
+                        r_density_m = r_edges_m / n_poss_m if n_poss_m > 0 else 0.0
+
+                        # Preference entropy: Shannon entropy (base 2) of
+                        # out-degree distribution.
+                        # Mirrors Rust: -sum(p_i * log2(p_i)) for p_i = d_i / sum(d)
+                        deg_sum_m = float(out_deg_m.sum())
+                        if deg_sum_m > 0.0:
+                            p_m = out_deg_m / deg_sum_m
+                            p_nz = p_m[p_m > 0.0]
+                            pref_entropy_m = float(-np.sum(p_nz * np.log2(p_nz)))
+
+                        # Choice diversity: unique choices / total choices.
+                        n_ch = len(choices)
+                        if n_ch > 0:
+                            choice_diversity_m = len(set(choices)) / n_ch
+
                     all_results.append(
                         MenuResult(
                             is_sarp=sarp.is_consistent,
                             is_warp=warp.is_consistent,
+                            is_warp_la=is_warp_la_val,
                             n_sarp_violations=len(sarp.violations),
                             n_warp_violations=len(warp.violations),
                             hm_consistent=len(hm.remaining_observations),
                             hm_total=hm.num_total,
+                            max_scc=max_scc_m,
+                            n_scc=n_scc_m,
+                            r_density=r_density_m,
+                            pref_entropy=pref_entropy_m,
+                            choice_diversity=choice_diversity_m,
                         )
                     )
 
