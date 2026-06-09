@@ -13,10 +13,16 @@ from prefgraph.core.result import MPIResult, MPIBoundsResult, HoutmanMaksResult
 from prefgraph.core.types import Cycle
 
 # Hyperparameter: ILP vs greedy threshold for Houtman-Maks.
-# ILP (scipy.optimize.milp) gives exact optimal solution but is O(exponential).
-# Greedy FVS is O(T^2) but is a 2-approximation that can over-remove.
-# For T <= threshold, use ILP for exact results; above, fall back to greedy.
-HOUTMAN_MAKS_ILP_THRESHOLD = 50
+# The exact ILP (scipy.optimize.milp / HiGHS) is the only trustworthy method.
+# The greedy fallback runs feedback-vertex-set on the transitive closure, which
+# is a complete bidirectional digraph, so it keeps one observation per cyclic
+# component and OVER-removes (1.5 to 3 times the optimum) at large T. It is a
+# grossly loose upper bound on removals (at T=100 it removed 97 observations
+# where the exact ILP removes 3), used only above this threshold where the exact
+# MILP is intractable. Raised from 50 so per-user budget data up to T=100 uses
+# the exact value; the exact ILP costs a few seconds at T=100 but correctness
+# outweighs the greedy's wild over-removal.
+HOUTMAN_MAKS_ILP_THRESHOLD = 100
 
 
 def compute_mpi(

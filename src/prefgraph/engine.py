@@ -48,8 +48,8 @@ class EngineResult:
         mpi: Money Pump Index (Echenique, Lee & Shum 2011). Average
             exploitability per dollar. 0.0 = unexploitable. Range: [0, 1).
         is_harp: True if choices satisfy HARP (homothetic preferences).
-        hm_consistent: Houtman-Maks: number of consistent observations (budget) or items (menu).
-        hm_total: Total observations (budget) or items (menu).
+        hm_consistent: Houtman-Maks: number of consistent observations (budget and menu).
+        hm_total: Total observations (budget and menu).
         utility_success: True if Afriat's LP recovered a rationalizing utility.
         vei_mean: Mean Varian Efficiency Index across observations. Range: [0, 1].
         vei_min: Worst-observation VEI. Range: [0, 1].
@@ -178,8 +178,8 @@ class MenuResult:
             ``compute_warp_la=True``.
         n_sarp_violations: Number of SARP violation cycles found.
         n_warp_violations: Number of WARP violation pairs found.
-        hm_consistent: Houtman-Maks: number of consistent observations (budget) or items (menu).
-        hm_total: Total observations (budget) or items (menu).
+        hm_consistent: Houtman-Maks: number of consistent observations (menu-choice pairs).
+        hm_total: Total observations (menu-choice pairs).
         max_scc: Largest SCC in the item graph. 1 = acyclic.
         compute_time_us: Wall-clock computation time in microseconds.
     """

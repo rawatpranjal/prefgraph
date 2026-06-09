@@ -312,8 +312,6 @@ def compute_menu_efficiency(log: MenuChoiceLog) -> HoutmanMaksAbstractResult:
         >>> result = compute_menu_efficiency(log)
         >>> print(f"Efficiency: {result.efficiency_index:.2f}")
     """
-    from prefgraph.graph.scc import find_sccs, greedy_feedback_vertex_set
-
     start_time = time.perf_counter()
 
     n_obs = log.num_observations
@@ -328,24 +326,22 @@ def compute_menu_efficiency(log: MenuChoiceLog) -> HoutmanMaksAbstractResult:
             computation_time_ms=computation_time,
         )
 
-    # Build revealed preference matrix R
+    # Build the item preference graph. Each observation makes its chosen item
+    # revealed preferred to the other items available in that menu. Record the
+    # edges per observation so removals are counted over observations, not items.
     all_items = log.all_items
     n_items = max(all_items) + 1 if all_items else 0
 
+    obs_edges: list[list[tuple[int, int]]] = []
     R = np.zeros((n_items, n_items), dtype=np.bool_)
-    # Track which observation created each preference edge
-    edge_to_obs: dict[tuple[int, int], int] = {}
+    for menu, choice in zip(log.menus, log.choices):
+        edges = [(choice, item) for item in menu if item != choice]
+        obs_edges.append(edges)
+        for c, k in edges:
+            R[c, k] = True
 
-    for t, (menu, choice) in enumerate(zip(log.menus, log.choices)):
-        for item in menu:
-            if item != choice:
-                R[choice, item] = True
-                edge_to_obs[(choice, item)] = t
-
-    # Compute transitive closure and check SARP
+    # SARP holds iff the item graph is acyclic.
     R_star = floyd_warshall_transitive_closure(R)
-
-    # SARP violations: R*[x,y] AND R*[y,x] for x != y
     violation_matrix = R_star & R_star.T
     np.fill_diagonal(violation_matrix, False)
 
@@ -359,52 +355,111 @@ def compute_menu_efficiency(log: MenuChoiceLog) -> HoutmanMaksAbstractResult:
             computation_time_ms=computation_time,
         )
 
-    # Find SCCs of R - cycles only exist within SCCs
-    n_comp, labels = find_sccs(R)
-    scc_sizes = np.bincount(labels, minlength=n_comp)
+    # Houtman-Maks over OBSERVATIONS (Houtman & Maks 1985; Demuynck & Rehbeck
+    # 2023 Def 3): the largest subset of observations whose induced item graph is
+    # acyclic. Exact via a ranking ILP below the threshold; above it, a greedy
+    # upper bound on removals.
+    if n_obs <= MENU_HM_ILP_THRESHOLD:
+        removed_obs = _menu_houtman_maks_exact(obs_edges, n_items, n_obs)
+    else:
+        removed_obs = _menu_houtman_maks_greedy(obs_edges, n_items, n_obs)
 
-    # Find items that need removal via greedy FVS per SCC
-    removed_items: set[int] = set()
-
-    for c in range(n_comp):
-        if scc_sizes[c] <= 1:
-            continue
-
-        scc_nodes = np.where(labels == c)[0]
-
-        # Check if this SCC has SARP violations
-        sub_violation = violation_matrix[np.ix_(scc_nodes, scc_nodes)]
-        if not np.any(sub_violation):
-            continue
-
-        sub_R = R[np.ix_(scc_nodes, scc_nodes)].copy()
-        fvs_local = greedy_feedback_vertex_set(sub_R)
-
-        for local_idx in fvs_local:
-            removed_items.add(int(scc_nodes[local_idx]))
-
-    # Map removed items back to observations
-    # An observation is removed if it created a preference edge involving a removed item
-    removed_obs: list[int] = []
-    removed_obs_set: set[int] = set()
-
-    for (src, dst), obs_idx in edge_to_obs.items():
-        if src in removed_items and obs_idx not in removed_obs_set:
-            removed_obs_set.add(obs_idx)
-            removed_obs.append(obs_idx)
-
-    remaining = [i for i in range(n_obs) if i not in removed_obs_set]
-
+    removed_set = set(removed_obs)
+    remaining = [i for i in range(n_obs) if i not in removed_set]
     computation_time = (time.perf_counter() - start_time) * 1000
     efficiency = 1.0 - (len(removed_obs) / n_obs) if n_obs > 0 else 1.0
 
     return HoutmanMaksAbstractResult(
         efficiency_index=efficiency,
-        removed_observations=removed_obs,
+        removed_observations=sorted(removed_set),
         remaining_observations=remaining,
         num_total=n_obs,
         computation_time_ms=computation_time,
     )
+
+
+MENU_HM_ILP_THRESHOLD = 60
+
+
+def _menu_houtman_maks_exact(
+    obs_edges: list[list[tuple[int, int]]],
+    n_items: int,
+    n_obs: int,
+) -> list[int]:
+    """Exact menu Houtman-Maks over observations.
+
+    Maximise the number of kept observations subject to the kept item graph
+    being acyclic, encoded as a ranking ILP: a binary keep-flag z_o per
+    observation and a real rank r_i per item, with r[chosen] >= r[other] + 1 for
+    every edge of a kept observation (the constraint is inactive when z_o = 0).
+    A consistent ranking exists iff the kept graph is acyclic, i.e. SARP holds.
+    """
+    from scipy.optimize import Bounds, LinearConstraint, milp
+
+    big_m = float(n_items + 1)
+    n_vars = n_obs + n_items
+    rows: list[list[float]] = []
+    upper: list[float] = []
+    for o, edges in enumerate(obs_edges):
+        for chosen, other in edges:
+            row = [0.0] * n_vars
+            row[n_obs + chosen] -= 1.0
+            row[n_obs + other] += 1.0
+            row[o] += big_m
+            rows.append(row)
+            upper.append(big_m - 1.0)
+
+    if not rows:
+        return []
+
+    c = np.zeros(n_vars)
+    c[:n_obs] = -1.0  # maximize sum(z)
+    integrality = np.zeros(n_vars, dtype=int)
+    integrality[:n_obs] = 1
+    lb = np.zeros(n_vars)
+    ub = np.concatenate([np.ones(n_obs), np.full(n_items, float(n_items))])
+    res = milp(
+        c,
+        constraints=LinearConstraint(np.array(rows), -np.inf, np.array(upper)),
+        integrality=integrality,
+        bounds=Bounds(lb, ub),
+    )
+    if not getattr(res, "success", False) or res.x is None:
+        return _menu_houtman_maks_greedy(obs_edges, n_items, n_obs)
+    z = res.x[:n_obs]
+    return [o for o in range(n_obs) if z[o] < 0.5]
+
+
+def _menu_houtman_maks_greedy(
+    obs_edges: list[list[tuple[int, int]]],
+    n_items: int,
+    n_obs: int,
+) -> list[int]:
+    """Greedy upper bound on removals: drop the observation touching the most
+    SARP-violating item pairs until the remaining item graph is acyclic. Used
+    only above the exact-ILP threshold; it over-removes relative to the optimum."""
+    kept = set(range(n_obs))
+    removed: list[int] = []
+    while True:
+        graph = np.zeros((n_items, n_items), dtype=np.bool_)
+        for o in kept:
+            for c, k in obs_edges[o]:
+                graph[c, k] = True
+        closure = floyd_warshall_transitive_closure(graph)
+        viol = closure & closure.T
+        np.fill_diagonal(viol, False)
+        if not np.any(viol):
+            break
+        best_o, best_score = -1, -1
+        for o in kept:
+            score = sum(1 for c, k in obs_edges[o] if viol[c, k] or viol[k, c])
+            if score > best_score:
+                best_o, best_score = o, score
+        if best_o < 0:
+            break
+        kept.discard(best_o)
+        removed.append(best_o)
+    return removed
 
 
 def fit_menu_preferences(log: MenuChoiceLog) -> OrdinalUtilityResult:
