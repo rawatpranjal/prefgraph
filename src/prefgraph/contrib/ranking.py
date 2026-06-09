@@ -27,16 +27,12 @@ References:
 from __future__ import annotations
 
 import time
-from dataclasses import dataclass
-from typing import TYPE_CHECKING
 
 import numpy as np
 from numpy.typing import NDArray
 from scipy.optimize import minimize
 
 from prefgraph.core.result import BradleyTerryResult, RankingComparisonResult
-from prefgraph.core.mixins import ResultSummaryMixin
-from prefgraph.core.display import ResultDisplayMixin, ResultPlotMixin
 from prefgraph.core.exceptions import ComputationalLimitError
 
 
@@ -362,8 +358,7 @@ def aggregate_rankings(
 
         for perm in permutations(items):
             total_distance = sum(
-                _kendall_tau_distance(list(perm), ranking)
-                for ranking in rankings
+                _kendall_tau_distance(list(perm), ranking) for ranking in rankings
             )
             if total_distance < min_distance:
                 min_distance = total_distance
@@ -604,7 +599,7 @@ def compute_rank_biased_overlap(
     # This accounts for the remaining probability mass
     overlap_at_k = len(set1 & set2)
     if k > 0:
-        rbo += (p ** k) * (overlap_at_k / k)
+        rbo += (p**k) * (overlap_at_k / k)
 
     return rbo
 

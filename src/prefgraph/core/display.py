@@ -202,7 +202,6 @@ class ResultPlotMixin:
     def _plot_heatmap(self, **kwargs) -> tuple[Any, Any]:
         """Plot heatmap visualization."""
         import matplotlib.pyplot as plt
-        import numpy as np
 
         figsize = kwargs.get("figsize", (8, 8))
         fig, ax = plt.subplots(figsize=figsize)
@@ -268,7 +267,12 @@ class ResultPlotMixin:
             return fig, ax
 
         ax.hist(values, bins=kwargs.get("bins", 30), edgecolor="black", alpha=0.7)
-        ax.axvline(np.mean(values), color="red", linestyle="--", label=f"Mean: {np.mean(values):.3f}")
+        ax.axvline(
+            np.mean(values),
+            color="red",
+            linestyle="--",
+            label=f"Mean: {np.mean(values):.3f}",
+        )
         ax.set_title(title)
         ax.set_xlabel("Value")
         ax.set_ylabel("Count")
@@ -292,8 +296,7 @@ class ResultPlotMixin:
 
         # Only works for GARP-related results
         if not (
-            hasattr(self, "direct_revealed_preference")
-            and hasattr(self, "violations")
+            hasattr(self, "direct_revealed_preference") and hasattr(self, "violations")
         ):
             raise NotImplementedError(
                 f"{class_name} does not support graph conversion. "

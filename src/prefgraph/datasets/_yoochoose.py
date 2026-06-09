@@ -16,7 +16,6 @@ from __future__ import annotations
 import os
 from pathlib import Path
 
-import numpy as np
 
 from prefgraph.core.session import MenuChoiceLog
 
@@ -36,15 +35,17 @@ def _find_data_dir(data_dir: str | Path | None) -> Path:
     if env:
         candidates.append(Path(env) / "yoochoose")
 
-    candidates.extend([
-        Path.home() / ".prefgraph" / "data" / "yoochoose",
-        Path(__file__).resolve().parents[3] / "datasets" / "yoochoose" / "data",
-    ])
+    candidates.extend(
+        [
+            Path.home() / ".prefgraph" / "data" / "yoochoose",
+            Path(__file__).resolve().parents[3] / "datasets" / "yoochoose" / "data",
+        ]
+    )
 
     for d in candidates:
         if d.is_dir() and (
-            (d / "yoochoose-clicks.dat").exists() or
-            (d / "yoochoose-clicks.csv").exists()
+            (d / "yoochoose-clicks.dat").exists()
+            or (d / "yoochoose-clicks.csv").exists()
         ):
             return d
 
@@ -131,10 +132,7 @@ def load_yoochoose(
 
     # Build menus: items clicked in each session
     session_menus = (
-        clicks_with_buys
-        .groupby("session_id")["item_id"]
-        .apply(set)
-        .to_dict()
+        clicks_with_buys.groupby("session_id")["item_id"].apply(set).to_dict()
     )
 
     # Build (menu, choice) pairs
@@ -146,11 +144,13 @@ def load_yoochoose(
         menu = menu | {choice}  # Ensure choice is in menu
         if len(menu) < MIN_MENU_SIZE or len(menu) > MAX_MENU_SIZE:
             continue
-        records.append({
-            "session_id": session_id,
-            "menu": frozenset(menu),
-            "choice": choice,
-        })
+        records.append(
+            {
+                "session_id": session_id,
+                "menu": frozenset(menu),
+                "choice": choice,
+            }
+        )
 
     print(f"  Valid sessions: {len(records):,}")
 
@@ -192,7 +192,7 @@ def load_yoochoose(
         # Split this category's sessions into user-sized chunks
         sessions_list = group.to_dict("records")
         for chunk_start in range(0, len(sessions_list), min_sessions * 2):
-            chunk = sessions_list[chunk_start:chunk_start + min_sessions * 2]
+            chunk = sessions_list[chunk_start : chunk_start + min_sessions * 2]
             if len(chunk) < min_sessions:
                 continue
 

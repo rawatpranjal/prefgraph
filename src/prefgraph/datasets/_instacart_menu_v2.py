@@ -34,10 +34,12 @@ def _find_data_dir(data_dir: str | Path | None) -> Path:
     env = os.environ.get("PYREVEALED_DATA_DIR") or os.environ.get("PREFGRAPH_DATA_DIR")
     if env:
         candidates.append(Path(env) / "instacart")
-    candidates.extend([
-        Path.home() / ".prefgraph" / "data" / "instacart",
-        Path.home() / ".pyrevealed" / "data" / "instacart",
-    ])
+    candidates.extend(
+        [
+            Path.home() / ".prefgraph" / "data" / "instacart",
+            Path.home() / ".pyrevealed" / "data" / "instacart",
+        ]
+    )
     for d in candidates:
         if d.is_dir() and (d / "orders.csv").exists():
             return d
@@ -100,8 +102,7 @@ def load_instacart_menu_v2(
 
     # --- Step 2: Build full (user, order_number, aisle_id, product_id, reordered) ---
     df = (
-        op
-        .join(products, on="product_id")
+        op.join(products, on="product_id")
         .join(orders, on="order_id")
         .select(["user_id", "order_number", "aisle_id", "product_id", "reordered"])
         .sort(["user_id", "order_number", "aisle_id"])
@@ -113,13 +114,14 @@ def load_instacart_menu_v2(
     # A valid event has exactly 1 reordered SKU in that aisle-order combination.
     # ~80% of aisle-order combos have exactly 1 reordered product.
     single_reorder = (
-        df
-        .filter(pl.col("reordered") == 1)
+        df.filter(pl.col("reordered") == 1)
         .group_by(["user_id", "order_number", "aisle_id"])
-        .agg([
-            pl.len().alias("n_reordered"),
-            pl.col("product_id").first().alias("choice_product_id"),
-        ])
+        .agg(
+            [
+                pl.len().alias("n_reordered"),
+                pl.col("product_id").first().alias("choice_product_id"),
+            ]
+        )
         .filter(pl.col("n_reordered") == 1)
         .drop("n_reordered")
         .sort(["user_id", "order_number", "aisle_id"])
@@ -131,8 +133,7 @@ def load_instacart_menu_v2(
     # For each (user, aisle, order_number), collect ALL products bought (not just reorders).
     # This forms the "familiarity set" the trailing-3 window draws from.
     aisle_history = (
-        df
-        .group_by(["user_id", "aisle_id", "order_number"])
+        df.group_by(["user_id", "aisle_id", "order_number"])
         .agg(pl.col("product_id").unique().alias("products"))
         .sort(["user_id", "aisle_id", "order_number"])
     )
@@ -176,14 +177,16 @@ def load_instacart_menu_v2(
         if len(menu_products) < min_menu_size:
             continue
 
-        built_events.append({
-            "user_id": uid,
-            "aisle_id": aid,
-            "order_number": onum,
-            "choice_product_id": choice,
-            "menu_product_ids": sorted(menu_products),
-            "menu_size": len(menu_products),
-        })
+        built_events.append(
+            {
+                "user_id": uid,
+                "aisle_id": aid,
+                "order_number": onum,
+                "choice_product_id": choice,
+                "menu_product_ids": sorted(menu_products),
+                "menu_size": len(menu_products),
+            }
+        )
 
     print(f"  {len(built_events):,} events after menu_size >= {min_menu_size} filter")
 
@@ -203,8 +206,7 @@ def load_instacart_menu_v2(
     )
 
     pair_counts = (
-        events_df
-        .group_by(["user_id", "aisle_id"])
+        events_df.group_by(["user_id", "aisle_id"])
         .agg(pl.len().alias("pair_count"))
         .filter(pl.col("pair_count") >= min_pair_events)
     )

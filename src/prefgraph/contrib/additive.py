@@ -38,7 +38,6 @@ from typing import TYPE_CHECKING
 import numpy as np
 from numpy.typing import NDArray
 from scipy.optimize import linprog
-from scipy import stats
 
 from prefgraph.core.result import AdditivityResult
 from prefgraph.core.exceptions import RegressionError, SolverError
@@ -87,9 +86,7 @@ def test_additive_separability(
     N = log.num_features
 
     # Compute cross-price effects matrix
-    cross_effects_matrix = _compute_cross_effects_matrix(
-        log, price_change_threshold
-    )
+    cross_effects_matrix = _compute_cross_effects_matrix(log, price_change_threshold)
 
     # Find violations (significant off-diagonal effects)
     violations = []
@@ -285,7 +282,9 @@ def _compute_cross_effects_matrix(
     elif method == "finite_diff":
         return _compute_cross_effects_finite_diff(log, price_change_threshold)
     else:
-        raise ValueError(f"Unknown method: {method}. Use 'regression' or 'finite_diff'.")
+        raise ValueError(
+            f"Unknown method: {method}. Use 'regression' or 'finite_diff'."
+        )
 
 
 def compute_cross_effects_regression(
@@ -480,7 +479,8 @@ def _compute_cross_effects_finite_diff(
                     mask = np.ones(N, dtype=bool)
                     mask[j] = False
                     other_change = np.sum(
-                        np.abs(P[t2, mask] - P[t1, mask]) / np.maximum(P[t1, mask], 1e-10)
+                        np.abs(P[t2, mask] - P[t1, mask])
+                        / np.maximum(P[t1, mask], 1e-10)
                     )
 
                     if other_change > price_change_threshold * N * 0.3:

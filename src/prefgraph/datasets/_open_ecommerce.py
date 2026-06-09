@@ -25,20 +25,35 @@ MIN_OBSERVATIONS = 5
 
 # Category mapping: keyword -> group name
 CATEGORY_GROUPS = {
-    "book": "Books", "kindle": "Books",
-    "electronic": "Electronics", "computer": "Electronics", "phone": "Electronics",
-    "clothing": "Clothing", "apparel": "Clothing", "shoe": "Clothing",
-    "home": "Home & Garden", "garden": "Home & Garden", "kitchen": "Home & Garden",
-    "grocery": "Grocery", "food": "Grocery", "gourmet": "Grocery",
-    "health": "Health & Beauty", "beauty": "Health & Beauty", "personal care": "Health & Beauty",
-    "toy": "Toys & Games", "game": "Toys & Games",
-    "sport": "Sports & Outdoors", "outdoor": "Sports & Outdoors",
+    "book": "Books",
+    "kindle": "Books",
+    "electronic": "Electronics",
+    "computer": "Electronics",
+    "phone": "Electronics",
+    "clothing": "Clothing",
+    "apparel": "Clothing",
+    "shoe": "Clothing",
+    "home": "Home & Garden",
+    "garden": "Home & Garden",
+    "kitchen": "Home & Garden",
+    "grocery": "Grocery",
+    "food": "Grocery",
+    "gourmet": "Grocery",
+    "health": "Health & Beauty",
+    "beauty": "Health & Beauty",
+    "personal care": "Health & Beauty",
+    "toy": "Toys & Games",
+    "game": "Toys & Games",
+    "sport": "Sports & Outdoors",
+    "outdoor": "Sports & Outdoors",
     "baby": "Baby Products",
     "pet": "Pet Supplies",
     "office": "Office Products",
     "automotive": "Automotive",
     "tool": "Tools & Home Improvement",
-    "music": "Music & Entertainment", "movie": "Music & Entertainment", "video": "Music & Entertainment",
+    "music": "Music & Entertainment",
+    "movie": "Music & Entertainment",
+    "video": "Music & Entertainment",
 }
 
 
@@ -61,10 +76,15 @@ def _find_data_dir(data_dir: str | Path | None) -> Path:
     if env:
         candidates.append(Path(env) / "open_ecommerce")
 
-    candidates.extend([
-        Path.home() / ".prefgraph" / "data" / "open_ecommerce",
-        Path(__file__).resolve().parents[3] / "datasets" / "open_ecommerce" / "data",
-    ])
+    candidates.extend(
+        [
+            Path.home() / ".prefgraph" / "data" / "open_ecommerce",
+            Path(__file__).resolve().parents[3]
+            / "datasets"
+            / "open_ecommerce"
+            / "data",
+        ]
+    )
 
     for d in candidates:
         if d.is_dir() and (d / "amazon-purchases.csv").exists():
@@ -115,8 +135,8 @@ def load_open_ecommerce(
 
     # Filter
     df = df[
-        (df["Purchase Price Per Unit"].between(MIN_PRICE, MAX_PRICE)) &
-        (df["Quantity"] > 0)
+        (df["Purchase Price Per Unit"].between(MIN_PRICE, MAX_PRICE))
+        & (df["Quantity"] > 0)
     ]
 
     # Select top categories by count
@@ -127,7 +147,9 @@ def load_open_ecommerce(
     # Build price oracle
     periods = sorted(df["period"].unique())
     price_pivot = df.pivot_table(
-        values="Purchase Price Per Unit", index="period", columns="category",
+        values="Purchase Price Per Unit",
+        index="period",
+        columns="category",
         aggfunc="median",
     ).reindex(index=periods, columns=categories)
     price_pivot = price_pivot.ffill().bfill().fillna(price_pivot.median())
@@ -146,10 +168,16 @@ def load_open_ecommerce(
     for uid_raw in user_ids:
         user_data = grouped.get_group(uid_raw)
 
-        qty_pivot = user_data.pivot_table(
-            values="Quantity", index="period", columns="category",
-            aggfunc="sum",
-        ).reindex(columns=categories).fillna(0)
+        qty_pivot = (
+            user_data.pivot_table(
+                values="Quantity",
+                index="period",
+                columns="category",
+                aggfunc="sum",
+            )
+            .reindex(columns=categories)
+            .fillna(0)
+        )
 
         active_periods = qty_pivot[qty_pivot.sum(axis=1) > 0].index.tolist()
         if len(active_periods) < min_observations:
@@ -160,24 +188,25 @@ def load_open_ecommerce(
         if len(price_indices) != len(active_periods):
             continue
         # User-specific realized prices where available; market median otherwise
-        user_price_pivot = (
-            user_data.pivot_table(
-                values="Purchase Price Per Unit",
-                index="period",
-                columns="category",
-                aggfunc="median",
-            )
-            .reindex(columns=categories)
-        )
+        user_price_pivot = user_data.pivot_table(
+            values="Purchase Price Per Unit",
+            index="period",
+            columns="category",
+            aggfunc="median",
+        ).reindex(columns=categories)
         user_price_matrix = (
             user_price_pivot.loc[active_periods].values.astype(np.float64)
             if set(active_periods).issubset(set(user_price_pivot.index))
-            else np.full((len(active_periods), len(categories)), np.nan, dtype=np.float64)
+            else np.full(
+                (len(active_periods), len(categories)), np.nan, dtype=np.float64
+            )
         )
 
         market_slice = price_grid[price_indices].astype(np.float64)
         # Fill NaNs (unbought categories) with market medians
-        price_matrix = np.where(np.isnan(user_price_matrix), market_slice, user_price_matrix)
+        price_matrix = np.where(
+            np.isnan(user_price_matrix), market_slice, user_price_matrix
+        )
 
         uid = f"user_{uid_raw}"
         logs[uid] = BehaviorLog(

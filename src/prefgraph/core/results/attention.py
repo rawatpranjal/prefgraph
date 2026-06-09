@@ -1,12 +1,11 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, asdict
+from dataclasses import dataclass
 from typing import Any
 
 import numpy as np
 from numpy.typing import NDArray
 
-from prefgraph.core.types import Cycle
 from prefgraph.core.mixins import ResultSummaryMixin
 from prefgraph.core.display import ResultDisplayMixin, ResultPlotMixin
 
@@ -78,7 +77,7 @@ class WARPLAResult(ResultDisplayMixin, ResultPlotMixin):
         status = m._format_status(
             self.satisfies_warp_la,
             "CONSISTENT WITH LIMITED ATTENTION",
-            "VIOLATIONS FOUND"
+            "VIOLATIONS FOUND",
         )
         lines.append(f"\nStatus: {status}")
 
@@ -86,8 +85,12 @@ class WARPLAResult(ResultDisplayMixin, ResultPlotMixin):
         lines.append(m._format_section("Metrics"))
         lines.append(m._format_metric("Satisfies WARP(LA)", self.satisfies_warp_la))
         lines.append(m._format_metric("Observations", self.num_observations))
-        lines.append(m._format_metric("Revealed Preferences", len(self.revealed_preference)))
-        lines.append(m._format_metric("Transitive Closure Size", len(self.transitive_closure)))
+        lines.append(
+            m._format_metric("Revealed Preferences", len(self.revealed_preference))
+        )
+        lines.append(
+            m._format_metric("Transitive Closure Size", len(self.transitive_closure))
+        )
         lines.append(m._format_metric("Violations", self.num_violations))
 
         # Show recovered preference if available
@@ -110,7 +113,9 @@ class WARPLAResult(ResultDisplayMixin, ResultPlotMixin):
             lines.append("  Behavior is consistent with preference maximization")
             lines.append("  under limited attention (attention filter model).")
         else:
-            lines.append("  Behavior cannot be rationalized even with limited attention.")
+            lines.append(
+                "  Behavior cannot be rationalized even with limited attention."
+            )
             lines.append(f"  Found {self.num_violations} preference cycle(s).")
 
         lines.append(m._format_footer(self.computation_time_ms))
@@ -124,7 +129,9 @@ class WARPLAResult(ResultDisplayMixin, ResultPlotMixin):
             "violations": [list(c) for c in self.violations],
             "revealed_preference": self.revealed_preference,
             "transitive_closure": self.transitive_closure,
-            "recovered_preference": list(self.recovered_preference) if self.recovered_preference else None,
+            "recovered_preference": list(self.recovered_preference)
+            if self.recovered_preference
+            else None,
             "num_observations": self.num_observations,
             "computation_time_ms": self.computation_time_ms,
             "score": self.score(),
@@ -132,7 +139,11 @@ class WARPLAResult(ResultDisplayMixin, ResultPlotMixin):
 
     def __repr__(self) -> str:
         """Compact string representation."""
-        status = "consistent" if self.satisfies_warp_la else f"{self.num_violations} violations"
+        status = (
+            "consistent"
+            if self.satisfies_warp_la
+            else f"{self.num_violations} violations"
+        )
         return f"WARPLAResult({status}, {self.computation_time_ms:.2f}ms)"
 
 
@@ -198,9 +209,7 @@ class RandomAttentionResult(ResultDisplayMixin, ResultPlotMixin):
 
         # Status
         status = m._format_status(
-            self.is_ram_consistent,
-            "RAM CONSISTENT",
-            "RAM INCONSISTENT"
+            self.is_ram_consistent, "RAM CONSISTENT", "RAM INCONSISTENT"
         )
         lines.append(f"\nStatus: {status}")
 
@@ -211,7 +220,9 @@ class RandomAttentionResult(ResultDisplayMixin, ResultPlotMixin):
         lines.append(m._format_metric("Test Statistic", self.test_statistic))
         lines.append(m._format_metric("P-Value", self.p_value))
         lines.append(m._format_metric("Observations", self.num_observations))
-        lines.append(m._format_metric("Compatible Preferences", self.num_compatible_preferences))
+        lines.append(
+            m._format_metric("Compatible Preferences", self.num_compatible_preferences)
+        )
 
         # Show estimated preference if available
         if self.preference_ranking:
@@ -230,7 +241,9 @@ class RandomAttentionResult(ResultDisplayMixin, ResultPlotMixin):
         lines.append(m._format_section("Interpretation"))
         if self.is_ram_consistent:
             lines.append("  Stochastic choices are consistent with random attention.")
-            lines.append("  Consumer maximizes fixed preference among considered items.")
+            lines.append(
+                "  Consumer maximizes fixed preference among considered items."
+            )
         else:
             lines.append("  Data cannot be explained by random attention model.")
             lines.append(f"  Test statistic: {self.test_statistic:.4f}")
@@ -242,7 +255,9 @@ class RandomAttentionResult(ResultDisplayMixin, ResultPlotMixin):
         """Return dictionary representation for serialization."""
         return {
             "is_ram_consistent": self.is_ram_consistent,
-            "preference_ranking": list(self.preference_ranking) if self.preference_ranking else None,
+            "preference_ranking": list(self.preference_ranking)
+            if self.preference_ranking
+            else None,
             "item_attention_scores": self.item_attention_scores.tolist(),
             "test_statistic": self.test_statistic,
             "p_value": self.p_value,
@@ -311,9 +326,7 @@ class RUMConsistencyResult(ResultDisplayMixin, ResultPlotMixin):
         if not self.rationalizing_distribution:
             return []
         sorted_orderings = sorted(
-            self.rationalizing_distribution.items(),
-            key=lambda x: x[1],
-            reverse=True
+            self.rationalizing_distribution.items(), key=lambda x: x[1], reverse=True
         )
         return sorted_orderings[:n]
 
@@ -324,9 +337,7 @@ class RUMConsistencyResult(ResultDisplayMixin, ResultPlotMixin):
 
         # Status
         status = m._format_status(
-            self.is_rum_consistent,
-            "RUM CONSISTENT",
-            "RUM INCONSISTENT"
+            self.is_rum_consistent, "RUM CONSISTENT", "RUM INCONSISTENT"
         )
         lines.append(f"\nStatus: {status}")
 
@@ -334,7 +345,9 @@ class RUMConsistencyResult(ResultDisplayMixin, ResultPlotMixin):
         lines.append(m._format_section("Metrics"))
         lines.append(m._format_metric("RUM Consistent", self.is_rum_consistent))
         lines.append(m._format_metric("Distance to RUM", self.distance_to_rum))
-        lines.append(m._format_metric("Regularity Satisfied", self.regularity_satisfied))
+        lines.append(
+            m._format_metric("Regularity Satisfied", self.regularity_satisfied)
+        )
         lines.append(m._format_metric("Orderings Used", self.num_orderings_used))
         lines.append(m._format_metric("Column Gen Iterations", self.num_iterations))
 
@@ -356,7 +369,9 @@ class RUMConsistencyResult(ResultDisplayMixin, ResultPlotMixin):
         if self.is_rum_consistent:
             lines.append("  Stochastic choices can be rationalized by a mixture")
             lines.append("  of utility-maximizing preference orderings.")
-            lines.append(f"  Sparse representation uses {self.num_orderings_used} orderings.")
+            lines.append(
+                f"  Sparse representation uses {self.num_orderings_used} orderings."
+            )
         else:
             lines.append("  Data cannot be explained by ANY random utility model.")
             lines.append(f"  Distance to nearest RUM: {self.distance_to_rum:.4f}")
@@ -368,9 +383,7 @@ class RUMConsistencyResult(ResultDisplayMixin, ResultPlotMixin):
         """Return dictionary representation for serialization."""
         dist_dict = None
         if self.rationalizing_distribution:
-            dist_dict = {
-                str(k): v for k, v in self.rationalizing_distribution.items()
-            }
+            dist_dict = {str(k): v for k, v in self.rationalizing_distribution.items()}
         return {
             "is_rum_consistent": self.is_rum_consistent,
             "distance_to_rum": self.distance_to_rum,
@@ -385,7 +398,11 @@ class RUMConsistencyResult(ResultDisplayMixin, ResultPlotMixin):
 
     def __repr__(self) -> str:
         """Compact string representation."""
-        status = "consistent" if self.is_rum_consistent else f"dist={self.distance_to_rum:.4f}"
+        status = (
+            "consistent"
+            if self.is_rum_consistent
+            else f"dist={self.distance_to_rum:.4f}"
+        )
         return f"RUMConsistencyResult({status}, {self.num_orderings_used} orderings)"
 
 
@@ -398,4 +415,3 @@ StochasticAttentionResult = RandomAttentionResult
 
 MixtureRationalityResult = RUMConsistencyResult
 """Tech-friendly alias for RUM consistency result."""
-

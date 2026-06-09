@@ -301,8 +301,12 @@ def compute_technical_efficiency(
 
             if method == "output_oriented":
                 # Can j produce more output with same or fewer inputs?
-                input_ratio = np.sum(log.input_quantities[j]) / max(np.sum(log.input_quantities[i]), 1e-10)
-                output_ratio = np.sum(log.output_quantities[j]) / max(np.sum(log.output_quantities[i]), 1e-10)
+                input_ratio = np.sum(log.input_quantities[j]) / max(
+                    np.sum(log.input_quantities[i]), 1e-10
+                )
+                output_ratio = np.sum(log.output_quantities[j]) / max(
+                    np.sum(log.output_quantities[i]), 1e-10
+                )
 
                 if input_ratio <= 1.0 and output_ratio > 1.0:
                     # j is more efficient
@@ -311,8 +315,12 @@ def compute_technical_efficiency(
 
             else:  # input_oriented
                 # Can j produce same output with fewer inputs?
-                input_ratio = np.sum(log.input_quantities[j]) / max(np.sum(log.input_quantities[i]), 1e-10)
-                output_ratio = np.sum(log.output_quantities[j]) / max(np.sum(log.output_quantities[i]), 1e-10)
+                input_ratio = np.sum(log.input_quantities[j]) / max(
+                    np.sum(log.input_quantities[i]), 1e-10
+                )
+                output_ratio = np.sum(log.output_quantities[j]) / max(
+                    np.sum(log.output_quantities[i]), 1e-10
+                )
 
                 if output_ratio >= 1.0 and input_ratio < 1.0:
                     # j uses fewer inputs for same output
@@ -338,10 +346,15 @@ def _compute_cost_efficiency(
                 continue
 
             # Can j produce same output at lower cost?
-            output_comparable = np.all(log.output_quantities[j] >= log.output_quantities[i] - tolerance)
+            output_comparable = np.all(
+                log.output_quantities[j] >= log.output_quantities[i] - tolerance
+            )
             counterfactual_cost = np.dot(log.input_prices[i], log.input_quantities[j])
 
-            if output_comparable and counterfactual_cost < log.total_cost[i] - tolerance:
+            if (
+                output_comparable
+                and counterfactual_cost < log.total_cost[i] - tolerance
+            ):
                 is_efficient = False
                 break
 

@@ -113,7 +113,9 @@ class BehaviorPanel:
         c_cols = cost_cols or price_cols
         a_cols = action_cols or qty_cols
         if c_cols is None or a_cols is None:
-            raise ValueError("Must provide cost_cols/action_cols (or price_cols/qty_cols)")
+            raise ValueError(
+                "Must provide cost_cols/action_cols (or price_cols/qty_cols)"
+            )
 
         group_cols = [user_col]
         if period_col is not None:
@@ -178,7 +180,8 @@ class BehaviorPanel:
         if self._period_map is None:
             raise ValueError("Panel has no period structure")
         filtered = {
-            k: log for k, log in self._logs.items()
+            k: log
+            for k, log in self._logs.items()
             if self._period_map.get(k, ("", ""))[1] == period
         }
         return BehaviorPanel(_logs=filtered, metadata=dict(self.metadata))
@@ -206,6 +209,7 @@ class BehaviorPanel:
     def analyze_user(self, user_id: str) -> "BehavioralSummary":
         """Run full behavioral analysis on a single user."""
         from prefgraph.core.summary import BehavioralSummary
+
         return BehavioralSummary.from_log(self._logs[user_id])
 
     def summary(
@@ -262,7 +266,11 @@ class MenuChoicePanel:
         log_dict: dict[str, "MenuChoiceLog"] = {}
         auto_idx = 0
         for log in logs:
-            uid = log.user_id if hasattr(log, 'user_id') and log.user_id else f"user_{auto_idx}"
+            uid = (
+                log.user_id
+                if hasattr(log, "user_id") and log.user_id
+                else f"user_{auto_idx}"
+            )
             if uid == f"user_{auto_idx}" or log.user_id is None:
                 auto_idx += 1
             if uid in log_dict:

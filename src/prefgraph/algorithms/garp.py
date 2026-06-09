@@ -97,6 +97,7 @@ def check_garp(
     # The O(T²) SCC-only test (Talla Nobibon et al. 2015 JOTA) correctly
     # determines is_consistent but does not populate R*.
     from prefgraph._rust_backend import HAS_RUST, _rust_build_preference_graph
+
     if HAS_RUST:
         try:
             g = _rust_build_preference_graph(
@@ -416,7 +417,9 @@ def compute_swaps_index(
         return SwapsIndexResult(
             swaps_count=0,
             swaps_normalized=0.0,
-            max_possible_swaps=session.num_observations * (session.num_observations - 1) // 2,
+            max_possible_swaps=session.num_observations
+            * (session.num_observations - 1)
+            // 2,
             swap_pairs=[],
             is_consistent=True,
             method=method,
@@ -502,10 +505,7 @@ def _compute_swaps_greedy(
         best_count = 0
 
         for edge, _ in sorted(edge_counts.items(), key=lambda x: -x[1]):
-            count = sum(
-                1 for c in remaining_cycles
-                if edge[0] in c and edge[1] in c
-            )
+            count = sum(1 for c in remaining_cycles if edge[0] in c and edge[1] in c)
             if count > best_count:
                 best_count = count
                 best_edge = edge
@@ -517,8 +517,7 @@ def _compute_swaps_greedy(
 
         # Remove cycles containing this edge
         remaining_cycles = [
-            c for c in remaining_cycles
-            if not (best_edge[0] in c and best_edge[1] in c)
+            c for c in remaining_cycles if not (best_edge[0] in c and best_edge[1] in c)
         ]
 
     return swap_pairs
@@ -570,6 +569,7 @@ def compute_observation_contributions(
 
     # Compute base AEI
     from prefgraph.algorithms.aei import compute_aei
+
     base_aei_result = compute_aei(session, tolerance=tolerance)
     base_aei = base_aei_result.efficiency_index
 
@@ -621,8 +621,7 @@ def compute_observation_contributions(
 
             if len(subset_prices) > 1:
                 subset_session = ConsumerSession(
-                    prices=subset_prices,
-                    quantities=subset_quantities
+                    prices=subset_prices, quantities=subset_quantities
                 )
                 subset_aei = compute_aei(subset_session, tolerance=tolerance)
                 improvement = subset_aei.efficiency_index - base_aei
@@ -706,7 +705,6 @@ def compute_minimum_cost_index(
         Review of Economics and Statistics, 98(3), 524-534.
     """
     from prefgraph.core.result import MinimumCostIndexResult
-    from scipy.optimize import linprog
 
     start_time = time.perf_counter()
 

@@ -640,7 +640,6 @@ def compute_optimal_efficiency(
     if random_seed is not None:
         np.random.seed(random_seed)
 
-    from prefgraph.algorithms.garp import check_garp
     from prefgraph.algorithms.aei import compute_aei
     from prefgraph.core.session import ConsumerSession as CS
 

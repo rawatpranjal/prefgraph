@@ -24,12 +24,26 @@ from prefgraph.core.session import BehaviorLog
 # --- Constants ---
 
 TOP_CATEGORIES = [
-    "bed_bath_table", "health_beauty", "sports_leisure",
-    "furniture_decor", "computers_accessories", "housewares",
-    "watches_gifts", "telephony", "garden_tools", "auto",
-    "toys", "cool_stuff", "perfumery", "baby",
-    "electronics", "stationery", "fashion_bags_accessories",
-    "pet_shop", "office_furniture", "luggage_accessories",
+    "bed_bath_table",
+    "health_beauty",
+    "sports_leisure",
+    "furniture_decor",
+    "computers_accessories",
+    "housewares",
+    "watches_gifts",
+    "telephony",
+    "garden_tools",
+    "auto",
+    "toys",
+    "cool_stuff",
+    "perfumery",
+    "baby",
+    "electronics",
+    "stationery",
+    "fashion_bags_accessories",
+    "pet_shop",
+    "office_furniture",
+    "luggage_accessories",
 ]
 
 NUM_CATEGORIES = len(TOP_CATEGORIES)
@@ -47,10 +61,12 @@ def _find_data_dir(data_dir: str | Path | None) -> Path:
     if env:
         candidates.append(Path(env) / "olist")
 
-    candidates.extend([
-        Path.home() / ".prefgraph" / "data" / "olist",
-        Path(__file__).resolve().parents[3] / "olist" / "data",
-    ])
+    candidates.extend(
+        [
+            Path.home() / ".prefgraph" / "data" / "olist",
+            Path(__file__).resolve().parents[3] / "olist" / "data",
+        ]
+    )
 
     for d in candidates:
         if d.is_dir() and (d / "olist_orders_dataset.csv").exists():
@@ -111,8 +127,7 @@ def load_olist(
     # --- Load CSVs ---
     orders = pd.read_csv(
         data_path / "olist_orders_dataset.csv",
-        usecols=["order_id", "customer_id", "order_status",
-                 "order_purchase_timestamp"],
+        usecols=["order_id", "customer_id", "order_status", "order_purchase_timestamp"],
         parse_dates=["order_purchase_timestamp"],
     )
     customers = pd.read_csv(
@@ -142,12 +157,14 @@ def load_olist(
     # Merge items -> products -> translation -> orders
     merged = items.merge(products, on="product_id", how="left")
     merged = merged.merge(
-        translation, on="product_category_name", how="left",
+        translation,
+        on="product_category_name",
+        how="left",
     )
     merged = merged.merge(
-        orders[["order_id", "customer_unique_id",
-                "order_purchase_timestamp"]],
-        on="order_id", how="inner",
+        orders[["order_id", "customer_unique_id", "order_purchase_timestamp"]],
+        on="order_id",
+        how="inner",
     )
 
     # Use English category names, drop unmapped
@@ -156,8 +173,7 @@ def load_olist(
 
     # Filter valid prices
     merged = merged[
-        (merged["price"] >= MIN_UNIT_PRICE) &
-        (merged["price"] <= MAX_UNIT_PRICE)
+        (merged["price"] >= MIN_UNIT_PRICE) & (merged["price"] <= MAX_UNIT_PRICE)
     ]
 
     # --- Select top categories ---
@@ -166,24 +182,17 @@ def load_olist(
     # Verify hardcoded list against actual data; fall back to data-driven
     available = [c for c in categories if c in category_counts.index]
     if len(available) < n_categories:
-        extras = [
-            c for c in category_counts.index
-            if c not in available
-        ]
-        available.extend(extras[:n_categories - len(available)])
+        extras = [c for c in category_counts.index if c not in available]
+        available.extend(extras[: n_categories - len(available)])
     categories = available[:n_categories]
 
     merged = merged[merged["category"].isin(categories)]
 
     # --- Build monthly period key ---
-    merged["year_month"] = (
-        merged["order_purchase_timestamp"].dt.to_period("M")
-    )
+    merged["year_month"] = merged["order_purchase_timestamp"].dt.to_period("M")
 
     # --- Pre-filter: keep only repeat customers (by distinct orders) ---
-    order_counts = (
-        merged.groupby("customer_unique_id")["order_id"].nunique()
-    )
+    order_counts = merged.groupby("customer_unique_id")["order_id"].nunique()
     repeat_customers = order_counts[order_counts >= min_orders].index
     merged = merged[merged["customer_unique_id"].isin(repeat_customers)]
 
@@ -204,7 +213,9 @@ def load_olist(
     # --- Build price oracle: median price per category per month ---
     # Use ALL delivered rows (before customer filter) for robust medians
     price_oracle = merged.pivot_table(
-        values="price", index="year_month", columns="category",
+        values="price",
+        index="year_month",
+        columns="category",
         aggfunc="median",
     ).reindex(columns=categories)
     price_oracle = price_oracle.ffill().bfill()
@@ -212,9 +223,7 @@ def load_olist(
     global_medians = merged.groupby("category")["price"].median()
     for cat in categories:
         if cat in global_medians.index:
-            price_oracle[cat] = price_oracle[cat].fillna(
-                global_medians[cat]
-            )
+            price_oracle[cat] = price_oracle[cat].fillna(global_medians[cat])
     price_oracle = price_oracle.fillna(1.0)  # absolute fallback
 
     all_months = sorted(price_oracle.index)
@@ -224,12 +233,17 @@ def load_olist(
     # --- Aggregate quantity per customer-month-category ---
     # Each order item counts as quantity 1 (marketplace items)
     merged["quantity"] = 1
-    agg = merged.groupby(
-        ["customer_unique_id", "year_month", "category"], observed=True,
-    ).agg(
-        total_qty=("quantity", "sum"),
-        first_timestamp=("order_purchase_timestamp", "first"),
-    ).reset_index()
+    agg = (
+        merged.groupby(
+            ["customer_unique_id", "year_month", "category"],
+            observed=True,
+        )
+        .agg(
+            total_qty=("quantity", "sum"),
+            first_timestamp=("order_purchase_timestamp", "first"),
+        )
+        .reset_index()
+    )
 
     # --- Build per-customer BehaviorLogs ---
     logs: dict[str, BehaviorLog] = {}
@@ -244,15 +258,19 @@ def load_olist(
         cust_data = grouped.get_group(cust_id)
 
         # Pivot to quantity matrix (months x categories)
-        qty_pivot = cust_data.pivot_table(
-            values="total_qty", index="year_month", columns="category",
-            aggfunc="sum",
-        ).reindex(columns=categories).fillna(0)
+        qty_pivot = (
+            cust_data.pivot_table(
+                values="total_qty",
+                index="year_month",
+                columns="category",
+                aggfunc="sum",
+            )
+            .reindex(columns=categories)
+            .fillna(0)
+        )
 
         # Only keep months with at least one purchase
-        active_months = (
-            qty_pivot[qty_pivot.sum(axis=1) > 0].index.tolist()
-        )
+        active_months = qty_pivot[qty_pivot.sum(axis=1) > 0].index.tolist()
         if len(active_months) < min_months:
             continue
 

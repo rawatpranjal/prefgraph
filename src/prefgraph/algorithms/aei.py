@@ -74,9 +74,11 @@ def compute_aei(
 
     # Try Rust backend for CCEI (binary search over T² ratios in Rust)
     from prefgraph._rust_backend import HAS_RUST, _rust_analyze_batch
+
     if HAS_RUST and method == "discrete" and axiom == "garp":
         try:
             import numpy as np
+
             p = np.ascontiguousarray(session.prices, dtype=np.float64)
             q = np.ascontiguousarray(session.quantities, dtype=np.float64)
             results = _rust_analyze_batch(
@@ -96,6 +98,7 @@ def compute_aei(
             is_consistent = results[0]["is_garp"]
 
             from prefgraph.algorithms.garp import check_garp
+
             garp_result = check_garp(session, tolerance)
 
             computation_time = (time.perf_counter() - start_time) * 1000

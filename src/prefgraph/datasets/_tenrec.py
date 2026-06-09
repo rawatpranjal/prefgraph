@@ -19,7 +19,6 @@ from __future__ import annotations
 import os
 from pathlib import Path
 
-import numpy as np
 import pandas as pd
 
 from prefgraph.core.session import MenuChoiceLog
@@ -43,10 +42,12 @@ def _find_data_dir(data_dir: str | Path | None) -> tuple[Path, str]:
     if env:
         candidates.append(Path(env) / "tenrec")
 
-    candidates.extend([
-        Path.home() / ".prefgraph" / "data" / "tenrec",
-        Path(__file__).resolve().parents[3] / "datasets" / "tenrec" / "data",
-    ])
+    candidates.extend(
+        [
+            Path.home() / ".prefgraph" / "data" / "tenrec",
+            Path(__file__).resolve().parents[3] / "datasets" / "tenrec" / "data",
+        ]
+    )
 
     for d in candidates:
         if d.is_dir():
@@ -94,7 +95,9 @@ def load_tenrec(
     print(f"  Loading Tenrec {csv_name} from {csv_path} (chunked)...")
 
     if feedback not in ("like", "follow", "share"):
-        raise ValueError(f"feedback must be 'like', 'follow', or 'share', got '{feedback}'")
+        raise ValueError(
+            f"feedback must be 'like', 'follow', or 'share', got '{feedback}'"
+        )
 
     # Accumulate per-user click data with positional feedback.
     # Each entry is (item_id, had_feedback) so we know whether THIS specific
@@ -106,7 +109,12 @@ def load_tenrec(
     for chunk in pd.read_csv(
         csv_path,
         usecols=["user_id", "item_id", "click", feedback],
-        dtype={"user_id": "int64", "item_id": "int64", "click": "int8", feedback: "int8"},
+        dtype={
+            "user_id": "int64",
+            "item_id": "int64",
+            "click": "int8",
+            feedback: "int8",
+        },
         chunksize=CHUNK_SIZE,
     ):
         n_rows += len(chunk)

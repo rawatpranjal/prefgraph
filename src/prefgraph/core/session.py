@@ -452,6 +452,7 @@ class BehaviorLog:
             >>> print(log.summary(include_power=True))  # With power analysis
         """
         from prefgraph.core.summary import BehavioralSummary
+
         return BehavioralSummary.from_log(self, include_power=include_power)
 
 
@@ -608,6 +609,7 @@ class RiskChoiceLog:
             >>> print(log.summary())  # Full report
         """
         from prefgraph.core.summary import RiskChoiceSummary
+
         return RiskChoiceSummary.from_log(self)
 
 
@@ -850,22 +852,22 @@ class MenuChoiceLog:
 
     def to_engine_tuple(self) -> tuple[list[list[int]], list[int], int]:
         """Convert to ``(menus, choices, n_items)`` tuple for ``Engine.analyze_menus()``.
-        
-        Note: Automatically remaps item IDs to 0..N-1 if they are not already 
+
+        Note: Automatically remaps item IDs to 0..N-1 if they are not already
         compact, to prevent out-of-bounds access in the Rust engine.
         """
         all_items = sorted(self.all_items)
         n_items = len(all_items)
-        
+
         # Check if already 0..N-1
         if n_items > 0 and all_items[0] == 0 and all_items[-1] == n_items - 1:
             return ([sorted(m) for m in self.menus], list(self.choices), n_items)
-            
+
         # Need remapping
         item_map = {item: idx for idx, item in enumerate(all_items)}
         remapped_menus = [[item_map[i] for i in sorted(m)] for m in self.menus]
         remapped_choices = [item_map[c] for c in self.choices]
-        
+
         return (remapped_menus, remapped_choices, n_items)
 
     def get_item_label(self, idx: int) -> str:
@@ -969,6 +971,7 @@ class MenuChoiceLog:
             >>> print(log.summary())  # Full report
         """
         from prefgraph.core.summary import MenuChoiceSummary
+
         return MenuChoiceSummary.from_log(self)
 
     @property
@@ -1046,9 +1049,7 @@ class StochasticChoiceLog:
             )
 
         if len(self.menus) < 1:
-            raise InsufficientDataError(
-                "Must have at least one menu observation."
-            )
+            raise InsufficientDataError("Must have at least one menu observation.")
 
         for t, (menu, freqs) in enumerate(zip(self.menus, self.choice_frequencies)):
             # Check all chosen items are in the menu
@@ -1156,6 +1157,7 @@ class StochasticChoiceLog:
             >>> print(log.summary())  # Full report
         """
         from prefgraph.core.summary import StochasticChoiceSummary
+
         return StochasticChoiceSummary.from_log(self)
 
 
@@ -1259,9 +1261,7 @@ class ProductionLog:
         ]:
             if not np.all(np.isfinite(arr)):
                 invalid_count = int(np.sum(~np.isfinite(arr)))
-                raise NaNInfError(
-                    f"Found {invalid_count} NaN/Inf values in {name}."
-                )
+                raise NaNInfError(f"Found {invalid_count} NaN/Inf values in {name}.")
 
         # Check for positive prices
         if np.any(self.input_prices <= 0):
@@ -1337,6 +1337,7 @@ class ProductionLog:
             >>> print(log.summary())  # Full report
         """
         from prefgraph.core.summary import ProductionSummary
+
         return ProductionSummary.from_log(self)
 
 

@@ -39,8 +39,6 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 from numpy.typing import NDArray
-from scipy import stats
-from scipy.optimize import minimize
 
 from prefgraph.core.result import IntegrabilityResult
 from prefgraph.core.exceptions import RegressionError
@@ -165,7 +163,9 @@ def compute_slutsky_matrix(
     elif method == "finite_diff":
         return _compute_slutsky_matrix_finite_diff(log)
     else:
-        raise ValueError(f"Unknown method: {method}. Use 'regression', 'stone_geary', or 'finite_diff'.")
+        raise ValueError(
+            f"Unknown method: {method}. Use 'regression', 'stone_geary', or 'finite_diff'."
+        )
 
 
 def compute_slutsky_matrix_regression(
@@ -630,7 +630,9 @@ def check_slutsky_nsd(
             if sim_max >= test_stat:
                 count_exceeding += 1
 
-        p_value = (count_exceeding + 1) / (n_simulations + 1)  # Add 1 for continuity correction
+        p_value = (count_exceeding + 1) / (
+            n_simulations + 1
+        )  # Add 1 for continuity correction
 
     elif compute_pvalue:
         # If max eigenvalue <= 0, p-value is 1 (clearly NSD)

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, asdict
+from dataclasses import dataclass
 from typing import Any
 
 import numpy as np
@@ -76,7 +76,9 @@ class AbstractWARPResult(ResultDisplayMixin, ResultPlotMixin):
         lines.append(m._format_section("Metrics"))
         lines.append(m._format_metric("Consistent", self.is_consistent))
         lines.append(m._format_metric("Violations", self.num_violations))
-        lines.append(m._format_metric("Revealed Preferences", self.num_revealed_preferences))
+        lines.append(
+            m._format_metric("Revealed Preferences", self.num_revealed_preferences)
+        )
 
         # Show violations if any
         if self.violations:
@@ -89,7 +91,9 @@ class AbstractWARPResult(ResultDisplayMixin, ResultPlotMixin):
             lines.append("  No direct preference reversals in menu choices.")
             lines.append("  Satisfies Weak Axiom for abstract choice.")
         else:
-            lines.append(f"  {self.num_violations} direct preference reversal(s) found.")
+            lines.append(
+                f"  {self.num_violations} direct preference reversal(s) found."
+            )
 
         lines.append(m._format_footer(self.computation_time_ms))
         return "\n".join(lines)
@@ -108,7 +112,9 @@ class AbstractWARPResult(ResultDisplayMixin, ResultPlotMixin):
 
     def __repr__(self) -> str:
         """Compact string representation."""
-        status = "consistent" if self.is_consistent else f"{self.num_violations} violations"
+        status = (
+            "consistent" if self.is_consistent else f"{self.num_violations} violations"
+        )
         return f"AbstractWARPResult({status})"
 
 
@@ -171,7 +177,9 @@ class AbstractSARPResult(ResultDisplayMixin, ResultPlotMixin):
         # Show violations if any
         if self.violations:
             lines.append(m._format_section("Violation Cycles"))
-            lines.append(m._format_list(self.violations, max_items=5, item_name="cycle"))
+            lines.append(
+                m._format_list(self.violations, max_items=5, item_name="cycle")
+            )
 
         # Interpretation
         lines.append(m._format_section("Interpretation"))
@@ -198,7 +206,9 @@ class AbstractSARPResult(ResultDisplayMixin, ResultPlotMixin):
 
     def __repr__(self) -> str:
         """Compact string representation."""
-        status = "consistent" if self.is_consistent else f"{self.num_violations} violations"
+        status = (
+            "consistent" if self.is_consistent else f"{self.num_violations} violations"
+        )
         return f"AbstractSARPResult({status}, items={self.num_items})"
 
 
@@ -258,7 +268,9 @@ class CongruenceResult(ResultDisplayMixin, ResultPlotMixin):
         lines = [m._format_header("CONGRUENCE TEST REPORT")]
 
         # Status
-        status = m._format_status(self.is_congruent, "RATIONALIZABLE", "NOT RATIONALIZABLE")
+        status = m._format_status(
+            self.is_congruent, "RATIONALIZABLE", "NOT RATIONALIZABLE"
+        )
         lines.append(f"\nStatus: {status}")
 
         # Metrics
@@ -266,12 +278,18 @@ class CongruenceResult(ResultDisplayMixin, ResultPlotMixin):
         lines.append(m._format_metric("Is Congruent", self.is_congruent))
         lines.append(m._format_metric("Satisfies SARP", self.satisfies_sarp))
         lines.append(m._format_metric("SARP Violations", self.num_sarp_violations))
-        lines.append(m._format_metric("Maximality Violations", self.num_maximality_violations))
+        lines.append(
+            m._format_metric("Maximality Violations", self.num_maximality_violations)
+        )
 
         # Show violations if any
         if self.maximality_violations:
             lines.append(m._format_section("Maximality Violations"))
-            lines.append(m._format_list(self.maximality_violations, max_items=5, item_name="pair"))
+            lines.append(
+                m._format_list(
+                    self.maximality_violations, max_items=5, item_name="pair"
+                )
+            )
 
         # Interpretation
         lines.append(m._format_section("Interpretation"))
@@ -373,12 +391,18 @@ class HoutmanMaksAbstractResult(ResultDisplayMixin, ResultPlotMixin):
         lines.append(m._format_metric("Fraction Removed", self.fraction_removed))
         lines.append(m._format_metric("Total Observations", self.num_total))
         lines.append(m._format_metric("Removed Observations", self.num_removed))
-        lines.append(m._format_metric("Remaining Observations", len(self.remaining_observations)))
+        lines.append(
+            m._format_metric("Remaining Observations", len(self.remaining_observations))
+        )
 
         # Show removed observations
         if self.removed_observations:
             lines.append(m._format_section("Removed Observation Indices"))
-            lines.append(m._format_list(self.removed_observations, max_items=10, item_name="observation"))
+            lines.append(
+                m._format_list(
+                    self.removed_observations, max_items=10, item_name="observation"
+                )
+            )
 
         # Interpretation
         lines.append(m._format_section("Interpretation"))
@@ -386,7 +410,9 @@ class HoutmanMaksAbstractResult(ResultDisplayMixin, ResultPlotMixin):
             lines.append("  All menu choices are consistent - no removal needed.")
         else:
             pct = self.fraction_removed * 100
-            lines.append(f"  Remove {self.num_removed} observations ({pct:.1f}%) for consistency.")
+            lines.append(
+                f"  Remove {self.num_removed} observations ({pct:.1f}%) for consistency."
+            )
             lines.append("  Remaining observations satisfy SARP/Congruence.")
 
         lines.append(m._format_footer(self.computation_time_ms))

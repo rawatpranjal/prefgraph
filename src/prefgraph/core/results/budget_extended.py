@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, asdict
+from dataclasses import dataclass
 from typing import Any
 
 import numpy as np
@@ -95,8 +95,12 @@ class WARPResult(ResultDisplayMixin, ResultPlotMixin):
             lines.append("  No direct preference reversals detected.")
             lines.append("  Behavior satisfies the Weak Axiom of Revealed Preference.")
         else:
-            lines.append(f"  {self.num_violations} direct preference reversal(s) found.")
-            lines.append("  WARP is weaker than GARP - consider running full GARP check.")
+            lines.append(
+                f"  {self.num_violations} direct preference reversal(s) found."
+            )
+            lines.append(
+                "  WARP is weaker than GARP - consider running full GARP check."
+            )
 
         lines.append(m._format_footer(self.computation_time_ms))
         return "\n".join(lines)
@@ -114,7 +118,9 @@ class WARPResult(ResultDisplayMixin, ResultPlotMixin):
     def __repr__(self) -> str:
         """Compact string representation with [+]/[-] indicator."""
         indicator = "[+]" if self.is_consistent else "[-]"
-        status = "CONSISTENT" if self.is_consistent else f"{self.num_violations} violations"
+        status = (
+            "CONSISTENT" if self.is_consistent else f"{self.num_violations} violations"
+        )
         return f"WARPResult: {indicator} {status} ({self.computation_time_ms:.2f}ms)"
 
     def short_summary(self) -> str:
@@ -171,13 +177,17 @@ class SARPResult(ResultDisplayMixin, ResultPlotMixin):
         # Show violations if any
         if self.violations:
             lines.append(m._format_section("Violation Cycles"))
-            lines.append(m._format_list(self.violations, max_items=5, item_name="cycle"))
+            lines.append(
+                m._format_list(self.violations, max_items=5, item_name="cycle")
+            )
 
         # Interpretation
         lines.append(m._format_section("Interpretation"))
         if self.is_consistent:
             lines.append("  No mutual preference cycles detected.")
-            lines.append("  Behavior satisfies the Strict Axiom of Revealed Preference.")
+            lines.append(
+                "  Behavior satisfies the Strict Axiom of Revealed Preference."
+            )
         else:
             lines.append(f"  {self.num_violations} mutual preference cycle(s) found.")
             lines.append("  Choices exhibit indifference cycles (x R* y and y R* x).")
@@ -198,7 +208,9 @@ class SARPResult(ResultDisplayMixin, ResultPlotMixin):
     def __repr__(self) -> str:
         """Compact string representation with [+]/[-] indicator."""
         indicator = "[+]" if self.is_consistent else "[-]"
-        status = "CONSISTENT" if self.is_consistent else f"{self.num_violations} violations"
+        status = (
+            "CONSISTENT" if self.is_consistent else f"{self.num_violations} violations"
+        )
         return f"SARPResult: {indicator} {status} ({self.computation_time_ms:.2f}ms)"
 
     def short_summary(self) -> str:
@@ -278,7 +290,11 @@ class HoutmanMaksResult(ResultDisplayMixin, ResultPlotMixin):
         # Show removed observations
         if self.removed_observations:
             lines.append(m._format_section("Removed Observation Indices"))
-            lines.append(m._format_list(self.removed_observations, max_items=10, item_name="observation"))
+            lines.append(
+                m._format_list(
+                    self.removed_observations, max_items=10, item_name="observation"
+                )
+            )
 
         # Interpretation
         lines.append(m._format_section("Interpretation"))
@@ -286,7 +302,9 @@ class HoutmanMaksResult(ResultDisplayMixin, ResultPlotMixin):
             lines.append("  All observations are consistent - no removal needed.")
         else:
             pct = self.fraction * 100
-            lines.append(f"  Remove {self.num_removed} observations ({pct:.1f}%) for consistency.")
+            lines.append(
+                f"  Remove {self.num_removed} observations ({pct:.1f}%) for consistency."
+            )
             lines.append("  Remaining observations satisfy GARP.")
 
         lines.append(m._format_footer(self.computation_time_ms))
@@ -393,7 +411,9 @@ class BronarsPowerResult(ResultDisplayMixin, ResultPlotMixin):
         lines.append(m._format_metric("Simulations", self.n_simulations))
         lines.append(m._format_metric("Violations", self.n_violations))
         lines.append(m._format_metric("Random Pass Rate", self.pass_rate_random))
-        lines.append(m._format_metric("Mean Random Integrity", self.mean_integrity_random))
+        lines.append(
+            m._format_metric("Mean Random Integrity", self.mean_integrity_random)
+        )
 
         # Interpretation
         lines.append(m._format_section("Interpretation"))
@@ -406,7 +426,9 @@ class BronarsPowerResult(ResultDisplayMixin, ResultPlotMixin):
         if self.is_significant:
             lines.append(f"  Passing {self.axiom.upper()} is statistically meaningful.")
         else:
-            lines.append(f"  Passing {self.axiom.upper()} may not indicate true rationality.")
+            lines.append(
+                f"  Passing {self.axiom.upper()} may not indicate true rationality."
+            )
 
         lines.append(m._format_footer(self.computation_time_ms))
         return "\n".join(lines)
@@ -427,14 +449,18 @@ class BronarsPowerResult(ResultDisplayMixin, ResultPlotMixin):
             "score": self.score(),
         }
         if self.simulation_integrity_values is not None:
-            result["simulation_integrity_values"] = self.simulation_integrity_values.tolist()
+            result["simulation_integrity_values"] = (
+                self.simulation_integrity_values.tolist()
+            )
         return result
 
     def __repr__(self) -> str:
         """Compact string representation with [+]/[-] indicator."""
         indicator = "[+]" if self.is_significant else "[-]"
         status = "SIGNIFICANT" if self.is_significant else "LOW POWER"
-        return f"BronarsPowerResult: {indicator} {status} (power={self.power_index:.4f})"
+        return (
+            f"BronarsPowerResult: {indicator} {status} (power={self.power_index:.4f})"
+        )
 
     def short_summary(self) -> str:
         """Return one-liner with [+]/[-] indicator."""
@@ -508,10 +534,14 @@ class HARPResult(ResultDisplayMixin, ResultPlotMixin):
         # Metrics
         lines.append(m._format_section("Metrics"))
         lines.append(m._format_metric("Homothetic (HARP)", self.is_consistent))
-        lines.append(m._format_metric("GARP Consistent", self.garp_result.is_consistent))
+        lines.append(
+            m._format_metric("GARP Consistent", self.garp_result.is_consistent)
+        )
         lines.append(m._format_metric("HARP Violations", self.num_violations))
         lines.append(m._format_metric("Max Cycle Product", self.max_cycle_product))
-        lines.append(m._format_metric("Max Violation Severity", self.max_violation_severity))
+        lines.append(
+            m._format_metric("Max Violation Severity", self.max_violation_severity)
+        )
 
         # Show worst violation if any
         if self.violations:
@@ -548,8 +578,12 @@ class HARPResult(ResultDisplayMixin, ResultPlotMixin):
     def __repr__(self) -> str:
         """Compact string representation with [+]/[-] indicator."""
         indicator = "[+]" if self.is_consistent else "[-]"
-        status = "HOMOTHETIC" if self.is_consistent else f"{self.num_violations} violations"
-        return f"HARPResult: {indicator} {status} (max_prod={self.max_cycle_product:.4f})"
+        status = (
+            "HOMOTHETIC" if self.is_consistent else f"{self.num_violations} violations"
+        )
+        return (
+            f"HARPResult: {indicator} {status} (max_prod={self.max_cycle_product:.4f})"
+        )
 
     def short_summary(self) -> str:
         """Return one-liner with [+]/[-] indicator."""
@@ -614,7 +648,9 @@ class QuasilinearityResult(ResultDisplayMixin, ResultPlotMixin):
         lines.append(m._format_metric("Has Income Effects", self.has_income_effects))
         lines.append(m._format_metric("Violations", self.num_violations))
         lines.append(m._format_metric("Cycles Tested", self.num_cycles_tested))
-        lines.append(m._format_metric("Worst Violation", self.worst_violation_magnitude))
+        lines.append(
+            m._format_metric("Worst Violation", self.worst_violation_magnitude)
+        )
 
         # Interpretation
         lines.append(m._format_section("Interpretation"))
@@ -644,7 +680,11 @@ class QuasilinearityResult(ResultDisplayMixin, ResultPlotMixin):
     def __repr__(self) -> str:
         """Compact string representation with [+]/[-] indicator."""
         indicator = "[+]" if self.is_quasilinear else "[-]"
-        status = "QUASILINEAR" if self.is_quasilinear else f"{self.num_violations} violations"
+        status = (
+            "QUASILINEAR"
+            if self.is_quasilinear
+            else f"{self.num_violations} violations"
+        )
         return f"QuasilinearityResult: {indicator} {status}"
 
     def short_summary(self) -> str:
@@ -721,13 +761,23 @@ class GrossSubstitutesResult(ResultDisplayMixin, ResultPlotMixin):
         # Interpretation
         lines.append(m._format_section("Interpretation"))
         if self.are_substitutes:
-            lines.append(f"  Goods {self.good_g_index} and {self.good_h_index} are substitutes.")
-            lines.append("  Price increase in one leads to demand increase in the other.")
+            lines.append(
+                f"  Goods {self.good_g_index} and {self.good_h_index} are substitutes."
+            )
+            lines.append(
+                "  Price increase in one leads to demand increase in the other."
+            )
         elif self.are_complements:
-            lines.append(f"  Goods {self.good_g_index} and {self.good_h_index} are complements.")
-            lines.append("  Price increase in one leads to demand decrease in the other.")
+            lines.append(
+                f"  Goods {self.good_g_index} and {self.good_h_index} are complements."
+            )
+            lines.append(
+                "  Price increase in one leads to demand decrease in the other."
+            )
         elif self.relationship == "independent":
-            lines.append(f"  Goods {self.good_g_index} and {self.good_h_index} are independent.")
+            lines.append(
+                f"  Goods {self.good_g_index} and {self.good_h_index} are independent."
+            )
             lines.append("  No significant cross-price effects detected.")
         else:
             lines.append("  Relationship is inconclusive - insufficient evidence.")
@@ -830,11 +880,15 @@ class SubstitutionMatrixResult(ResultDisplayMixin, ResultPlotMixin):
         # Show pairs
         if self.substitute_pairs:
             lines.append(m._format_section("Substitute Pairs"))
-            lines.append(m._format_list(self.substitute_pairs, max_items=10, item_name="pair"))
+            lines.append(
+                m._format_list(self.substitute_pairs, max_items=10, item_name="pair")
+            )
 
         if self.complement_pairs:
             lines.append(m._format_section("Complement Pairs"))
-            lines.append(m._format_list(self.complement_pairs, max_items=10, item_name="pair"))
+            lines.append(
+                m._format_list(self.complement_pairs, max_items=10, item_name="pair")
+            )
 
         lines.append(m._format_footer(self.computation_time_ms))
         return "\n".join(lines)
@@ -934,19 +988,29 @@ class VEIResult(ResultDisplayMixin, ResultPlotMixin):
         lines.append(m._format_metric("Observations", self.num_observations))
         lines.append(m._format_metric("Problematic Obs", self.num_problematic))
         lines.append(m._format_metric("Worst Observation", self.worst_observation))
-        lines.append(m._format_metric("Optimization Success", self.optimization_success))
+        lines.append(
+            m._format_metric("Optimization Success", self.optimization_success)
+        )
 
         # Show problematic observations
         if self.problematic_observations:
             lines.append(m._format_section("Problematic Observations"))
-            lines.append(m._format_list(self.problematic_observations, max_items=10, item_name="observation"))
+            lines.append(
+                m._format_list(
+                    self.problematic_observations, max_items=10, item_name="observation"
+                )
+            )
 
         # Interpretation
         lines.append(m._format_section("Interpretation"))
-        lines.append(f"  {m._format_interpretation(self.mean_efficiency, 'efficiency')}")
+        lines.append(
+            f"  {m._format_interpretation(self.mean_efficiency, 'efficiency')}"
+        )
         if self.num_problematic > 0:
             pct = (self.num_problematic / self.num_observations) * 100
-            lines.append(f"  {self.num_problematic} observations ({pct:.1f}%) below efficiency threshold.")
+            lines.append(
+                f"  {self.num_problematic} observations ({pct:.1f}%) below efficiency threshold."
+            )
 
         lines.append(m._format_footer(self.computation_time_ms))
         return "\n".join(lines)
@@ -973,7 +1037,9 @@ class VEIResult(ResultDisplayMixin, ResultPlotMixin):
         """Compact string representation."""
         if self.is_perfectly_consistent:
             return f"VEIResult(perfect, n={self.num_observations})"
-        return f"VEIResult(mean={self.mean_efficiency:.4f}, min={self.min_efficiency:.4f})"
+        return (
+            f"VEIResult(mean={self.mean_efficiency:.4f}, min={self.min_efficiency:.4f})"
+        )
 
 
 # =============================================================================
@@ -1088,22 +1154,29 @@ class DifferentiableResult(ResultDisplayMixin, ResultPlotMixin):
         lines = [m._format_header("DIFFERENTIABILITY TEST REPORT")]
 
         # Status
-        status = m._format_status(self.is_differentiable,
-                                  "DIFFERENTIABLE (SMOOTH)", "PIECEWISE-LINEAR")
+        status = m._format_status(
+            self.is_differentiable, "DIFFERENTIABLE (SMOOTH)", "PIECEWISE-LINEAR"
+        )
         lines.append(f"\nStatus: {status}")
 
         # Metrics
         lines.append(m._format_section("Metrics"))
         lines.append(m._format_metric("Is Differentiable", self.is_differentiable))
         lines.append(m._format_metric("Satisfies SARP", self.satisfies_sarp))
-        lines.append(m._format_metric("Satisfies Uniqueness", self.satisfies_uniqueness))
+        lines.append(
+            m._format_metric("Satisfies Uniqueness", self.satisfies_uniqueness)
+        )
         lines.append(m._format_metric("SARP Violations", self.num_sarp_violations))
-        lines.append(m._format_metric("Uniqueness Violations", self.num_uniqueness_violations))
+        lines.append(
+            m._format_metric("Uniqueness Violations", self.num_uniqueness_violations)
+        )
 
         # Show violations if any
         if self.sarp_violations:
             lines.append(m._format_section("SARP Violations"))
-            lines.append(m._format_list(self.sarp_violations, max_items=5, item_name="cycle"))
+            lines.append(
+                m._format_list(self.sarp_violations, max_items=5, item_name="cycle")
+            )
 
         # Interpretation
         lines.append(m._format_section("Interpretation"))
@@ -1201,9 +1274,11 @@ class AcyclicalPResult(ResultDisplayMixin, ResultPlotMixin):
         lines = [m._format_header("ACYCLICAL P TEST REPORT")]
 
         # Status
-        status = m._format_status(self.is_consistent,
-                                  "NO STRICT CYCLES (APPROX RATIONAL)",
-                                  "STRICT CYCLES FOUND")
+        status = m._format_status(
+            self.is_consistent,
+            "NO STRICT CYCLES (APPROX RATIONAL)",
+            "STRICT CYCLES FOUND",
+        )
         lines.append(f"\nStatus: {status}")
 
         # Metrics
@@ -1211,13 +1286,19 @@ class AcyclicalPResult(ResultDisplayMixin, ResultPlotMixin):
         lines.append(m._format_metric("Acyclical P Consistent", self.is_consistent))
         lines.append(m._format_metric("GARP Consistent", self.garp_consistent))
         lines.append(m._format_metric("Strict Violations", self.num_violations))
-        lines.append(m._format_metric("Strict Preferences", self.num_strict_preferences))
-        lines.append(m._format_metric("Approximately Rational", self.is_approximately_rational))
+        lines.append(
+            m._format_metric("Strict Preferences", self.num_strict_preferences)
+        )
+        lines.append(
+            m._format_metric("Approximately Rational", self.is_approximately_rational)
+        )
 
         # Show violations if any
         if self.violations:
             lines.append(m._format_section("Strict Preference Cycles"))
-            lines.append(m._format_list(self.violations, max_items=5, item_name="cycle"))
+            lines.append(
+                m._format_list(self.violations, max_items=5, item_name="cycle")
+            )
 
         # Interpretation
         lines.append(m._format_section("Interpretation"))
@@ -1225,10 +1306,16 @@ class AcyclicalPResult(ResultDisplayMixin, ResultPlotMixin):
             if self.garp_consistent:
                 lines.append("  Fully rational - passes both GARP and Acyclical P.")
             else:
-                lines.append("  Approximately rational - passes Acyclical P but not GARP.")
-                lines.append("  Apparent violations due to indifference, not irrationality.")
+                lines.append(
+                    "  Approximately rational - passes Acyclical P but not GARP."
+                )
+                lines.append(
+                    "  Apparent violations due to indifference, not irrationality."
+                )
         else:
-            lines.append("  Strict preference cycles exist - not approximately rational.")
+            lines.append(
+                "  Strict preference cycles exist - not approximately rational."
+            )
             lines.append("  Behavior cannot be explained by any utility function.")
 
         lines.append(m._format_footer(self.computation_time_ms))
@@ -1316,16 +1403,20 @@ class GAPPResult(ResultDisplayMixin, ResultPlotMixin):
         lines = [m._format_header("GAPP (PRICE PREFERENCE) TEST REPORT")]
 
         # Status
-        status = m._format_status(self.is_consistent,
-                                  "CONSISTENT PRICE PREFERENCES",
-                                  "INCONSISTENT PRICE PREFERENCES")
+        status = m._format_status(
+            self.is_consistent,
+            "CONSISTENT PRICE PREFERENCES",
+            "INCONSISTENT PRICE PREFERENCES",
+        )
         lines.append(f"\nStatus: {status}")
 
         # Metrics
         lines.append(m._format_section("Metrics"))
         lines.append(m._format_metric("GAPP Consistent", self.is_consistent))
         lines.append(m._format_metric("GARP Consistent", self.garp_consistent))
-        lines.append(m._format_metric("Price Preference Relations", self.num_price_preferences))
+        lines.append(
+            m._format_metric("Price Preference Relations", self.num_price_preferences)
+        )
         lines.append(m._format_metric("Violations", self.num_violations))
 
         # Show violations if any
@@ -1360,7 +1451,9 @@ class GAPPResult(ResultDisplayMixin, ResultPlotMixin):
 
     def __repr__(self) -> str:
         """Compact string representation."""
-        status = "consistent" if self.is_consistent else f"{self.num_violations} violations"
+        status = (
+            "consistent" if self.is_consistent else f"{self.num_violations} violations"
+        )
         return f"GAPPResult({status})"
 
 
@@ -1469,24 +1562,44 @@ class LancasterResult(ResultDisplayMixin, ResultPlotMixin):
         lines.append(m._format_metric("Well-Specified", self.is_well_specified))
         lines.append(m._format_metric("Mean NNLS Residual", self.mean_nnls_residual))
         lines.append(m._format_metric("Max NNLS Residual", self.max_nnls_residual))
-        lines.append(m._format_metric("Problematic Obs", len(self.problematic_observations)))
+        lines.append(
+            m._format_metric("Problematic Obs", len(self.problematic_observations))
+        )
 
         # Shadow prices
         lines.append(m._format_section("Shadow Prices (Implicit Valuations)"))
         for i in range(self.num_characteristics):
-            name = self.characteristic_names[i] if self.characteristic_names else f"Char {i}"
-            lines.append(f"  {name}: mean={self.mean_shadow_prices[i]:.4f}, "
-                         f"std={self.shadow_price_std[i]:.4f}, "
-                         f"share={self.spend_shares[i]*100:.1f}%")
+            name = (
+                self.characteristic_names[i]
+                if self.characteristic_names
+                else f"Char {i}"
+            )
+            lines.append(
+                f"  {name}: mean={self.mean_shadow_prices[i]:.4f}, "
+                f"std={self.shadow_price_std[i]:.4f}, "
+                f"share={self.spend_shares[i] * 100:.1f}%"
+            )
 
         # Key insights
         lines.append(m._format_section("Key Insights"))
         most_valued = self.most_valued_characteristic
         most_volatile = self.most_volatile_characteristic
-        val_name = self.characteristic_names[most_valued] if self.characteristic_names else f"Char {most_valued}"
-        vol_name = self.characteristic_names[most_volatile] if self.characteristic_names else f"Char {most_volatile}"
-        lines.append(f"  Most valued: {val_name} (shadow price {self.mean_shadow_prices[most_valued]:.4f})")
-        lines.append(f"  Most volatile: {vol_name} (CV {self.shadow_price_cv[most_volatile]:.4f})")
+        val_name = (
+            self.characteristic_names[most_valued]
+            if self.characteristic_names
+            else f"Char {most_valued}"
+        )
+        vol_name = (
+            self.characteristic_names[most_volatile]
+            if self.characteristic_names
+            else f"Char {most_volatile}"
+        )
+        lines.append(
+            f"  Most valued: {val_name} (shadow price {self.mean_shadow_prices[most_valued]:.4f})"
+        )
+        lines.append(
+            f"  Most volatile: {vol_name} (CV {self.shadow_price_cv[most_volatile]:.4f})"
+        )
 
         lines.append(m._format_footer(self.computation_time_ms))
         return "\n".join(lines)

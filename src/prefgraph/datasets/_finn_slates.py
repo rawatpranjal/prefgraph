@@ -50,8 +50,8 @@ from prefgraph.core.session import MenuChoiceLog
 
 # --- Constants ---
 
-MIN_MENU_SIZE = 2    # Minimum real items in a slate after filtering padding
-MAX_MENU_SIZE = 25   # FINN.no slates have K=25 slots, all potentially real items
+MIN_MENU_SIZE = 2  # Minimum real items in a slate after filtering padding
+MAX_MENU_SIZE = 25  # FINN.no slates have K=25 slots, all potentially real items
 MIN_SESSIONS_PER_USER = 5  # User must have this many click events (excluding no-click)
 PADDING_THRESHOLD = 3  # Item IDs 0, 1, 2 are padding/special; real items >= 3
 
@@ -74,10 +74,12 @@ def _find_data_dir(data_dir: str | Path | None) -> Path:
     if env:
         candidates.append(Path(env) / "finn_slates")
 
-    candidates.extend([
-        Path.home() / ".prefgraph" / "data" / "finn_slates",
-        Path(__file__).resolve().parents[3] / "datasets" / "finn_slates",
-    ])
+    candidates.extend(
+        [
+            Path.home() / ".prefgraph" / "data" / "finn_slates",
+            Path(__file__).resolve().parents[3] / "datasets" / "finn_slates",
+        ]
+    )
 
     for d in candidates:
         if d.is_dir() and (d / "data.npz").exists():
@@ -90,7 +92,7 @@ def _find_data_dir(data_dir: str | Path | None) -> Path:
         f"FINN.no Slates data not found. Searched:\n  {searched}\n\n"
         "Download options:\n"
         "  A) pip install recsys_slates_dataset gdown==4.5.1\n"
-        "     python3 -c \"from recsys_slates_dataset.data_helper import download_data_files; "
+        '     python3 -c "from recsys_slates_dataset.data_helper import download_data_files; '
         "download_data_files(data_dir='~/.prefgraph/data/finn_slates')\"\n\n"
         "  B) Manual Google Drive download (browser):\n"
         "     data.npz    → https://drive.google.com/uc?id=1XHqyk01qi9qnvBTfWWwqgDzrdjv1eBVV\n"
@@ -135,7 +137,7 @@ def load_finn_slates(
     npz_path = data_path / "data.npz"
 
     print(f"  Loading FINN.no Slates from {npz_path}...")
-    print(f"  (This is a large file ~3GB; first load may take 30–60 seconds)")
+    print("  (This is a large file ~3GB; first load may take 30–60 seconds)")
 
     # -------------------------------------------------------------------------
     # Step 1: Load numpy arrays from data.npz.
@@ -198,8 +200,8 @@ def load_finn_slates(
     n_skipped_choice_not_in_menu = 0
 
     for i in range(n_users):
-        user_clicks = click[i]     # [T]
-        user_slates = slate[i]     # [T, K]
+        user_clicks = click[i]  # [T]
+        user_slates = slate[i]  # [T, K]
 
         menus: list[frozenset[int]] = []
         choices: list[int] = []
@@ -214,8 +216,7 @@ def load_finn_slates(
 
             # Build menu: all real items in the slate at this timestep
             menu = frozenset(
-                int(item) for item in user_slates[t]
-                if int(item) >= PADDING_THRESHOLD
+                int(item) for item in user_slates[t] if int(item) >= PADDING_THRESHOLD
             )
 
             if len(menu) < MIN_MENU_SIZE:
@@ -249,8 +250,10 @@ def load_finn_slates(
 
     print(f"  Users with >= {min_sessions} click sessions: {len(user_logs):,}")
     print(f"  Total kept observations: {n_kept:,}")
-    print(f"  Skipped — no-click: {n_skipped_no_click:,}  "
-          f"small-menu: {n_skipped_small_menu:,}  "
-          f"choice-not-in-slate: {n_skipped_choice_not_in_menu:,}")
+    print(
+        f"  Skipped — no-click: {n_skipped_no_click:,}  "
+        f"small-menu: {n_skipped_small_menu:,}  "
+        f"choice-not-in-slate: {n_skipped_choice_not_in_menu:,}"
+    )
 
     return user_logs

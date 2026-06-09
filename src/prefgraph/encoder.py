@@ -245,9 +245,7 @@ class PreferenceEncoder:
             return None
         return self._result.mean_marginal_utility
 
-    def transform(
-        self, logs: list[BehaviorLog] | BehaviorLog
-    ) -> NDArray[np.float64]:
+    def transform(self, logs: list[BehaviorLog] | BehaviorLog) -> NDArray[np.float64]:
         """
         Transform behavior logs to feature array.
 

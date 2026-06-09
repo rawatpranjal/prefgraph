@@ -28,7 +28,7 @@ from __future__ import annotations
 
 import time
 from dataclasses import dataclass
-from typing import Literal, TYPE_CHECKING
+from typing import Literal
 
 import numpy as np
 from numpy.typing import NDArray
@@ -414,7 +414,9 @@ def test_expected_utility(
                 lottery_choices[i], lottery_choices[j], tolerance
             ):
                 violations.append((i, j))
-                total_severity += 0.1  # Add constant severity for independence violations
+                total_severity += (
+                    0.1  # Add constant severity for independence violations
+                )
 
     # Apply risk attitude constraint via linear programming
     if risk_attitude != "any" and len(violations) == 0:
@@ -427,7 +429,9 @@ def test_expected_utility(
 
     num_violations = len(violations)
     is_consistent = num_violations == 0
-    violation_severity = total_severity / max(1, num_violations) if num_violations > 0 else 0.0
+    violation_severity = (
+        total_severity / max(1, num_violations) if num_violations > 0 else 0.0
+    )
 
     computation_time = (time.perf_counter() - start_time) * 1000
 
@@ -524,8 +528,9 @@ def test_rank_dependent_utility(
                 continue
 
             # Strict dominance: other >= chosen everywhere, > somewhere
-            if np.all(other_outcomes >= chosen_outcomes - tolerance) and \
-               np.any(other_outcomes > chosen_outcomes + tolerance):
+            if np.all(other_outcomes >= chosen_outcomes - tolerance) and np.any(
+                other_outcomes > chosen_outcomes + tolerance
+            ):
                 violations.append((i, j))
                 total_severity += np.sum(other_outcomes - chosen_outcomes)
 
@@ -534,7 +539,9 @@ def test_rank_dependent_utility(
 
     num_violations = len(violations)
     is_consistent = num_violations == 0
-    violation_severity = total_severity / max(1, num_violations) if num_violations > 0 else 0.0
+    violation_severity = (
+        total_severity / max(1, num_violations) if num_violations > 0 else 0.0
+    )
 
     computation_time = (time.perf_counter() - start_time) * 1000
 
@@ -667,7 +674,9 @@ def _violates_independence(
                     for k, L2_other in enumerate(outcomes2):
                         if k == j:
                             continue
-                        alpha2 = _is_mixture_of(L2_other, L1_chosen, L1_rejected, tolerance)
+                        alpha2 = _is_mixture_of(
+                            L2_other, L1_chosen, L1_rejected, tolerance
+                        )
                         if alpha2 is not None:
                             # Both are mixtures - higher α should be preferred
                             if alpha > alpha2 + tolerance and chosen2 == k:
@@ -734,7 +743,7 @@ def _is_mixture_of(
         return None
 
     # α = (lottery - L_B) · (L_A - L_B) / ||L_A - L_B||²
-    alpha = np.dot(diff_lottery.flatten(), diff_AB.flatten()) / (norm_diff ** 2)
+    alpha = np.dot(diff_lottery.flatten(), diff_AB.flatten()) / (norm_diff**2)
 
     # Verify the reconstruction
     reconstructed = alpha * L_A + (1 - alpha) * L_B
@@ -990,7 +999,9 @@ def _detect_probability_weighting(lottery_choices: list[LotteryChoice]) -> str:
         chosen_var = np.var(chosen_outcomes)
 
         # Compare to other options
-        other_vars = [np.var(outcomes[j]) for j in range(len(outcomes)) if j != chosen_idx]
+        other_vars = [
+            np.var(outcomes[j]) for j in range(len(outcomes)) if j != chosen_idx
+        ]
 
         if len(other_vars) > 0:
             if chosen_var < np.mean(other_vars) * 0.5:

@@ -273,25 +273,28 @@ class ViolationGraph:
         Returns:
             Dictionary with nodes, edges, violations, and summary statistics
         """
-        import networkx as nx
 
         nodes = []
         for node_id, data in self.graph.nodes(data=True):
-            nodes.append({
-                "id": node_id,
-                "label": data.get("label", str(node_id)),
-                "bundle": data.get("bundle", []),
-                "prices": data.get("prices", []),
-                "expenditure": data.get("expenditure", 0.0),
-            })
+            nodes.append(
+                {
+                    "id": node_id,
+                    "label": data.get("label", str(node_id)),
+                    "bundle": data.get("bundle", []),
+                    "prices": data.get("prices", []),
+                    "expenditure": data.get("expenditure", 0.0),
+                }
+            )
 
         edges = []
         for u, v, data in self.graph.edges(data=True):
-            edges.append({
-                "source": u,
-                "target": v,
-                "relation": data.get("relation", "weak"),
-            })
+            edges.append(
+                {
+                    "source": u,
+                    "target": v,
+                    "relation": data.get("relation", "weak"),
+                }
+            )
 
         violation_nodes = set()
         for cycle in self.garp_result.violations:
@@ -373,7 +376,6 @@ class ViolationGraph:
         Returns:
             Dict mapping observation index to violation centrality score
         """
-        import networkx as nx
 
         # Count how many violation cycles each node participates in
         cycle_counts: dict[int, int] = {}
@@ -390,8 +392,7 @@ class ViolationGraph:
         if max_count == 0:
             max_count = 1  # Avoid division by zero when no violations
         violation_centrality = {
-            node: count / max_count
-            for node, count in cycle_counts.items()
+            node: count / max_count for node, count in cycle_counts.items()
         }
 
         return violation_centrality

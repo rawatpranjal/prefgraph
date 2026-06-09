@@ -23,9 +23,13 @@ from prefgraph.core.session import BehaviorLog
 # --- Constants ---
 
 DEPARTMENTS = [
-    "FOODS_1", "FOODS_2", "FOODS_3",
-    "HOBBIES_1", "HOBBIES_2",
-    "HOUSEHOLD_1", "HOUSEHOLD_2",
+    "FOODS_1",
+    "FOODS_2",
+    "FOODS_3",
+    "HOBBIES_1",
+    "HOBBIES_2",
+    "HOUSEHOLD_1",
+    "HOUSEHOLD_2",
 ]
 
 CATEGORIES = ["FOODS", "HOBBIES", "HOUSEHOLD"]
@@ -44,10 +48,12 @@ def _find_data_dir(data_dir: str | Path | None) -> Path:
     if env:
         candidates.append(Path(env) / "m5")
 
-    candidates.extend([
-        Path.home() / ".prefgraph" / "data" / "m5",
-        Path(__file__).resolve().parents[3] / "m5" / "data",
-    ])
+    candidates.extend(
+        [
+            Path.home() / ".prefgraph" / "data" / "m5",
+            Path(__file__).resolve().parents[3] / "m5" / "data",
+        ]
+    )
 
     for d in candidates:
         if d.is_dir() and (d / "sales_train_evaluation.csv").exists():
@@ -131,7 +137,9 @@ def load_m5(
     # Melt to long format: one row per item-day
     id_cols = ["item_id", "dept_id", "cat_id", "store_id"]
     sales_long = sales[id_cols + d_cols].melt(
-        id_vars=id_cols, var_name="d", value_name="units",
+        id_vars=id_cols,
+        var_name="d",
+        value_name="units",
     )
     sales_long["wm_yr_wk"] = sales_long["d"].map(d_to_week)
     sales_long.dropna(subset=["wm_yr_wk"], inplace=True)
@@ -139,22 +147,29 @@ def load_m5(
 
     # Merge prices
     sales_long = sales_long.merge(
-        prices_df, on=["store_id", "item_id", "wm_yr_wk"], how="left",
+        prices_df,
+        on=["store_id", "item_id", "wm_yr_wk"],
+        how="left",
     )
 
     # Drop rows with missing prices or zero units
     sales_long = sales_long[
-        sales_long["sell_price"].notna() &
-        (sales_long["sell_price"] >= MIN_UNIT_PRICE)
+        sales_long["sell_price"].notna() & (sales_long["sell_price"] >= MIN_UNIT_PRICE)
     ]
 
     if aggregation == "store":
         return _build_store_panel(
-            sales_long, weeks_sorted, min_weeks, max_users,
+            sales_long,
+            weeks_sorted,
+            min_weeks,
+            max_users,
         )
     else:
         return _build_store_dept_panel(
-            sales_long, weeks_sorted, min_weeks, max_users,
+            sales_long,
+            weeks_sorted,
+            min_weeks,
+            max_users,
         )
 
 
@@ -165,15 +180,18 @@ def _build_store_panel(
     max_users: int | None,
 ) -> BehaviorPanel:
     """Build panel with one user per store, departments as goods."""
-    import pandas as pd
 
     week_index = {w: i for i, w in enumerate(weeks_sorted)}
 
     # Aggregate: total units and mean price per store-dept-week
-    agg = sales_long.groupby(["store_id", "dept_id", "wm_yr_wk"]).agg(
-        units=("units", "sum"),
-        price=("sell_price", "mean"),
-    ).reset_index()
+    agg = (
+        sales_long.groupby(["store_id", "dept_id", "wm_yr_wk"])
+        .agg(
+            units=("units", "sum"),
+            price=("sell_price", "mean"),
+        )
+        .reset_index()
+    )
 
     stores = sorted(agg["store_id"].unique())
     if max_users is not None:
@@ -185,14 +203,22 @@ def _build_store_panel(
         store_data = agg[agg["store_id"] == store]
 
         # Pivot quantities: rows=weeks, columns=departments
-        qty_pivot = store_data.pivot_table(
-            values="units", index="wm_yr_wk", columns="dept_id",
-            aggfunc="sum",
-        ).reindex(index=weeks_sorted, columns=DEPARTMENTS).fillna(0)
+        qty_pivot = (
+            store_data.pivot_table(
+                values="units",
+                index="wm_yr_wk",
+                columns="dept_id",
+                aggfunc="sum",
+            )
+            .reindex(index=weeks_sorted, columns=DEPARTMENTS)
+            .fillna(0)
+        )
 
         # Pivot prices: rows=weeks, columns=departments
         price_pivot = store_data.pivot_table(
-            values="price", index="wm_yr_wk", columns="dept_id",
+            values="price",
+            index="wm_yr_wk",
+            columns="dept_id",
             aggfunc="mean",
         ).reindex(index=weeks_sorted, columns=DEPARTMENTS)
         price_pivot = price_pivot.ffill().bfill()
@@ -212,7 +238,9 @@ def _build_store_panel(
             mask = np.isnan(price_matrix[:, col])
             if mask.any():
                 median_val = np.nanmedian(price_matrix[:, col])
-                price_matrix[mask, col] = median_val if not np.isnan(median_val) else 1.0
+                price_matrix[mask, col] = (
+                    median_val if not np.isnan(median_val) else 1.0
+                )
 
         uid = store
         logs[uid] = BehaviorLog(
@@ -240,18 +268,23 @@ def _build_store_dept_panel(
     max_users: int | None,
 ) -> BehaviorPanel:
     """Build panel with one user per store-department, categories as goods."""
-    import pandas as pd
 
     # Aggregate: total units and mean price per store-dept-cat-week
-    agg = sales_long.groupby(
-        ["store_id", "dept_id", "cat_id", "wm_yr_wk"],
-    ).agg(
-        units=("units", "sum"),
-        price=("sell_price", "mean"),
-    ).reset_index()
+    agg = (
+        sales_long.groupby(
+            ["store_id", "dept_id", "cat_id", "wm_yr_wk"],
+        )
+        .agg(
+            units=("units", "sum"),
+            price=("sell_price", "mean"),
+        )
+        .reset_index()
+    )
 
     combos = sorted(
-        agg[["store_id", "dept_id"]].drop_duplicates().itertuples(index=False, name=None),
+        agg[["store_id", "dept_id"]]
+        .drop_duplicates()
+        .itertuples(index=False, name=None),
     )
     if max_users is not None:
         combos = combos[:max_users]
@@ -262,14 +295,22 @@ def _build_store_dept_panel(
         subset = agg[(agg["store_id"] == store) & (agg["dept_id"] == dept)]
 
         # Pivot quantities: rows=weeks, columns=categories
-        qty_pivot = subset.pivot_table(
-            values="units", index="wm_yr_wk", columns="cat_id",
-            aggfunc="sum",
-        ).reindex(index=weeks_sorted, columns=CATEGORIES).fillna(0)
+        qty_pivot = (
+            subset.pivot_table(
+                values="units",
+                index="wm_yr_wk",
+                columns="cat_id",
+                aggfunc="sum",
+            )
+            .reindex(index=weeks_sorted, columns=CATEGORIES)
+            .fillna(0)
+        )
 
         # Pivot prices: rows=weeks, columns=categories
         price_pivot = subset.pivot_table(
-            values="price", index="wm_yr_wk", columns="cat_id",
+            values="price",
+            index="wm_yr_wk",
+            columns="cat_id",
             aggfunc="mean",
         ).reindex(index=weeks_sorted, columns=CATEGORIES)
         price_pivot = price_pivot.ffill().bfill()
@@ -288,7 +329,9 @@ def _build_store_dept_panel(
             mask = np.isnan(price_matrix[:, col])
             if mask.any():
                 median_val = np.nanmedian(price_matrix[:, col])
-                price_matrix[mask, col] = median_val if not np.isnan(median_val) else 1.0
+                price_matrix[mask, col] = (
+                    median_val if not np.isnan(median_val) else 1.0
+                )
 
         uid = f"{store}__{dept}"
         logs[uid] = BehaviorLog(

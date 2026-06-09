@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, asdict
+from dataclasses import dataclass
 from typing import Any
 
 import numpy as np
@@ -93,7 +93,9 @@ class GARPResult(ResultDisplayMixin, ResultPlotMixin):
             lines.append("  Behavior is consistent with utility maximization.")
             lines.append("  No revealed preference cycles detected.")
         else:
-            lines.append("  Behavior violates GARP - inconsistent with utility maximization.")
+            lines.append(
+                "  Behavior violates GARP - inconsistent with utility maximization."
+            )
             lines.append(f"  Found {self.num_violations} preference cycle(s).")
 
         lines.append(m._format_footer(self.computation_time_ms))
@@ -112,13 +114,17 @@ class GARPResult(ResultDisplayMixin, ResultPlotMixin):
     def __repr__(self) -> str:
         """Compact string representation with [+]/[-] indicator."""
         indicator = "[+]" if self.is_consistent else "[-]"
-        status = "CONSISTENT" if self.is_consistent else f"{self.num_violations} violations"
+        status = (
+            "CONSISTENT" if self.is_consistent else f"{self.num_violations} violations"
+        )
         return f"GARPResult: {indicator} {status} ({self.computation_time_ms:.2f}ms)"
 
     def short_summary(self) -> str:
         """Return one-liner with [+]/[-] indicator."""
         indicator = "[+]" if self.is_consistent else "[-]"
-        status = "CONSISTENT" if self.is_consistent else f"{self.num_violations} violations"
+        status = (
+            "CONSISTENT" if self.is_consistent else f"{self.num_violations} violations"
+        )
         return f"GARP: {indicator} {status}"
 
 
@@ -188,16 +194,24 @@ class AEIResult(ResultDisplayMixin, ResultPlotMixin):
         lines.append(m._format_metric("Efficiency Index (AEI)", self.efficiency_index))
         lines.append(m._format_metric("Axiom", self.axiom.upper()))
         lines.append(m._format_metric("Waste Fraction", self.waste_fraction))
-        lines.append(m._format_metric("Perfectly Consistent", self.is_perfectly_consistent))
-        lines.append(m._format_metric("Binary Search Iterations", self.binary_search_iterations))
+        lines.append(
+            m._format_metric("Perfectly Consistent", self.is_perfectly_consistent)
+        )
+        lines.append(
+            m._format_metric("Binary Search Iterations", self.binary_search_iterations)
+        )
         lines.append(m._format_metric("Tolerance", self.tolerance))
 
         # Interpretation
         lines.append(m._format_section("Interpretation"))
-        lines.append(f"  {m._format_interpretation(self.efficiency_index, 'efficiency')}")
+        lines.append(
+            f"  {m._format_interpretation(self.efficiency_index, 'efficiency')}"
+        )
         if self.waste_fraction > 0:
             pct = self.waste_fraction * 100
-            lines.append(f"  Approximately {pct:.1f}% of budget on inconsistent choices.")
+            lines.append(
+                f"  Approximately {pct:.1f}% of budget on inconsistent choices."
+            )
 
         lines.append(m._format_footer(self.computation_time_ms))
         return "\n".join(lines)
@@ -477,15 +491,27 @@ class UtilityRecoveryResult(ResultDisplayMixin, ResultPlotMixin):
         lines.append(m._format_metric("Recovery Successful", self.success))
 
         if self.success and self.utility_values is not None:
-            lines.append(m._format_metric("Utility Values Range",
-                                          f"[{np.min(self.utility_values):.4f}, {np.max(self.utility_values):.4f}]"))
-            lines.append(m._format_metric("Mean Utility", float(np.mean(self.utility_values))))
+            lines.append(
+                m._format_metric(
+                    "Utility Values Range",
+                    f"[{np.min(self.utility_values):.4f}, {np.max(self.utility_values):.4f}]",
+                )
+            )
+            lines.append(
+                m._format_metric("Mean Utility", float(np.mean(self.utility_values)))
+            )
             lines.append(m._format_metric("Num Observations", len(self.utility_values)))
 
         if self.lagrange_multipliers is not None:
-            lines.append(m._format_metric("Mean Marginal Utility", self.mean_marginal_utility))
-            lines.append(m._format_metric("Lagrange Range",
-                                          f"[{np.min(self.lagrange_multipliers):.4f}, {np.max(self.lagrange_multipliers):.4f}]"))
+            lines.append(
+                m._format_metric("Mean Marginal Utility", self.mean_marginal_utility)
+            )
+            lines.append(
+                m._format_metric(
+                    "Lagrange Range",
+                    f"[{np.min(self.lagrange_multipliers):.4f}, {np.max(self.lagrange_multipliers):.4f}]",
+                )
+            )
 
         # Interpretation
         lines.append(m._format_section("Interpretation"))

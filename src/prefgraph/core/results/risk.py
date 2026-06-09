@@ -1,12 +1,11 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, asdict
+from dataclasses import dataclass
 from typing import Any
 
 import numpy as np
 from numpy.typing import NDArray
 
-from prefgraph.core.types import Cycle
 from prefgraph.core.mixins import ResultSummaryMixin
 from prefgraph.core.display import ResultDisplayMixin, ResultPlotMixin
 
@@ -86,19 +85,36 @@ class RiskProfileResult(ResultDisplayMixin, ResultPlotMixin):
 
         # Metrics
         lines.append(m._format_section("Metrics"))
-        lines.append(m._format_metric("Risk Aversion Coefficient", self.risk_aversion_coefficient))
+        lines.append(
+            m._format_metric(
+                "Risk Aversion Coefficient", self.risk_aversion_coefficient
+            )
+        )
         lines.append(m._format_metric("Utility Curvature", self.utility_curvature))
         lines.append(m._format_metric("Consistency Score", self.consistency_score))
-        lines.append(m._format_metric("Consistent Choices", f"{self.num_consistent_choices}/{self.num_total_choices}"))
+        lines.append(
+            m._format_metric(
+                "Consistent Choices",
+                f"{self.num_consistent_choices}/{self.num_total_choices}",
+            )
+        )
 
         # Interpretation
         lines.append(m._format_section("Interpretation"))
         if self.is_risk_averse:
-            lines.append("  Decision-maker is risk averse - prefers certainty over gambles.")
-            lines.append(f"  Coefficient {self.risk_aversion_coefficient:.4f} > 0 indicates risk aversion.")
+            lines.append(
+                "  Decision-maker is risk averse - prefers certainty over gambles."
+            )
+            lines.append(
+                f"  Coefficient {self.risk_aversion_coefficient:.4f} > 0 indicates risk aversion."
+            )
         elif self.is_risk_seeking:
-            lines.append("  Decision-maker is risk seeking - prefers gambles over certainty.")
-            lines.append(f"  Coefficient {self.risk_aversion_coefficient:.4f} < 0 indicates risk seeking.")
+            lines.append(
+                "  Decision-maker is risk seeking - prefers gambles over certainty."
+            )
+            lines.append(
+                f"  Coefficient {self.risk_aversion_coefficient:.4f} < 0 indicates risk seeking."
+            )
         else:
             lines.append("  Decision-maker is approximately risk neutral.")
             lines.append("  Maximizes expected value without risk premium.")

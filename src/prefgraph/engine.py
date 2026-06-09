@@ -15,15 +15,18 @@ Usage:
 
 from __future__ import annotations
 
-import time
 from dataclasses import dataclass, fields, replace
 from typing import Any, Optional
 
 import numpy as np
 
 from prefgraph._rust_backend import (
-    HAS_RUST, _rust_analyze_batch, _rust_analyze_menu_batch, _rust_build_preference_graph,
-    HAS_PARQUET_RUST, _rust_analyze_parquet_file,
+    HAS_RUST,
+    _rust_analyze_batch,
+    _rust_analyze_menu_batch,
+    _rust_build_preference_graph,
+    HAS_PARQUET_RUST,
+    _rust_analyze_parquet_file,
 )
 
 
@@ -104,7 +107,11 @@ class EngineResult:
     def summary(self) -> str:
         """Return human-readable summary report."""
         indicator = "[+]" if self.is_garp else "[-]"
-        status = "GARP-consistent" if self.is_garp else f"{self.n_violations} GARP violations"
+        status = (
+            "GARP-consistent"
+            if self.is_garp
+            else f"{self.n_violations} GARP violations"
+        )
         lines = [f"Engine Budget Report: {indicator} {status}"]
         lines.append(f"  CCEI:  {self.ccei:.4f}")
         if self.mpi > 0.0:
@@ -113,17 +120,27 @@ class EngineResult:
             lines.append("  HARP:  yes (homothetic)")
         if self.hm_total is not None and self.hm_total > 0:
             frac = self.hm_consistent / self.hm_total
-            lines.append(f"  HM:    {self.hm_consistent}/{self.hm_total} ({frac:.0%} consistent)")
+            lines.append(
+                f"  HM:    {self.hm_consistent}/{self.hm_total} ({frac:.0%} consistent)"
+            )
         if self.utility_success is True:
             lines.append("  Utility: recovered")
         if self.vei_mean < 1.0:
-            lines.append(f"  VEI:   mean={self.vei_mean:.4f}  min={self.vei_min:.4f}  std={self.vei_std:.4f}  IQR=[{self.vei_q25:.4f}, {self.vei_q75:.4f}]")
+            lines.append(
+                f"  VEI:   mean={self.vei_mean:.4f}  min={self.vei_min:.4f}  std={self.vei_std:.4f}  IQR=[{self.vei_q25:.4f}, {self.vei_q75:.4f}]"
+            )
         if self.is_harp is False and self.harp_severity > 1.0:
             lines.append(f"  HARP:  violated (severity={self.harp_severity:.4f})")
         if self.max_scc > 1:
-            lines.append(f"  SCC:   {self.n_scc} components, max={self.max_scc}, mean={self.scc_mean_size:.1f}")
+            lines.append(
+                f"  SCC:   {self.n_scc} components, max={self.max_scc}, mean={self.scc_mean_size:.1f}"
+            )
         if self.r_density > 0:
-            parts = [f"density={self.r_density:.3f}", f"deg_std={self.r_out_degree_std:.2f}", f"gini={self.degree_gini:.3f}"]
+            parts = [
+                f"density={self.r_density:.3f}",
+                f"deg_std={self.r_out_degree_std:.2f}",
+                f"gini={self.degree_gini:.3f}",
+            ]
             if self.ew_std > 0:
                 parts.append(f"ew_std={self.ew_std:.3f}")
             lines.append(f"  Graph: {', '.join(parts)}")
@@ -132,7 +149,9 @@ class EngineResult:
 
     def __repr__(self) -> str:
         indicator = "[+]" if self.is_garp else "[-]"
-        status = "GARP-consistent" if self.is_garp else f"{self.n_violations} violations"
+        status = (
+            "GARP-consistent" if self.is_garp else f"{self.n_violations} violations"
+        )
         parts = [f"EngineResult: {indicator} {status}"]
         parts.append(f"ccei={self.ccei:.4f}")
         if self.mpi > 0.0:
@@ -185,7 +204,11 @@ class MenuResult:
     def summary(self) -> str:
         """Return human-readable summary report."""
         indicator = "[+]" if self.is_sarp else "[-]"
-        status = "SARP-consistent" if self.is_sarp else f"{self.n_sarp_violations} SARP violations"
+        status = (
+            "SARP-consistent"
+            if self.is_sarp
+            else f"{self.n_sarp_violations} SARP violations"
+        )
         lines = [f"Engine Menu Report: {indicator} {status}"]
         if not self.is_warp:
             lines.append(f"  WARP:  {self.n_warp_violations} violations")
@@ -195,7 +218,9 @@ class MenuResult:
             lines.append("  WARP-LA: consistent (limited attention)")
         if self.hm_total > 0:
             frac = self.hm_consistent / self.hm_total
-            lines.append(f"  HM:    {self.hm_consistent}/{self.hm_total} ({frac:.0%} consistent)")
+            lines.append(
+                f"  HM:    {self.hm_consistent}/{self.hm_total} ({frac:.0%} consistent)"
+            )
         if self.max_scc > 1:
             lines.append(f"  SCC:   {self.n_scc} components, max={self.max_scc}")
         lines.append(f"  Time:  {self.compute_time_us}us")
@@ -203,7 +228,11 @@ class MenuResult:
 
     def __repr__(self) -> str:
         indicator = "[+]" if self.is_sarp else "[-]"
-        status = "SARP-consistent" if self.is_sarp else f"{self.n_sarp_violations} SARP violations"
+        status = (
+            "SARP-consistent"
+            if self.is_sarp
+            else f"{self.n_sarp_violations} SARP violations"
+        )
         parts = [f"MenuResult: {indicator} {status}"]
         if self.hm_total > 0:
             parts.append(f"hm={self.hm_consistent}/{self.hm_total}")
@@ -223,7 +252,17 @@ class Engine:
         tolerance: Numerical tolerance for GARP comparisons.
     """
 
-    SUPPORTED_METRICS = {"garp", "ccei", "mpi", "harp", "hm", "utility", "vei", "vei_exact", "network"}
+    SUPPORTED_METRICS = {
+        "garp",
+        "ccei",
+        "mpi",
+        "harp",
+        "hm",
+        "utility",
+        "vei",
+        "vei_exact",
+        "network",
+    }
 
     def __init__(
         self,
@@ -264,11 +303,15 @@ class Engine:
                 f"If you have a pandas DataFrame, use prefgraph.analyze(df, ...) instead."
             )
         if len(users) == 0:
-            raise DataValidationError("users list is empty. Provide at least one (prices, quantities) tuple.")
+            raise DataValidationError(
+                "users list is empty. Provide at least one (prices, quantities) tuple."
+            )
 
         for i, item in enumerate(users):
             if not isinstance(item, (list, tuple)) or len(item) != 2:
-                length_hint = f" of length {len(item)}" if hasattr(item, '__len__') else ""
+                length_hint = (
+                    f" of length {len(item)}" if hasattr(item, "__len__") else ""
+                )
                 raise DataValidationError(
                     f"users[{i}] must be a (prices, quantities) tuple of length 2, "
                     f"got {type(item).__name__}{length_hint}. "
@@ -333,11 +376,15 @@ class Engine:
                 f"got {type(users).__name__}."
             )
         if len(users) == 0:
-            raise DataValidationError("users list is empty. Provide at least one (menus, choices, n_items) tuple.")
+            raise DataValidationError(
+                "users list is empty. Provide at least one (menus, choices, n_items) tuple."
+            )
 
         for i, item in enumerate(users):
             if not isinstance(item, (list, tuple)) or len(item) != 3:
-                length_hint = f" of length {len(item)}" if hasattr(item, '__len__') else ""
+                length_hint = (
+                    f" of length {len(item)}" if hasattr(item, "__len__") else ""
+                )
                 raise DataValidationError(
                     f"users[{i}] must be a (menus, choices, n_items) tuple of length 3, "
                     f"got {type(item).__name__}{length_hint}. "
@@ -345,11 +392,17 @@ class Engine:
                 )
             menus, choices, n_items = item
             if not isinstance(menus, (list, tuple)):
-                raise TypeError(f"users[{i}]: menus must be a list of lists, got {type(menus).__name__}.")
+                raise TypeError(
+                    f"users[{i}]: menus must be a list of lists, got {type(menus).__name__}."
+                )
             if not isinstance(choices, (list, tuple)):
-                raise TypeError(f"users[{i}]: choices must be a list, got {type(choices).__name__}.")
+                raise TypeError(
+                    f"users[{i}]: choices must be a list, got {type(choices).__name__}."
+                )
             if not isinstance(n_items, int) or n_items < 1:
-                raise DataValidationError(f"users[{i}]: n_items must be a positive integer, got {n_items!r}.")
+                raise DataValidationError(
+                    f"users[{i}]: n_items must be a positive integer, got {n_items!r}."
+                )
             if len(menus) != len(choices):
                 raise DataValidationError(
                     f"users[{i}]: len(menus)={len(menus)} != len(choices)={len(choices)}. "
@@ -461,15 +514,12 @@ class Engine:
         flags: dict[str, bool],
     ) -> list[EngineResult]:
         """Analyze a chunk using Rust Rayon backend."""
-        prices_list = [
-            np.ascontiguousarray(p, dtype=np.float64) for p, _ in chunk
-        ]
-        quantities_list = [
-            np.ascontiguousarray(q, dtype=np.float64) for _, q in chunk
-        ]
+        prices_list = [np.ascontiguousarray(p, dtype=np.float64) for p, _ in chunk]
+        quantities_list = [np.ascontiguousarray(q, dtype=np.float64) for _, q in chunk]
 
         raw_results = _rust_analyze_batch(
-            prices_list, quantities_list,
+            prices_list,
+            quantities_list,
             flags.get("ccei", False),
             flags.get("mpi", False),
             flags.get("harp", False),
@@ -525,13 +575,16 @@ class Engine:
         if flags.get("vei"):
             from prefgraph.core.session import BehaviorLog as _BL
             from prefgraph.algorithms.vei import compute_vei as _compute_vei
+
             fixed = []
             for er, (prices, quantities) in zip(engine_results, chunk):
                 if not er.is_garp and er.vei_mean == 1.0:
                     try:
                         log = _BL(cost_vectors=prices, action_vectors=quantities)
                         vr = _compute_vei(log)
-                        er = replace(er, vei_mean=vr.mean_efficiency, vei_min=vr.min_efficiency)
+                        er = replace(
+                            er, vei_mean=vr.mean_efficiency, vei_min=vr.min_efficiency
+                        )
                     except Exception:
                         pass
                 fixed.append(er)
@@ -633,24 +686,27 @@ class Engine:
             if flags.get("vei") and not garp.is_consistent:
                 try:
                     from prefgraph.algorithms.vei import compute_vei
+
                     vei_result = compute_vei(log)
                     vei_mean_val = vei_result.mean_efficiency
                     vei_min_val = vei_result.min_efficiency
                 except Exception:
                     pass  # keep defaults on solver failure
 
-            results.append(EngineResult(
-                is_garp=garp.is_consistent,
-                n_violations=len(garp.violations),
-                ccei=ccei_val,
-                mpi=mpi_val,
-                hm_consistent=hm_consistent,
-                hm_total=hm_total,
-                is_harp=is_harp,
-                utility_success=utility_success,
-                vei_mean=vei_mean_val,
-                vei_min=vei_min_val,
-            ))
+            results.append(
+                EngineResult(
+                    is_garp=garp.is_consistent,
+                    n_violations=len(garp.violations),
+                    ccei=ccei_val,
+                    mpi=mpi_val,
+                    hm_consistent=hm_consistent,
+                    hm_total=hm_total,
+                    is_harp=is_harp,
+                    utility_success=utility_success,
+                    vei_mean=vei_mean_val,
+                    vei_min=vei_min_val,
+                )
+            )
         return results
 
     # ------------------------------------------------------------------
@@ -696,7 +752,10 @@ class Engine:
                 n_items_list = [u[2] for u in chunk]
 
                 raw = _rust_analyze_menu_batch(
-                    menus_list, choices_list, n_items_list, compute_warp_la,
+                    menus_list,
+                    choices_list,
+                    n_items_list,
+                    compute_warp_la,
                     "network" in self.metrics,
                 )
                 all_results.extend(
@@ -721,8 +780,11 @@ class Engine:
                 # Python fallback
                 from prefgraph import MenuChoiceLog
                 from prefgraph.algorithms.abstract_choice import (
-                    validate_menu_sarp, validate_menu_warp, compute_menu_efficiency,
+                    validate_menu_sarp,
+                    validate_menu_warp,
+                    compute_menu_efficiency,
                 )
+
                 for menus, choices, n_items in chunk:
                     log = MenuChoiceLog(
                         menus=[frozenset(m) for m in menus],
@@ -731,14 +793,16 @@ class Engine:
                     sarp = validate_menu_sarp(log)
                     warp = validate_menu_warp(log)
                     hm = compute_menu_efficiency(log)
-                    all_results.append(MenuResult(
-                        is_sarp=sarp.is_consistent,
-                        is_warp=warp.is_consistent,
-                        n_sarp_violations=len(sarp.violations),
-                        n_warp_violations=len(warp.violations),
-                        hm_consistent=len(hm.remaining_observations),
-                        hm_total=hm.num_total,
-                    ))
+                    all_results.append(
+                        MenuResult(
+                            is_sarp=sarp.is_consistent,
+                            is_warp=warp.is_consistent,
+                            n_sarp_violations=len(sarp.violations),
+                            n_warp_violations=len(warp.violations),
+                            hm_consistent=len(hm.remaining_observations),
+                            hm_total=hm.num_total,
+                        )
+                    )
 
         return all_results
 
@@ -870,7 +934,9 @@ class Engine:
                 is_harp=r["is_harp"] if "harp" in self.metrics else None,
                 hm_consistent=r["hm_consistent"] if "hm" in self.metrics else None,
                 hm_total=r["hm_total"] if "hm" in self.metrics else None,
-                utility_success=r["utility_success"] if "utility" in self.metrics else None,
+                utility_success=r["utility_success"]
+                if "utility" in self.metrics
+                else None,
                 vei_mean=r.get("vei_mean", 1.0),
                 vei_min=r.get("vei_min", 1.0),
                 vei_exact_mean=r.get("vei_exact_mean", 1.0),
@@ -927,8 +993,9 @@ class Engine:
             result_table = pa.Table.from_pandas(result_df)
 
             if writer is None:
-                writer = pq.ParquetWriter(output_path, result_table.schema,
-                                          compression="zstd")
+                writer = pq.ParquetWriter(
+                    output_path, result_table.schema, compression="zstd"
+                )
             writer.write_table(result_table)
             total_users += len(user_ids)
 
@@ -938,13 +1005,16 @@ class Engine:
         return output_path
 
     def __repr__(self) -> str:
-        return (f"Engine(backend={self.backend!r}, "
-                f"metrics={self.metrics}, chunk_size={self.chunk_size})")
+        return (
+            f"Engine(backend={self.backend!r}, "
+            f"metrics={self.metrics}, chunk_size={self.chunk_size})"
+        )
 
 
 # ------------------------------------------------------------------
 # DataFrame conversion
 # ------------------------------------------------------------------
+
 
 def results_to_dataframe(
     results: list[EngineResult] | list[MenuResult],

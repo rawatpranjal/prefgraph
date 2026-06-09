@@ -19,9 +19,16 @@ from prefgraph.core.session import BehaviorLog
 # --- Constants ---
 
 TOP_COMMODITIES = [
-    "SOFT DRINKS", "FLUID MILK PRODUCTS", "BAKED BREAD/BUNS/ROLLS",
-    "CHEESE", "BAG SNACKS", "SOUP", "YOGURT", "BEEF",
-    "FROZEN PIZZA", "LUNCHMEAT",
+    "SOFT DRINKS",
+    "FLUID MILK PRODUCTS",
+    "BAKED BREAD/BUNS/ROLLS",
+    "CHEESE",
+    "BAG SNACKS",
+    "SOUP",
+    "YOGURT",
+    "BEEF",
+    "FROZEN PIZZA",
+    "LUNCHMEAT",
 ]
 
 NUM_WEEKS = 104
@@ -40,10 +47,12 @@ def _find_data_dir(data_dir: str | Path | None) -> Path:
     if env:
         candidates.append(Path(env) / "dunnhumby")
 
-    candidates.extend([
-        Path.home() / ".prefgraph" / "data" / "dunnhumby",
-        Path(__file__).resolve().parents[3] / "dunnhumby" / "data",
-    ])
+    candidates.extend(
+        [
+            Path.home() / ".prefgraph" / "data" / "dunnhumby",
+            Path(__file__).resolve().parents[3] / "dunnhumby" / "data",
+        ]
+    )
 
     for d in candidates:
         if d.is_dir() and (d / "transaction_data.csv").exists():
@@ -93,7 +102,9 @@ def load_dunnhumby(
     # Load and join
     transactions = pd.read_csv(data_path / "transaction_data.csv")
     products = pd.read_csv(data_path / "product.csv")
-    merged = transactions.merge(products[["PRODUCT_ID", "COMMODITY_DESC"]], on="PRODUCT_ID")
+    merged = transactions.merge(
+        products[["PRODUCT_ID", "COMMODITY_DESC"]], on="PRODUCT_ID"
+    )
 
     # Filter to top commodities
     merged = merged[merged["COMMODITY_DESC"].isin(TOP_COMMODITIES)]
@@ -101,18 +112,19 @@ def load_dunnhumby(
     # Calculate week and unit price
     merged["week"] = ((merged["DAY"] - 1) // 7) + 1
     merged["unit_price"] = (
-        (merged["SALES_VALUE"] - merged["RETAIL_DISC"] - merged["COUPON_DISC"])
-        / merged["QUANTITY"]
-    )
+        merged["SALES_VALUE"] - merged["RETAIL_DISC"] - merged["COUPON_DISC"]
+    ) / merged["QUANTITY"]
     merged = merged[
-        (merged["unit_price"] >= MIN_UNIT_PRICE) &
-        (merged["unit_price"] <= MAX_UNIT_PRICE) &
-        (merged["QUANTITY"] > 0)
+        (merged["unit_price"] >= MIN_UNIT_PRICE)
+        & (merged["unit_price"] <= MAX_UNIT_PRICE)
+        & (merged["QUANTITY"] > 0)
     ]
 
     # Build price oracle: median price per week per commodity
     price_pivot = merged.pivot_table(
-        values="unit_price", index="week", columns="COMMODITY_DESC",
+        values="unit_price",
+        index="week",
+        columns="COMMODITY_DESC",
         aggfunc="median",
     ).reindex(index=range(1, NUM_WEEKS + 1), columns=TOP_COMMODITIES)
     price_pivot = price_pivot.ffill().bfill()
@@ -143,10 +155,16 @@ def load_dunnhumby(
         if group_col is not None:
             # Split by period
             for period_val, period_data in hh_data.groupby(group_col):
-                qty_pivot = period_data.pivot_table(
-                    values="QUANTITY", index="week", columns="COMMODITY_DESC",
-                    aggfunc="sum",
-                ).reindex(columns=TOP_COMMODITIES).fillna(0)
+                qty_pivot = (
+                    period_data.pivot_table(
+                        values="QUANTITY",
+                        index="week",
+                        columns="COMMODITY_DESC",
+                        aggfunc="sum",
+                    )
+                    .reindex(columns=TOP_COMMODITIES)
+                    .fillna(0)
+                )
 
                 active_weeks = qty_pivot.index.tolist()
                 if len(active_weeks) < 2:
@@ -164,10 +182,16 @@ def load_dunnhumby(
                 period_map[uid] = (f"household_{hh_key}", str(int(period_val)))
         else:
             # All weeks together
-            qty_pivot = hh_data.pivot_table(
-                values="QUANTITY", index="week", columns="COMMODITY_DESC",
-                aggfunc="sum",
-            ).reindex(columns=TOP_COMMODITIES).fillna(0)
+            qty_pivot = (
+                hh_data.pivot_table(
+                    values="QUANTITY",
+                    index="week",
+                    columns="COMMODITY_DESC",
+                    aggfunc="sum",
+                )
+                .reindex(columns=TOP_COMMODITIES)
+                .fillna(0)
+            )
 
             active_weeks = qty_pivot[qty_pivot.sum(axis=1) > 0].index.tolist()
             if len(active_weeks) < min_weeks:

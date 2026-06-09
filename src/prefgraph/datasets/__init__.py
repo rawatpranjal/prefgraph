@@ -24,6 +24,7 @@ from prefgraph.datasets._generators import (
 from prefgraph.datasets._dunnhumby import load_dunnhumby
 from prefgraph.datasets._open_ecommerce import load_open_ecommerce
 from prefgraph.datasets._uci_retail import load_uci_retail
+
 # These loaders require pandas at module level. Import lazily so that
 # `import prefgraph` does not crash without pandas installed.
 # The 4 offenders: _retailrocket, _rees46, _taobao, _tenrec all have
@@ -43,42 +44,49 @@ from prefgraph.datasets._favorita import load_favorita
 def load_retailrocket(*args, **kwargs):
     """Lazy wrapper - defers pandas import until called."""
     from prefgraph.datasets._retailrocket import load_retailrocket as _fn
+
     return _fn(*args, **kwargs)
 
 
 def load_rees46(*args, **kwargs):
     """Lazy wrapper - defers pandas import until called."""
     from prefgraph.datasets._rees46 import load_rees46 as _fn
+
     return _fn(*args, **kwargs)
 
 
 def load_taobao(*args, **kwargs):
     """Lazy wrapper - defers pandas import until called."""
     from prefgraph.datasets._taobao import load_taobao as _fn
+
     return _fn(*args, **kwargs)
 
 
 def load_tenrec(*args, **kwargs):
     """Lazy wrapper - defers pandas import until called."""
     from prefgraph.datasets._tenrec import load_tenrec as _fn
+
     return _fn(*args, **kwargs)
 
 
 def load_kuairec(*args, **kwargs):
     """Lazy wrapper - defers polars import until called."""
     from prefgraph.datasets._kuairec import load_kuairec as _fn
+
     return _fn(*args, **kwargs)
 
 
 def load_mind(*args, **kwargs):
     """Lazy wrapper - defers polars import until called."""
     from prefgraph.datasets._mind import load_mind as _fn
+
     return _fn(*args, **kwargs)
 
 
 def load_finn_slates(*args, **kwargs):
     """Lazy wrapper - defers numpy import until called."""
     from prefgraph.datasets._finn_slates import load_finn_slates as _fn
+
     return _fn(*args, **kwargs)
 
 
