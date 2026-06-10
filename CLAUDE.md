@@ -243,13 +243,16 @@ Engine results
 
 ### Backend Parity
 
-Python fallback (`Engine._analyze_chunk_python`) supports GARP + CCEI + MPI + HM + HARP + utility.
-VEI requires the Rust backend.
+Python fallback (`Engine._analyze_chunk_python`) supports GARP + CCEI + MPI + HM + HARP + utility +
+VEI (relaxation and exact).
 
 Known algorithm differences:
 - **MPI**: Python uses GARP-cycle enumeration; Rust uses Karp's max-mean-weight cycle. Tolerance: 0.05
 - **CCEI**: Both use discrete binary search. Tolerance: 0.01
 - **HM**: Both use greedy FVS with SCC recomputation. Should match exactly.
+- **VEI exact**: Both implement Mononen (2023) Theorem 1 with the canonical max-min-then-lex vector.
+  EXACT equality on integer (discrete) data, 1e-9 on continuous. Discrete fixtures are the binding
+  parity tests (ties are measure-zero in continuous data).
 
 Cross-backend parity tests: `pytest tests/test_backend_parity.py`
 

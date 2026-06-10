@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.6.2] - 2026-06-10
+
+### Fixed
+- Exact VEI objective. `vei_exact` charged each removed preference independently, missing the constraint structure of Mononen (2023) Theorem 1, where lowering one budget also removes every cheaper preference at that observation for free. On data where one observation's adjustment covers several cycles the index was overstated (on a 3-observation integer example the old code pays 0.233 where the true Varian total is 2/11). Both backends now implement Theorem 1 with U-set expanded covering rows and the Algorithm 1 separation oracle, verified against two exhaustive-enumeration oracles (one in the test suite, one written independently by an adversarial audit) on roughly a thousand random and adversarial datasets. Reported `vei_exact` values change relative to 0.6.1; mean efficiency moves weakly higher except where the old 50-iteration cap had silently truncated.
+- Exact VEI per-observation vector is now canonical. The value-optimal adjustment vector is not unique under ties, so the two backends could report different valid optima (0.8 versus 0.9 minimum efficiency on a 7-observation integer case). Among value-optimal solutions both backends now minimize the largest single adjustment, then resolve remaining ties in observation order. The vector statistics (min, std, quartiles) are deterministic and bit-identical across backends on integer data, asserted by exact-equality parity tests. The selection is documented as a reporting convention, not part of the index definition.
+- The Engine fallback computes the real exact index. Without the Rust extension, `vei_exact` previously substituted the LP relaxation; a pure-Python mirror of the Theorem 1 algorithm (`prefgraph.algorithms.vei.compute_vei_exact`) now backs the fallback.
+- Solver failures surface loudly. Both VEI batch paths previously reported a solver failure as a plausible score (zeros, or defaults of 1.0 in the fallback). The row-generation solve cap (now 1000, previously a silent 50) and any MILP failure now produce NaN in the Engine and raise SolverError in the per-user function.
+- Batch percentile statistics match numpy bit-for-bit (branch-corrected linear interpolation), removing a one-ULP cross-backend difference in the q25 and q75 fields.
+
 ## [0.6.1] - 2026-06-10
 
 ### Added
