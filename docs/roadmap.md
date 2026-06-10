@@ -5,6 +5,14 @@
 > identification docs. Now/Next/Later horizons below. Goalposts are locked unless the
 > user relocks them. Draft lived at `~/.claude/plans/need-you-to-thrash-lexical-knuth.md`.
 
+> **Cycle status (2026-06-10): essentially complete.** 0.6.0 shipped the trust hardening
+> (CI gating, maturin build, property tests) and the six oracle-verified metric fixes. 0.6.1
+> shipped the Now, Next, and Later items (identification docs, slim install, aarch64 wheels,
+> sklearn encoders, contributor files). The one substantive item left is the native Python
+> exact VEI tie-break (parked on `feat/061-vei-exact`, see the VEI update below), which is the
+> natural headline for a future cycle. The Linux aarch64 build failed on its first release run
+> on a package-manager mismatch and is fixed forward in `release.yml`, pending the next tag.
+
 ## Why this cycle exists
 
 An external reviewer surveyed PrefGraph (PyPI 0.5.17) and argued the highest-leverage work
@@ -145,12 +153,13 @@ Algorithm 2. Both backends now agree with an independent supremum oracle to abou
 parity test was made real (it forces the pure-Python path), and `tests/test_ccei_supremum.py` adds
 a brute-force oracle property test that would have caught the original bug.
 
-## Triaged findings (metric-correctness audit, paper-grounded; fixes pending)
+## Triaged findings (metric-correctness audit, paper-grounded)
 
 A read-only triage traced each parked finding to its paper definition. The unifying theme is one
 anti-pattern. In every case a fast approximation is wired in as the default while the correct
 routine already sits unused in the same module, so each fix routes the default to the existing
-exact path. None are fixed yet.
+exact path. All are now fixed and shipped in 0.6.0, except the native Python exact VEI, which an
+adversarial verification found is not safely landable yet and is deferred (see the VEI update below).
 
 **MPI computes the wrong objective (HIGH, FIXED).** The Money Pump Index is the minimum cycle ratio of
 summed savings to summed budgets (Smeulders and Spieksma 2013 Theorem 2; Megiddo 1979). The Rust
@@ -160,7 +169,7 @@ maximum money-pump fraction. The correct routine is already in the repo as
 `compute_mpi_bounds().maximum_mpi`. This subsumes the earlier backend-divergence finding, which was
 a symptom.
 
-**Houtman-Maks is mis-implemented for menus and over-removes at large T (HIGH and MED).** The
+**Houtman-Maks is mis-implemented for menus and over-removes at large T (HIGH and MED, FIXED).** The
 canonical HM is the largest subset of observations consistent with the axiom (Demuynck and Rehbeck
 2023 Definition 3; Smeulders et al. 2014; Heufer and Hjertstrand 2015), never items. The Rust menu
 HM counts items with an ad-hoc heuristic, so every shipped menu HM value is the wrong quantity. The
