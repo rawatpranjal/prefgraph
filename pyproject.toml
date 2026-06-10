@@ -40,14 +40,13 @@ classifiers = [
 dependencies = [
     "numpy>=1.24.0",
     "scipy>=1.11.0",
-    "networkx>=3.0",
     "numba>=0.58.0",
-    "polars>=0.19.0",
 ]
 
 [project.optional-dependencies]
 viz = [
     "matplotlib>=3.7.0",
+    "networkx>=3.0",
 ]
 notebooks = [
     "jupyter>=1.0.0",
@@ -57,6 +56,7 @@ notebooks = [
 ]
 datasets = [
     "pandas>=2.0.0",
+    "polars>=0.19.0",
 ]
 parquet = [
     "pyarrow>=14.0.0",
@@ -68,6 +68,9 @@ dev = [
     "hypothesis>=6.0",
     "mypy>=1.0",
     "ruff>=0.1.0",
+    # Runtime packages needed for the test suite and for mypy to resolve stubs.
+    "networkx>=3.0",
+    "polars>=0.19.0",
     # Type stubs so the mypy gate resolves third-party imports in CI's fresh install.
     "scipy-stubs>=1.17; python_version >= '3.11'",
     "pandas-stubs>=2.2; python_version >= '3.11'",
@@ -91,7 +94,7 @@ benchmarks = [
     "matplotlib>=3.7.0",
 ]
 all = [
-    "prefgraph[dev,viz,notebooks,docs,parquet]"
+    "prefgraph[dev,viz,notebooks,docs,parquet,datasets]"
 ]
 
 [project.urls]
@@ -151,8 +154,10 @@ ignore_errors = true
 # no py.typed marker and pyarrow's stubs are incomplete, so importing them as
 # Any is the honest choice. scipy / pandas / networkx are handled via their
 # maintained stub packages (scipy-stubs, pandas-stubs, types-networkx) instead.
+# polars bundles its own py.typed stubs but is now an optional dependency;
+# ignore_missing_imports lets mypy pass when polars is absent from the env.
 [[tool.mypy.overrides]]
-module = ["numba.*", "pyarrow.*"]
+module = ["numba.*", "pyarrow.*", "polars.*"]
 ignore_missing_imports = true
 
 # prefgraph._rust_core is the compiled Rust (maturin/PyO3) extension module.
