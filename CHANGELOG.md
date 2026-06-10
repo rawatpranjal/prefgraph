@@ -1,5 +1,16 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+- Identification and Failure Modes documentation page. It centralizes when a revealed-preference score reflects a data artifact rather than behavior, covering stockouts and unavailability, recommendation and platform bias, reconstructed versus observed menus, multi-purchase and category aggregation, repeated exposure, and time-varying preferences.
+- scikit-learn compatible encoders. PreferenceEncoder and MenuPreferenceEncoder now inherit BaseEstimator and TransformerMixin, so they drop into a Pipeline and support clone, get_params, and set_params. scikit-learn is an optional dependency in the new ml extra. They are positioned as diagnostics and interpretable features, consistent with the near-zero predictive lift reported in the case studies.
+- Linux aarch64 wheels in the release matrix, isolated so that an aarch64 build failure can never block the x86_64 publish.
+- Contributor and security files, namely CONTRIBUTING, SECURITY, and issue templates, alongside a scheduled dependency-audit workflow that never gates pull requests or releases.
+
+### Changed
+- Slimmer base install. Polars and NetworkX are no longer core dependencies. Polars moves to the datasets extra and NetworkX to the viz extra, each behind an import guard, so importing prefgraph and running core scoring work without them and a clear message names the extra to install when a feature needs one.
+
 ## [0.6.0] - 2026-06-09
 
 ### Fixed

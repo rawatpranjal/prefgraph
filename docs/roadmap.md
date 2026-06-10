@@ -185,6 +185,20 @@ is an ad-hoc per-observation index, not Varian's VEI. The exact routine exists a
 `compute_vei_exact`. The Engine also reports `vei_exact_mean` 1.0 against a Rust unit test expecting
 0.9375, so the exact path may be mis-wired.
 
+**Update 2026-06-10, exact-VEI attempt deferred.** A native Python exact VEI was implemented on branch
+`feat/061-vei-exact`, a weighted feedback arc set solved with scipy.milp that mirrors the Rust
+formulation, and an independent adversarial agent verified it. The implementation is a correct exact
+optimizer, matching a from-scratch permutation oracle on 4401 of 4401 cases. The verifier found that
+the per-observation VEI index is not unique when the optimum has ties. Rust through HiGHS and Python
+through scipy.milp then select different valid optima, so on discrete data they disagree. On a
+reproducible seven-observation integer case Rust gives a minimum of 0.8 and Python gives 0.9. The
+deeper issue is that the feedback arc set cost objective is not Varian's L1 norm, the sum of one minus
+the efficiencies, so the reported exact value depends on solver tie breaking in both backends rather
+than only in Python. Do not land the Python exact until a deterministic tie break is imposed in both
+backends, for example a lexicographic secondary objective that minimizes the L1 inefficiency among
+minimum cost feedback arc sets. The continuous-data parity test passes only because ties are
+measure-zero there, so it needs discrete fixtures before any parity claim stands.
+
 **Quasilinear default truncates cycle search (MED, FIXED).** `check_quasilinearity` defaults
 `max_cycle_length=3`, so violations that first appear in longer cycles are missed. The exhaustive
 Bellman-Ford variant already exists and should be the default.
