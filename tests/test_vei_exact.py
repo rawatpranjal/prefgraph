@@ -35,12 +35,13 @@ from prefgraph._rust_backend import HAS_RUST
 from prefgraph.engine import Engine
 
 TOL_STRICT = 1e-10  # parse_budget tolerance: strict arc iff own - E[i,j] > tol
-TOL_COST = 1e-12    # cost filter and AddCost survival tolerance
+TOL_COST = 1e-12  # cost filter and AddCost survival tolerance
 
 
 # ---------------------------------------------------------------------------
 # Definition-based oracle (independent of the package implementation)
 # ---------------------------------------------------------------------------
+
 
 def arcs_and_costs(prices, quantities):
     """Strict revealed-preference arcs and their removal costs.
@@ -68,7 +69,7 @@ def arcs_and_costs(prices, quantities):
 def _is_acyclic(n_obs, surviving_arcs):
     color = [0] * n_obs  # 0 white, 1 gray, 2 black
     adj = [[] for _ in range(n_obs)]
-    for (i, j) in surviving_arcs:
+    for i, j in surviving_arcs:
         adj[i].append(j)
 
     def dfs(u):
@@ -208,12 +209,22 @@ STAGE_C_CANON_D = (0.0, 0.0, 1.0 / 8.0, 0.0)
 # Optimality is established by the oracle's exhaustive enumeration.
 LARGE_T7 = (
     [
-        [9.0, 7.0, 6.0], [3.0, 4.0, 1.0], [1.0, 1.0, 2.0], [9.0, 7.0, 10.0],
-        [6.0, 7.0, 10.0], [8.0, 7.0, 6.0], [6.0, 10.0, 3.0],
+        [9.0, 7.0, 6.0],
+        [3.0, 4.0, 1.0],
+        [1.0, 1.0, 2.0],
+        [9.0, 7.0, 10.0],
+        [6.0, 7.0, 10.0],
+        [8.0, 7.0, 6.0],
+        [6.0, 10.0, 3.0],
     ],
     [
-        [9.0, 7.0, 1.0], [4.0, 9.0, 6.0], [1.0, 8.0, 8.0], [9.0, 2.0, 1.0],
-        [9.0, 1.0, 6.0], [1.0, 3.0, 5.0], [5.0, 5.0, 1.0],
+        [9.0, 7.0, 1.0],
+        [4.0, 9.0, 6.0],
+        [1.0, 8.0, 8.0],
+        [9.0, 2.0, 1.0],
+        [9.0, 1.0, 6.0],
+        [1.0, 3.0, 5.0],
+        [5.0, 5.0, 1.0],
     ],
 )
 LARGE_T7_TOTAL = 23.0 / 136.0 + 6.0 / 83.0
@@ -231,6 +242,7 @@ ALL_FIXTURES = [
 # ---------------------------------------------------------------------------
 # Oracle self-checks (the hand derivations above must match the enumeration)
 # ---------------------------------------------------------------------------
+
 
 class TestOracleSelfCheck:
     @pytest.mark.parametrize("name,data,total,canon", ALL_FIXTURES)
@@ -253,6 +265,7 @@ class TestOracleSelfCheck:
 # ---------------------------------------------------------------------------
 # Rust backend (Engine) against the oracle
 # ---------------------------------------------------------------------------
+
 
 @pytest.mark.skipif(not HAS_RUST, reason="Rust backend not available")
 class TestRustExactValue:
