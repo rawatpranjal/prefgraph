@@ -35,7 +35,7 @@ sys.modules['numba'] = MockNumba()
 project = "PrefGraph"
 copyright = "2024, PrefGraph Contributors"
 author = "PrefGraph Contributors"
-release = "0.5.17"
+release = "0.6.0"
 
 # -- General configuration ---------------------------------------------------
 
