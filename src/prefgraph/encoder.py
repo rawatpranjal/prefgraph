@@ -419,8 +419,8 @@ class MenuPreferenceEncoder(_BaseEstimator, _TransformerMixin):
     Encodes menu-based preferences into ordinal preference representations.
 
     MenuPreferenceEncoder follows the scikit-learn estimator contract: fit() to
-    learn from menu choice data, then transform() or preference_order_ to access
-    features. When scikit-learn is installed, get_params / set_params / clone
+    learn from menu choice data, then transform() or ``preference_order_`` to
+    access features. When scikit-learn is installed, get_params / set_params / clone
     and Pipeline integration work automatically via BaseEstimator.
 
     The encoder recovers ordinal preferences from observed menu choices using a
