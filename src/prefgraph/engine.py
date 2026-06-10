@@ -632,7 +632,7 @@ class Engine:
         from prefgraph.algorithms.mpi import compute_houtman_maks_index
         from prefgraph.algorithms.harp import check_harp
         from prefgraph.algorithms.utility import recover_utility
-        from prefgraph.algorithms.vei import compute_vei
+        from prefgraph.algorithms.vei import compute_vei, compute_vei_exact
         from prefgraph.graph.scc import find_sccs
 
         results = []
@@ -791,9 +791,10 @@ class Engine:
                     pass  # keep defaults on solver failure
 
             # --- VEI exact ---
-            # Python has no separate compute_vei_exact; compute_vei (scipy LP) is the
-            # closest equivalent. vei and vei_exact may disagree with Rust's exact LP
-            # but both are correct per-observation indices.
+            # Pure-Python mirror of the Rust exact path (Mononen 2023 Theorem 1
+            # with the canonical max-min-then-lex vector). Both backends derive
+            # the vector from the binary incumbent, so they agree exactly on
+            # discrete data; see tests/test_backend_parity.py.
             vei_exact_mean_val = 1.0
             vei_exact_min_val = 1.0
             vei_exact_std_val = 0.0
@@ -802,7 +803,7 @@ class Engine:
 
             if flags.get("vei_exact") and not garp.is_consistent:
                 try:
-                    vr_ex = compute_vei(log)
+                    vr_ex = compute_vei_exact(log)
                     ev_ex = vr_ex.efficiency_vector
                     vei_exact_mean_val = vr_ex.mean_efficiency
                     vei_exact_min_val = vr_ex.min_efficiency
@@ -810,7 +811,13 @@ class Engine:
                     vei_exact_q25_val = float(np.percentile(ev_ex, 25))
                     vei_exact_q75_val = float(np.percentile(ev_ex, 75))
                 except Exception:
-                    pass  # keep defaults on solver failure
+                    # Mirror the Rust failure path (success=false reports
+                    # zeros): a conspicuous zero, never a silent perfect 1.0.
+                    vei_exact_mean_val = 0.0
+                    vei_exact_min_val = 0.0
+                    vei_exact_std_val = 0.0
+                    vei_exact_q25_val = 0.0
+                    vei_exact_q75_val = 0.0
 
             results.append(
                 EngineResult(

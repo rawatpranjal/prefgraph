@@ -334,3 +334,87 @@ class TestRustOracleSweep:
 
     def test_continuous_t4(self):
         self._sweep(np.random.default_rng(44), 30, 4, 2, integer=False)
+
+
+# ---------------------------------------------------------------------------
+# Pure-Python mirror (per-user function and the Engine fallback path)
+# ---------------------------------------------------------------------------
+
+
+def python_exact(prices, quantities):
+    from prefgraph.algorithms.vei import compute_vei_exact
+    from prefgraph.core.session import ConsumerSession
+
+    session = ConsumerSession(
+        prices=np.asarray(prices, dtype=float),
+        quantities=np.asarray(quantities, dtype=float),
+    )
+    return compute_vei_exact(session)
+
+
+class TestPythonExactFunction:
+    """compute_vei_exact in prefgraph.algorithms.vei must reproduce the
+    oracle value and the full canonical vector, mirroring Rust exactly."""
+
+    @pytest.mark.parametrize("name,data,total,canon", ALL_FIXTURES)
+    def test_value_and_canonical_vector(self, name, data, total, canon):
+        res = python_exact(*data)
+        assert res.optimization_success, name
+        assert res.total_inefficiency == pytest.approx(total, abs=1e-9), name
+        expected_e = 1.0 - np.asarray(canon, dtype=float)
+        assert np.allclose(res.efficiency_vector, expected_e, atol=1e-12), (
+            f"{name}: {res.efficiency_vector} != {expected_e}"
+        )
+
+    def test_consistent_data_all_ones(self):
+        prices = [[1.0, 2.0], [2.0, 1.0]]
+        quantities = [[4.0, 1.0], [1.0, 4.0]]
+        res = python_exact(prices, quantities)
+        assert res.optimization_success
+        assert res.total_inefficiency == 0.0
+        assert np.all(res.efficiency_vector == 1.0)
+
+    def test_sweep_integer_t4(self):
+        rng = np.random.default_rng(45)
+        checked = 0
+        for _ in range(30):
+            prices = rng.integers(1, 7, size=(4, 2)).astype(float)
+            quantities = rng.integers(1, 7, size=(4, 2)).astype(float)
+            arcs = arcs_and_costs(prices, quantities)
+            grid_size = 1
+            for i in range(4):
+                grid_size *= 1 + sum(1 for (a, _) in arcs if a == i)
+            if grid_size > 20000:
+                continue
+            total, _, canon = varian_oracle(prices, quantities)
+            res = python_exact(prices, quantities)
+            assert res.total_inefficiency == pytest.approx(total, abs=1e-9)
+            assert np.allclose(
+                res.efficiency_vector, 1.0 - np.asarray(canon), atol=1e-12
+            ), f"prices={prices.tolist()} quantities={quantities.tolist()}"
+            checked += 1
+        assert checked >= 15
+
+
+class TestPythonEngineFallback:
+    """The Engine fallback must compute the real exact index, not substitute
+    the LP relaxation (forcing HAS_RUST=False per CLAUDE.md Learned Rules)."""
+
+    def test_fallback_matches_canonical(self):
+        import prefgraph._rust_backend as rb
+
+        prices, quantities = NESTED_T3
+        chunk = [(np.asarray(prices, dtype=float), np.asarray(quantities, dtype=float))]
+        engine = Engine(metrics=["garp", "vei_exact"])
+        saved = rb.HAS_RUST
+        rb.HAS_RUST = False
+        try:
+            res = engine._analyze_chunk_python(chunk, {"vei_exact": True})[0]
+        finally:
+            rb.HAS_RUST = saved
+        expected = canonical_stats(NESTED_T3_CANON_D)
+        assert res.vei_exact_mean == pytest.approx(expected["mean"], abs=1e-9)
+        assert res.vei_exact_min == pytest.approx(expected["min"], abs=1e-9)
+        assert res.vei_exact_std == pytest.approx(expected["std"], abs=1e-9)
+        assert res.vei_exact_q25 == pytest.approx(expected["q25"], abs=1e-9)
+        assert res.vei_exact_q75 == pytest.approx(expected["q75"], abs=1e-9)
