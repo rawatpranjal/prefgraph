@@ -53,11 +53,14 @@ class EngineResult:
         utility_success: True if Afriat's LP recovered a rationalizing utility.
         vei_mean: Mean Varian Efficiency Index across observations. Range: [0, 1].
         vei_min: Worst-observation VEI. Range: [0, 1].
-        vei_exact_mean: Exact per-observation VEI (Mononen 2023 weighted
-            feedback arc set) via the Rust backend. Without the Rust extension it
-            falls back to the VEI relaxation (compute_vei), which is a lower
-            bound on the exact value, not the exact value itself.
-        vei_exact_min: Exact VEI, worst observation (same Rust/relaxation note).
+        vei_exact_mean: Exact per-observation VEI (Varian's index per Mononen
+            2023 Theorem 1). Rust and the pure-Python fallback implement the
+            same algorithm with a canonical tie-break and agree exactly on
+            discrete data. NaN signals a solver failure, never a default.
+        vei_exact_min: Exact VEI, worst observation under the canonical
+            vector (among value-optimal solutions, the maximum adjustment is
+            minimized first, then earlier observations keep the benefit of
+            the doubt).
         max_scc: Largest strongly connected component in observation graph.
             1 = acyclic (no entangled violations).
         compute_time_us: Wall-clock computation time in microseconds.
@@ -632,7 +635,7 @@ class Engine:
         from prefgraph.algorithms.mpi import compute_houtman_maks_index
         from prefgraph.algorithms.harp import check_harp
         from prefgraph.algorithms.utility import recover_utility
-        from prefgraph.algorithms.vei import compute_vei
+        from prefgraph.algorithms.vei import compute_vei, compute_vei_exact
         from prefgraph.graph.scc import find_sccs
 
         results = []
@@ -791,9 +794,10 @@ class Engine:
                     pass  # keep defaults on solver failure
 
             # --- VEI exact ---
-            # Python has no separate compute_vei_exact; compute_vei (scipy LP) is the
-            # closest equivalent. vei and vei_exact may disagree with Rust's exact LP
-            # but both are correct per-observation indices.
+            # Pure-Python mirror of the Rust exact path (Mononen 2023 Theorem 1
+            # with the canonical max-min-then-lex vector). Both backends derive
+            # the vector from the binary incumbent, so they agree exactly on
+            # discrete data; see tests/test_backend_parity.py.
             vei_exact_mean_val = 1.0
             vei_exact_min_val = 1.0
             vei_exact_std_val = 0.0
@@ -802,7 +806,7 @@ class Engine:
 
             if flags.get("vei_exact") and not garp.is_consistent:
                 try:
-                    vr_ex = compute_vei(log)
+                    vr_ex = compute_vei_exact(log)
                     ev_ex = vr_ex.efficiency_vector
                     vei_exact_mean_val = vr_ex.mean_efficiency
                     vei_exact_min_val = vr_ex.min_efficiency
@@ -810,7 +814,15 @@ class Engine:
                     vei_exact_q25_val = float(np.percentile(ev_ex, 25))
                     vei_exact_q75_val = float(np.percentile(ev_ex, 75))
                 except Exception:
-                    pass  # keep defaults on solver failure
+                    # Mirror the Rust batch failure path: NaN is unmistakable
+                    # downstream, never a plausible score (audit finding 1:
+                    # zeros read as "fully irrational" and defaults of 1.0
+                    # read as "perfectly efficient").
+                    vei_exact_mean_val = float("nan")
+                    vei_exact_min_val = float("nan")
+                    vei_exact_std_val = float("nan")
+                    vei_exact_q25_val = float("nan")
+                    vei_exact_q75_val = float("nan")
 
             results.append(
                 EngineResult(
