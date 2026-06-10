@@ -174,11 +174,21 @@ def test_rust_python_backends_agree(n_obs, n_goods, seed):
     0.01 (same discrete binary search), MPI within 0.05 (Python uses cycle
     enumeration, Rust uses Karp's max-mean-weight cycle).
     """
+    import prefgraph._rust_backend as rb
+
     prices, quantities = generate_irrational_data(n_obs, n_goods, seed=seed)
     chunk = [(prices.astype(np.float64), quantities.astype(np.float64))]
 
     engine = Engine(metrics=["garp", "ccei", "mpi"])
-    py = engine._analyze_chunk_python(chunk, _PARITY_FLAGS)[0]
+    # Force the genuine Python fallback: the per-user functions delegate to
+    # Rust at call time, so without this the test silently compares Rust
+    # against Rust (CLAUDE.md Learned Rules; audit finding 2026-06-10).
+    saved = rb.HAS_RUST
+    rb.HAS_RUST = False
+    try:
+        py = engine._analyze_chunk_python(chunk, _PARITY_FLAGS)[0]
+    finally:
+        rb.HAS_RUST = saved
     rust = engine._analyze_chunk_rust(chunk, _PARITY_FLAGS)[0]
 
     assert py.is_garp == rust.is_garp, (

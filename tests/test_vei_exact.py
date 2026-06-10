@@ -440,3 +440,28 @@ class TestPythonEngineFallback:
         assert res.vei_exact_std == pytest.approx(expected["std"], abs=1e-9)
         assert res.vei_exact_q25 == pytest.approx(expected["q25"], abs=1e-9)
         assert res.vei_exact_q75 == pytest.approx(expected["q75"], abs=1e-9)
+
+    def test_fallback_failure_reports_nan(self, monkeypatch):
+        """Solver failure must surface as NaN, never as a plausible score
+        (0.0 reads as fully irrational, the 1.0 default as perfect)."""
+        import math
+
+        import prefgraph._rust_backend as rb
+        import prefgraph.algorithms.vei as vei_mod
+        from prefgraph.core.exceptions import SolverError
+
+        def boom(*args, **kwargs):
+            raise SolverError("forced failure for the NaN path test")
+
+        monkeypatch.setattr(vei_mod, "compute_vei_exact", boom)
+        prices, quantities = NESTED_T3
+        chunk = [(np.asarray(prices, dtype=float), np.asarray(quantities, dtype=float))]
+        engine = Engine(metrics=["garp", "vei_exact"])
+        saved = rb.HAS_RUST
+        rb.HAS_RUST = False
+        try:
+            res = engine._analyze_chunk_python(chunk, {"vei_exact": True})[0]
+        finally:
+            rb.HAS_RUST = saved
+        for field in ("vei_exact_mean", "vei_exact_min", "vei_exact_std"):
+            assert math.isnan(getattr(res, field)), field

@@ -310,8 +310,14 @@ fn process_users_parallel(
 
                 let (vei_exact_mean, vei_exact_min, vei_exact_std, vei_exact_q25, vei_exact_q75) = if flags.vei_exact {
                     let vei = run_vei_exact(graph);
-                    let (std, q25, q75) = compute_vei_stats(&vei.efficiency_vector);
-                    (vei.mean_efficiency, vei.min_efficiency, std, q25, q75)
+                    if vei.success {
+                        let (std, q25, q75) = compute_vei_stats(&vei.efficiency_vector);
+                        (vei.mean_efficiency, vei.min_efficiency, std, q25, q75)
+                    } else {
+                        // Loud failure (solver error or solve cap): NaN is
+                        // unmistakable downstream, never a plausible score.
+                        (f64::NAN, f64::NAN, f64::NAN, f64::NAN, f64::NAN)
+                    }
                 } else {
                     (1.0, 1.0, 0.0, 1.0, 1.0)
                 };
