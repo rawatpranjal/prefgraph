@@ -1,0 +1,52 @@
+name: Dependency Audit
+
+# Runs on a weekly schedule and on manual dispatch only.
+# This workflow is intentionally non-blocking: it does NOT run on pull_request
+# or push, so a newly published advisory never reddens required CI or blocks
+# a release. All steps use continue-on-error so the workflow stays green even
+# when advisories are found; the findings appear in the job log for review.
+
+on:
+  schedule:
+    - cron: "0 6 * * 1"  # Every Monday at 06:00 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  cargo-audit:
+    name: cargo-audit (Rust dependencies)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install cargo-audit
+        run: cargo install cargo-audit --locked
+        continue-on-error: true
+
+      - name: Run cargo-audit
+        working-directory: rust
+        run: cargo audit
+        continue-on-error: true
+
+  pip-audit:
+    name: pip-audit (Python dependencies)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install pip-audit and project dependencies
+        run: pip install pip-audit ".[dev]" --no-build-isolation || pip install pip-audit
+        continue-on-error: true
+
+      - name: Run pip-audit
+        run: pip-audit
+        continue-on-error: true

@@ -31,7 +31,6 @@ from prefgraph.datasets._uci_retail import load_uci_retail
 # bare `import pandas as pd` at file scope. Wrapping them here defers
 # the pandas import until the loader function is actually called.
 from prefgraph.datasets._instacart import load_instacart
-from prefgraph.datasets._instacart_menu_v2 import load_instacart_menu_v2
 from prefgraph.datasets._yoochoose import load_yoochoose
 from prefgraph.datasets._olist import load_olist
 from prefgraph.datasets._m5 import load_m5
@@ -69,17 +68,47 @@ def load_tenrec(*args, **kwargs):
     return _fn(*args, **kwargs)
 
 
+def load_instacart_menu_v2(*args, **kwargs):
+    """Lazy wrapper - defers polars import until called."""
+    try:
+        from prefgraph.datasets._instacart_menu_v2 import (
+            load_instacart_menu_v2 as _fn,
+        )
+    except ImportError as exc:
+        if "polars" in str(exc).lower():
+            raise ImportError(
+                "polars is required for load_instacart_menu_v2. "
+                "Install it with: pip install 'prefgraph[datasets]'"
+            ) from exc
+        raise
+    return _fn(*args, **kwargs)
+
+
 def load_kuairec(*args, **kwargs):
     """Lazy wrapper - defers polars import until called."""
-    from prefgraph.datasets._kuairec import load_kuairec as _fn
-
+    try:
+        from prefgraph.datasets._kuairec import load_kuairec as _fn
+    except ImportError as exc:
+        if "polars" in str(exc).lower():
+            raise ImportError(
+                "polars is required for load_kuairec. "
+                "Install it with: pip install 'prefgraph[datasets]'"
+            ) from exc
+        raise
     return _fn(*args, **kwargs)
 
 
 def load_mind(*args, **kwargs):
     """Lazy wrapper - defers polars import until called."""
-    from prefgraph.datasets._mind import load_mind as _fn
-
+    try:
+        from prefgraph.datasets._mind import load_mind as _fn
+    except ImportError as exc:
+        if "polars" in str(exc).lower():
+            raise ImportError(
+                "polars is required for load_mind. "
+                "Install it with: pip install 'prefgraph[datasets]'"
+            ) from exc
+        raise
     return _fn(*args, **kwargs)
 
 
