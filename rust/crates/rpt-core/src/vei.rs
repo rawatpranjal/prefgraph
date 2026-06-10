@@ -472,22 +472,116 @@ mod tests {
 
     #[test]
     fn test_vei_exact_warp_violation() {
-        // 2-obs WARP violation: mutual preference, ratio = 7/8 = 0.875
-        // Exact VEI: remove ONE arc (cost 0.125), so one obs gets e=0.875, other e=1.0
-        // Total inefficiency = 0.125, mean efficiency = (0.875 + 1.0)/2 = 0.9375
+        // 2-obs WARP violation: mutual preference, ratio = 7/8 = 0.875.
+        // Exact VEI removes ONE arc (cost 0.125): total inefficiency 0.125,
+        // mean efficiency (0.875 + 1.0)/2 = 0.9375. The two value-optimal
+        // vectors are (0.875, 1.0) and (1.0, 0.875); the canonical convention
+        // (max-min over optima, then lexicographically maximal efficiency in
+        // observation order) selects (1.0, 0.875). Oracle-verified in
+        // tests/test_vei_exact.py (fixture ANCHOR_2OBS).
         let prices = [2.0, 1.0, 1.0, 2.0];
         let quantities = [3.0, 2.0, 2.0, 3.0];
         let mut graph = PreferenceGraph::new(2);
         graph.parse_budget(&prices, &quantities, 2, 2, 1e-10);
         let vei = compute_vei_exact(&mut graph);
         assert!(vei.success);
-        // One obs has e=0.875, the other e=1.0 (optimizer picks one to reduce)
-        let mut sorted_e = vei.efficiency_vector.clone();
-        sorted_e.sort_by(|a, b| a.partial_cmp(b).unwrap());
-        assert!((sorted_e[0] - 0.875).abs() < 1e-6, "lower e={}", sorted_e[0]);
-        assert!((sorted_e[1] - 1.0).abs() < 1e-6, "upper e={}", sorted_e[1]);
-        assert!((vei.mean_efficiency - 0.9375).abs() < 1e-6);
-        assert!((vei.total_inefficiency - 0.125).abs() < 1e-6);
+        assert!((vei.mean_efficiency - 0.9375).abs() < 1e-9);
+        assert!((vei.total_inefficiency - 0.125).abs() < 1e-9);
+        assert!(
+            (vei.efficiency_vector[0] - 1.0).abs() < 1e-12
+                && (vei.efficiency_vector[1] - 0.875).abs() < 1e-12,
+            "canonical vector must be [1.0, 0.875], got {:?}",
+            vei.efficiency_vector
+        );
+        assert_eq!(vei.worst_observation, 1);
+    }
+
+    #[test]
+    fn test_vei_exact_nested_removal_theorem1() {
+        // The Theorem 1 U-set fixture (Mononen 2023, p. 11). T=3, G=3.
+        // E = [[39,37,39],[45,55,45],[51,41,51]]. Strict arcs and costs:
+        // 0->1 (2/39), 1->0 (2/11), 1->2 (2/11), 2->1 (10/51). Two 2-cycles,
+        // (0,1) and (1,2), share observation 1. A single adjustment
+        // d_1 = 2/11 removes both arcs out of 1 and breaks both cycles, so
+        // the Varian total is 2/11. Charging each removed arc independently
+        // (no U-set expansion) pays 2/39 + 2/11 instead. Oracle-verified by
+        // exhaustive enumeration in tests/test_vei_exact.py (NESTED_T3).
+        let prices = [2.0, 3.0, 5.0, 1.0, 6.0, 6.0, 6.0, 3.0, 5.0];
+        let quantities = [3.0, 1.0, 6.0, 1.0, 5.0, 4.0, 3.0, 1.0, 6.0];
+        let mut graph = PreferenceGraph::new(3);
+        graph.parse_budget(&prices, &quantities, 3, 3, 1e-10);
+        let vei = compute_vei_exact(&mut graph);
+        assert!(vei.success);
+        let expected_total = 2.0 / 11.0;
+        assert!(
+            (vei.total_inefficiency - expected_total).abs() < 1e-9,
+            "total inefficiency must be 2/11, got {}",
+            vei.total_inefficiency
+        );
+        assert!((vei.mean_efficiency - (1.0 - expected_total / 3.0)).abs() < 1e-9);
+        let expected = [1.0, 9.0 / 11.0, 1.0];
+        for (i, (&got, &want)) in vei
+            .efficiency_vector
+            .iter()
+            .zip(expected.iter())
+            .enumerate()
+        {
+            assert!((got - want).abs() < 1e-12, "e[{i}] = {got}, want {want}");
+        }
+        assert_eq!(vei.worst_observation, 1);
+    }
+
+    #[test]
+    fn test_vei_exact_canonical_max_min_stage() {
+        // Stage-B fixture: two value-optimal solutions, both totaling 4/11:
+        // d = (0,0,1/11,3/11) with max 3/11, and d = (0,0,4/11,0) with max
+        // 4/11. The canonical convention minimizes the maximum adjustment, so
+        // the vector must be e = (1, 1, 10/11, 8/11). Oracle-verified in
+        // tests/test_vei_exact.py (STAGE_B).
+        let prices = [3.0, 3.0, 6.0, 2.0, 1.0, 2.0, 6.0, 2.0];
+        let quantities = [1.0, 3.0, 2.0, 4.0, 1.0, 5.0, 3.0, 2.0];
+        let mut graph = PreferenceGraph::new(4);
+        graph.parse_budget(&prices, &quantities, 4, 2, 1e-10);
+        let vei = compute_vei_exact(&mut graph);
+        assert!(vei.success);
+        assert!((vei.total_inefficiency - 4.0 / 11.0).abs() < 1e-9);
+        let expected = [1.0, 1.0, 10.0 / 11.0, 8.0 / 11.0];
+        for (i, (&got, &want)) in vei
+            .efficiency_vector
+            .iter()
+            .zip(expected.iter())
+            .enumerate()
+        {
+            assert!((got - want).abs() < 1e-12, "e[{i}] = {got}, want {want}");
+        }
+        assert!((vei.min_efficiency - 8.0 / 11.0).abs() < 1e-12);
+    }
+
+    #[test]
+    fn test_vei_exact_canonical_lex_stage() {
+        // Stage-C fixture: the only strict cycle is the 2-cycle between
+        // observations 1 and 2 (both arcs cost 1/8). The two optima are
+        // d = (0,1/8,0,0) and d = (0,0,1/8,0); equal max, so the
+        // lexicographic stage keeps the earlier observation at efficiency 1:
+        // e = (1, 1, 7/8, 1). Oracle-verified in tests/test_vei_exact.py
+        // (STAGE_C).
+        let prices = [4.0, 1.0, 3.0, 1.0, 1.0, 2.0, 2.0, 3.0];
+        let quantities = [3.0, 1.0, 5.0, 1.0, 4.0, 2.0, 4.0, 1.0];
+        let mut graph = PreferenceGraph::new(4);
+        graph.parse_budget(&prices, &quantities, 4, 2, 1e-10);
+        let vei = compute_vei_exact(&mut graph);
+        assert!(vei.success);
+        assert!((vei.total_inefficiency - 0.125).abs() < 1e-9);
+        let expected = [1.0, 1.0, 0.875, 1.0];
+        for (i, (&got, &want)) in vei
+            .efficiency_vector
+            .iter()
+            .zip(expected.iter())
+            .enumerate()
+        {
+            assert!((got - want).abs() < 1e-12, "e[{i}] = {got}, want {want}");
+        }
+        assert_eq!(vei.worst_observation, 2);
     }
 
     #[test]
