@@ -1,18 +1,25 @@
 """PreferenceEncoder: High-level API for latent preference extraction.
 
-This module provides a user-friendly, scikit-learn style interface for
-extracting latent preference values from user behavior logs.
+This module provides a user-friendly interface for extracting latent preference
+values from user behavior logs. When scikit-learn is installed, both encoders
+are proper sklearn estimators that work inside Pipeline, cross_val_score, and
+GridSearchCV. Without scikit-learn the classes function identically but do not
+expose get_params or set_params.
 
 Use this to:
-- Extract features for ML models
-- Generate user embeddings
+- Extract interpretable preference features for diagnostics and exploration
+- Slot into sklearn Pipelines for consistent preprocessing
+- Compute user embeddings for similarity calculations
 - Run counterfactual simulations
-- Predict user choices under new conditions
+
+Note on predictive lift: the case studies show that revealed preference features
+rarely improve held-out prediction over baseline activity features. The encoders
+are most valuable for interpretable diagnostics, not as general-purpose predictors.
 """
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Callable, cast
+from typing import TYPE_CHECKING, Any, Callable, cast
 
 import numpy as np
 from numpy.typing import NDArray
@@ -28,19 +35,58 @@ if TYPE_CHECKING:
     from prefgraph.core.session import BehaviorLog, MenuChoiceLog
     from prefgraph.core.result import LatentValueResult, OrdinalUtilityResult
 
+# ---------------------------------------------------------------------------
+# Optional scikit-learn integration
+# ---------------------------------------------------------------------------
+# prefgraph imports cleanly without scikit-learn. When sklearn is present,
+# both encoders inherit from BaseEstimator and TransformerMixin so that
+# get_params / set_params / clone / Pipeline / GridSearchCV all work.
+# When sklearn is absent, the fallback stubs make the classes work normally
+# but raise a helpful ImportError if get_params or set_params are called.
+# ---------------------------------------------------------------------------
+try:
+    from sklearn.base import BaseEstimator as _BaseEstimator
+    from sklearn.base import TransformerMixin as _TransformerMixin
 
-class PreferenceEncoder:
+    _SKLEARN_AVAILABLE = True
+except ImportError:  # pragma: no cover
+
+    class _BaseEstimator:  # type: ignore[no-redef]
+        """No-op stub used when scikit-learn is not installed."""
+
+        def get_params(self, deep: bool = True) -> dict[str, Any]:
+            raise ImportError(
+                "scikit-learn is required for get_params() and set_params(). "
+                "Install it with: pip install 'prefgraph[ml]'"
+            )
+
+        def set_params(self, **params: object) -> object:
+            raise ImportError(
+                "scikit-learn is required for get_params() and set_params(). "
+                "Install it with: pip install 'prefgraph[ml]'"
+            )
+
+    class _TransformerMixin:  # type: ignore[no-redef]
+        """No-op stub used when scikit-learn is not installed."""
+
+        pass
+
+    _SKLEARN_AVAILABLE = False
+
+
+class PreferenceEncoder(_BaseEstimator, _TransformerMixin):
     """
-    Encodes user preferences into latent value representations.
+    Encodes budget-choice preferences into latent value representations.
 
-    PreferenceEncoder follows the scikit-learn pattern: fit() to learn
-    from data, then extract features or make predictions.
+    PreferenceEncoder follows the scikit-learn estimator contract: fit() to
+    learn from data, then transform() or extract_latent_values() to produce
+    features. When scikit-learn is installed, get_params / set_params / clone
+    and Pipeline integration work automatically via BaseEstimator.
 
-    The encoder solves an optimization problem to find latent values
-    that explain the user's observed choices. These values can be used as:
-    - Features for downstream ML models
-    - User embeddings for similarity calculations
-    - Inputs to counterfactual simulations
+    The encoder solves an Afriat LP to find latent values that rationalise the
+    user's observed choices. These values are useful for interpretable diagnostics
+    and dimensionality reduction. Predictive lift over baseline activity features
+    is typically near zero in real data; see the case studies for details.
 
     Example:
         >>> from prefgraph import PreferenceEncoder, BehaviorLog
@@ -65,36 +111,48 @@ class PreferenceEncoder:
         >>> print(f"Value of [2, 2]: {value_fn(np.array([2.0, 2.0]))}")
 
     Attributes:
-        precision: Numerical precision for optimization (default: 1e-8)
+        precision: Numerical precision for the LP solver (default 1e-8).
     """
 
     def __init__(self, precision: float = 1e-8) -> None:
         """
         Initialize the encoder.
 
+        Every __init__ parameter is stored as a same-named attribute so that
+        BaseEstimator.get_params() and clone() work correctly.
+
         Args:
             precision: Numerical precision for the LP solver.
         """
+        # Store plainly so BaseEstimator.get_params() finds it via introspection.
         self.precision = precision
+        # Private state: not __init__ params, ignored by get_params().
         self._result: LatentValueResult | None = None
         self._log: BehaviorLog | None = None
         self._is_fitted: bool = False
+        super().__init__()
 
-    def fit(self, log: BehaviorLog) -> PreferenceEncoder:
+    def fit(
+        self,
+        log: BehaviorLog,
+        y: object = None,
+    ) -> PreferenceEncoder:
         """
         Fit the encoder to a behavior log.
 
-        Solves an optimization problem to find latent preference values
-        that explain the user's observed choices.
+        Solves an Afriat LP to find latent preference values that explain the
+        user's observed choices. The y parameter is accepted but ignored,
+        following the sklearn convention for unsupervised transformers.
 
         Args:
-            log: BehaviorLog containing user's historical actions
+            log: BehaviorLog containing user's historical actions.
+            y: Ignored. Present for sklearn Pipeline compatibility.
 
         Returns:
             self (for method chaining)
 
         Raises:
-            ValueError: If the behavior is too inconsistent to fit
+            ValueError: If the behavior is too inconsistent to fit.
 
         Example:
             >>> encoder = PreferenceEncoder().fit(user_log)
@@ -196,18 +254,18 @@ class PreferenceEncoder:
         Predict what action the user would take under new conditions.
 
         Given a new cost vector and resource limit (budget), predicts
-        what action vector the user would choose to maximize their
+        what action vector the user would choose to maximise their
         latent preference value.
 
         Args:
-            cost_vector: Array of costs for each action dimension
-            resource_limit: Total budget/resource constraint
+            cost_vector: Array of costs for each action dimension.
+            resource_limit: Total budget or resource constraint.
 
         Returns:
-            Predicted action vector, or None if prediction failed
+            Predicted action vector, or None if prediction failed.
 
         Raises:
-            ValueError: If not fitted
+            ValueError: If not fitted.
 
         Example:
             >>> encoder.fit(user_log)
@@ -257,15 +315,22 @@ class PreferenceEncoder:
         assert self._result is not None  # set whenever the encoder is fitted
         return self._result.mean_marginal_utility
 
-    def transform(self, logs: list[BehaviorLog] | BehaviorLog) -> NDArray[np.float64]:
+    def transform(
+        self,
+        logs: list[BehaviorLog] | BehaviorLog,
+        y: object = None,
+    ) -> NDArray[np.float64]:
         """
         Transform behavior logs to feature array.
 
         For each log, extracts latent values as a feature vector.
         Each log is fitted independently and its latent values extracted.
+        The y parameter is accepted but ignored, following the sklearn
+        convention for unsupervised transformers.
 
         Args:
-            logs: Single BehaviorLog or list of BehaviorLogs
+            logs: Single BehaviorLog or list of BehaviorLogs.
+            y: Ignored. Present for sklearn Pipeline compatibility.
 
         Returns:
             Feature array of shape (n_logs, n_features) where n_features
@@ -286,7 +351,7 @@ class PreferenceEncoder:
         if len(logs) == 0:
             return np.array([]).reshape(0, 0)
 
-        # Extract features for each log
+        # Extract features for each log independently.
         all_features = []
         max_len = max(log.num_records for log in logs)
 
@@ -294,7 +359,7 @@ class PreferenceEncoder:
             result = fit_latent_values(log, tolerance=self.precision)
             if result.success and result.utility_values is not None:
                 features = result.utility_values
-                # Pad to max_len if necessary
+                # Pad to max_len if necessary.
                 if len(features) < max_len:
                     features = np.pad(
                         features,
@@ -308,20 +373,27 @@ class PreferenceEncoder:
         return np.vstack(all_features)
 
     def fit_transform(
-        self, logs: list[BehaviorLog] | BehaviorLog
+        self,
+        logs: list[BehaviorLog] | BehaviorLog,
+        y: object = None,
+        **fit_params: object,
     ) -> NDArray[np.float64]:
         """
         Fit encoder and transform logs in one call.
 
-        This is the standard sklearn-style interface. For a single log,
+        This follows the sklearn transformer contract. For a single log,
         fits the encoder to that log and returns its latent values.
         For multiple logs, fits to the first log and transforms all.
+        The y parameter is accepted but ignored, following the sklearn
+        convention for unsupervised transformers.
 
         Args:
-            logs: Single BehaviorLog or list of BehaviorLogs
+            logs: Single BehaviorLog or list of BehaviorLogs.
+            y: Ignored. Present for sklearn Pipeline compatibility.
+            **fit_params: Ignored. Present for sklearn Pipeline compatibility.
 
         Returns:
-            Feature array of shape (n_logs, n_features)
+            Feature array of shape (n_logs, n_features).
 
         Example:
             >>> encoder = PreferenceEncoder()
@@ -337,22 +409,24 @@ class PreferenceEncoder:
         if len(logs) == 0:
             return np.array([]).reshape(0, 0)
 
-        # Fit on first log
+        # Fit on first log, then transform all.
         self.fit(logs[0])
-
-        # Transform all logs
         return self.transform(logs)
 
 
-class MenuPreferenceEncoder:
+class MenuPreferenceEncoder(_BaseEstimator, _TransformerMixin):
     """
     Encodes menu-based preferences into ordinal preference representations.
 
-    MenuPreferenceEncoder follows the scikit-learn pattern: fit() to learn
-    from menu choice data, then extract features or make predictions.
+    MenuPreferenceEncoder follows the scikit-learn estimator contract: fit() to
+    learn from menu choice data, then transform() or ``preference_order_`` to
+    access features. When scikit-learn is installed, get_params / set_params / clone
+    and Pipeline integration work automatically via BaseEstimator.
 
-    The encoder recovers ordinal preferences from observed menu choices
-    using topological sort of the revealed preference graph.
+    The encoder recovers ordinal preferences from observed menu choices using a
+    topological sort of the revealed preference graph. These features are useful
+    for interpretable diagnostics. Predictive lift in real data is typically near
+    zero; see the case studies for details.
 
     Example:
         >>> from prefgraph import MenuPreferenceEncoder, MenuChoiceLog
@@ -372,20 +446,34 @@ class MenuPreferenceEncoder:
     """
 
     def __init__(self) -> None:
-        """Initialize the encoder."""
+        """
+        Initialize the encoder.
+
+        MenuPreferenceEncoder has no hyperparameters. BaseEstimator.get_params()
+        will return an empty dict, and clone() will call MenuPreferenceEncoder().
+        """
+        # Private state: not __init__ params, ignored by get_params().
         self._result: OrdinalUtilityResult | None = None
         self._log: MenuChoiceLog | None = None
         self._is_fitted: bool = False
+        super().__init__()
 
-    def fit(self, log: MenuChoiceLog) -> MenuPreferenceEncoder:
+    def fit(
+        self,
+        log: MenuChoiceLog,
+        y: object = None,
+    ) -> MenuPreferenceEncoder:
         """
         Fit the encoder to a menu choice log.
 
-        Recovers ordinal preferences from menu choices using
-        topological sort of the revealed preference graph.
+        Recovers ordinal preferences from menu choices using a topological
+        sort of the revealed preference graph. The y parameter is accepted
+        but ignored, following the sklearn convention for unsupervised
+        transformers.
 
         Args:
-            log: MenuChoiceLog containing menu choices
+            log: MenuChoiceLog containing menu choices.
+            y: Ignored. Present for sklearn Pipeline compatibility.
 
         Returns:
             self (for method chaining)
@@ -415,7 +503,7 @@ class MenuPreferenceEncoder:
 
     @property
     def utility_ranking_(self) -> dict[int, int] | None:
-        """Get the utility ranking (item -> rank, where 0 = most preferred)."""
+        """Get the utility ranking (item to rank, where 0 is most preferred)."""
         if not self._is_fitted or self._result is None:
             return None
         return self._result.utility_ranking
@@ -429,20 +517,25 @@ class MenuPreferenceEncoder:
             )
 
     def transform(
-        self, logs: list[MenuChoiceLog] | MenuChoiceLog
+        self,
+        logs: list[MenuChoiceLog] | MenuChoiceLog,
+        y: object = None,
     ) -> NDArray[np.float64]:
         """
         Transform menu choice logs to preference feature array.
 
         For each log, extracts utility values based on recovered preferences.
         Each log is fitted independently and its preference values extracted.
+        The y parameter is accepted but ignored, following the sklearn
+        convention for unsupervised transformers.
 
         Args:
-            logs: Single MenuChoiceLog or list of MenuChoiceLogs
+            logs: Single MenuChoiceLog or list of MenuChoiceLogs.
+            y: Ignored. Present for sklearn Pipeline compatibility.
 
         Returns:
             Feature array of shape (n_logs, n_items) where each row
-            contains utility values for items (NaN for unfitted logs)
+            contains utility values for items (NaN for unfitted logs).
 
         Example:
             >>> encoder = MenuPreferenceEncoder()
@@ -457,7 +550,7 @@ class MenuPreferenceEncoder:
         if len(logs) == 0:
             return np.array([]).reshape(0, 0)
 
-        # Extract features for each log
+        # Extract features for each log independently.
         all_features = []
         max_items = max(log.num_items for log in logs)
 
@@ -465,7 +558,7 @@ class MenuPreferenceEncoder:
             result = fit_menu_preferences(log)
             if result.success and result.utility_values is not None:
                 features = result.utility_values
-                # Pad to max_items if necessary
+                # Pad to max_items if necessary.
                 if len(features) < max_items:
                     features = np.pad(
                         features,
@@ -479,20 +572,27 @@ class MenuPreferenceEncoder:
         return np.vstack(all_features)
 
     def fit_transform(
-        self, logs: list[MenuChoiceLog] | MenuChoiceLog
+        self,
+        logs: list[MenuChoiceLog] | MenuChoiceLog,
+        y: object = None,
+        **fit_params: object,
     ) -> NDArray[np.float64]:
         """
         Fit encoder and transform logs in one call.
 
-        For a single log, fits the encoder to that log and returns its
-        preference values. For multiple logs, fits to the first log
-        and transforms all.
+        This follows the sklearn transformer contract. For a single log, fits
+        the encoder to that log and returns its preference values. For multiple
+        logs, fits to the first log and transforms all. The y parameter is
+        accepted but ignored, following the sklearn convention for unsupervised
+        transformers.
 
         Args:
-            logs: Single MenuChoiceLog or list of MenuChoiceLogs
+            logs: Single MenuChoiceLog or list of MenuChoiceLogs.
+            y: Ignored. Present for sklearn Pipeline compatibility.
+            **fit_params: Ignored. Present for sklearn Pipeline compatibility.
 
         Returns:
-            Feature array of shape (n_logs, n_items)
+            Feature array of shape (n_logs, n_items).
 
         Example:
             >>> encoder = MenuPreferenceEncoder()
@@ -509,10 +609,8 @@ class MenuPreferenceEncoder:
         if len(logs) == 0:
             return np.array([]).reshape(0, 0)
 
-        # Fit on first log
+        # Fit on first log, then transform all.
         self.fit(logs[0])
-
-        # Transform all logs
         return self.transform(logs)
 
     def get_fit_details(self) -> OrdinalUtilityResult:
@@ -523,10 +621,10 @@ class MenuPreferenceEncoder:
         utility values, and diagnostic information.
 
         Returns:
-            OrdinalUtilityResult with full details
+            OrdinalUtilityResult with full details.
 
         Raises:
-            NotFittedError: If not fitted
+            NotFittedError: If not fitted.
         """
         self._check_fitted()
         assert self._result is not None  # guaranteed by _check_fitted

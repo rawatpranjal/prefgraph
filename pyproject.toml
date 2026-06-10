@@ -87,6 +87,9 @@ docs = [
     "numba>=0.58.0",
     "pyarrow>=14.0.0",
 ]
+ml = [
+    "scikit-learn>=1.3.0",
+]
 benchmarks = [
     "pandas>=2.0.0",
     "lightgbm>=4.0.0",
@@ -165,6 +168,13 @@ ignore_missing_imports = true
 # resolve it across the FFI boundary. Suppressing the missing-import is correct.
 [[tool.mypy.overrides]]
 module = "prefgraph._rust_core"
+ignore_missing_imports = true
+
+# scikit-learn ships no py.typed marker and its inline types are incomplete.
+# Importing it as Any is the honest choice; the encoder.py guard already
+# handles the ImportError path with no-op stubs.
+[[tool.mypy.overrides]]
+module = ["sklearn.*"]
 ignore_missing_imports = true
 
 [tool.ruff]

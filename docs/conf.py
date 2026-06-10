@@ -10,8 +10,11 @@ sys.path.insert(0, os.path.abspath("../src"))
 # Suppress deprecation warnings from contrib module shims during autodoc
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 
-# Mock the compiled Rust extension so autodoc works without Rust toolchain (RTD)
-autodoc_mock_imports = ["prefgraph._rust_core"]
+# Mock the compiled Rust extension so autodoc works without Rust toolchain (RTD).
+# Mock sklearn too so the sklearn-compatible encoders document cleanly whether or
+# not sklearn is installed in the docs environment, without pulling in sklearn's
+# own inherited-member docstrings (which reference labels absent from our docs).
+autodoc_mock_imports = ["prefgraph._rust_core", "sklearn"]
 
 from unittest.mock import MagicMock
 
