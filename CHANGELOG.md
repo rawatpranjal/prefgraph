@@ -1,6 +1,6 @@
 # Changelog
 
-## [Unreleased]
+## [0.6.0] - 2026-06-09
 
 ### Fixed
 - CCEI/AEI supremum. The discrete efficiency search returned the next-lower breakpoint instead of the true supremum on roughly 7 percent of datasets, with error up to 0.4. This affected both backends, Production CCEI, and the SARP and WARP variants. An earlier one-float-ULP probe only corrected the case where the binding own-expenditure was about 1. The index is now located exactly as the upper breakpoint of the highest open interval on which the axiom holds, each interval tested at its midpoint where no ratio tie occurs (Smeulders et al. 2014, Algorithm 2). Rust and the pure-Python fallback now agree with an independent supremum oracle to about 1e-11 across random data.
@@ -12,7 +12,12 @@
 - Backend parity tests now genuinely compare Rust against the pure-Python fallback. They previously delegated both sides to Rust, because the per-user functions read HAS_RUST at call time, which is why the CCEI divergence went unnoticed.
 
 ### Added
-- `tests/test_ccei_supremum.py` with regression cases for the supremum fix and a brute-force oracle property test that cross-checks CCEI against an independent reference on random data.
+- Pull-request CI (`ci.yml`) that gates every change with the existing suite: pytest and cargo test across Python 3.10 to 3.13 on Linux, with macOS and Windows on 3.12, plus ruff, ruff-format, and mypy as blocking checks, a no-Rust fallback job, and a build-from-source smoke test. Previously no tests ran on pull requests.
+- Property-based tests (`hypothesis`) for core invariants, plus brute-force oracle tests for CCEI (`tests/test_ccei_supremum.py`), the menu Houtman-Maks (`tests/test_menu_hm.py`), and quasilinearity (`tests/test_quasilinear_exhaustive.py`) that cross-check each algorithm against an independent reference.
+
+### Changed
+- The build is unified on maturin as the single backend; the declared setuptools-rust path was removed.
+- The lint and type backlog was cleared so the new CI gates are meaningful. Ruff went from 134 findings to zero, the source was formatted, and mypy went from 832 errors under blanket strict mode to zero under a pragmatic configuration that type-checks the live core and scopes out the deprecated contrib package.
 
 ### Notes
 - One golden test value was corrected. A weak-tie-at-e=1 violation has CCEI 1.0 (the supremum holds for every efficiency below 1), not a value below 1. This was verified against the oracle and by hand, not changed to make a test pass.
