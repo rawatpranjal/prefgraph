@@ -41,7 +41,15 @@ jobs:
           target: ${{ matrix.target }}
           args: --release --out dist -i python3.10 -i python3.11 -i python3.12 -i python3.13
           manylinux: "2_28"
-          before-script-linux: dnf install -y clang-devel
+          # The x86_64 and aarch64 manylinux images ship different package
+          # managers (dnf on AlmaLinux, yum on CentOS, apt on Debian). Detect
+          # whichever is present so the clang-devel install works on both.
+          before-script-linux: |
+            if command -v dnf >/dev/null 2>&1; then dnf install -y clang-devel
+            elif command -v microdnf >/dev/null 2>&1; then microdnf install -y clang-devel
+            elif command -v yum >/dev/null 2>&1; then yum install -y clang-devel
+            elif command -v apt-get >/dev/null 2>&1; then apt-get update && apt-get install -y libclang-dev clang
+            fi
       - uses: actions/upload-artifact@v4
         with:
           name: wheel-linux-${{ matrix.target }}
