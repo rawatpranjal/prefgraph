@@ -4,6 +4,9 @@ on:
   push:
     tags:
       - "v*"
+  # Manual dispatch builds all wheels but never publishes (the publish job is
+  # tag-gated). Use it to test build fixes without burning a release tag.
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -44,11 +47,22 @@ jobs:
           # The x86_64 and aarch64 manylinux images ship different package
           # managers (dnf on AlmaLinux, yum on CentOS, apt on Debian). Detect
           # whichever is present so the clang-devel install works on both.
+          #
+          # aarch64 cross builds additionally need bindgen pointed at the
+          # cross sysroot: highs-sys runs bindgen with an aarch64 target, but
+          # host clang would otherwise parse the x86_64 glibc headers and die
+          # on "bits/libc-header-start.h not found" (the v0.6.2 failure). Ask
+          # the cross gcc for its sysroot rather than hardcoding image paths.
           before-script-linux: |
             if command -v dnf >/dev/null 2>&1; then dnf install -y clang-devel
             elif command -v microdnf >/dev/null 2>&1; then microdnf install -y clang-devel
             elif command -v yum >/dev/null 2>&1; then yum install -y clang-devel
             elif command -v apt-get >/dev/null 2>&1; then apt-get update && apt-get install -y libclang-dev clang
+            fi
+            if [ "$(uname -m)" != "aarch64" ] && command -v aarch64-unknown-linux-gnu-gcc >/dev/null 2>&1; then
+              CROSS_SYSROOT="$(aarch64-unknown-linux-gnu-gcc -print-sysroot)"
+              export BINDGEN_EXTRA_CLANG_ARGS_aarch64_unknown_linux_gnu="--sysroot=${CROSS_SYSROOT}"
+              echo "bindgen cross sysroot: ${CROSS_SYSROOT}"
             fi
       - uses: actions/upload-artifact@v4
         with:
@@ -97,6 +111,9 @@ jobs:
 
   publish:
     needs: [sdist, linux, macos, windows]
+    # Tag pushes only: workflow_dispatch runs build wheels for testing but
+    # must never publish.
+    if: startsWith(github.ref, 'refs/tags/')
     runs-on: ubuntu-latest
     # PyPI Trusted Publishing (OIDC) - no API token needed.
     # Configured at: https://pypi.org/manage/project/prefgraph/settings/publishing/
