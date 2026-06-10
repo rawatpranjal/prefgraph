@@ -13,6 +13,17 @@ if TYPE_CHECKING:
     from prefgraph.core.session import ConsumerSession
 
 
+def _require_networkx() -> None:
+    """Raise a helpful ImportError when networkx is not installed."""
+    try:
+        import networkx  # noqa: F401
+    except ImportError as exc:
+        raise ImportError(
+            "networkx is required for ViolationGraph. "
+            "Install it with: pip install 'prefgraph[viz]'"
+        ) from exc
+
+
 class ViolationGraph:
     """
     NetworkX-based graph for visualizing revealed preference relations and violations.
@@ -54,6 +65,7 @@ class ViolationGraph:
 
     def _build_graph(self) -> nx.DiGraph:
         """Build NetworkX directed graph from preference matrices."""
+        _require_networkx()
         import networkx as nx
 
         G: nx.DiGraph = nx.DiGraph()
@@ -161,6 +173,7 @@ class ViolationGraph:
         Returns:
             Tuple of (figure, axes) matplotlib objects
         """
+        _require_networkx()
         import matplotlib.pyplot as plt
         import networkx as nx
 

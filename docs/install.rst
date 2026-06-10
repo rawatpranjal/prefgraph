@@ -5,7 +5,7 @@ Installation
 
    pip install prefgraph
 
-This installs the core library with NumPy, SciPy, NetworkX, Numba, and Polars. The Rust engine compiles automatically if a Rust toolchain is available. If not, a pure-Python fallback handles GARP, CCEI, MPI, and HM.
+This installs the core library with NumPy, SciPy, and Numba. The Rust engine compiles automatically if a Rust toolchain is available. If not, a pure-Python fallback handles GARP, CCEI, MPI, and HM. Polars and NetworkX are not required for the core install.
 
 Extras
 ------
@@ -19,15 +19,15 @@ Some workflows need additional packages. Install them with bracket syntax.
    * - Extra
      - Install command
      - What it adds
+   * - ``datasets``
+     - ``pip install "prefgraph[datasets]"``
+     - Pandas and Polars for real-world dataset loaders
+   * - ``viz``
+     - ``pip install "prefgraph[viz]"``
+     - Matplotlib and NetworkX for plotting and ViolationGraph
    * - ``parquet``
      - ``pip install "prefgraph[parquet]"``
      - PyArrow for reading and writing Parquet files
-   * - ``datasets``
-     - ``pip install "prefgraph[datasets]"``
-     - Pandas for loading real-world dataset loaders
-   * - ``viz``
-     - ``pip install "prefgraph[viz]"``
-     - Matplotlib for plotting
    * - ``dev``
      - ``pip install "prefgraph[dev]"``
      - Pytest, Mypy, Ruff for development
@@ -35,7 +35,7 @@ Some workflows need additional packages. Install them with bracket syntax.
      - ``pip install "prefgraph[all]"``
      - Everything above plus Jupyter and Sphinx
 
-The core ``pip install prefgraph`` is enough for ``load_demo``, ``Engine``, ``analyze_arrays``, and ``analyze_menus``. You only need extras when working with Parquet files, real-world datasets, or visualization.
+The core ``pip install prefgraph`` is enough for ``load_demo``, ``Engine``, ``analyze_arrays``, and ``analyze_menus``. You only need ``datasets`` when loading real-world datasets, ``viz`` when using ViolationGraph or matplotlib plots, and ``parquet`` when reading or writing Parquet files.
 
 Choose Your Workflow
 --------------------
