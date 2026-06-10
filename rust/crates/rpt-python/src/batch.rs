@@ -22,6 +22,11 @@ use rpt_core::vei::{compute_vei as run_vei, compute_vei_exact as run_vei_exact};
 use crate::convert::extract_user_data;
 
 /// Linear interpolation percentile (matches numpy default method='linear').
+///
+/// Bit-exact mirror of numpy's branch-corrected lerp (numpy/lib/_function_base
+/// _lerp): a + (b - a) * t for t < 0.5, else b - (b - a) * (1 - t). The naive
+/// a * (1 - t) + b * t form differs in the last ulp, which the exact-VEI
+/// parity tests assert away (exact equality on integer data).
 fn percentile(sorted: &[f64], p: f64) -> f64 {
     let n = sorted.len();
     if n == 0 { return 0.0; }
@@ -29,8 +34,9 @@ fn percentile(sorted: &[f64], p: f64) -> f64 {
     let idx = p * (n - 1) as f64;
     let lo = idx.floor() as usize;
     let hi = (lo + 1).min(n - 1);
-    let frac = idx - lo as f64;
-    sorted[lo] * (1.0 - frac) + sorted[hi] * frac
+    let t = idx - lo as f64;
+    let (a, b) = (sorted[lo], sorted[hi]);
+    if t < 0.5 { a + (b - a) * t } else { b - (b - a) * (1.0 - t) }
 }
 
 /// Compute (std, q25, q75) from a VEI efficiency vector.

@@ -18,8 +18,13 @@ Tolerance rationale:
 - ew_mean/std/skew (float): within 1e-6 - same log-ratio formula
 - vei_mean/min (float): within 0.05 - different LP implementations (scipy vs HiGHS)
 - vei_std/q25/q75 (float): within 0.05 - derived from efficiency vector
-- vei_exact: not tested for Rust parity (Rust uses a different exact LP;
-  Python compute_vei is the closest equivalent, see engine.py docstring)
+- vei_exact_* (float): EXACT equality on integer (discrete) data, within 1e-9
+  on continuous data. Both backends implement Mononen (2023) Theorem 1 with
+  the same canonical max-min-then-lex vector, derive every number from the
+  binary incumbent (grid floats), and integer data makes the cost grids
+  bit-identical across numpy and Rust. Discrete fixtures are the binding
+  ones: ties are measure-zero in continuous data, so a continuous-only
+  parity test would pass even under solver-dependent tie-breaking.
 - Menu is_sarp/is_warp/n_violations (bool/int): exact
 - Menu max_scc/n_scc: exact
 - Menu r_density/pref_entropy/choice_diversity: within 1e-8
@@ -33,11 +38,27 @@ from prefgraph.engine import Engine
 
 pytestmark = pytest.mark.skipif(not HAS_RUST, reason="Rust backend not available")
 
-FLAGS = {"ccei": True, "mpi": True, "harp": False, "hm": False,
-         "utility": False, "vei": False, "vei_exact": False, "network": False}
+FLAGS = {
+    "ccei": True,
+    "mpi": True,
+    "harp": False,
+    "hm": False,
+    "utility": False,
+    "vei": False,
+    "vei_exact": False,
+    "network": False,
+}
 
-FLAGS_FULL = {"ccei": True, "mpi": True, "harp": True, "hm": True,
-              "utility": True, "vei": True, "vei_exact": True, "network": True}
+FLAGS_FULL = {
+    "ccei": True,
+    "mpi": True,
+    "harp": True,
+    "hm": True,
+    "utility": True,
+    "vei": True,
+    "vei_exact": True,
+    "network": True,
+}
 
 
 def _run_both(chunk, flags=None):
@@ -99,14 +120,17 @@ def _run_both_menu(chunk, compute_warp_la=False, network=False):
         n_items_list = [u[2] for u in chunk]
 
         from typing import cast, Callable, Any
-        analyze_menu_batch = cast(
-            "Callable[..., Any]", rb._rust_analyze_menu_batch
-        )
+
+        analyze_menu_batch = cast("Callable[..., Any]", rb._rust_analyze_menu_batch)
         raw = analyze_menu_batch(
-            menus_list, choices_list, n_items_list,
-            compute_warp_la, network,
+            menus_list,
+            choices_list,
+            n_items_list,
+            compute_warp_la,
+            network,
         )
         from prefgraph.engine import MenuResult
+
         rust = [
             MenuResult(
                 is_sarp=r["is_sarp"],
@@ -139,6 +163,7 @@ def _run_both_menu(chunk, compute_warp_la=False, network=False):
 
 
 # --- Fixtures ---
+
 
 @pytest.fixture
 def consistent_data():
@@ -188,6 +213,7 @@ def network_users():
 
 # --- GARP parity ---
 
+
 class TestGARPParity:
     def test_consistent(self, consistent_data):
         py, rust = _run_both(consistent_data)
@@ -204,6 +230,7 @@ class TestGARPParity:
 
 
 # --- CCEI parity ---
+
 
 class TestCCEIParity:
     def test_consistent_is_one(self, consistent_data):
@@ -224,6 +251,7 @@ class TestCCEIParity:
 
 
 # --- MPI parity ---
+
 
 class TestMPIParity:
     def test_consistent_is_zero(self, consistent_data):
@@ -246,6 +274,7 @@ class TestMPIParity:
 
 
 # --- SCC stats parity ---
+
 
 class TestSCCParity:
     """SCC stats are always computed (no flag gate) - exact integer match expected."""
@@ -277,15 +306,14 @@ class TestSCCParity:
             assert p.max_scc == r.max_scc, (
                 f"User {i} max_scc: py={p.max_scc}, rust={r.max_scc}"
             )
-            assert p.n_scc == r.n_scc, (
-                f"User {i} n_scc: py={p.n_scc}, rust={r.n_scc}"
-            )
+            assert p.n_scc == r.n_scc, f"User {i} n_scc: py={p.n_scc}, rust={r.n_scc}"
             assert abs(p.scc_mean_size - r.scc_mean_size) < 1e-10, (
                 f"User {i} scc_mean_size: py={p.scc_mean_size}, rust={r.scc_mean_size}"
             )
 
 
 # --- Network stats parity ---
+
 
 class TestNetworkParity:
     """Network stats parity with flags network=True, harp=True."""
@@ -328,18 +356,16 @@ class TestNetworkParity:
     def test_random_network_close(self, network_users):
         """Bulk parity check for 100 users with varied T."""
         py, rust = _run_both(network_users, FLAGS_FULL)
-        max_density_err = max(abs(p.r_density - r.r_density)
-                              for p, r in zip(py, rust))
-        max_gini_err = max(abs(p.degree_gini - r.degree_gini)
-                           for p, r in zip(py, rust))
-        max_ew_mean_err = max(abs(p.ew_mean - r.ew_mean)
-                              for p, r in zip(py, rust))
+        max_density_err = max(abs(p.r_density - r.r_density) for p, r in zip(py, rust))
+        max_gini_err = max(abs(p.degree_gini - r.degree_gini) for p, r in zip(py, rust))
+        max_ew_mean_err = max(abs(p.ew_mean - r.ew_mean) for p, r in zip(py, rust))
         assert max_density_err < 1e-8, f"max r_density error: {max_density_err}"
         assert max_gini_err < 1e-8, f"max degree_gini error: {max_gini_err}"
         assert max_ew_mean_err < 1e-6, f"max ew_mean error: {max_ew_mean_err}"
 
 
 # --- VEI stats parity ---
+
 
 class TestVEIParity:
     """VEI stats (std, q25, q75) parity.  Tolerance 0.05 - different LP backends."""
@@ -353,8 +379,8 @@ class TestVEIParity:
     def test_violation_vei_mean(self, violation_data):
         py, rust = _run_both(violation_data, FLAGS_FULL)
         # VEI for violating data should be < 1.0 in both backends
-        assert py[0].vei_mean < 1.0, f"Python VEI mean unexpectedly 1.0"
-        assert rust[0].vei_mean < 1.0, f"Rust VEI mean unexpectedly 1.0"
+        assert py[0].vei_mean < 1.0, "Python VEI mean unexpectedly 1.0"
+        assert rust[0].vei_mean < 1.0, "Rust VEI mean unexpectedly 1.0"
         assert abs(py[0].vei_mean - rust[0].vei_mean) < 0.05, (
             f"vei_mean: py={py[0].vei_mean:.4f}, rust={rust[0].vei_mean:.4f}"
         )
@@ -376,11 +402,120 @@ class TestVEIParity:
         """harp_severity is always 1.0 in both backends (no severity metric exists)."""
         py, rust = _run_both(random_users, FLAGS_FULL)
         for i, (p, r) in enumerate(zip(py, rust)):
-            assert p.harp_severity == 1.0, f"User {i}: Python harp_severity={p.harp_severity}"
-            assert r.harp_severity == 1.0, f"User {i}: Rust harp_severity={r.harp_severity}"
+            assert p.harp_severity == 1.0, (
+                f"User {i}: Python harp_severity={p.harp_severity}"
+            )
+            assert r.harp_severity == 1.0, (
+                f"User {i}: Rust harp_severity={r.harp_severity}"
+            )
+
+
+# --- VEI exact parity ---
+
+_VEI_EXACT_FIELDS = (
+    "vei_exact_mean",
+    "vei_exact_min",
+    "vei_exact_std",
+    "vei_exact_q25",
+    "vei_exact_q75",
+)
+
+_VEI_EXACT_FLAGS = {
+    "ccei": False,
+    "mpi": False,
+    "harp": False,
+    "hm": False,
+    "utility": False,
+    "vei": False,
+    "vei_exact": True,
+    "network": False,
+}
+
+
+class TestVEIExactParity:
+    """Exact VEI parity: both backends implement Mononen (2023) Theorem 1
+    with the canonical max-min-then-lex vector.
+
+    Integer fixtures assert EXACT equality: the cost grids are bit-identical
+    across numpy and Rust on integer data and both backends report grid
+    floats taken from the binary incumbent, so any difference is a real
+    algorithmic divergence, not float noise. The fixtures (imported from
+    test_vei_exact, where they are oracle-verified by exhaustive enumeration)
+    include tie cases where the optimal vector is non-unique, which is
+    exactly where the pre-fix backends disagreed.
+    """
+
+    def test_discrete_fixtures_exact_equality(self):
+        from test_vei_exact import ALL_FIXTURES
+
+        chunk = [
+            (np.asarray(p, dtype=np.float64), np.asarray(q, dtype=np.float64))
+            for _, (p, q), _, _ in ALL_FIXTURES
+        ]
+        py, rust = _run_both(chunk, _VEI_EXACT_FLAGS)
+        for (name, _, _, _), p_res, r_res in zip(ALL_FIXTURES, py, rust):
+            for field in _VEI_EXACT_FIELDS:
+                pv, rv = getattr(p_res, field), getattr(r_res, field)
+                assert pv == rv, (
+                    f"{name}.{field}: python={pv!r} != rust={rv!r} "
+                    "(must be exactly equal on integer data)"
+                )
+
+    def test_discrete_fixtures_match_oracle_canonical(self):
+        """Both backends equal the oracle canonical stats, not just each other."""
+        from test_vei_exact import ALL_FIXTURES, canonical_stats
+
+        chunk = [
+            (np.asarray(p, dtype=np.float64), np.asarray(q, dtype=np.float64))
+            for _, (p, q), _, _ in ALL_FIXTURES
+        ]
+        py, rust = _run_both(chunk, _VEI_EXACT_FLAGS)
+        keymap = dict(zip(_VEI_EXACT_FIELDS, ("mean", "min", "std", "q25", "q75")))
+        for (name, _, _, canon), p_res, r_res in zip(ALL_FIXTURES, py, rust):
+            expected = canonical_stats(canon)
+            for field, key in keymap.items():
+                assert getattr(p_res, field) == pytest.approx(
+                    expected[key], abs=1e-9
+                ), f"python {name}.{field}"
+                assert getattr(r_res, field) == pytest.approx(
+                    expected[key], abs=1e-9
+                ), f"rust {name}.{field}"
+
+    def test_random_integer_users_exact_equality(self):
+        """Random small-integer users: tie-rich data, exact equality."""
+        rng = np.random.RandomState(2026)
+        chunk = []
+        for _ in range(60):
+            t = rng.randint(3, 8)
+            p = rng.randint(1, 7, size=(t, 3)).astype(np.float64)
+            q = rng.randint(1, 7, size=(t, 3)).astype(np.float64)
+            chunk.append((p, q))
+        py, rust = _run_both(chunk, _VEI_EXACT_FLAGS)
+        for i, (p_res, r_res) in enumerate(zip(py, rust)):
+            for field in _VEI_EXACT_FIELDS:
+                pv, rv = getattr(p_res, field), getattr(r_res, field)
+                assert pv == rv, f"user {i} {field}: python={pv!r} != rust={rv!r}"
+
+    def test_random_continuous_users_close(self, random_users):
+        """Continuous data: ties are measure-zero, parity within 1e-9."""
+        py, rust = _run_both(random_users, _VEI_EXACT_FLAGS)
+        for i, (p_res, r_res) in enumerate(zip(py, rust)):
+            for field in _VEI_EXACT_FIELDS:
+                pv, rv = getattr(p_res, field), getattr(r_res, field)
+                assert abs(pv - rv) < 1e-9, (
+                    f"user {i} {field}: python={pv!r} rust={rv!r}"
+                )
+
+    def test_consistent_defaults(self, consistent_data):
+        py, rust = _run_both(consistent_data, _VEI_EXACT_FLAGS)
+        for res in (py[0], rust[0]):
+            assert res.vei_exact_mean == 1.0
+            assert res.vei_exact_min == 1.0
+            assert res.vei_exact_std == 0.0
 
 
 # --- Menu parity ---
+
 
 @pytest.fixture
 def consistent_menu_data():
@@ -483,9 +618,7 @@ class TestMenuParity:
             assert p.max_scc == r.max_scc, (
                 f"User {i} max_scc: py={p.max_scc}, rust={r.max_scc}"
             )
-            assert p.n_scc == r.n_scc, (
-                f"User {i} n_scc: py={p.n_scc}, rust={r.n_scc}"
-            )
+            assert p.n_scc == r.n_scc, f"User {i} n_scc: py={p.n_scc}, rust={r.n_scc}"
             assert abs(p.r_density - r.r_density) < 1e-8, (
                 f"User {i} r_density: py={p.r_density:.6f}, rust={r.r_density:.6f}"
             )

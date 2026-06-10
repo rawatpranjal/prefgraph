@@ -396,6 +396,28 @@ class TestPythonExactFunction:
         assert checked >= 15
 
 
+@pytest.mark.skipif(not HAS_RUST, reason="Rust backend not available")
+class TestPerformanceGuard:
+    """Loose wall-clock guard: 100 users x T=20 well under 30 s (measured
+    0.56 s locally, 2026-06-10; the pre-fix code took 0.19 s, the canonical
+    stages add the difference)."""
+
+    def test_batch_100_users_t20(self):
+        import time
+
+        rng = np.random.default_rng(7)
+        users = [
+            (rng.uniform(0.5, 5.0, (20, 5)), rng.uniform(0.5, 5.0, (20, 5)))
+            for _ in range(100)
+        ]
+        eng = Engine(metrics=["garp", "vei_exact"])
+        start = time.perf_counter()
+        res = eng.analyze_arrays(users)
+        elapsed = time.perf_counter() - start
+        assert len(res) == 100
+        assert elapsed < 30.0, f"vei_exact batch took {elapsed:.1f}s"
+
+
 class TestPythonEngineFallback:
     """The Engine fallback must compute the real exact index, not substitute
     the LP relaxation (forcing HAS_RUST=False per CLAUDE.md Learned Rules)."""

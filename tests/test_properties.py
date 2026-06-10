@@ -192,3 +192,139 @@ def test_rust_python_backends_agree(n_obs, n_goods, seed):
         f"MPI gap {abs(py.mpi - rust.mpi):.4f} > 0.05 "
         f"(py={py.mpi:.4f} rust={rust.mpi:.4f})"
     )
+
+
+# ---------------------------------------------------------------------------
+# Properties 5-8: exact VEI (Mononen 2023 Theorem 1, canonical vector).
+# ---------------------------------------------------------------------------
+
+_VEI_EXACT_FIELDS = (
+    "vei_exact_mean",
+    "vei_exact_min",
+    "vei_exact_std",
+    "vei_exact_q25",
+    "vei_exact_q75",
+)
+
+_VEI_EXACT_FLAGS = {
+    "ccei": False,
+    "mpi": False,
+    "harp": False,
+    "hm": False,
+    "utility": False,
+    "vei": False,
+    "vei_exact": True,
+}
+
+
+@PROP_SETTINGS
+@given(n_obs=_n_obs, n_goods=_n_goods, seed=_seeds)
+def test_vei_exact_bounds_and_ccei_dominance(n_obs, n_goods, seed):
+    """Exact-VEI efficiencies lie in [0, 1] and the mean weakly exceeds CCEI.
+
+    A uniform adjustment of 1 - CCEI at every observation makes the relaxed
+    relation acyclic, so it is feasible for Varian's per-observation problem;
+    the Varian average adjustment is therefore weakly smaller and the mean
+    efficiency weakly larger (Mononen 2023, Section 2.4 relates the measures;
+    the tolerance absorbs the discrete CCEI search and supremum convention).
+    """
+    prices, quantities = generate_irrational_data(n_obs, n_goods, seed=seed)
+    engine = Engine(metrics=["garp", "ccei", "vei_exact"])
+    res = engine.analyze_arrays(
+        [(prices.astype(np.float64), quantities.astype(np.float64))]
+    )[0]
+    for field in _VEI_EXACT_FIELDS:
+        value = getattr(res, field)
+        assert -1e-12 <= value <= 1.0 + 1e-12, f"{field} out of range: {value}"
+    assert res.vei_exact_min <= res.vei_exact_mean + 1e-12
+    assert res.vei_exact_mean >= res.ccei - 1e-6, (
+        f"Varian mean efficiency {res.vei_exact_mean:.6f} below "
+        f"CCEI {res.ccei:.6f}: a uniform CCEI adjustment is Varian-feasible"
+    )
+
+
+@PROP_SETTINGS
+@given(data=st.data())
+def test_vei_exact_rational_data_all_ones(data):
+    """Utility-maximizing (Cobb-Douglas) data has exact VEI exactly 1.0."""
+    n_obs = data.draw(_n_obs, label="n_obs")
+    n_goods = data.draw(_n_goods, label="n_goods")
+    prices = data.draw(
+        arrays(
+            np.float64,
+            (n_obs, n_goods),
+            elements=st.floats(0.5, 5.0, allow_nan=False, allow_infinity=False),
+        ),
+        label="prices",
+    )
+    raw_alpha = data.draw(
+        arrays(
+            np.float64,
+            (n_goods,),
+            elements=st.floats(0.1, 1.0, allow_nan=False, allow_infinity=False),
+        ),
+        label="alpha",
+    )
+    alpha = raw_alpha / raw_alpha.sum()
+    budgets = data.draw(
+        arrays(
+            np.float64,
+            (n_obs,),
+            elements=st.floats(10.0, 100.0, allow_nan=False, allow_infinity=False),
+        ),
+        label="budgets",
+    )
+    quantities = np.vstack(
+        [cobb_douglas_demand(prices[t], budgets[t], alpha) for t in range(n_obs)]
+    )
+    engine = Engine(metrics=["garp", "vei_exact"])
+    res = engine.analyze_arrays([(prices, quantities)])[0]
+    assert res.vei_exact_mean == 1.0
+    assert res.vei_exact_min == 1.0
+    assert res.vei_exact_std == 0.0
+
+
+@PROP_SETTINGS
+@given(n_obs=_n_obs, seed=_seeds)
+def test_vei_exact_deterministic(n_obs, seed):
+    """Two runs on identical tie-rich integer data are bitwise identical:
+    the canonical vector leaves no room for solver vertex choice."""
+    rng = np.random.default_rng(seed)
+    prices = rng.integers(1, 7, size=(n_obs, 2)).astype(np.float64)
+    quantities = rng.integers(1, 7, size=(n_obs, 2)).astype(np.float64)
+    engine = Engine(metrics=["garp", "vei_exact"])
+    first = engine.analyze_arrays([(prices, quantities)])[0]
+    second = engine.analyze_arrays([(prices, quantities)])[0]
+    for field in _VEI_EXACT_FIELDS:
+        assert getattr(first, field) == getattr(second, field), field
+
+
+@pytest.mark.skipif(not HAS_RUST, reason="Rust backend not available")
+@PROP_SETTINGS
+@given(n_obs=_n_obs, n_goods=st.integers(min_value=2, max_value=3), seed=_seeds)
+def test_vei_exact_backends_agree_exactly_on_integer_data(n_obs, n_goods, seed):
+    """Rust and the pure-Python mirror are EXACTLY equal on integer data.
+
+    HAS_RUST is forced off for the Python side (CLAUDE.md Learned Rules:
+    parity tests must force the fallback path). Small integer grids maximize
+    ties, the regime where the pre-fix backends returned different optima.
+    """
+    import prefgraph._rust_backend as rb
+
+    rng = np.random.default_rng(seed)
+    prices = rng.integers(1, 7, size=(n_obs, n_goods)).astype(np.float64)
+    quantities = rng.integers(1, 7, size=(n_obs, n_goods)).astype(np.float64)
+    chunk = [(prices, quantities)]
+
+    engine = Engine(metrics=["garp", "vei_exact"])
+    rust = engine._analyze_chunk_rust(chunk, _VEI_EXACT_FLAGS)[0]
+    saved = rb.HAS_RUST
+    rb.HAS_RUST = False
+    try:
+        py = engine._analyze_chunk_python(chunk, _VEI_EXACT_FLAGS)[0]
+    finally:
+        rb.HAS_RUST = saved
+
+    for field in _VEI_EXACT_FIELDS:
+        pv, rv = getattr(py, field), getattr(rust, field)
+        assert pv == rv, f"{field}: python={pv!r} != rust={rv!r}"
