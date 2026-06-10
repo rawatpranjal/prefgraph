@@ -302,8 +302,13 @@ fn process_users_parallel(
 
                 let (vei_mean, vei_min, vei_std, vei_q25, vei_q75) = if flags.vei {
                     let vei = run_vei(graph);
-                    let (std, q25, q75) = compute_vei_stats(&vei.efficiency_vector);
-                    (vei.mean_efficiency, vei.min_efficiency, std, q25, q75)
+                    if vei.success {
+                        let (std, q25, q75) = compute_vei_stats(&vei.efficiency_vector);
+                        (vei.mean_efficiency, vei.min_efficiency, std, q25, q75)
+                    } else {
+                        // Same loud-failure convention as vei_exact below.
+                        (f64::NAN, f64::NAN, f64::NAN, f64::NAN, f64::NAN)
+                    }
                 } else {
                     (1.0, 1.0, 0.0, 1.0, 1.0)
                 };
