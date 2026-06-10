@@ -250,6 +250,7 @@ Explore the :doc:`API Reference <api>` and :doc:`References <papers>` for more.
    install
    quickstart
    theory/index
+   identification
    budget/index
    menu/index
    benchmarks
