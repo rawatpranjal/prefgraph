@@ -1,6 +1,6 @@
 # Changelog
 
-## [Unreleased]
+## [0.6.1] - 2026-06-10
 
 ### Added
 - Identification and Failure Modes documentation page. It centralizes when a revealed-preference score reflects a data artifact rather than behavior, covering stockouts and unavailability, recommendation and platform bias, reconstructed versus observed menus, multi-purchase and category aggregation, repeated exposure, and time-varying preferences.
