@@ -30,8 +30,9 @@ def compute_vei(
     a lower bound on the per-observation efficiency and a fast way to flag
     problematic observations. It is NOT the exact Varian (1990) index: it does
     not re-impose GARP at the deflated budgets, and the code minimizes sum(e_i)
-    rather than the index's sum(1 - e_i). For the exact per-observation index use
-    vei_exact (the Mononen 2023 weighted-feedback-arc-set formulation in Rust).
+    rather than the index's sum(1 - e_i). For the exact per-observation index
+    use compute_vei_exact (Mononen 2023 Theorem 1, implemented identically in
+    Rust and in this module).
 
     Args:
         session: ConsumerSession with prices and quantities

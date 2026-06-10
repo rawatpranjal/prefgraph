@@ -208,6 +208,19 @@ backends, for example a lexicographic secondary objective that minimizes the L1 
 minimum cost feedback arc sets. The continuous-data parity test passes only because ties are
 measure-zero there, so it needs discrete fixtures before any parity claim stands.
 
+**Update 2026-06-10, CLOSED in 0.6.2.** The finding went deeper than tie breaking. Reading Mononen
+(2023) Theorem 1 against the Rust code showed the objective was right but the cycle constraints were
+not. Theorem 1 expands each cycle constraint over the U-set, every equally or more expensive
+preference at the same observation, because one budget adjustment removes all cheaper preferences
+free. Without that expansion the solver pays for nested removals independently and overstates the
+index. Branch `fix/062-vei-exact-varian` reimplemented both backends to Theorem 1 with the Algorithm 1
+AddCost separation oracle, test first against a definition-based enumeration oracle. The
+user-approved canonical vector convention, minimize the maximum adjustment among value-optimal
+solutions and then resolve ties in observation order, makes the reported vector deterministic and
+bit-identical across backends on integer data. A fresh adversarial audit with its own
+exact-arithmetic oracle passed it on roughly a thousand datasets with zero blockers, see
+`docs/chunks/vei-exact/audit.md`. Branch `feat/061-vei-exact` is superseded and can be deleted.
+
 **Quasilinear default truncates cycle search (MED, FIXED).** `check_quasilinearity` defaults
 `max_cycle_length=3`, so violations that first appear in longer cycles are missed. The exhaustive
 Bellman-Ford variant already exists and should be the default.

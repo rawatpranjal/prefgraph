@@ -258,9 +258,23 @@ variables, which avoids the LP-relaxation errors documented by Mononen (2023).
 VEI (Varian Efficiency Index) - Exact MILP
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-**Definition**: The VEI assigns an individual efficiency level :math:`e_t \in [0,1]`
-to each observation such that the vector :math:`(e_t)_{t=1}^T` maximizes some
-objective (usually :math:`\sum e_t`) subject to GARP.
+**Definition**: Varian's index assigns an individual efficiency level
+:math:`e_t \in [0,1]` to each observation. It is the least average adjustment
+that restores consistency,
+
+.. math::
+
+   I_{\mathrm{Var}} = \frac{1}{T} \inf_{(e_t)} \sum_{t=1}^{T} (1 - e_t)
+   \quad \text{such that GARP holds at the adjusted budgets } e_t \, p_t x_t.
+
+``vei_exact_mean`` reports :math:`1 - I_{\mathrm{Var}}`, which is unique. The
+per-observation vector behind it is generally not unique when several
+adjustment patterns achieve the same total, so PrefGraph reports a canonical
+vector. Among value-optimal solutions it first minimizes the largest single
+adjustment, then resolves remaining ties in observation order, giving earlier
+observations the benefit of the doubt. This selection is a reporting
+convention, not part of the index definition, and it makes the vector
+statistics deterministic and identical across both backends.
 
 **Intuition**: Unlike CCEI, which applies a single "penalty" to every observation,
 VEI allows us to say: "Trip #14 was irrational (e=0.7), but Trip #1 was
@@ -268,14 +282,14 @@ perfect (e=1.0)." This provides much higher diagnostic resolution for identifyin
 *when* behavior became inconsistent.
 
 **Algorithm (Mononen, 2023)**:
-PrefGraph implements the **Row Generation** algorithm from Mononen (2023).
-1. Formulate the problem as a **Weighted Minimum Feedback Arc Set (WFAS)** - find the minimum-cost set of strict revealed preferences to remove so that no directed cycle remains.
+PrefGraph implements Theorem 1 of Mononen (2023) with row generation.
+1. Reformulate the index as a binary linear program over strict revealed preferences. Lowering one budget removes the targeted preference and every cheaper preference at the same observation for free, so each cycle constraint is expanded to the full set of equally or more expensive preferences that would cover it.
 2. Initialize with all 2-cycles (WARP violations).
 3. Solve the MILP with the current constraint set.
-4. Run a separation oracle (DFS) to find any remaining violated cycles in the residual graph.
-5. If cycles are found, add new cycle constraints and re-solve; otherwise, terminate.
+4. Run the separation oracle from Mononen's Algorithm 1, which keeps a preference alive only while its additional removal cost is positive and greedily breaks each cycle it finds.
+5. If surviving cycles are found, add their expanded constraints and re-solve; otherwise the value is optimal. Two further constrained solves then pin the canonical vector.
 
-This is NP-hard, but the WFAS reformulation converges orders of magnitude faster
+This is NP-hard, but the reformulation converges orders of magnitude faster
 than earlier ILP approaches and sidesteps the LP-relaxation errors documented by
 Mononen (2023) in the Demuynck & Rehbeck formulation. A polynomial-time LP
 relaxation (``compute_vei``) is also available as a fast heuristic.
@@ -283,7 +297,11 @@ relaxation (``compute_vei``) is also available as a fast heuristic.
 .. rubric:: Implementation
 
 - **Rust**: ``rpt-core/src/vei.rs`` - ``compute_vei()`` (LP relaxation) and
-  ``compute_vei_exact()`` (MILP with row generation).
+  ``compute_vei_exact()`` (Theorem 1 MILP with row generation).
+- **Python**: ``prefgraph.algorithms.vei.compute_vei_exact`` is an exact
+  mirror used by the Engine fallback; on integer data both backends return
+  bit-identical results, verified by exhaustive-enumeration oracles in the
+  test suite.
 
 **References**: Varian (1990, *J Econometrics*); Mononen (2023).
 
