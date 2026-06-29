@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Current Roadmap
 
-Active cycle is the v0.6 "Trust Release" hardening cycle. See [docs/roadmap.md](docs/roadmap.md). New algorithms are frozen and the API surface is locked for this cycle. CI enforcement and the maturin build are done and gating. A metric-correctness audit then fixed the CCEI/AEI supremum and is sequencing the rest of the parked findings before the 0.6.0 release.
+See [roadmap.md](roadmap.md) for STATUS, CURRENT GOAL, and BACKLOG, and [memory.md](memory.md) for decisions and learned rules. The v0.6 "Trust Release" cycle is complete and shipped to PyPI through 0.6.2. It delivered pull-request CI gating, the maturin single build, six oracle-verified metric-correctness fixes, the identification and failure-modes docs page, a slim core install, sklearn-compatible encoders, and the exact-VEI close-out per Mononen (2023) Theorem 1. The repo is between cycles. The retired v0.6 cycle roadmap is preserved at [legacy/roadmap-v0.6.md](legacy/roadmap-v0.6.md).
 
 ## Learned Rules
 
