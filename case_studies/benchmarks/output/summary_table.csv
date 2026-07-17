@@ -1,2 +1,0 @@
-Dataset,Target,N,Task,AUC (RP only),AUC (Baseline),AUC (Combined),Lift %
-Tenrec,High Engagement,50000,class,0.993,0.993,0.993,-0.0%
