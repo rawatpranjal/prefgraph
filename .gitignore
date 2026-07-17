@@ -126,3 +126,8 @@ deploy2.sh
 
 # CatBoost training logs
 catboost_info/
+
+# Internal project memory/roadmap and AI project config (never public)
+memory.md
+roadmap.md
+CLAUDE.md
